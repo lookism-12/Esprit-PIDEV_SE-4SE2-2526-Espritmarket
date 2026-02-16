@@ -1,0 +1,7 @@
+# Angular
+/front/node_modules
+/front/dist
+
+# Spring
+/back/target
+/back/.idea
