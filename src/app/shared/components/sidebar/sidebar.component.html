@@ -1,0 +1,46 @@
+<aside class="w-64 bg-primary-dark text-white flex flex-col h-full shadow-2xl">
+  <!-- Logo -->
+  <div class="p-6 border-b border-primary-light/20 flex items-center justify-center">
+    <div class="flex flex-col items-center">
+      <div class="bg-white p-2 rounded-full mb-2">
+        <img src="assets/logo_esprit_market-removebg-preview (1).png" alt="Logo" class="w-12 h-12 object-contain">
+      </div>
+      <h1 class="text-xl font-bold tracking-wider">Esprit Market</h1>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="flex-1 overflow-y-auto py-4">
+    <div class="space-y-1 px-3">
+      <ng-container *ngFor="let item of menuItems">
+        <a [routerLink]="item.route"
+          routerLinkActive="bg-white text-primary-dark font-bold shadow-md transform scale-105"
+          [routerLinkActiveOptions]="{exact: item.route === '/admin/dashboard'}"
+          class="flex items-center px-4 py-3 rounded-lg transition-all duration-200 hover:bg-primary-light hover:text-white group cursor-pointer mb-1">
+
+          <i-lucide [name]="item.icon" class="mr-3 w-5 h-5"></i-lucide>
+
+          <span class="flex-1">{{ item.label }}</span>
+
+          <span *ngIf="item.badge"
+            class="bg-accent-red text-white text-xs font-bold px-2 py-0.5 rounded-full border border-white/20">
+            {{ item.badge }}
+          </span>
+        </a>
+      </ng-container>
+    </div>
+  </nav>
+
+  <!-- User Profile (Bottom) -->
+  <div class="p-4 border-t border-primary-light/20 bg-primary-dark">
+    <div class="flex items-center p-2 rounded-lg hover:bg-primary-light transition-colors cursor-pointer">
+      <div class="w-10 h-10 rounded-full bg-white flex items-center justify-center text-primary-dark font-bold text-lg">
+        AU
+      </div>
+      <div class="ml-3 overflow-hidden">
+        <p class="text-sm font-semibold truncate">Admin User</p>
+        <p class="text-xs text-primary-100 truncate">admin&#64;esprit.tn</p>
+      </div>
+    </div>
+  </div>
+</aside>

@@ -1,0 +1,43 @@
+<header class="bg-gradient-header h-16 flex items-center justify-between px-6 shadow-md z-20">
+    <!-- Left Section -->
+    <div class="flex items-center gap-4">
+        <div class="md:hidden">
+            <button class="text-white hover:text-gray-200 transition-colors">
+                <i-lucide name="menu" class="w-6 h-6"></i-lucide>
+            </button>
+        </div>
+        <h2 class="text-lg font-bold text-white tracking-wide">Admin Dashboard</h2>
+    </div>
+
+    <!-- Right Section -->
+    <div class="flex items-center gap-4">
+        <!-- Search Bar -->
+        <div class="relative hidden lg:block">
+            <input type="text" placeholder="Search..."
+                class="bg-white/10 border border-white/20 rounded-full px-4 py-1.5 pl-10 text-sm text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-white/50 w-64 transition-all" />
+            <i-lucide name="search" class="absolute left-3 top-2 text-gray-300 w-4 h-4"></i-lucide>
+        </div>
+
+        <div class="h-6 w-px bg-white/20 mx-2 hidden md:block"></div>
+
+        <!-- Icons -->
+        <div class="flex items-center space-x-3 text-white">
+            <button class="p-1 hover:bg-white/10 rounded-full transition-colors relative">
+                <i-lucide name="bell" class="w-5 h-5"></i-lucide>
+                <span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+            </button>
+            <button class="p-1 hover:bg-white/10 rounded-full transition-colors">
+                <i-lucide name="mail" class="w-5 h-5"></i-lucide>
+            </button>
+        </div>
+
+        <!-- User -->
+        <div class="flex items-center gap-2 ml-2 cursor-pointer">
+            <div
+                class="w-8 h-8 rounded-full bg-white text-primary font-bold flex items-center justify-center border-2 border-white/50">
+                AU
+            </div>
+            <i-lucide name="chevron-down" class="w-4 h-4 text-white/80 hidden md:block"></i-lucide>
+        </div>
+    </div>
+</header>
