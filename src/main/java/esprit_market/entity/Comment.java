@@ -1,0 +1,27 @@
+package esprit_market.entity;
+
+import lombok.*;
+import org.bson.types.ObjectId;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@Document(collection = "comments")
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class Comment {
+    @Id
+    private ObjectId id;
+    
+    // Post — Comment (OneToMany BIDIRECTIONAL)
+    private ObjectId postId;
+    
+    private String content;
+    
+    // Comment — Reaction (OneToMany BIDIRECTIONAL)
+    private List<ObjectId> reactionIds = new ArrayList<>();
+}
