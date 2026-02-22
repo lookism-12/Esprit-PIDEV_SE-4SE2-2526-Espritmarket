@@ -17,3 +17,11 @@ Thumbs.db
 ### Application properties (sensible data) ###
 application.properties
 application.yml
+
+# Angular
+/front/node_modules
+/front/dist
+
+# Spring
+/back/target
+/back/.idea
