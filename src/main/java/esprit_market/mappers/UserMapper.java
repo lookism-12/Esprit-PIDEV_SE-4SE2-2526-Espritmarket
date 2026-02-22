@@ -1,7 +1,7 @@
 package esprit_market.mappers;
 
 import esprit_market.dto.UserDTO;
-import esprit_market.entity.User;
+import esprit_market.entity.user.User;
 import org.springframework.stereotype.Component;
 
 import java.util.stream.Collectors;
@@ -9,7 +9,8 @@ import java.util.stream.Collectors;
 @Component
 public class UserMapper {
     public UserDTO toDTO(User user) {
-        if (user == null) return null;
+        if (user == null)
+            return null;
         UserDTO dto = new UserDTO();
         dto.setId(user.getId().toHexString());
         dto.setFirstName(user.getFirstName());

@@ -1,8 +1,8 @@
 package esprit_market.config;
 
-import esprit_market.Enum.Role;
-import esprit_market.entity.User;
-import esprit_market.repository.UserRepository;
+import esprit_market.Enum.userEnum.Role;
+import esprit_market.entity.user.User;
+import esprit_market.repository.userRepository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
