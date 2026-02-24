@@ -1,18 +1,54 @@
 package esprit_market.controller.forumController;
 
+import esprit_market.dto.forum.*;
 import esprit_market.entity.forum.Message;
+import esprit_market.mappers.ForumMapper;
 import esprit_market.service.forumService.MessageService;
 import lombok.RequiredArgsConstructor;
+import org.bson.types.ObjectId;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/messages")
+@RequestMapping("/api/forum/messages")
 @RequiredArgsConstructor
 public class MessageController {
     private final MessageService service;
 
     @GetMapping
-    public List<Message> getAll() { return service.findAll(); }
+    public List<MessageDto> getAll() {
+        return service.findAll().stream().map(ForumMapper::toMessageDto).collect(Collectors.toList());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<MessageDto> findById(@PathVariable String id) {
+        Message entity = service.findById(new ObjectId(id));
+        if (entity == null) return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(ForumMapper.toMessageDto(entity));
+    }
+
+    @PostMapping
+    public ResponseEntity<MessageDto> create(@RequestBody CreateMessageDto dto) {
+        Message entity = service.create(dto);
+        if (entity == null) return ResponseEntity.badRequest().build();
+        return ResponseEntity.status(HttpStatus.CREATED).body(ForumMapper.toMessageDto(entity));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<MessageDto> update(@PathVariable String id, @RequestBody UpdateMessageDto dto) {
+        Message entity = service.update(new ObjectId(id), dto);
+        if (entity == null) return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(ForumMapper.toMessageDto(entity));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteById(@PathVariable String id) {
+        if (service.findById(new ObjectId(id)) == null) return ResponseEntity.notFound().build();
+        service.deleteById(new ObjectId(id));
+        return ResponseEntity.noContent().build();
+    }
 }

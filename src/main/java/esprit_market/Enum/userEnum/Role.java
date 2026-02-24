@@ -1,5 +1,5 @@
 package esprit_market.Enum.userEnum;
 
 public enum Role {
-    CLIENT, PROVIDER, DRIVER, PASSENGER, DELIVERY, ADMIN
+    USER, STUDENT, ADMIN, CLIENT, PROVIDER, DRIVER, PASSENGER, DELIVERY
 }

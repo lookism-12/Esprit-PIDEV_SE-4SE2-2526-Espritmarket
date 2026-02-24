@@ -15,12 +15,10 @@ import java.time.LocalDateTime;
 public class Message {
     @Id
     private ObjectId id;
-
-    // User — Message (OneToMany BIDIRECTIONAL)
     private ObjectId senderId;
-
-    private ObjectId receiverId; // Optional if message is direct
-
+    private ObjectId groupId;   // for group chat
+    private ObjectId receiverId; // for direct message (optional)
+    private ObjectId replyToMessageId; // optional: reply to another message
     private String content;
     private LocalDateTime timestamp;
 }
