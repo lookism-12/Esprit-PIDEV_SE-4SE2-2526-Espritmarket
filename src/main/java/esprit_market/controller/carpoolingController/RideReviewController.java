@@ -1,4 +1,4 @@
-package esprit_market.controller;
+package esprit_market.controller.carpoolingController;
 
 import esprit_market.entity.carpooling.RideReview;
 import esprit_market.service.carpoolingService.RideReviewService;

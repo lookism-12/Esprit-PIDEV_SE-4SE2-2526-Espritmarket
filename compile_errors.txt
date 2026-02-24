@@ -1,0 +1,128 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ---------------------< esprit_market:EspritMarket >---------------------
+[INFO] Building EspritMarket 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.3.2:clean (default-clean) @ EspritMarket ---
+[INFO] Deleting C:\Users\21694\Desktop\EspritMaket\PI-version-1\target
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ EspritMarket ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 0 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ EspritMarket ---
+[INFO] Changes detected - recompiling the module! :source
+[INFO] Compiling 159 source files with javac [debug release 17] to target\classes
+[INFO] -------------------------------------------------------------
+[WARNING] COMPILATION WARNING : 
+[INFO] -------------------------------------------------------------
+[WARNING] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/entity/marketplace/Shop.java:[22,28] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/entity/marketplace/Shop.java:[25,28] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/entity/marketplace/Product.java:[24,32] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/entity/marketplace/Product.java:[27,28] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/entity/forum/Group.java:[22,28] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/entity/forum/Group.java:[25,28] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/entity/forum/Post.java:[26,28] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/entity/forum/Comment.java:[26,28] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/entity/carpooling/DriverProfile.java:[24,28] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/entity/carpooling/DriverProfile.java:[27,28] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/entity/carpooling/PassengerProfile.java:[24,28] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/entity/carpooling/Ride.java:[30,28] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/entity/carpooling/Ride.java:[33,28] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/entity/marketplace/Category.java:[22,28] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/entity/cart/Cart.java:[24,28] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[INFO] 15 warnings 
+[INFO] -------------------------------------------------------------
+[INFO] -------------------------------------------------------------
+[ERROR] COMPILATION ERROR : 
+[INFO] -------------------------------------------------------------
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/mappers/notificationMapper/NotificationMapper.java:[13,31] cannot find symbol
+  symbol:   method builder()
+  location: class esprit_market.dto.notification.NotificationDTO
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/mappers/notificationMapper/NotificationMapper.java:[31,24] cannot find symbol
+  symbol:   method getId()
+  location: variable dto of type esprit_market.dto.notification.NotificationDTO
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/mappers/notificationMapper/NotificationMapper.java:[31,59] cannot find symbol
+  symbol:   method getId()
+  location: variable dto of type esprit_market.dto.notification.NotificationDTO
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/mappers/notificationMapper/NotificationMapper.java:[32,27] cannot find symbol
+  symbol:   method getTitle()
+  location: variable dto of type esprit_market.dto.notification.NotificationDTO
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/mappers/notificationMapper/NotificationMapper.java:[33,33] cannot find symbol
+  symbol:   method getDescription()
+  location: variable dto of type esprit_market.dto.notification.NotificationDTO
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/mappers/notificationMapper/NotificationMapper.java:[34,26] cannot find symbol
+  symbol:   method getType()
+  location: variable dto of type esprit_market.dto.notification.NotificationDTO
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/mappers/notificationMapper/NotificationMapper.java:[35,35] cannot find symbol
+  symbol:   method getLinkedEventId()
+  location: variable dto of type esprit_market.dto.notification.NotificationDTO
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/mappers/notificationMapper/NotificationMapper.java:[35,81] cannot find symbol
+  symbol:   method getLinkedEventId()
+  location: variable dto of type esprit_market.dto.notification.NotificationDTO
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/mappers/notificationMapper/NotificationMapper.java:[36,39] cannot find symbol
+  symbol:   method getLinkedPromotionId()
+  location: variable dto of type esprit_market.dto.notification.NotificationDTO
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/mappers/notificationMapper/NotificationMapper.java:[36,89] cannot find symbol
+  symbol:   method getLinkedPromotionId()
+  location: variable dto of type esprit_market.dto.notification.NotificationDTO
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/mappers/notificationMapper/NotificationMapper.java:[37,26] cannot find symbol
+  symbol:   method isRead()
+  location: variable dto of type esprit_market.dto.notification.NotificationDTO
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/mappers/notificationMapper/NotificationMapper.java:[38,31] cannot find symbol
+  symbol:   method getCreatedAt()
+  location: variable dto of type esprit_market.dto.notification.NotificationDTO
+[INFO] 12 errors 
+[INFO] -------------------------------------------------------------
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  8.095 s
+[INFO] Finished at: 2026-02-22T15:32:22+01:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.11.0:compile (default-compile) on project EspritMarket: Compilation failure: Compilation failure: 
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/mappers/notificationMapper/NotificationMapper.java:[13,31] cannot find symbol
+[ERROR]   symbol:   method builder()
+[ERROR]   location: class esprit_market.dto.notification.NotificationDTO
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/mappers/notificationMapper/NotificationMapper.java:[31,24] cannot find symbol
+[ERROR]   symbol:   method getId()
+[ERROR]   location: variable dto of type esprit_market.dto.notification.NotificationDTO
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/mappers/notificationMapper/NotificationMapper.java:[31,59] cannot find symbol
+[ERROR]   symbol:   method getId()
+[ERROR]   location: variable dto of type esprit_market.dto.notification.NotificationDTO
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/mappers/notificationMapper/NotificationMapper.java:[32,27] cannot find symbol
+[ERROR]   symbol:   method getTitle()
+[ERROR]   location: variable dto of type esprit_market.dto.notification.NotificationDTO
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/mappers/notificationMapper/NotificationMapper.java:[33,33] cannot find symbol
+[ERROR]   symbol:   method getDescription()
+[ERROR]   location: variable dto of type esprit_market.dto.notification.NotificationDTO
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/mappers/notificationMapper/NotificationMapper.java:[34,26] cannot find symbol
+[ERROR]   symbol:   method getType()
+[ERROR]   location: variable dto of type esprit_market.dto.notification.NotificationDTO
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/mappers/notificationMapper/NotificationMapper.java:[35,35] cannot find symbol
+[ERROR]   symbol:   method getLinkedEventId()
+[ERROR]   location: variable dto of type esprit_market.dto.notification.NotificationDTO
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/mappers/notificationMapper/NotificationMapper.java:[35,81] cannot find symbol
+[ERROR]   symbol:   method getLinkedEventId()
+[ERROR]   location: variable dto of type esprit_market.dto.notification.NotificationDTO
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/mappers/notificationMapper/NotificationMapper.java:[36,39] cannot find symbol
+[ERROR]   symbol:   method getLinkedPromotionId()
+[ERROR]   location: variable dto of type esprit_market.dto.notification.NotificationDTO
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/mappers/notificationMapper/NotificationMapper.java:[36,89] cannot find symbol
+[ERROR]   symbol:   method getLinkedPromotionId()
+[ERROR]   location: variable dto of type esprit_market.dto.notification.NotificationDTO
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/mappers/notificationMapper/NotificationMapper.java:[37,26] cannot find symbol
+[ERROR]   symbol:   method isRead()
+[ERROR]   location: variable dto of type esprit_market.dto.notification.NotificationDTO
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/mappers/notificationMapper/NotificationMapper.java:[38,31] cannot find symbol
+[ERROR]   symbol:   method getCreatedAt()
+[ERROR]   location: variable dto of type esprit_market.dto.notification.NotificationDTO
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException

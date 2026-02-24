@@ -3,7 +3,6 @@ package esprit_market.config;
 import esprit_market.entity.user.User;
 import esprit_market.repository.userRepository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.bson.types.ObjectId;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;

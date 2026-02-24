@@ -12,26 +12,26 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class OpenApiConfig {
 
-    private static final String SECURITY_SCHEME_NAME = "BearerAuth";
+        private static final String SECURITY_SCHEME_NAME = "BearerAuth";
 
-    @Bean
-    public OpenAPI espritMarketOpenAPI() {
-        return new OpenAPI()
-                .info(new Info()
-                        .title("ESPRIT Market API")
-                        .description("REST API for ESPRIT Market – Spring Boot + MongoDB + JWT")
-                        .version("1.0.0")
-                        .contact(new Contact()
-                                .name("ESPRIT Market Team")
-                                .email("contact@espritmarket.tn")))
-                // Global security requirement: every secured endpoint requires BearerAuth
-                .addSecurityItem(new SecurityRequirement().addList(SECURITY_SCHEME_NAME))
-                .components(new Components()
-                        .addSecuritySchemes(SECURITY_SCHEME_NAME, new SecurityScheme()
-                                .name(SECURITY_SCHEME_NAME)
-                                .type(SecurityScheme.Type.HTTP)
-                                .scheme("bearer")
-                                .bearerFormat("JWT")
-                                .description("Paste your JWT token here (without 'Bearer ' prefix)")));
-    }
+        @Bean
+        public OpenAPI espritMarketOpenAPI() {
+                return new OpenAPI()
+                                .info(new Info()
+                                                .title("ESPRIT Market API")
+                                                .description("REST API for ESPRIT Market – Spring Boot + MongoDB + JWT")
+                                                .version("1.0.0")
+                                                .contact(new Contact()
+                                                                .name("ESPRIT Market Team")
+                                                                .email("contact@espritmarket.tn")))
+                                // Global security requirement: every secured endpoint requires BearerAuth
+                                .addSecurityItem(new SecurityRequirement().addList(SECURITY_SCHEME_NAME))
+                                .components(new Components()
+                                                .addSecuritySchemes(SECURITY_SCHEME_NAME, new SecurityScheme()
+                                                                .name(SECURITY_SCHEME_NAME)
+                                                                .type(SecurityScheme.Type.HTTP)
+                                                                .scheme("bearer")
+                                                                .bearerFormat("JWT")
+                                                                .description("Paste your JWT token here (without 'Bearer ' prefix)")));
+        }
 }

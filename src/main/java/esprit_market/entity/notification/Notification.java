@@ -1,29 +1,37 @@
 package esprit_market.entity.notification;
 
+import esprit_market.Enum.notificationEnum.NotificationType;
+import esprit_market.entity.user.User;
 import lombok.*;
 import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.time.LocalDateTime;
 
-@Document(collection = "external_notifications")
+@Document(collection = "notifications")
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class Notification {
+
     @Id
     private ObjectId id;
-    
-    // User — ExternalNotification (ManyToMany BIDIRECTIONAL)
-    private List<ObjectId> userIds = new ArrayList<>();
-    
+
+    @DBRef
+    private User user; // destinataire (receiver) — null = broadcast global (ex: Black Friday,
+                       // promotions)
+
     private String title;
     private String description;
-    
-    // Linked to Events and Promotions
-    private ObjectId linkedEventId;
-    private ObjectId linkedPromotionId;
+
+    private NotificationType type; // INTERNAL_NOTIFICATION ou EXTERNAL_NOTIFICATION
+
+    private String linkedObjectId; // ID de l'objet lié (ex: negotiationId, eventId, etc.)
+
+    private boolean read;
+
+    private LocalDateTime createdAt;
 }
