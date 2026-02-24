@@ -8,9 +8,11 @@ import java.util.List;
 public interface ICategoryService {
     List<Category> findAll();
 
-    Category save(Category category);
-
     Category findById(ObjectId id);
+
+    Category create(Category category);
+
+    Category update(ObjectId id, Category category);
 
     void deleteById(ObjectId id);
 }

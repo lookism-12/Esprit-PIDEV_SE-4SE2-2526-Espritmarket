@@ -16,13 +16,14 @@ import java.util.List;
 public class Notification {
     @Id
     private ObjectId id;
-    
+
     // User — ExternalNotification (ManyToMany BIDIRECTIONAL)
+    @Builder.Default
     private List<ObjectId> userIds = new ArrayList<>();
-    
+
     private String title;
     private String description;
-    
+
     // Linked to Events and Promotions
     private ObjectId linkedEventId;
     private ObjectId linkedPromotionId;

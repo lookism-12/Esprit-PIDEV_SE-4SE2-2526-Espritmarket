@@ -16,12 +16,13 @@ import java.util.List;
 public class Post {
     @Id
     private ObjectId id;
-    
+
     // User — Post (OneToMany BIDIRECTIONAL)
     private ObjectId userId;
-    
+
     private String content;
-    
+
     // Post — Comment (OneToMany BIDIRECTIONAL)
+    @Builder.Default
     private List<ObjectId> commentIds = new ArrayList<>();
 }

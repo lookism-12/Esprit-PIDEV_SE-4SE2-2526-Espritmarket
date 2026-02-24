@@ -27,8 +27,10 @@ public class Ride {
     private String destination;
 
     // Ride — Booking (OneToMany BIDIRECTIONAL)
+    @Builder.Default
     private List<ObjectId> bookingIds = new ArrayList<>();
 
     // Ride — RideReview (OneToMany BIDIRECTIONAL)
+    @Builder.Default
     private List<ObjectId> reviewIds = new ArrayList<>();
 }

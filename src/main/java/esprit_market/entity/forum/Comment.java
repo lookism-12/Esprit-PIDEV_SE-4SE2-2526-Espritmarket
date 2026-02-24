@@ -23,5 +23,6 @@ public class Comment {
     private String content;
 
     // Comment — Reaction (OneToMany BIDIRECTIONAL)
-    private List<ObjectId> reactionIds = new ArrayList<>();
+    @Builder.Default
+    private List<ObjectId> replyIds = new ArrayList<>();
 }

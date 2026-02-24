@@ -8,9 +8,11 @@ import java.util.List;
 public interface IServiceService {
     List<ServiceEntity> findAll();
 
-    ServiceEntity save(ServiceEntity service);
-
     ServiceEntity findById(ObjectId id);
+
+    ServiceEntity create(ServiceEntity service);
+
+    ServiceEntity update(ObjectId id, ServiceEntity service);
 
     void deleteById(ObjectId id);
 }

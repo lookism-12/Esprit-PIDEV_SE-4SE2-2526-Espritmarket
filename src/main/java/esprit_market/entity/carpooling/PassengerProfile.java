@@ -16,10 +16,11 @@ import java.util.List;
 public class PassengerProfile {
     @Id
     private ObjectId id;
-    
+
     // Bidirectional OneToOne User <-> PassengerProfile
     private ObjectId userId;
-    
+
     // Bidirectional OneToMany PassengerProfile <-> Booking
+    @Builder.Default
     private List<ObjectId> bookingIds = new ArrayList<>();
 }

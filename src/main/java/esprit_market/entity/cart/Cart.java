@@ -16,12 +16,13 @@ import java.util.List;
 public class Cart {
     @Id
     private ObjectId id;
-    
+
     // User — Cart (OneToMany BIDIRECTIONAL)
     private ObjectId userId;
-    
+
     // Cart — CartItem (OneToMany BIDIRECTIONAL)
+    @Builder.Default
     private List<ObjectId> cartItemIds = new ArrayList<>();
-    
+
     private double totalPrice;
 }

@@ -28,4 +28,9 @@ public class UserService implements IUserService {
     public void deleteById(ObjectId id) {
         userRepository.deleteById(id);
     }
+
+    @Override
+    public boolean existsByEmail(String email) {
+        return userRepository.existsByEmail(email);
+    }
 }

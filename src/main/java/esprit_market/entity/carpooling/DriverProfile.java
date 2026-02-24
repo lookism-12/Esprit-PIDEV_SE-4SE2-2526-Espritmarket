@@ -16,13 +16,15 @@ import java.util.List;
 public class DriverProfile {
     @Id
     private ObjectId id;
-    
+
     // Bidirectional OneToOne User <-> DriverProfile
     private ObjectId userId;
-    
+
     // Bidirectional OneToMany DriverProfile <-> Vehicle
+    @Builder.Default
     private List<ObjectId> vehicleIds = new ArrayList<>();
-    
+
     // Bidirectional OneToMany DriverProfile <-> Ride
+    @Builder.Default
     private List<ObjectId> rideIds = new ArrayList<>();
 }

@@ -17,10 +17,4 @@ public class Shop {
     @Id
     private ObjectId id;
     private ObjectId ownerId;
-    
-    // Shop — Product (OneToMany BIDIRECTIONAL)
-    private List<ObjectId> productIds = new ArrayList<>();
-    
-    // Shop — Service (OneToMany BIDIRECTIONAL)
-    private List<ObjectId> serviceIds = new ArrayList<>();
 }
