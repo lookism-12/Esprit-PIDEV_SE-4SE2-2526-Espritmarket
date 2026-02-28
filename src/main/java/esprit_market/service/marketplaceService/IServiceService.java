@@ -1,18 +1,19 @@
 package esprit_market.service.marketplaceService;
 
-import esprit_market.entity.marketplace.ServiceEntity;
+import esprit_market.dto.marketplace.ServiceRequestDTO;
+import esprit_market.dto.marketplace.ServiceResponseDTO;
 import org.bson.types.ObjectId;
 
 import java.util.List;
 
 public interface IServiceService {
-    List<ServiceEntity> findAll();
+    List<ServiceResponseDTO> findAll();
 
-    ServiceEntity findById(ObjectId id);
+    ServiceResponseDTO findById(ObjectId id);
 
-    ServiceEntity create(ServiceEntity service);
+    ServiceResponseDTO create(ServiceRequestDTO dto);
 
-    ServiceEntity update(ObjectId id, ServiceEntity service);
+    ServiceResponseDTO update(ObjectId id, ServiceRequestDTO dto);
 
     void deleteById(ObjectId id);
 }

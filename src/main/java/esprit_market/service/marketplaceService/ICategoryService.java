@@ -1,18 +1,19 @@
 package esprit_market.service.marketplaceService;
 
-import esprit_market.entity.marketplace.Category;
+import esprit_market.dto.marketplace.CategoryRequestDTO;
+import esprit_market.dto.marketplace.CategoryResponseDTO;
 import org.bson.types.ObjectId;
 
 import java.util.List;
 
 public interface ICategoryService {
-    List<Category> findAll();
+    List<CategoryResponseDTO> findAll();
 
-    Category findById(ObjectId id);
+    CategoryResponseDTO findById(ObjectId id);
 
-    Category create(Category category);
+    CategoryResponseDTO create(CategoryRequestDTO dto);
 
-    Category update(ObjectId id, Category category);
+    CategoryResponseDTO update(ObjectId id, CategoryRequestDTO dto);
 
     void deleteById(ObjectId id);
 }

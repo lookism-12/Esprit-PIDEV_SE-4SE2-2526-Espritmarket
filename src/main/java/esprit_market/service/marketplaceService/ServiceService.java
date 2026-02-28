@@ -1,7 +1,11 @@
 package esprit_market.service.marketplaceService;
 
+import esprit_market.dto.marketplace.ServiceRequestDTO;
+import esprit_market.dto.marketplace.ServiceResponseDTO;
 import esprit_market.entity.marketplace.ServiceEntity;
 import esprit_market.exception.ResourceNotFoundException;
+import esprit_market.mappers.marketplace.ServiceMapper;
+import esprit_market.repository.marketplaceRepository.CategoryRepository;
 import esprit_market.repository.marketplaceRepository.ServiceRepository;
 import esprit_market.repository.marketplaceRepository.ShopRepository;
 import lombok.RequiredArgsConstructor;
@@ -9,49 +13,82 @@ import org.bson.types.ObjectId;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class ServiceService implements IServiceService {
     private final ServiceRepository repository;
     private final ShopRepository shopRepository;
+    private final CategoryRepository categoryRepository;
+    private final ServiceMapper mapper;
 
     @Override
-    public List<ServiceEntity> findAll() {
-        return repository.findAll();
+    public List<ServiceResponseDTO> findAll() {
+        return repository.findAll().stream()
+                .map(mapper::toDTO)
+                .collect(Collectors.toList());
     }
 
     @Override
-    public ServiceEntity findById(ObjectId id) {
-        return repository.findById(id)
+    public ServiceResponseDTO findById(ObjectId id) {
+        ServiceEntity service = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Service not found with id: " + id));
+        return mapper.toDTO(service);
     }
 
     @Override
-    public ServiceEntity create(ServiceEntity service) {
-        // FR-PS1: Validate Shop existence
-        if (service.getShopId() == null) {
+    public ServiceResponseDTO create(ServiceRequestDTO dto) {
+        // Validate Shop existence
+        if (dto.getShopId() == null) {
             throw new IllegalArgumentException("Shop ID is mandatory");
         }
-        if (!shopRepository.existsById(service.getShopId())) {
-            throw new ResourceNotFoundException("Shop not found with id: " + service.getShopId());
+        ObjectId shopId = new ObjectId(dto.getShopId());
+        shopRepository.findById(shopId)
+                .orElseThrow(() -> new ResourceNotFoundException("Shop not found with id: " + dto.getShopId()));
+
+        // Validate Category existence (if provided)
+        if (dto.getCategoryId() != null) {
+            ObjectId categoryId = new ObjectId(dto.getCategoryId());
+            categoryRepository.findById(categoryId)
+                    .orElseThrow(
+                            () -> new ResourceNotFoundException("Category not found with id: " + dto.getCategoryId()));
         }
 
-        // Save Service
-        ServiceEntity savedService = repository.save(service);
-
-        return savedService;
+        ServiceEntity service = mapper.toEntity(dto);
+        return mapper.toDTO(repository.save(service));
     }
 
     @Override
-    public ServiceEntity update(ObjectId id, ServiceEntity serviceDetails) {
-        ServiceEntity existingService = findById(id);
+    public ServiceResponseDTO update(ObjectId id, ServiceRequestDTO dto) {
+        ServiceEntity existingService = repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Service not found with id: " + id));
 
-        existingService.setName(serviceDetails.getName());
-        existingService.setDescription(serviceDetails.getDescription());
-        existingService.setPrice(serviceDetails.getPrice());
+        existingService.setName(dto.getName());
+        existingService.setDescription(dto.getDescription());
+        existingService.setPrice(dto.getPrice());
 
-        return repository.save(existingService);
+        // Affectation Shop: validate and assign if provided
+        if (dto.getShopId() != null) {
+            ObjectId shopId = new ObjectId(dto.getShopId());
+            shopRepository.findById(shopId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Shop not found with id: " + dto.getShopId()));
+            existingService.setShopId(shopId);
+        }
+
+        // Affectation / Désaffectation Category
+        if (dto.getCategoryId() != null) {
+            ObjectId categoryId = new ObjectId(dto.getCategoryId());
+            categoryRepository.findById(categoryId)
+                    .orElseThrow(
+                            () -> new ResourceNotFoundException("Category not found with id: " + dto.getCategoryId()));
+            existingService.setCategoryId(categoryId);
+        } else {
+            // Désaffectation: if null is passed, remove the category link
+            existingService.setCategoryId(null);
+        }
+
+        return mapper.toDTO(repository.save(existingService));
     }
 
     @Override

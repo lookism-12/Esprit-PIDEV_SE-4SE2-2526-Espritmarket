@@ -1,7 +1,8 @@
 package esprit_market.controller.marketplaceController;
 
-import esprit_market.entity.marketplace.Category;
-import esprit_market.service.marketplaceService.CategoryService;
+import esprit_market.dto.marketplace.CategoryRequestDTO;
+import esprit_market.dto.marketplace.CategoryResponseDTO;
+import esprit_market.service.marketplaceService.ICategoryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -15,30 +16,30 @@ import java.util.List;
 @RequiredArgsConstructor
 @Tag(name = "Category", description = "Category management APIs")
 public class CategoryController {
-    private final CategoryService service;
+    private final ICategoryService service;
 
     @GetMapping
     @Operation(summary = "Get all categories")
-    public List<Category> findAll() {
+    public List<CategoryResponseDTO> findAll() {
         return service.findAll();
     }
 
     @PostMapping
     @Operation(summary = "Create a new category")
-    public Category create(@RequestBody Category category) {
-        return service.create(category);
+    public CategoryResponseDTO create(@RequestBody CategoryRequestDTO dto) {
+        return service.create(dto);
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Get category by ID")
-    public Category findById(@PathVariable ObjectId id) {
+    public CategoryResponseDTO findById(@PathVariable ObjectId id) {
         return service.findById(id);
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "Update an existing category")
-    public Category update(@PathVariable ObjectId id, @RequestBody Category category) {
-        return service.update(id, category);
+    public CategoryResponseDTO update(@PathVariable ObjectId id, @RequestBody CategoryRequestDTO dto) {
+        return service.update(id, dto);
     }
 
     @DeleteMapping("/{id}")

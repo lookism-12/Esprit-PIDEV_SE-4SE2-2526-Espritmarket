@@ -1,42 +1,70 @@
 package esprit_market.service.marketplaceService;
 
+import esprit_market.dto.marketplace.ShopRequestDTO;
+import esprit_market.dto.marketplace.ShopResponseDTO;
 import esprit_market.entity.marketplace.Shop;
 import esprit_market.exception.ResourceNotFoundException;
+import esprit_market.mappers.marketplace.ShopMapper;
 import esprit_market.repository.marketplaceRepository.ShopRepository;
+import esprit_market.repository.userRepository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class ShopService implements IShopService {
     private final ShopRepository repository;
+    private final UserRepository userRepository;
+    private final ShopMapper mapper;
 
     @Override
-    public List<Shop> findAll() {
-        return repository.findAll();
+    public List<ShopResponseDTO> findAll() {
+        return repository.findAll().stream()
+                .map(mapper::toDTO)
+                .collect(Collectors.toList());
     }
 
     @Override
-    public Shop findById(ObjectId id) {
-        return repository.findById(id)
+    public ShopResponseDTO findById(ObjectId id) {
+        Shop shop = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Shop not found with id: " + id));
+        return mapper.toDTO(shop);
     }
 
     @Override
-    public Shop create(Shop shop) {
-        return repository.save(shop);
+    public ShopResponseDTO create(ShopRequestDTO dto) {
+        // Validate Owner (User) existence
+        if (dto.getOwnerId() != null) {
+            ObjectId ownerId = new ObjectId(dto.getOwnerId());
+            userRepository.findById(ownerId)
+                    .orElseThrow(
+                            () -> new ResourceNotFoundException("User (owner) not found with id: " + dto.getOwnerId()));
+        }
+        Shop shop = mapper.toEntity(dto);
+        return mapper.toDTO(repository.save(shop));
     }
 
     @Override
-    public Shop update(ObjectId id, Shop shopDetails) {
-        Shop existingShop = findById(id);
-        existingShop.setOwnerId(shopDetails.getOwnerId());
-        // IDs lists (productIds, serviceIds) are managed by the respective entities'
-        // CRUD
-        return repository.save(existingShop);
+    public ShopResponseDTO update(ObjectId id, ShopRequestDTO dto) {
+        Shop existingShop = repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Shop not found with id: " + id));
+
+        // Affectation Owner: validate and assign
+        if (dto.getOwnerId() != null) {
+            ObjectId ownerId = new ObjectId(dto.getOwnerId());
+            userRepository.findById(ownerId)
+                    .orElseThrow(
+                            () -> new ResourceNotFoundException("User (owner) not found with id: " + dto.getOwnerId()));
+            existingShop.setOwnerId(ownerId);
+        } else {
+            existingShop.setOwnerId(null);
+        }
+
+        return mapper.toDTO(repository.save(existingShop));
     }
 
     @Override

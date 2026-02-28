@@ -1,7 +1,8 @@
 package esprit_market.controller.marketplaceController;
 
-import esprit_market.entity.marketplace.ServiceEntity;
-import esprit_market.service.marketplaceService.ServiceService;
+import esprit_market.dto.marketplace.ServiceRequestDTO;
+import esprit_market.dto.marketplace.ServiceResponseDTO;
+import esprit_market.service.marketplaceService.IServiceService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -15,30 +16,30 @@ import java.util.List;
 @RequiredArgsConstructor
 @Tag(name = "Service", description = "Service management APIs")
 public class ServiceController {
-    private final ServiceService service;
+    private final IServiceService service;
 
     @GetMapping
     @Operation(summary = "Get all services")
-    public List<ServiceEntity> findAll() {
+    public List<ServiceResponseDTO> findAll() {
         return service.findAll();
     }
 
     @PostMapping
     @Operation(summary = "Create a new service")
-    public ServiceEntity create(@RequestBody ServiceEntity s) {
-        return service.create(s);
+    public ServiceResponseDTO create(@RequestBody ServiceRequestDTO dto) {
+        return service.create(dto);
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Get service by ID")
-    public ServiceEntity findById(@PathVariable ObjectId id) {
+    public ServiceResponseDTO findById(@PathVariable ObjectId id) {
         return service.findById(id);
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "Update an existing service")
-    public ServiceEntity update(@PathVariable ObjectId id, @RequestBody ServiceEntity s) {
-        return service.update(id, s);
+    public ServiceResponseDTO update(@PathVariable ObjectId id, @RequestBody ServiceRequestDTO dto) {
+        return service.update(id, dto);
     }
 
     @DeleteMapping("/{id}")

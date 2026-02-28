@@ -1,6 +1,11 @@
 package esprit_market.controller.marketplaceController;
 
+import esprit_market.dto.marketplace.ProductImageDTO;
+import esprit_market.dto.marketplace.ProductRequestDTO;
+import esprit_market.dto.marketplace.ProductResponseDTO;
 import esprit_market.entity.marketplace.Product;
+import esprit_market.entity.marketplace.ProductImage;
+import esprit_market.service.marketplaceService.IProductService;
 import esprit_market.service.marketplaceService.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -8,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -15,30 +21,30 @@ import java.util.List;
 @RequiredArgsConstructor
 @Tag(name = "Product", description = "Product management APIs")
 public class ProductController {
-    private final ProductService service;
+    private final IProductService service;
 
     @GetMapping
     @Operation(summary = "Get all products")
-    public List<Product> getAll() {
+    public List<ProductResponseDTO> getAll() {
         return service.findAll();
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Get product by ID")
-    public Product getById(@PathVariable ObjectId id) {
+    public ProductResponseDTO getById(@PathVariable ObjectId id) {
         return service.findById(id);
     }
 
     @PostMapping
     @Operation(summary = "Create a new product")
-    public Product create(@RequestBody Product product) {
-        return service.create(product);
+    public ProductResponseDTO create(@RequestBody ProductRequestDTO dto) {
+        return service.create(dto);
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "Update an existing product")
-    public Product update(@PathVariable ObjectId id, @RequestBody Product product) {
-        return service.update(id, product);
+    public ProductResponseDTO update(@PathVariable ObjectId id, @RequestBody ProductRequestDTO dto) {
+        return service.update(id, dto);
     }
 
     @DeleteMapping("/{id}")
@@ -51,28 +57,33 @@ public class ProductController {
 
     @GetMapping("/{id}/images")
     @Operation(summary = "Get all images of a product")
-    public List<esprit_market.entity.marketplace.ProductImage> getImages(@PathVariable ObjectId id) {
-        return service.findById(id).getImages();
+    public List<ProductImageDTO> getImages(@PathVariable ObjectId id) {
+        ProductResponseDTO dto = service.findById(id);
+        return dto.getImages() != null ? dto.getImages() : new ArrayList<>();
     }
 
     @PostMapping("/{id}/images")
     @Operation(summary = "Add an image to a product")
-    public Product addImage(@PathVariable ObjectId id,
-            @RequestBody esprit_market.entity.marketplace.ProductImage image) {
-        Product p = service.findById(id);
+    public ProductResponseDTO addImage(@PathVariable ObjectId id,
+            @RequestBody ProductImageDTO imageDto) {
+        // Use the package-private helper on the concrete service to manipulate entity
+        // directly
+        ProductService productService = (ProductService) service;
+        Product p = productService.findEntityById(id);
         if (p.getImages() == null)
-            p.setImages(new java.util.ArrayList<>());
-        p.getImages().add(image);
-        return service.update(id, p);
+            p.setImages(new ArrayList<>());
+        p.getImages().add(new ProductImage(imageDto.getUrl(), imageDto.getAltText()));
+        return productService.saveAndMap(p);
     }
 
     @DeleteMapping("/{id}/images")
     @Operation(summary = "Remove an image from a product by URL")
-    public Product removeImage(@PathVariable ObjectId id, @RequestParam String imageUrl) {
-        Product p = service.findById(id);
+    public ProductResponseDTO removeImage(@PathVariable ObjectId id, @RequestParam String imageUrl) {
+        ProductService productService = (ProductService) service;
+        Product p = productService.findEntityById(id);
         if (p.getImages() != null) {
             p.getImages().removeIf(img -> img.getUrl().equals(imageUrl));
         }
-        return service.update(id, p);
+        return productService.saveAndMap(p);
     }
 }

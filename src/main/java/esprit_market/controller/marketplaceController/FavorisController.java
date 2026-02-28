@@ -1,6 +1,7 @@
 package esprit_market.controller.marketplaceController;
 
-import esprit_market.entity.marketplace.Favoris;
+import esprit_market.dto.marketplace.FavorisRequestDTO;
+import esprit_market.dto.marketplace.FavorisResponseDTO;
 import esprit_market.service.marketplaceService.IFavorisService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -19,32 +20,32 @@ public class FavorisController {
 
     @GetMapping
     @Operation(summary = "Get all favorites")
-    public List<Favoris> findAll() {
+    public List<FavorisResponseDTO> findAll() {
         return service.findAll();
     }
 
     @PostMapping
     @Operation(summary = "Add a new favorite")
-    public Favoris create(@RequestBody Favoris favoris) {
-        return service.create(favoris);
+    public FavorisResponseDTO create(@RequestBody FavorisRequestDTO dto) {
+        return service.create(dto);
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Get favorite by ID")
-    public Favoris findById(@PathVariable String id) {
+    public FavorisResponseDTO findById(@PathVariable String id) {
         return service.findById(new ObjectId(id));
     }
 
     @GetMapping("/user/{userId}")
     @Operation(summary = "Get all favorites for a specific user")
-    public List<Favoris> getByUserId(@PathVariable String userId) {
+    public List<FavorisResponseDTO> getByUserId(@PathVariable String userId) {
         return service.getByUserId(new ObjectId(userId));
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "Update an existing favorite")
-    public Favoris update(@PathVariable String id, @RequestBody Favoris favoris) {
-        return service.update(new ObjectId(id), favoris);
+    public FavorisResponseDTO update(@PathVariable String id, @RequestBody FavorisRequestDTO dto) {
+        return service.update(new ObjectId(id), dto);
     }
 
     @DeleteMapping("/{id}")
