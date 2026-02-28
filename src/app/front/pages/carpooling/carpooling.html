@@ -1,0 +1,325 @@
+<div class="bg-gray-50 min-h-screen py-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+        <!-- Hero Section -->
+        <div class="premium-card p-10 mb-12 bg-secondary text-white relative overflow-hidden">
+            <div class="relative z-10 max-w-xl">
+                <h1 class="text-4xl font-extrabold mb-4 italic">ESPRIT Carpooling</h1>
+                <p class="text-gray-400 mb-8 text-lg font-medium">Save money and make friends on your way to campus.
+                    Exclusive for ESPRIT students.</p>
+                
+                <!-- Search Form -->
+                <form [formGroup]="searchForm" (ngSubmit)="onSearch()" class="flex flex-col sm:flex-row gap-4">
+                    <input 
+                        formControlName="from"
+                        type="text" 
+                        placeholder="Where are you coming from?"
+                        class="flex-1 bg-white/10 border border-white/20 rounded-xl px-5 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-primary transition-all">
+                    <button type="submit" class="btn-primary py-3 px-8 font-bold">Search Rides</button>
+                </form>
+            </div>
+            <!-- Abstract Decal -->
+            <div class="absolute -right-20 -bottom-20 w-80 h-80 bg-primary/20 rounded-full blur-3xl"></div>
+        </div>
+
+        <!-- View Toggle (Passenger/Driver) -->
+        <div class="flex items-center justify-between mb-8">
+            <div class="flex bg-white rounded-xl p-1 shadow-sm">
+                <button 
+                    (click)="setView('passenger')"
+                    [class]="activeView() === 'passenger' 
+                        ? 'px-6 py-2 bg-primary text-white rounded-lg font-bold text-sm transition-all' 
+                        : 'px-6 py-2 text-gray-500 rounded-lg font-bold text-sm hover:text-secondary transition-all'">
+                    🚶 Find a Ride
+                </button>
+                <button 
+                    (click)="setView('driver')"
+                    [class]="activeView() === 'driver' 
+                        ? 'px-6 py-2 bg-primary text-white rounded-lg font-bold text-sm transition-all' 
+                        : 'px-6 py-2 text-gray-500 rounded-lg font-bold text-sm hover:text-secondary transition-all'">
+                    🚗 Offer a Ride
+                </button>
+            </div>
+
+            @if (activeView() === 'driver') {
+                <button (click)="openCreateRideModal()" class="btn-primary flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Create Ride
+                </button>
+            }
+        </div>
+
+        <!-- PASSENGER VIEW: Available Rides -->
+        @if (activeView() === 'passenger') {
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                @for (ride of filteredRides(); track ride.id) {
+                    <div class="premium-card p-8 group hover:border-primary/30 transition-all" [class.opacity-60]="ride.status === 'full'">
+                        <div class="flex justify-between items-start mb-8">
+                            <div class="flex items-center space-x-4">
+                                <div
+                                    class="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center font-extrabold text-secondary shadow-sm">
+                                    {{ ride.driver.charAt(0) }}
+                                </div>
+                                <div>
+                                    <div class="text-lg font-extrabold text-secondary">{{ ride.driver }}</div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-yellow-500">★</span>
+                                        <span class="text-xs text-gray-500 font-bold">{{ ride.driverRating }}</span>
+                                        <span class="text-xs text-gray-400 font-bold uppercase tracking-widest">Verified Driver</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-2xl font-black text-primary">{{ ride.price | currency:'TND':'code' }}</div>
+                                <div class="text-[10px] text-gray-400 font-bold">PER PASSENGER</div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-6 mb-8 relative">
+                            <div class="absolute left-3 top-2 bottom-2 w-0.5 border-l-2 border-dashed border-gray-200"></div>
+
+                            <div class="flex items-start space-x-6 relative">
+                                <div class="w-6 h-6 bg-white border-4 border-gray-100 rounded-full z-10"></div>
+                                <div>
+                                    <div class="text-xs text-gray-400 font-bold uppercase tracking-widest mb-1">Departure</div>
+                                    <div class="text-secondary font-bold">{{ ride.from }}</div>
+                                </div>
+                            </div>
+
+                            <div class="flex items-start space-x-6 relative">
+                                <div class="w-6 h-6 bg-primary border-4 border-red-50 rounded-full z-10"></div>
+                                <div>
+                                    <div class="text-xs text-gray-400 font-bold uppercase tracking-widest mb-1">Arrival</div>
+                                    <div class="text-secondary font-bold">{{ ride.to }}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between pt-6 border-t border-gray-50">
+                            <div class="flex items-center space-x-6">
+                                <div class="flex items-center text-gray-500 font-bold text-sm">
+                                    <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    {{ ride.time }}
+                                </div>
+                                <div class="flex items-center text-gray-500 font-bold text-sm">
+                                    <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    {{ ride.availableSeats }}/{{ ride.seats }} Seats
+                                </div>
+                                @if (ride.recurring) {
+                                    <span class="text-xs px-2 py-1 bg-blue-50 text-blue-600 rounded-full font-bold">Daily</span>
+                                }
+                            </div>
+                            <button
+                                (click)="bookRide(ride)"
+                                [disabled]="ride.status === 'full'"
+                                [class]="ride.status === 'full' 
+                                    ? 'py-2 px-6 text-sm font-bold bg-gray-100 text-gray-400 rounded-xl cursor-not-allowed'
+                                    : 'btn-primary py-2 px-6 text-sm font-bold shadow-md shadow-primary/10 transition-transform active:scale-95'">
+                                {{ ride.status === 'full' ? 'Full' : 'Book Ride' }}
+                            </button>
+                        </div>
+                    </div>
+                } @empty {
+                    <div class="col-span-2 premium-card p-12 text-center">
+                        <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 9.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-bold text-secondary">No rides found</h3>
+                        <p class="text-gray-500">Try adjusting your search or check back later.</p>
+                    </div>
+                }
+            </div>
+        }
+
+        <!-- DRIVER VIEW: My Rides -->
+        @if (activeView() === 'driver') {
+            <div class="space-y-6">
+                <h2 class="text-2xl font-bold text-secondary">My Rides</h2>
+                
+                @if (myRides().length > 0) {
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        @for (ride of myRides(); track ride.id) {
+                            <div class="premium-card p-6" [class.border-red-200]="ride.status === 'cancelled'">
+                                <div class="flex items-center justify-between mb-4">
+                                    <div>
+                                        <span [class]="ride.status === 'active' ? 'px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold' : 
+                                                       ride.status === 'full' ? 'px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-bold' :
+                                                       'px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-bold'">
+                                            {{ ride.status | titlecase }}
+                                        </span>
+                                        @if (ride.recurring) {
+                                            <span class="ml-2 px-2 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-bold">Recurring</span>
+                                        }
+                                    </div>
+                                    <div class="text-primary font-extrabold">{{ ride.price | currency:'TND':'code' }}</div>
+                                </div>
+
+                                <div class="space-y-3 mb-4">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-3 h-3 bg-gray-300 rounded-full"></div>
+                                        <span class="text-secondary font-medium">{{ ride.from }}</span>
+                                    </div>
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-3 h-3 bg-primary rounded-full"></div>
+                                        <span class="text-secondary font-medium">{{ ride.to }}</span>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center justify-between text-sm text-gray-500 pt-4 border-t border-gray-100">
+                                    <span>{{ ride.time }} • {{ ride.seats - ride.availableSeats }}/{{ ride.seats }} booked</span>
+                                    @if (ride.status === 'active') {
+                                        <button (click)="cancelRide(ride.id)" class="text-red-500 hover:text-red-700 font-bold">Cancel</button>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                } @else {
+                    <div class="premium-card p-12 text-center">
+                        <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-bold text-secondary">No rides created yet</h3>
+                        <p class="text-gray-500 mb-6">Start offering rides to your fellow students!</p>
+                        <button (click)="openCreateRideModal()" class="btn-primary">Create Your First Ride</button>
+                    </div>
+                }
+            </div>
+        }
+
+        <!-- Create Ride Modal -->
+        @if (showCreateRideModal()) {
+            <div class="fixed inset-0 z-50 overflow-y-auto" (click)="closeCreateRideModal()">
+                <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
+                <div class="flex min-h-full items-center justify-center p-4">
+                    <div class="relative w-full max-w-lg bg-white rounded-3xl shadow-xl p-8" (click)="$event.stopPropagation()">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="text-2xl font-bold text-secondary">Create New Ride</h3>
+                            <button (click)="closeCreateRideModal()" class="text-gray-400 hover:text-gray-600">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        <form [formGroup]="createRideForm" (ngSubmit)="createRide()" class="space-y-5">
+                            <div>
+                                <label class="block text-xs font-black text-secondary uppercase tracking-widest mb-2">Departure Location</label>
+                                <input 
+                                    formControlName="from"
+                                    type="text"
+                                    placeholder="Where are you leaving from?"
+                                    [class]="isFieldInvalid(createRideForm, 'from') 
+                                        ? 'w-full h-12 px-4 bg-white border-2 border-red-400 rounded-xl focus:ring-2 focus:ring-red-400 text-sm font-bold'
+                                        : 'w-full h-12 px-4 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-sm font-bold'">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-black text-secondary uppercase tracking-widest mb-2">Destination</label>
+                                <input 
+                                    formControlName="to"
+                                    type="text"
+                                    class="w-full h-12 px-4 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-gray-500"
+                                    readonly>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-black text-secondary uppercase tracking-widest mb-2">Date</label>
+                                    <input 
+                                        formControlName="date"
+                                        type="date"
+                                        [class]="isFieldInvalid(createRideForm, 'date') 
+                                            ? 'w-full h-12 px-4 bg-white border-2 border-red-400 rounded-xl text-sm font-bold'
+                                            : 'w-full h-12 px-4 bg-white border border-gray-200 rounded-xl text-sm font-bold'">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-black text-secondary uppercase tracking-widest mb-2">Time</label>
+                                    <input 
+                                        formControlName="time"
+                                        type="time"
+                                        [class]="isFieldInvalid(createRideForm, 'time') 
+                                            ? 'w-full h-12 px-4 bg-white border-2 border-red-400 rounded-xl text-sm font-bold'
+                                            : 'w-full h-12 px-4 bg-white border border-gray-200 rounded-xl text-sm font-bold'">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-black text-secondary uppercase tracking-widest mb-2">Available Seats</label>
+                                    <input 
+                                        formControlName="seats"
+                                        type="number"
+                                        min="1"
+                                        max="7"
+                                        class="w-full h-12 px-4 bg-white border border-gray-200 rounded-xl text-sm font-bold">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-black text-secondary uppercase tracking-widest mb-2">Price (TND)</label>
+                                    <input 
+                                        formControlName="price"
+                                        type="number"
+                                        step="0.5"
+                                        min="0"
+                                        class="w-full h-12 px-4 bg-white border border-gray-200 rounded-xl text-sm font-bold">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-black text-secondary uppercase tracking-widest mb-2">Vehicle Type</label>
+                                <select 
+                                    formControlName="vehicleType"
+                                    class="w-full h-12 px-4 bg-white border border-gray-200 rounded-xl text-sm font-bold">
+                                    <option value="Car">Car</option>
+                                    <option value="Motorcycle">Motorcycle</option>
+                                    <option value="Van">Van</option>
+                                </select>
+                            </div>
+
+                            <div class="flex items-center gap-3">
+                                <input 
+                                    formControlName="recurring"
+                                    type="checkbox"
+                                    id="recurring"
+                                    class="h-5 w-5 text-primary border-gray-300 rounded focus:ring-primary">
+                                <label for="recurring" class="text-sm font-bold text-secondary">This is a recurring daily ride</label>
+                            </div>
+
+                            <div class="flex gap-4 pt-4">
+                                <button 
+                                    type="submit"
+                                    [disabled]="isCreatingRide()"
+                                    class="flex-1 btn-primary py-3 flex items-center justify-center gap-2">
+                                    @if (isCreatingRide()) {
+                                        <svg class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                        </svg>
+                                        Creating...
+                                    } @else {
+                                        Create Ride
+                                    }
+                                </button>
+                                <button type="button" (click)="closeCreateRideModal()" class="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200">
+                                    Cancel
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>

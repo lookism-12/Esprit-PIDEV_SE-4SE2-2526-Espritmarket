@@ -1,0 +1,507 @@
+<div class="bg-gray-50 min-h-screen py-12">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+
+        <!-- Profile Header -->
+        <div class="premium-card p-8 mb-8">
+            <div class="flex flex-col md:flex-row items-center gap-8">
+                <div class="w-32 h-32 bg-primary text-white rounded-full flex items-center justify-center text-5xl font-extrabold shadow-xl">
+                    {{ user().firstName.charAt(0) }}
+                </div>
+
+                <div class="flex-1 text-center md:text-left space-y-2">
+                    <h1 class="text-3xl font-extrabold text-dark">{{ user().firstName }} {{ user().lastName }}</h1>
+                    <p class="text-gray-500 font-medium">{{ user().email }}</p>
+                    <div class="flex flex-wrap justify-center md:justify-start gap-3 mt-4">
+                        @if (user().isVerified) {
+                            <span class="flex items-center px-3 py-1 bg-green-50 text-green-600 rounded-full text-xs font-bold ring-1 ring-green-500/20">
+                                <svg class="h-4 w-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" />
+                                </svg>
+                                Verified Student
+                            </span>
+                        }
+                        <span class="flex items-center px-3 py-1 bg-yellow-50 text-yellow-600 rounded-full text-xs font-bold ring-1 ring-yellow-500/20">
+                            <svg class="h-4 w-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                            {{ user().reputation }} Rating
+                        </span>
+                        <!-- Loyalty Level Badge -->
+                        <span class="flex items-center px-3 py-1 rounded-full text-xs font-bold border" [ngClass]="getLevelBadgeClass(loyaltyAccount().level)">
+                            <span class="mr-1">{{ getLevelIcon(loyaltyAccount().level) }}</span>
+                            {{ loyaltyAccount().level }} Member
+                        </span>
+                    </div>
+                </div>
+
+                @if (!isEditing()) {
+                    <button (click)="startEditing()" class="btn-primary">Edit Profile</button>
+                }
+            </div>
+        </div>
+
+        <!-- Stats & Info -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div class="premium-card p-6 text-center">
+                <div class="text-2xl font-black text-dark">{{ user().ordersCount }}</div>
+                <div class="text-xs text-gray-400 font-bold uppercase tracking-widest mt-1">Orders</div>
+            </div>
+            <div class="premium-card p-6 text-center">
+                <div class="text-2xl font-black text-dark">{{ listings().length }}</div>
+                <div class="text-xs text-gray-400 font-bold uppercase tracking-widest mt-1">Listings</div>
+            </div>
+            <div class="premium-card p-6 text-center">
+                <div class="text-2xl font-black text-primary">{{ loyaltyAccount().points }}</div>
+                <div class="text-xs text-gray-400 font-bold uppercase tracking-widest mt-1">Points</div>
+            </div>
+            <div class="premium-card p-6 text-center">
+                <div class="text-2xl font-black text-dark">{{ user().joinedDate }}</div>
+                <div class="text-xs text-gray-400 font-bold uppercase tracking-widest mt-1">Member Since</div>
+            </div>
+        </div>
+
+        <!-- Tabs/Section -->
+        <div class="premium-card overflow-hidden">
+            <div class="border-b border-gray-100 flex overflow-x-auto">
+                <button 
+                    (click)="setActiveTab('listings')"
+                    class="px-6 py-5 text-sm font-bold whitespace-nowrap transition-colors"
+                    [ngClass]="activeTab() === 'listings' ? 'text-primary border-b-2 border-primary' : 'text-gray-500 hover:text-dark'">
+                    My Listings
+                </button>
+                <button 
+                    (click)="setActiveTab('orders')"
+                    class="px-6 py-5 text-sm font-bold whitespace-nowrap transition-colors"
+                    [ngClass]="activeTab() === 'orders' ? 'text-primary border-b-2 border-primary' : 'text-gray-500 hover:text-dark'">
+                    Order History
+                </button>
+                <button 
+                    (click)="setActiveTab('loyalty')"
+                    class="px-6 py-5 text-sm font-bold whitespace-nowrap transition-colors"
+                    [ngClass]="activeTab() === 'loyalty' ? 'text-primary border-b-2 border-primary' : 'text-gray-500 hover:text-dark'">
+                    🏆 Loyalty Points
+                </button>
+                <button 
+                    (click)="setActiveTab('preferences')"
+                    class="px-6 py-5 text-sm font-bold whitespace-nowrap transition-colors"
+                    [ngClass]="activeTab() === 'preferences' ? 'text-primary border-b-2 border-primary' : 'text-gray-500 hover:text-dark'">
+                    Preferences
+                </button>
+                <button 
+                    (click)="setActiveTab('settings')"
+                    class="px-6 py-5 text-sm font-bold whitespace-nowrap transition-colors"
+                    [ngClass]="activeTab() === 'settings' ? 'text-primary border-b-2 border-primary' : 'text-gray-500 hover:text-dark'">
+                    Settings
+                </button>
+            </div>
+
+            <!-- LISTINGS TAB -->
+            @if (activeTab() === 'listings') {
+                @if (listings().length > 0) {
+                    <div class="p-6 space-y-4">
+                        @for (listing of listings(); track listing.id) {
+                            <div class="flex items-center gap-6 p-4 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-colors">
+                                <div class="w-20 h-20 bg-gray-200 rounded-xl overflow-hidden flex-shrink-0">
+                                    <img [src]="listing.imageUrl" [alt]="listing.name" class="w-full h-full object-cover">
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="font-bold text-dark">{{ listing.name }}</h4>
+                                    <p class="text-primary font-extrabold">{{ listing.price }} TND</p>
+                                    <div class="flex items-center gap-4 mt-1">
+                                        <span class="text-xs text-gray-400">{{ listing.views }} views</span>
+                                        <span class="text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded-full font-bold">{{ listing.status }}</span>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <button class="p-2 text-gray-400 hover:text-primary transition-colors" title="Edit">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                    </button>
+                                    <button (click)="deleteListing(listing.id)" class="p-2 text-gray-400 hover:text-red-500 transition-colors" title="Delete">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                        <div class="pt-4">
+                            <a routerLink="/seller/products/new" class="btn-primary inline-flex">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                </svg>
+                                Post New Ad
+                            </a>
+                        </div>
+                    </div>
+                } @else {
+                    <div class="p-12 text-center">
+                        <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-300">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-bold text-dark">Your listings will appear here</h3>
+                        <p class="text-gray-500 mb-6">You haven't posted any items yet. Want to sell something?</p>
+                        <button class="btn-primary inline-flex">Post a New Ad</button>
+                    </div>
+                }
+            }
+
+            <!-- ORDERS TAB -->
+            @if (activeTab() === 'orders') {
+                @if (isLoadingOrders()) {
+                    <div class="p-12 text-center">
+                        <svg class="animate-spin h-8 w-8 text-primary mx-auto mb-4" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <p class="text-gray-500">Loading orders...</p>
+                    </div>
+                } @else if (mockOrders().length > 0) {
+                    <div class="p-6 space-y-4">
+                        @for (order of mockOrders(); track order.id) {
+                            <div class="border border-gray-100 rounded-2xl p-6 hover:border-primary/30 transition-colors">
+                                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                                    <div>
+                                        <h4 class="font-bold text-dark">{{ order.orderNumber }}</h4>
+                                        <p class="text-sm text-gray-400">{{ order.date | date:'mediumDate' }}</p>
+                                    </div>
+                                    <div class="flex items-center gap-4">
+                                        <span [class]="'px-3 py-1 rounded-full text-xs font-bold ' + getStatusClass(order.status)">
+                                            {{ getStatusLabel(order.status) }}
+                                        </span>
+                                        <span class="text-lg font-extrabold text-primary">{{ order.total }} TND</span>
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-between pt-4 border-t border-gray-50">
+                                    <p class="text-sm text-gray-500">
+                                        {{ order.itemCount }} item(s): 
+                                        @for (item of order.items; track item.name; let last = $last) {
+                                            {{ item.name }}{{ !last ? ', ' : '' }}
+                                        }
+                                    </p>
+                                    <a [routerLink]="['/orders', order.id]" class="text-primary font-bold text-sm hover:underline">
+                                        View Details →
+                                    </a>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                } @else {
+                    <div class="p-12 text-center">
+                        <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-300">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-bold text-dark">No orders yet</h3>
+                        <p class="text-gray-500 mb-6">Your order history will appear here once you make a purchase.</p>
+                        <a routerLink="/products" class="btn-primary inline-flex">Start Shopping</a>
+                    </div>
+                }
+            }
+
+            <!-- LOYALTY TAB -->
+            @if (activeTab() === 'loyalty') {
+                <div class="p-6">
+                    <!-- Loyalty Overview -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                        <!-- Points Card -->
+                        <div class="bg-gradient-to-br from-primary to-primary-dark rounded-2xl p-6 text-white">
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="text-white/80 text-sm font-semibold">Available Points</span>
+                                <span class="px-3 py-1 bg-white/20 rounded-full text-xs font-bold">
+                                    {{ getLevelIcon(loyaltyAccount().level) }} {{ loyaltyAccount().level }}
+                                </span>
+                            </div>
+                            <p class="text-5xl font-black mb-2">{{ loyaltyAccount().points }}</p>
+                            <p class="text-white/70 text-sm">= {{ loyaltyAccount().points / 100 | number:'1.2-2' }} TND value</p>
+                            <div class="mt-6 pt-4 border-t border-white/20">
+                                <p class="text-xs text-white/70 mb-2">Progress to {{ loyaltyAccount().level === 'SILVER' ? 'GOLD' : 'PLATINUM' }}</p>
+                                <div class="w-full bg-white/20 rounded-full h-2">
+                                    <div class="bg-accent h-2 rounded-full transition-all" [style.width.%]="loyaltyProgress()"></div>
+                                </div>
+                                <p class="text-xs text-white/70 mt-1">{{ loyaltyAccount().pointsToNextLevel }} points to go</p>
+                            </div>
+                        </div>
+
+                        <!-- Level Benefits -->
+                        <div class="premium-card p-6">
+                            <h4 class="font-bold text-dark mb-4">Your {{ loyaltyAccount().level }} Benefits</h4>
+                            <ul class="space-y-3">
+                                @if (loyaltyAccount().level === 'SILVER' || loyaltyAccount().level === 'GOLD' || loyaltyAccount().level === 'PLATINUM') {
+                                    <li class="flex items-center gap-3 text-sm text-gray-600">
+                                        <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                        2% cashback on purchases
+                                    </li>
+                                    <li class="flex items-center gap-3 text-sm text-gray-600">
+                                        <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                        Priority support
+                                    </li>
+                                    <li class="flex items-center gap-3 text-sm text-gray-600">
+                                        <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                        Exclusive deals access
+                                    </li>
+                                }
+                                @if (loyaltyAccount().level === 'GOLD' || loyaltyAccount().level === 'PLATINUM') {
+                                    <li class="flex items-center gap-3 text-sm text-gray-600">
+                                        <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                        Free delivery on all orders
+                                    </li>
+                                }
+                                @if (loyaltyAccount().level === 'PLATINUM') {
+                                    <li class="flex items-center gap-3 text-sm text-gray-600">
+                                        <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                        VIP event invitations
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Points History -->
+                    <h4 class="font-bold text-dark mb-4">Points History</h4>
+                    <div class="space-y-3">
+                        @for (transaction of pointsHistory(); track transaction.id) {
+                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-10 h-10 rounded-full flex items-center justify-center"
+                                        [ngClass]="transaction.type === 'EARNED' || transaction.type === 'BONUS' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'">
+                                        @if (transaction.type === 'EARNED' || transaction.type === 'BONUS') {
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                            </svg>
+                                        } @else {
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
+                                            </svg>
+                                        }
+                                    </div>
+                                    <div>
+                                        <p class="font-semibold text-dark">{{ transaction.description }}</p>
+                                        <p class="text-xs text-gray-400">{{ transaction.createdAt | date:'medium' }}</p>
+                                    </div>
+                                </div>
+                                <span class="font-black" [ngClass]="getTransactionClass(transaction.type)">
+                                    {{ transaction.points > 0 ? '+' : '' }}{{ transaction.points }} pts
+                                </span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+            <!-- PREFERENCES TAB -->
+            @if (activeTab() === 'preferences') {
+                <div class="p-6 space-y-8">
+                    <!-- Academic Interests -->
+                    <div>
+                        <h4 class="font-bold text-dark mb-2">Academic Interests</h4>
+                        <p class="text-sm text-gray-500 mb-4">Select your interests to get personalized recommendations</p>
+                        <div class="flex flex-wrap gap-2">
+                            @for (interest of availableInterests; track interest) {
+                                <button 
+                                    (click)="toggleInterest(interest)"
+                                    class="px-4 py-2 rounded-full text-sm font-semibold transition-colors"
+                                    [ngClass]="preferences().academicInterests.includes(interest) ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'">
+                                    {{ interest }}
+                                </button>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Preferred Categories -->
+                    <div>
+                        <h4 class="font-bold text-dark mb-2">Preferred Shopping Categories</h4>
+                        <p class="text-sm text-gray-500 mb-4">We'll prioritize these in your recommendations</p>
+                        <div class="flex flex-wrap gap-2">
+                            @for (category of availableCategories; track category) {
+                                <button 
+                                    (click)="toggleCategory(category)"
+                                    class="px-4 py-2 rounded-full text-sm font-semibold transition-colors"
+                                    [ngClass]="preferences().preferredCategories.includes(category) ? 'bg-accent text-dark' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'">
+                                    {{ category }}
+                                </button>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Notifications -->
+                    <div>
+                        <h4 class="font-bold text-dark mb-4">Notification Preferences</h4>
+                        <form [formGroup]="preferencesForm" class="space-y-4">
+                            <label class="flex items-center justify-between p-4 bg-gray-50 rounded-xl cursor-pointer">
+                                <div>
+                                    <span class="font-semibold text-dark">Email Notifications</span>
+                                    <p class="text-xs text-gray-500">Receive updates via email</p>
+                                </div>
+                                <input type="checkbox" formControlName="emailNotifications" class="w-5 h-5 text-primary rounded focus:ring-primary">
+                            </label>
+                            <label class="flex items-center justify-between p-4 bg-gray-50 rounded-xl cursor-pointer">
+                                <div>
+                                    <span class="font-semibold text-dark">Push Notifications</span>
+                                    <p class="text-xs text-gray-500">Browser push notifications</p>
+                                </div>
+                                <input type="checkbox" formControlName="pushNotifications" class="w-5 h-5 text-primary rounded focus:ring-primary">
+                            </label>
+                            <label class="flex items-center justify-between p-4 bg-gray-50 rounded-xl cursor-pointer">
+                                <div>
+                                    <span class="font-semibold text-dark">SMS Notifications</span>
+                                    <p class="text-xs text-gray-500">Text message alerts</p>
+                                </div>
+                                <input type="checkbox" formControlName="smsNotifications" class="w-5 h-5 text-primary rounded focus:ring-primary">
+                            </label>
+                        </form>
+                    </div>
+
+                    <!-- AI Recommendation Info -->
+                    <div class="p-6 bg-gradient-to-br from-primary/5 to-accent/5 rounded-xl border border-primary/10">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
+                                <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-dark">AI Recommendations</h4>
+                                <span class="text-xs text-gray-500">Powered by machine learning</span>
+                            </div>
+                        </div>
+                        <p class="text-sm text-gray-600">
+                            Based on your preferences and activity, we'll show personalized product, forum, and carpooling recommendations across the platform.
+                        </p>
+                    </div>
+
+                    <button (click)="savePreferences()" class="btn-primary">Save Preferences</button>
+                </div>
+            }
+
+            <!-- SETTINGS TAB -->
+            @if (activeTab() === 'settings') {
+                <div class="p-6">
+                    @if (isEditing()) {
+                        <form [formGroup]="profileForm" (ngSubmit)="saveProfile()" class="space-y-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-xs font-black text-dark uppercase tracking-widest mb-2">First Name</label>
+                                    <input 
+                                        formControlName="firstName"
+                                        type="text"
+                                        [class]="isFieldInvalid('firstName') 
+                                            ? 'w-full h-12 px-4 bg-white border-2 border-red-400 rounded-xl focus:ring-2 focus:ring-red-400 text-sm font-bold'
+                                            : 'w-full h-12 px-4 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-sm font-bold'">
+                                    @if (isFieldInvalid('firstName')) {
+                                        <p class="text-red-500 text-xs mt-1">{{ getFieldError('firstName') }}</p>
+                                    }
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-black text-dark uppercase tracking-widest mb-2">Last Name</label>
+                                    <input 
+                                        formControlName="lastName"
+                                        type="text"
+                                        [class]="isFieldInvalid('lastName') 
+                                            ? 'w-full h-12 px-4 bg-white border-2 border-red-400 rounded-xl focus:ring-2 focus:ring-red-400 text-sm font-bold'
+                                            : 'w-full h-12 px-4 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-sm font-bold'">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-black text-dark uppercase tracking-widest mb-2">Email</label>
+                                <input 
+                                    formControlName="email"
+                                    type="email"
+                                    class="w-full h-12 px-4 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-sm font-bold">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-black text-dark uppercase tracking-widest mb-2">Phone</label>
+                                <input 
+                                    formControlName="phone"
+                                    type="tel"
+                                    class="w-full h-12 px-4 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-sm font-bold">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-black text-dark uppercase tracking-widest mb-2">Address</label>
+                                <input 
+                                    formControlName="address"
+                                    type="text"
+                                    class="w-full h-12 px-4 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-sm font-bold">
+                            </div>
+                            <div class="flex items-center gap-4 pt-4">
+                                <button 
+                                    type="submit"
+                                    [disabled]="isSaving()"
+                                    class="btn-primary flex items-center gap-2">
+                                    @if (isSaving()) {
+                                        <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                        </svg>
+                                        Saving...
+                                    } @else {
+                                        Save Changes
+                                    }
+                                </button>
+                                <button type="button" (click)="cancelEditing()" class="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-colors">
+                                    Cancel
+                                </button>
+                            </div>
+                        </form>
+                    } @else {
+                        <div class="space-y-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2">First Name</label>
+                                    <p class="text-dark font-bold">{{ user().firstName }}</p>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Last Name</label>
+                                    <p class="text-dark font-bold">{{ user().lastName }}</p>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Email</label>
+                                <p class="text-dark font-bold">{{ user().email }}</p>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Phone</label>
+                                <p class="text-dark font-bold">{{ user().phone }}</p>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Address</label>
+                                <p class="text-dark font-bold">{{ user().address || 'Not set' }}</p>
+                            </div>
+                            <div class="pt-4">
+                                <button (click)="startEditing()" class="btn-primary">Edit Settings</button>
+                            </div>
+                        </div>
+
+                        <!-- Danger Zone -->
+                        <div class="mt-12 pt-8 border-t border-gray-100">
+                            <h4 class="text-lg font-bold text-red-600 mb-4">Danger Zone</h4>
+                            <div class="flex flex-col sm:flex-row gap-4">
+                                <button class="px-6 py-3 bg-red-50 text-red-600 rounded-xl font-bold hover:bg-red-100 transition-colors">
+                                    Change Password
+                                </button>
+                                <button class="px-6 py-3 bg-red-50 text-red-600 rounded-xl font-bold hover:bg-red-100 transition-colors">
+                                    Delete Account
+                                </button>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+    </div>
+</div>

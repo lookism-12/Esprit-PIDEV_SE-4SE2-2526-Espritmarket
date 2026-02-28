@@ -1,0 +1,89 @@
+<div
+    class="bg-white rounded-2xl border border-secondary/20 overflow-hidden group hover:shadow-2xl transition-all duration-500">
+    <!-- Image -->
+    <div class="relative aspect-[4/5] bg-secondary-light/30 overflow-hidden">
+        <a [routerLink]="['/product', product().id]">
+            <img [src]="product().imageUrl" [alt]="product().name"
+                class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+        </a>
+        <div
+            class="absolute top-4 right-4 flex flex-col gap-2 translate-x-16 group-hover:translate-x-0 transition-transform duration-500">
+            <button
+                aria-label="Add to favorites"
+                class="w-12 h-12 bg-white rounded-full flex items-center justify-center text-primary hover:bg-primary hover:text-white shadow-xl transition-all">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                </svg>
+            </button>
+        </div>
+        <div
+            class="absolute inset-x-0 bottom-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-500">
+            <a [routerLink]="['/product', product().id]"
+                class="w-full bg-dark text-white py-3 rounded-xl font-black hover:bg-black transition-all text-sm uppercase tracking-widest block text-center">
+                Quick View
+            </a>
+        </div>
+        <div class="absolute top-4 left-4">
+            <span
+                class="bg-accent text-dark text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-tighter shadow-lg">New
+                Arrival</span>
+        </div>
+    </div>
+
+    <!-- Info -->
+    <div class="p-6">
+        <div class="flex justify-between items-start mb-3">
+            <div>
+                <p class="text-[10px] font-black text-secondary uppercase tracking-widest mb-1">{{ product().category }}
+                </p>
+                <a [routerLink]="['/product', product().id]">
+                    <h3 class="font-black text-dark text-xl group-hover:text-primary transition-colors leading-tight">{{
+                        product().name }}</h3>
+                </a>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2 mb-6">
+            <div class="flex" role="img" [attr.aria-label]="'Rating: ' + product().rating + ' out of 5 stars'">
+                @for (star of stars(); track $index) {
+                    @if (star === 'full') {
+                        <svg class="h-4 w-4 text-accent fill-current" viewBox="0 0 20 20">
+                            <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+                        </svg>
+                    } @else if (star === 'half') {
+                        <svg class="h-4 w-4 text-accent" viewBox="0 0 20 20">
+                            <defs>
+                                <linearGradient [id]="'half-star-' + product().id">
+                                    <stop offset="50%" stop-color="currentColor" />
+                                    <stop offset="50%" stop-color="#e5e7eb" />
+                                </linearGradient>
+                            </defs>
+                            <path [attr.fill]="'url(#half-star-' + product().id + ')'" d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+                        </svg>
+                    } @else {
+                        <svg class="h-4 w-4 text-gray-300 fill-current" viewBox="0 0 20 20">
+                            <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+                        </svg>
+                    }
+                }
+            </div>
+            <span class="text-secondary font-bold text-xs">({{ product().reviewsCount }})</span>
+        </div>
+
+        <div class="flex items-center justify-between pt-4 border-t border-secondary/10">
+            <div class="flex flex-col">
+                <span class="text-[10px] font-bold text-secondary uppercase">Price</span>
+                <span class="text-2xl font-black text-primary">{{ product().price }} <span
+                        class="text-sm">TND</span></span>
+            </div>
+            <button
+                aria-label="Add to cart"
+                class="w-12 h-12 bg-accent text-dark rounded-2xl flex items-center justify-center hover:bg-accent-dark transition-all transform active:scale-90 shadow-lg">
+                <svg class="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+            </button>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,9 @@
+@if (!isAdminRoute()) {
+  <app-navbar></app-navbar>
+}
+<main [class]="isAdminRoute() ? '' : 'min-h-[calc(100vh-80px-400px)]'">
+  <router-outlet></router-outlet>
+</main>
+@if (!isAdminRoute()) {
+  <app-footer></app-footer>
+}

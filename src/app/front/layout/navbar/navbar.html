@@ -1,0 +1,315 @@
+<!-- Top Promo Bar -->
+<div class="promo-bar bg-gradient-to-r from-primary via-primary-dark to-primary text-white py-2">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex items-center justify-center gap-2 text-xs sm:text-sm font-medium">
+      <span class="hidden sm:inline">🔥</span>
+      <span>Summer Sale For All Swim Suits And Free Express Delivery - OFF 50%!</span>
+      <a routerLink="/promotions" class="font-bold underline ml-1 hover:text-accent transition-colors">Shop Now</a>
+    </div>
+  </div>
+</div>
+
+<!-- Main Header -->
+<header class="navbar-header sticky top-0 z-50">
+  <div class="navbar-gradient">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="navbar-container flex items-center justify-between h-28 sm:h-32 lg:h-36 gap-4">
+        
+        <!-- LEFT: Logo -->
+        <div class="navbar-logo flex-shrink-0">
+          <a routerLink="/" class="logo-link block">
+            <img 
+              src="assets/logo.png" 
+              alt="ESPRIT Market" 
+              class="logo-image w-auto object-contain"
+            />
+          </a>
+        </div>
+
+        <!-- CENTER: Navigation Links (Desktop) -->
+        <nav class="navbar-nav hidden lg:flex items-center gap-8">
+          <a routerLink="/products" 
+             routerLinkActive="nav-active" 
+             [routerLinkActiveOptions]="{exact: false}"
+             class="nav-link">
+            Marketplace
+          </a>
+          <a routerLink="/carpooling" 
+             routerLinkActive="nav-active"
+             class="nav-link">
+            Carpooling
+          </a>
+          <a routerLink="/forum" 
+             routerLinkActive="nav-active"
+             class="nav-link">
+            Forum
+          </a>
+          <a routerLink="/about" 
+             routerLinkActive="nav-active"
+             class="nav-link">
+            About
+          </a>
+        </nav>
+
+        <!-- RIGHT: Search + Icons + Actions -->
+        <div class="navbar-actions flex items-center gap-3 sm:gap-4">
+          
+          <!-- Search Bar -->
+          <div class="search-container" [class.search-expanded]="isSearchFocused()">
+            <!-- Mobile Search Toggle -->
+            <button 
+              (click)="toggleMobileSearch()"
+              class="search-toggle sm:hidden flex items-center justify-center w-10 h-10 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition-all"
+              aria-label="Search">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </button>
+            
+            <!-- Desktop Search Input -->
+            <div class="search-wrapper hidden sm:flex items-center">
+              <div class="search-input-container relative">
+                <svg class="search-icon absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input 
+                  type="text"
+                  [(ngModel)]="searchQuery"
+                  (focus)="onSearchFocus()"
+                  (blur)="onSearchBlur()"
+                  (keyup.enter)="onSearch($event)"
+                  class="search-input"
+                  placeholder="Search products..."
+                />
+                @if (searchQuery()) {
+                  <button 
+                    (click)="clearSearch()"
+                    class="search-clear absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                }
+              </div>
+            </div>
+          </div>
+
+          <!-- Divider -->
+          <div class="hidden lg:block w-px h-6 bg-white/20"></div>
+
+          <!-- Action Icons -->
+          <div class="flex items-center gap-1 sm:gap-2">
+            <!-- Notifications -->
+            <div class="relative">
+              <button
+                (click)="toggleNotifications()"
+                class="icon-btn notification-trigger"
+                aria-label="Notifications">
+                <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                @if (unreadCount() > 0) {
+                  <span class="icon-badge">{{ unreadCount() > 9 ? '9+' : unreadCount() }}</span>
+                }
+              </button>
+
+              <!-- Notifications Panel -->
+              @if (showNotifications()) {
+                <div class="notification-dropdown absolute right-0 top-full mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-[60] animate-fadeIn">
+                  <div class="p-4 bg-gradient-to-r from-primary to-primary-dark text-white">
+                    <div class="flex items-center justify-between">
+                      <h3 class="font-bold text-lg">Notifications</h3>
+                      @if (unreadCount() > 0) {
+                        <button (click)="markAllAsRead()" class="text-xs font-semibold hover:underline opacity-90">
+                          Mark all read
+                        </button>
+                      }
+                    </div>
+                  </div>
+                  <div class="max-h-80 overflow-y-auto">
+                    @for (notification of notifications(); track notification.id) {
+                      <div 
+                        (click)="markAsRead(notification.id)"
+                        class="p-4 border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer border-l-4"
+                        [ngClass]="[getPriorityClass(notification.priority), notification.isRead ? 'bg-white' : 'bg-blue-50/50']">
+                        <div class="flex gap-3">
+                          <span class="text-xl">{{ getNotificationIcon(notification.type) }}</span>
+                          <div class="flex-1 min-w-0">
+                            <div class="flex items-center justify-between">
+                              <h4 class="font-bold text-dark text-sm truncate">{{ notification.title }}</h4>
+                              @if (!notification.isRead) {
+                                <span class="w-2 h-2 bg-primary rounded-full flex-shrink-0"></span>
+                              }
+                            </div>
+                            <p class="text-gray-600 text-xs mt-1 line-clamp-2">{{ notification.message }}</p>
+                            <span class="text-gray-400 text-xs mt-2 block">{{ getTimeAgo(notification.createdAt) }}</span>
+                          </div>
+                        </div>
+                      </div>
+                    } @empty {
+                      <div class="p-8 text-center">
+                        <span class="text-4xl block mb-2">🔔</span>
+                        <p class="text-gray-500 text-sm">No notifications yet</p>
+                      </div>
+                    }
+                  </div>
+                  <a routerLink="/notifications" 
+                    class="block p-3 text-center text-primary font-bold text-sm hover:bg-gray-50 transition-colors border-t border-gray-100">
+                    View All Notifications
+                  </a>
+                </div>
+              }
+            </div>
+
+            <!-- Favorites -->
+            <a routerLink="/favorites" class="icon-btn" aria-label="Favorites">
+              <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              </svg>
+            </a>
+
+            <!-- Cart -->
+            <a routerLink="/cart" class="icon-btn" aria-label="Shopping cart">
+              <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                  d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+              @if (cartCount() > 0) {
+                <span class="icon-badge icon-badge-accent">{{ cartCount() > 9 ? '9+' : cartCount() }}</span>
+              }
+            </a>
+          </div>
+
+          <!-- Sign In Button -->
+          <a routerLink="/login" class="signin-btn hidden sm:flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+            </svg>
+            <span>Sign In</span>
+          </a>
+
+          <!-- Hamburger Menu -->
+          <button 
+            (click)="toggleDrawer()"
+            class="hamburger-btn"
+            [class.is-active]="isMenuOpen()"
+            aria-label="Open menu">
+            <div class="hamburger-icon">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Mobile Search Overlay -->
+  @if (showMobileSearch()) {
+    <div class="mobile-search-overlay">
+      <div class="mobile-search-container">
+        <div class="relative flex-1">
+          <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input 
+            type="text"
+            [(ngModel)]="searchQuery"
+            (keyup.enter)="onSearch($event)"
+            class="mobile-search-input"
+            placeholder="Search products, services..."
+            autofocus
+          />
+        </div>
+        <button 
+          (click)="closeMobileSearch()"
+          class="ml-3 px-4 py-2 text-white font-medium hover:text-accent transition-colors">
+          Cancel
+        </button>
+      </div>
+    </div>
+  }
+</header>
+
+<!-- Drawer Overlay & Side Menu -->
+@if (isMenuOpen()) {
+  <div 
+    class="drawer-overlay fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] animate-fadeIn"
+    (click)="onOverlayClick($event)">
+    
+    <!-- Drawer Panel -->
+    <div class="drawer-panel fixed top-0 right-0 h-full w-full max-w-md bg-gradient-to-b from-gray-900 to-black shadow-2xl z-[101] animate-slideInRight">
+      <!-- Drawer Header -->
+      <div class="flex items-center justify-between p-6 border-b border-white/10">
+        <div class="flex items-center gap-3">
+          <img src="assets/logo.png" alt="ESPRIT Market" class="h-10 w-auto" />
+        </div>
+        <button 
+          (click)="closeDrawer()"
+          class="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-gray-400 hover:text-white transition-all">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Drawer Content -->
+      <div class="drawer-content overflow-y-auto h-[calc(100vh-88px)] pb-24">
+        <!-- User Quick Actions (Mobile) -->
+        <div class="p-4 border-b border-white/10 sm:hidden">
+          <a routerLink="/login" 
+            (click)="closeDrawer()"
+            class="flex items-center justify-center gap-2 w-full py-3 bg-primary hover:bg-primary-dark text-white font-bold rounded-xl transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+            </svg>
+            Sign In
+          </a>
+        </div>
+
+        <!-- Menu Sections -->
+        <div class="p-4 space-y-2">
+          @for (section of menuSections; track section.title) {
+            <div class="menu-section">
+              <!-- Section Header -->
+              <div class="flex items-center gap-3 px-4 py-3 text-gray-400">
+                <span class="text-lg">{{ section.icon }}</span>
+                <span class="text-xs font-bold uppercase tracking-wider">{{ section.title }}</span>
+              </div>
+              
+              <!-- Section Items -->
+              <div class="space-y-1">
+                @for (item of section.items; track item.route) {
+                  <a 
+                    [routerLink]="item.route"
+                    routerLinkActive="menu-item-active"
+                    (click)="closeDrawer()"
+                    class="menu-item flex items-center gap-3 px-4 py-3 mx-2 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition-all group">
+                    @if (item.icon) {
+                      <span class="text-base opacity-70 group-hover:opacity-100 transition-opacity">{{ item.icon }}</span>
+                    }
+                    <span class="font-medium">{{ item.label }}</span>
+                    <svg class="w-4 h-4 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </a>
+                }
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Bottom Branding -->
+        <div class="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black to-transparent">
+          <div class="text-center">
+            <p class="text-gray-500 text-xs">© 2024 ESPRIT Market</p>
+            <p class="text-gray-600 text-xs mt-1">Student Marketplace Platform</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+}

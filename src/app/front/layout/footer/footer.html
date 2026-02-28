@@ -1,0 +1,70 @@
+<!-- Dark Luxury Footer with Black-to-Crimson Gradient -->
+<footer class="dark-luxury-footer relative overflow-hidden">
+    <!-- Gradient Background -->
+    <div class="absolute inset-0 dark-luxury-gradient"></div>
+
+    <!-- Content -->
+    <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16">
+            <!-- Brand & Info -->
+            <div class="col-span-1 lg:col-span-1">
+                <h2 class="text-3xl font-black mb-6 text-white tracking-tighter uppercase">EspritMarket</h2>
+                <p class="text-primary font-black mb-6 text-sm tracking-widest uppercase">Sell your stuff. Fund your
+                    coffee.</p>
+                <p class="text-gray-300 mb-8 leading-relaxed text-sm">
+                    The official marketplace for ESPRIT students. Join the community and start trading today safely and
+                    effectively.
+                </p>
+            </div>
+
+            <!-- Marketplace -->
+            <div>
+                <h3 class="text-lg font-black mb-8 text-white tracking-tighter uppercase">Marketplace</h3>
+                <ul class="space-y-4 text-gray-300 text-sm font-medium">
+                    <li><a routerLink="/products" class="hover:text-primary transition-colors">All Products</a></li>
+                    <li><a href="#" class="hover:text-primary transition-colors">Electronics</a></li>
+                    <li><a href="#" class="hover:text-primary transition-colors">Books & Study Material</a></li>
+                    <li><a href="#" class="hover:text-primary transition-colors">Services</a></li>
+                </ul>
+            </div>
+
+            <!-- Community -->
+            <div>
+                <h3 class="text-lg font-black mb-8 text-white tracking-tighter uppercase">Community</h3>
+                <ul class="space-y-4 text-gray-300 text-sm font-medium">
+                    <li><a routerLink="/carpooling" class="hover:text-primary transition-colors">Carpooling</a></li>
+                    <li><a routerLink="/forum" class="hover:text-primary transition-colors">Forum</a></li>
+                    <li><a href="#" class="hover:text-primary transition-colors">Student Clubs</a></li>
+                    <li><a href="#" class="hover:text-primary transition-colors">Events</a></li>
+                </ul>
+            </div>
+
+            <!-- Support -->
+            <div>
+                <h3 class="text-lg font-black mb-8 text-white tracking-tighter uppercase">Support</h3>
+                <ul class="space-y-4 text-gray-300 text-sm font-medium">
+                    <li><a routerLink="/contact" class="hover:text-primary transition-colors">Contact Us</a></li>
+                    <li><a href="#" class="hover:text-primary transition-colors">Help Center</a></li>
+                    <li><a href="#" class="hover:text-primary transition-colors">Safety Rules</a></li>
+                    <li><a href="#" class="hover:text-primary transition-colors">Terms of Service</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Bottom Section -->
+        <div
+            class="border-t border-white/10 mt-20 pt-10 flex flex-col md:flex-row justify-between items-center text-gray-400 text-xs font-bold tracking-widest uppercase">
+            <p>&copy; {{ currentYear }} ESPRIT Market. All rights reserved.</p>
+            <div class="flex space-x-10 mt-6 md:mt-0">
+                <a href="#" class="hover:text-white transition-colors">Privacy Policy</a>
+                <a href="#" class="hover:text-white transition-colors">Terms of Use</a>
+                <a href="#" class="hover:text-white transition-colors">FAQ</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Underlight Glow Effect -->
+    <div
+        class="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-primary/20 to-transparent pointer-events-none">
+    </div>
+</footer>
