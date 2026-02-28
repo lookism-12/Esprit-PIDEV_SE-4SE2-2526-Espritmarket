@@ -47,18 +47,43 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(AbstractHttpConfigurer::disable)
-            .exceptionHandling(ex -> ex.authenticationEntryPoint(unauthorizedHandler))
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                .requestMatchers("/api/seller/**").hasAnyRole("ADMIN", "SELLER")
-                .anyRequest().authenticated()
-            )
-            .authenticationProvider(authenticationProvider())
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .csrf(AbstractHttpConfigurer::disable)
+
+                .exceptionHandling(ex -> ex.authenticationEntryPoint(unauthorizedHandler))
+
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
+
+                .authorizeHttpRequests(auth -> auth
+
+                        // ✅ PUBLIC AUTH ENDPOINTS (IMPORTANT FIX)
+                        .requestMatchers("/api/users/login", "/api/users/register").permitAll()
+                        .requestMatchers("/api/auth/**").permitAll()
+
+                        // ✅ SWAGGER
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+
+                        // ✅ TEMP TEST MODULES
+                        .requestMatchers(
+                                "/api/cart/**",
+                                "/api/cart-items/**",
+                                "/api/coupons/**",
+                                "/api/discounts/**",
+                                "/api/loyalty/**"
+                        ).permitAll()
+
+                        // ✅ ROLE PROTECTION
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/seller/**").hasAnyRole("ADMIN", "SELLER")
+
+                        // ✅ ALL OTHERS NEED AUTH
+                        .anyRequest().authenticated()
+                )
+
+                .authenticationProvider(authenticationProvider())
+
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
