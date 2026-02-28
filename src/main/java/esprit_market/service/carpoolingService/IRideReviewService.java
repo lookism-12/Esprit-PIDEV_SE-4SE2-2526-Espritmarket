@@ -8,9 +8,15 @@ import java.util.List;
 public interface IRideReviewService {
     List<RideReview> findAll();
 
-    RideReview save(RideReview review);
-
     RideReview findById(ObjectId id);
 
     void deleteById(ObjectId id);
+
+    List<RideReview> findByRideId(ObjectId rideId);
+
+    List<RideReview> findByReviewerId(ObjectId reviewerId);
+
+    List<RideReview> findByRevieweeId(ObjectId revieweeId);
+
+    List<RideReview> findByRating(Integer rating);
 }
