@@ -1,4 +1,4 @@
-package esprit_market.controller;
+package esprit_market.controller.carpoolingController;
 
 import esprit_market.entity.carpooling.RideReview;
 import esprit_market.service.carpoolingService.RideReviewService;
@@ -15,14 +15,22 @@ public class RideReviewController {
     private final RideReviewService service;
 
     @GetMapping
-    public List<RideReview> findAll() { return service.findAll(); }
+    public List<RideReview> findAll() {
+        return service.findAll();
+    }
 
     @PostMapping
-    public RideReview save(@RequestBody RideReview review) { return service.save(review); }
+    public RideReview save(@RequestBody RideReview review) {
+        return service.save(review);
+    }
 
     @GetMapping("/{id}")
-    public RideReview findById(@PathVariable String id) { return service.findById(new ObjectId(id)); }
+    public RideReview findById(@PathVariable String id) {
+        return service.findById(new ObjectId(id));
+    }
 
     @DeleteMapping("/{id}")
-    public void deleteById(@PathVariable String id) { service.deleteById(new ObjectId(id)); }
+    public void deleteById(@PathVariable String id) {
+        service.deleteById(new ObjectId(id));
+    }
 }
