@@ -1,4 +1,4 @@
-package esprit_market;
+package esprit_market.cartTest;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
