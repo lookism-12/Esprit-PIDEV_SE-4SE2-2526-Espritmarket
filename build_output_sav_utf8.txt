@@ -1,0 +1,266 @@
+﻿[INFO] Scanning for projects...
+[INFO] 
+[INFO] ---------------------< esprit_market:EspritMarket >---------------------
+[INFO] Building EspritMarket 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.3.2:clean (default-clean) @ EspritMarket ---
+[INFO] Deleting C:\Users\21694\Desktop\EspritMaket\PI-version-1\target
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ EspritMarket ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 0 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ EspritMarket ---
+[INFO] Changes detected - recompiling the module! :source
+[INFO] Compiling 274 source files with javac [debug release 17] to target\classes
+[INFO] -------------------------------------------------------------
+[ERROR] COMPILATION ERROR : 
+[INFO] -------------------------------------------------------------
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[1,1] unmappable character (0xFF) for encoding UTF-8
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[1,2] unmappable character (0xFE) for encoding UTF-8
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/repository/SAVRepository/SavFeedbackRepository.java:[1,1] unmappable character (0xFF) for encoding UTF-8
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/repository/SAVRepository/SavFeedbackRepository.java:[1,2] unmappable character (0xFE) for encoding UTF-8
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/entity/SAV/SavFeedback.java:[1,1] unmappable character (0xFF) for encoding UTF-8
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/entity/SAV/SavFeedback.java:[1,2] unmappable character (0xFE) for encoding UTF-8
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/entity/SAV/SavFeedback.java:[57,34] unmappable character (0xD4) for encoding UTF-8
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/entity/SAV/SavFeedback.java:[57,36] unmappable character (0xC7) for encoding UTF-8
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/entity/SAV/SavFeedback.java:[57,38] unmappable character (0xF6) for encoding UTF-8
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/dto/SAV/SavFeedbackRequestDTO.java:[1,1] unmappable character (0xFF) for encoding UTF-8
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/dto/SAV/SavFeedbackRequestDTO.java:[1,2] unmappable character (0xFE) for encoding UTF-8
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/dto/SAV/SavFeedbackRequestDTO.java:[49,96] unmappable character (0xAE) for encoding UTF-8
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/dto/SAV/SavFeedbackRequestDTO.java:[49,202] unmappable character (0xAE) for encoding UTF-8
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/dto/SAV/SavFeedbackResponseDTO.java:[1,1] unmappable character (0xFF) for encoding UTF-8
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/dto/SAV/SavFeedbackResponseDTO.java:[1,2] unmappable character (0xFE) for encoding UTF-8
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/SAVService/ISavFeedbackService.java:[1,1] illegal character: '\ufeff'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/SAVService/ISavFeedbackService.java:[1,10] class, interface, enum, or record expected
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/SAVService/DeliveryService.java:[1,1] illegal character: '\ufeff'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/SAVService/DeliveryService.java:[1,10] class, interface, enum, or record expected
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[1,1] illegal character: '\ufffd'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[1,2] illegal character: '\ufffd'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[1,3] class, interface, enum, or record expected
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[1,18] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[1,46] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[1,68] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[1,96] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[2,1] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[3,1] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[4,1] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[5,1] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[5,15] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[5,42] class, interface, enum, or record expected
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[5,43] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[5,51] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[5,59] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[5,103] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[6,1] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[7,1] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[7,15] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[7,42] class, interface, enum, or record expected
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[7,43] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[7,51] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[7,59] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[7,105] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[8,1] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[9,1] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[9,15] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[9,42] class, interface, enum, or record expected
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[9,43] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[9,59] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[9,81] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[9,121] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[10,1] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[11,1] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[11,15] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[11,20] class, interface, enum, or record expected
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[11,21] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[11,37] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[11,43] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[11,51] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[11,75] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[11,95] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[12,1] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[13,1] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[13,15] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[13,20] class, interface, enum, or record expected
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[13,21] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[13,37] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[13,43] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[13,51] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[13,75] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[13,85] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[13,93] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[14,1] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[15,1] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[15,15] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[15,30] class, interface, enum, or record expected
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[15,31] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[15,53] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[15,65] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[16,1] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[17,1] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[17,15] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[17,28] class, interface, enum, or record expected
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[17,29] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[17,77] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[18,1] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[19,1] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[19,15] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[19,22] class, interface, enum, or record expected
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[19,23] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[19,55] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[19,65] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[19,87] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[20,1] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[21,1] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[21,15] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[21,22] class, interface, enum, or record expected
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[21,23] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[21,55] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[21,65] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[21,95] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[22,1] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[23,1] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[23,15] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[23,22] class, interface, enum, or record expected
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[23,23] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[23,55] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[23,63] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[23,73] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[23,95] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[23,97] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[23,99] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[24,1] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[25,1] illegal character: '\u0000'
+[INFO] 115 errors 
+[INFO] -------------------------------------------------------------
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  4.925 s
+[INFO] Finished at: 2026-03-01T01:04:11+01:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.11.0:compile (default-compile) on project EspritMarket: Compilation failure: Compilation failure: 
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[1,1] unmappable character (0xFF) for encoding UTF-8
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[1,2] unmappable character (0xFE) for encoding UTF-8
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/repository/SAVRepository/SavFeedbackRepository.java:[1,1] unmappable character (0xFF) for encoding UTF-8
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/repository/SAVRepository/SavFeedbackRepository.java:[1,2] unmappable character (0xFE) for encoding UTF-8
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/entity/SAV/SavFeedback.java:[1,1] unmappable character (0xFF) for encoding UTF-8
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/entity/SAV/SavFeedback.java:[1,2] unmappable character (0xFE) for encoding UTF-8
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/entity/SAV/SavFeedback.java:[57,34] unmappable character (0xD4) for encoding UTF-8
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/entity/SAV/SavFeedback.java:[57,36] unmappable character (0xC7) for encoding UTF-8
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/entity/SAV/SavFeedback.java:[57,38] unmappable character (0xF6) for encoding UTF-8
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/dto/SAV/SavFeedbackRequestDTO.java:[1,1] unmappable character (0xFF) for encoding UTF-8
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/dto/SAV/SavFeedbackRequestDTO.java:[1,2] unmappable character (0xFE) for encoding UTF-8
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/dto/SAV/SavFeedbackRequestDTO.java:[49,96] unmappable character (0xAE) for encoding UTF-8
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/dto/SAV/SavFeedbackRequestDTO.java:[49,202] unmappable character (0xAE) for encoding UTF-8
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/dto/SAV/SavFeedbackResponseDTO.java:[1,1] unmappable character (0xFF) for encoding UTF-8
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/dto/SAV/SavFeedbackResponseDTO.java:[1,2] unmappable character (0xFE) for encoding UTF-8
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/SAVService/ISavFeedbackService.java:[1,1] illegal character: '\ufeff'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/SAVService/ISavFeedbackService.java:[1,10] class, interface, enum, or record expected
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/SAVService/DeliveryService.java:[1,1] illegal character: '\ufeff'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/SAVService/DeliveryService.java:[1,10] class, interface, enum, or record expected
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[1,1] illegal character: '\ufffd'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[1,2] illegal character: '\ufffd'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[1,3] class, interface, enum, or record expected
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[1,18] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[1,46] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[1,68] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[1,96] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[2,1] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[3,1] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[4,1] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[5,1] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[5,15] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[5,42] class, interface, enum, or record expected
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[5,43] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[5,51] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[5,59] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[5,103] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[6,1] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[7,1] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[7,15] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[7,42] class, interface, enum, or record expected
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[7,43] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[7,51] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[7,59] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[7,105] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[8,1] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[9,1] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[9,15] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[9,42] class, interface, enum, or record expected
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[9,43] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[9,59] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[9,81] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[9,121] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[10,1] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[11,1] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[11,15] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[11,20] class, interface, enum, or record expected
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[11,21] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[11,37] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[11,43] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[11,51] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[11,75] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[11,95] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[12,1] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[13,1] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[13,15] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[13,20] class, interface, enum, or record expected
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[13,21] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[13,37] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[13,43] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[13,51] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[13,75] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[13,85] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[13,93] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[14,1] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[15,1] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[15,15] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[15,30] class, interface, enum, or record expected
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[15,31] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[15,53] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[15,65] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[16,1] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[17,1] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[17,15] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[17,28] class, interface, enum, or record expected
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[17,29] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[17,77] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[18,1] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[19,1] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[19,15] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[19,22] class, interface, enum, or record expected
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[19,23] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[19,55] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[19,65] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[19,87] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[20,1] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[21,1] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[21,15] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[21,22] class, interface, enum, or record expected
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[21,23] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[21,55] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[21,65] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[21,95] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[22,1] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[23,1] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[23,15] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[23,22] class, interface, enum, or record expected
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[23,23] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[23,55] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[23,63] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[23,73] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[23,95] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[23,97] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[23,99] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[24,1] illegal character: '\u0000'
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/SAVController/SavFeedbackController.java:[25,1] illegal character: '\u0000'
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException

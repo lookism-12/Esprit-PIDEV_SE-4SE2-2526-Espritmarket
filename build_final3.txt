@@ -1,0 +1,267 @@
+﻿[INFO] Scanning for projects...
+[INFO] 
+[INFO] ---------------------< esprit_market:EspritMarket >---------------------
+[INFO] Building EspritMarket 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.3.2:clean (default-clean) @ EspritMarket ---
+[INFO] Deleting C:\Users\21694\Desktop\EspritMaket\PI-version-1\target
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ EspritMarket ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 0 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ EspritMarket ---
+[INFO] Changes detected - recompiling the module! :source
+[INFO] Compiling 277 source files with javac [debug release 17] to target\classes
+[INFO] Some messages have been simplified; recompile with -Xdiags:verbose to get full output
+[INFO] -------------------------------------------------------------
+[WARNING] COMPILATION WARNING : 
+[INFO] -------------------------------------------------------------
+[WARNING] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/entity/notification/Notification.java:[24,28] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/entity/forum/Group.java:[26,28] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/entity/forum/Group.java:[27,28] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/entity/cart/Discount.java:[44,28] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/entity/forum/Post.java:[29,28] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/entity/forum/Post.java:[30,28] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/entity/marketplace/Shop.java:[23,28] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/entity/marketplace/Shop.java:[26,28] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/entity/forum/Comment.java:[28,28] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[INFO] 9 warnings 
+[INFO] -------------------------------------------------------------
+[INFO] -------------------------------------------------------------
+[ERROR] COMPILATION ERROR : 
+[INFO] -------------------------------------------------------------
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/carpoolingService/RideService.java:[313,32] cannot find symbol
+  symbol:   method notifyUsers(java.util.List<org.bson.types.ObjectId>,java.lang.String,java.lang.String)
+  location: variable notificationService of type esprit_market.service.notificationService.NotificationService
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/mappers/marketplace/FavorisMapper.java:[22,35] cannot find symbol
+  symbol:   method getCreatedAt()
+  location: variable favoris of type esprit_market.entity.marketplace.Favoris
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/marketplaceService/FavorisService.java:[78,16] cannot find symbol
+  symbol:   method setCreatedAt(java.time.LocalDateTime)
+  location: variable favoris of type esprit_market.entity.marketplace.Favoris
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/marketplaceService/FavorisService.java:[92,26] cannot find symbol
+  symbol:   method findByUserId(org.bson.types.ObjectId)
+  location: variable repository of type esprit_market.repository.marketplaceRepository.FavorisRepository
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/marketplaceService/ProductService.java:[111,24] cannot find symbol
+  symbol:   method setDescription(java.lang.String)
+  location: variable existingProduct of type esprit_market.entity.marketplace.Product
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/mappers/marketplace/ProductMapper.java:[37,37] cannot find symbol
+  symbol:   method getDescription()
+  location: variable product of type esprit_market.entity.marketplace.Product
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/mappers/marketplace/ProductMapper.java:[62,17] cannot find symbol
+  symbol:   method description(java.lang.String)
+  location: class esprit_market.entity.marketplace.Product.ProductBuilder
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[60,8] esprit_market.service.cartService.CartServiceImpl is not abstract and does not override abstract method getRefundSummary(org.bson.types.ObjectId,org.bson.types.ObjectId) in esprit_market.service.cartService.ICartService
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[910,29] getRefundSummary(org.bson.types.ObjectId,org.bson.types.ObjectId) in esprit_market.service.cartService.CartServiceImpl cannot implement getRefundSummary(org.bson.types.ObjectId,org.bson.types.ObjectId) in esprit_market.service.cartService.ICartService
+  return type esprit_market.dto.cart.RefundSummaryDTO is not compatible with esprit_market.dto.RefundSummaryDTO
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[698,25] getOrderById(org.bson.types.ObjectId,org.bson.types.ObjectId) in esprit_market.service.cartService.CartServiceImpl cannot implement getOrderById(org.bson.types.ObjectId,org.bson.types.ObjectId) in esprit_market.service.cartService.ICartService
+  return type esprit_market.dto.cart.CartResponse is not compatible with esprit_market.dto.CartResponse
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[687,31] getUserOrders(org.bson.types.ObjectId) in esprit_market.service.cartService.CartServiceImpl cannot implement getUserOrders(org.bson.types.ObjectId) in esprit_market.service.cartService.ICartService
+  return type java.util.List<esprit_market.dto.cart.CartResponse> is not compatible with java.util.List<esprit_market.dto.CartResponse>
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[312,35] findByCartId(org.bson.types.ObjectId) in esprit_market.service.cartService.CartServiceImpl cannot implement findByCartId(org.bson.types.ObjectId) in esprit_market.service.cartService.ICartService
+  return type java.util.List<esprit_market.dto.cart.CartItemResponse> is not compatible with java.util.List<esprit_market.dto.CartItemResponse>
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[677,31] findAllCarts() in esprit_market.service.cartService.CartServiceImpl cannot implement findAllCarts() in esprit_market.service.cartService.ICartService
+  return type java.util.List<esprit_market.dto.cart.CartResponse> is not compatible with java.util.List<esprit_market.dto.CartResponse>
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[563,25] removeDiscount(org.bson.types.ObjectId) in esprit_market.service.cartService.CartServiceImpl cannot implement removeDiscount(org.bson.types.ObjectId) in esprit_market.service.cartService.ICartService
+  return type esprit_market.dto.cart.CartResponse is not compatible with esprit_market.dto.CartResponse
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[544,25] removeCoupon(org.bson.types.ObjectId) in esprit_market.service.cartService.CartServiceImpl cannot implement removeCoupon(org.bson.types.ObjectId) in esprit_market.service.cartService.ICartService
+  return type esprit_market.dto.cart.CartResponse is not compatible with esprit_market.dto.CartResponse
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[522,25] applyDiscount(org.bson.types.ObjectId,org.bson.types.ObjectId) in esprit_market.service.cartService.CartServiceImpl cannot implement applyDiscount(org.bson.types.ObjectId,org.bson.types.ObjectId) in esprit_market.service.cartService.ICartService
+  return type esprit_market.dto.cart.CartResponse is not compatible with esprit_market.dto.CartResponse
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[126,25] getCartByUserId(org.bson.types.ObjectId) in esprit_market.service.cartService.CartServiceImpl cannot implement getCartByUserId(org.bson.types.ObjectId) in esprit_market.service.cartService.ICartService
+  return type esprit_market.dto.cart.CartResponse is not compatible with esprit_market.dto.CartResponse
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[85,25] getOrCreateCart(org.bson.types.ObjectId) in esprit_market.service.cartService.CartServiceImpl cannot implement getOrCreateCart(org.bson.types.ObjectId) in esprit_market.service.cartService.ICartService
+  return type esprit_market.dto.cart.CartResponse is not compatible with esprit_market.dto.CartResponse
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[84,5] method does not override or implement a method from a supertype
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[88,37] incompatible types: esprit_market.dto.CartResponse cannot be converted to esprit_market.dto.cart.CartResponse
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[125,5] method does not override or implement a method from a supertype
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[129,37] incompatible types: esprit_market.dto.CartResponse cannot be converted to esprit_market.dto.cart.CartResponse
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[137,5] method does not override or implement a method from a supertype
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[142,35] bad operand types for binary operator '=='
+  first type:  int
+  second type: <nulltype>
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[187,45] incompatible types: esprit_market.dto.CartItemResponse cannot be converted to esprit_market.dto.cart.CartItemResponse
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[211,41] incompatible types: esprit_market.dto.CartItemResponse cannot be converted to esprit_market.dto.cart.CartItemResponse
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[217,5] method does not override or implement a method from a supertype
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[222,35] bad operand types for binary operator '=='
+  first type:  int
+  second type: <nulltype>
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[255,41] incompatible types: esprit_market.dto.CartItemResponse cannot be converted to esprit_market.dto.cart.CartItemResponse
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[311,5] method does not override or implement a method from a supertype
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[315,25] incompatible types: inference variable T has incompatible bounds
+    equality constraints: esprit_market.dto.cart.CartItemResponse
+    lower bounds: esprit_market.dto.CartItemResponse
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[428,5] method does not override or implement a method from a supertype
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[492,37] incompatible types: esprit_market.dto.CartResponse cannot be converted to esprit_market.dto.cart.CartResponse
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[520,5] method does not override or implement a method from a supertype
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[536,37] incompatible types: esprit_market.dto.CartResponse cannot be converted to esprit_market.dto.cart.CartResponse
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[542,5] method does not override or implement a method from a supertype
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[555,37] incompatible types: esprit_market.dto.CartResponse cannot be converted to esprit_market.dto.cart.CartResponse
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[561,5] method does not override or implement a method from a supertype
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[574,37] incompatible types: esprit_market.dto.CartResponse cannot be converted to esprit_market.dto.cart.CartResponse
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[587,5] method does not override or implement a method from a supertype
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[662,30] cannot find symbol
+  symbol:   method getNotes()
+  location: variable request of type esprit_market.dto.cart.CheckoutRequest
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[670,37] incompatible types: esprit_market.dto.CartResponse cannot be converted to esprit_market.dto.cart.CartResponse
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[676,5] method does not override or implement a method from a supertype
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[680,25] incompatible types: inference variable T has incompatible bounds
+    equality constraints: esprit_market.dto.cart.CartResponse
+    lower bounds: esprit_market.dto.CartResponse
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[686,5] method does not override or implement a method from a supertype
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[691,25] incompatible types: inference variable T has incompatible bounds
+    equality constraints: esprit_market.dto.cart.CartResponse
+    lower bounds: esprit_market.dto.CartResponse
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[697,5] method does not override or implement a method from a supertype
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[710,37] incompatible types: esprit_market.dto.CartResponse cannot be converted to esprit_market.dto.cart.CartResponse
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[725,5] method does not override or implement a method from a supertype
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[759,39] cannot find symbol
+  symbol:   method getQuantityToCancel()
+  location: variable request of type esprit_market.dto.cart.CancelOrderItemRequest
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[759,79] cannot find symbol
+  symbol:   method getQuantityToCancel()
+  location: variable request of type esprit_market.dto.cart.CancelOrderItemRequest
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[819,5] method does not override or implement a method from a supertype
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[909,5] method does not override or implement a method from a supertype
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[973,30] cannot find symbol
+  symbol:   class RefundedItemDTO
+  location: class esprit_market.dto.cart.RefundSummaryDTO
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[975,46] cannot find symbol
+  symbol:   variable RefundedItemDTO
+  location: class esprit_market.dto.cart.RefundSummaryDTO
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[993,17] cannot find symbol
+  symbol:   method orderStatus(esprit_market.Enum.cartEnum.CartStatus)
+  location: class esprit_market.dto.cart.RefundSummaryDTO.RefundSummaryDTOBuilder
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/userController/UserController.java:[63,38] cannot find symbol
+  symbol:   class AuthResponse
+  location: class esprit_market.controller.userController.UserController
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/cartController/CartItemController.java:[40,68] incompatible types: java.util.List<esprit_market.dto.CartItemResponse> cannot be converted to java.util.List<esprit_market.dto.cart.CartItemResponse>
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/cartController/CartItemController.java:[50,70] incompatible types: @jakarta.validation.Valid esprit_market.dto.cart.AddToCartRequest cannot be converted to esprit_market.dto.AddToCartRequest
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/cartController/CartItemController.java:[61,102] incompatible types: @jakarta.validation.Valid esprit_market.dto.cart.UpdateCartItemRequest cannot be converted to esprit_market.dto.UpdateCartItemRequest
+[INFO] 60 errors 
+[INFO] -------------------------------------------------------------
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  19.280 s
+[INFO] Finished at: 2026-03-01T00:22:40+01:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.11.0:compile (default-compile) on project EspritMarket: Compilation failure: Compilation failure: 
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/carpoolingService/RideService.java:[313,32] cannot find symbol
+[ERROR]   symbol:   method notifyUsers(java.util.List<org.bson.types.ObjectId>,java.lang.String,java.lang.String)
+[ERROR]   location: variable notificationService of type esprit_market.service.notificationService.NotificationService
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/mappers/marketplace/FavorisMapper.java:[22,35] cannot find symbol
+[ERROR]   symbol:   method getCreatedAt()
+[ERROR]   location: variable favoris of type esprit_market.entity.marketplace.Favoris
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/marketplaceService/FavorisService.java:[78,16] cannot find symbol
+[ERROR]   symbol:   method setCreatedAt(java.time.LocalDateTime)
+[ERROR]   location: variable favoris of type esprit_market.entity.marketplace.Favoris
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/marketplaceService/FavorisService.java:[92,26] cannot find symbol
+[ERROR]   symbol:   method findByUserId(org.bson.types.ObjectId)
+[ERROR]   location: variable repository of type esprit_market.repository.marketplaceRepository.FavorisRepository
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/marketplaceService/ProductService.java:[111,24] cannot find symbol
+[ERROR]   symbol:   method setDescription(java.lang.String)
+[ERROR]   location: variable existingProduct of type esprit_market.entity.marketplace.Product
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/mappers/marketplace/ProductMapper.java:[37,37] cannot find symbol
+[ERROR]   symbol:   method getDescription()
+[ERROR]   location: variable product of type esprit_market.entity.marketplace.Product
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/mappers/marketplace/ProductMapper.java:[62,17] cannot find symbol
+[ERROR]   symbol:   method description(java.lang.String)
+[ERROR]   location: class esprit_market.entity.marketplace.Product.ProductBuilder
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[60,8] esprit_market.service.cartService.CartServiceImpl is not abstract and does not override abstract method getRefundSummary(org.bson.types.ObjectId,org.bson.types.ObjectId) in esprit_market.service.cartService.ICartService
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[910,29] getRefundSummary(org.bson.types.ObjectId,org.bson.types.ObjectId) in esprit_market.service.cartService.CartServiceImpl cannot implement getRefundSummary(org.bson.types.ObjectId,org.bson.types.ObjectId) in esprit_market.service.cartService.ICartService
+[ERROR]   return type esprit_market.dto.cart.RefundSummaryDTO is not compatible with esprit_market.dto.RefundSummaryDTO
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[698,25] getOrderById(org.bson.types.ObjectId,org.bson.types.ObjectId) in esprit_market.service.cartService.CartServiceImpl cannot implement getOrderById(org.bson.types.ObjectId,org.bson.types.ObjectId) in esprit_market.service.cartService.ICartService
+[ERROR]   return type esprit_market.dto.cart.CartResponse is not compatible with esprit_market.dto.CartResponse
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[687,31] getUserOrders(org.bson.types.ObjectId) in esprit_market.service.cartService.CartServiceImpl cannot implement getUserOrders(org.bson.types.ObjectId) in esprit_market.service.cartService.ICartService
+[ERROR]   return type java.util.List<esprit_market.dto.cart.CartResponse> is not compatible with java.util.List<esprit_market.dto.CartResponse>
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[312,35] findByCartId(org.bson.types.ObjectId) in esprit_market.service.cartService.CartServiceImpl cannot implement findByCartId(org.bson.types.ObjectId) in esprit_market.service.cartService.ICartService
+[ERROR]   return type java.util.List<esprit_market.dto.cart.CartItemResponse> is not compatible with java.util.List<esprit_market.dto.CartItemResponse>
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[677,31] findAllCarts() in esprit_market.service.cartService.CartServiceImpl cannot implement findAllCarts() in esprit_market.service.cartService.ICartService
+[ERROR]   return type java.util.List<esprit_market.dto.cart.CartResponse> is not compatible with java.util.List<esprit_market.dto.CartResponse>
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[563,25] removeDiscount(org.bson.types.ObjectId) in esprit_market.service.cartService.CartServiceImpl cannot implement removeDiscount(org.bson.types.ObjectId) in esprit_market.service.cartService.ICartService
+[ERROR]   return type esprit_market.dto.cart.CartResponse is not compatible with esprit_market.dto.CartResponse
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[544,25] removeCoupon(org.bson.types.ObjectId) in esprit_market.service.cartService.CartServiceImpl cannot implement removeCoupon(org.bson.types.ObjectId) in esprit_market.service.cartService.ICartService
+[ERROR]   return type esprit_market.dto.cart.CartResponse is not compatible with esprit_market.dto.CartResponse
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[522,25] applyDiscount(org.bson.types.ObjectId,org.bson.types.ObjectId) in esprit_market.service.cartService.CartServiceImpl cannot implement applyDiscount(org.bson.types.ObjectId,org.bson.types.ObjectId) in esprit_market.service.cartService.ICartService
+[ERROR]   return type esprit_market.dto.cart.CartResponse is not compatible with esprit_market.dto.CartResponse
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[126,25] getCartByUserId(org.bson.types.ObjectId) in esprit_market.service.cartService.CartServiceImpl cannot implement getCartByUserId(org.bson.types.ObjectId) in esprit_market.service.cartService.ICartService
+[ERROR]   return type esprit_market.dto.cart.CartResponse is not compatible with esprit_market.dto.CartResponse
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[85,25] getOrCreateCart(org.bson.types.ObjectId) in esprit_market.service.cartService.CartServiceImpl cannot implement getOrCreateCart(org.bson.types.ObjectId) in esprit_market.service.cartService.ICartService
+[ERROR]   return type esprit_market.dto.cart.CartResponse is not compatible with esprit_market.dto.CartResponse
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[84,5] method does not override or implement a method from a supertype
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[88,37] incompatible types: esprit_market.dto.CartResponse cannot be converted to esprit_market.dto.cart.CartResponse
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[125,5] method does not override or implement a method from a supertype
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[129,37] incompatible types: esprit_market.dto.CartResponse cannot be converted to esprit_market.dto.cart.CartResponse
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[137,5] method does not override or implement a method from a supertype
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[142,35] bad operand types for binary operator '=='
+[ERROR]   first type:  int
+[ERROR]   second type: <nulltype>
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[187,45] incompatible types: esprit_market.dto.CartItemResponse cannot be converted to esprit_market.dto.cart.CartItemResponse
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[211,41] incompatible types: esprit_market.dto.CartItemResponse cannot be converted to esprit_market.dto.cart.CartItemResponse
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[217,5] method does not override or implement a method from a supertype
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[222,35] bad operand types for binary operator '=='
+[ERROR]   first type:  int
+[ERROR]   second type: <nulltype>
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[255,41] incompatible types: esprit_market.dto.CartItemResponse cannot be converted to esprit_market.dto.cart.CartItemResponse
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[311,5] method does not override or implement a method from a supertype
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[315,25] incompatible types: inference variable T has incompatible bounds
+[ERROR]     equality constraints: esprit_market.dto.cart.CartItemResponse
+[ERROR]     lower bounds: esprit_market.dto.CartItemResponse
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[428,5] method does not override or implement a method from a supertype
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[492,37] incompatible types: esprit_market.dto.CartResponse cannot be converted to esprit_market.dto.cart.CartResponse
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[520,5] method does not override or implement a method from a supertype
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[536,37] incompatible types: esprit_market.dto.CartResponse cannot be converted to esprit_market.dto.cart.CartResponse
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[542,5] method does not override or implement a method from a supertype
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[555,37] incompatible types: esprit_market.dto.CartResponse cannot be converted to esprit_market.dto.cart.CartResponse
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[561,5] method does not override or implement a method from a supertype
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[574,37] incompatible types: esprit_market.dto.CartResponse cannot be converted to esprit_market.dto.cart.CartResponse
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[587,5] method does not override or implement a method from a supertype
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[662,30] cannot find symbol
+[ERROR]   symbol:   method getNotes()
+[ERROR]   location: variable request of type esprit_market.dto.cart.CheckoutRequest
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[670,37] incompatible types: esprit_market.dto.CartResponse cannot be converted to esprit_market.dto.cart.CartResponse
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[676,5] method does not override or implement a method from a supertype
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[680,25] incompatible types: inference variable T has incompatible bounds
+[ERROR]     equality constraints: esprit_market.dto.cart.CartResponse
+[ERROR]     lower bounds: esprit_market.dto.CartResponse
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[686,5] method does not override or implement a method from a supertype
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[691,25] incompatible types: inference variable T has incompatible bounds
+[ERROR]     equality constraints: esprit_market.dto.cart.CartResponse
+[ERROR]     lower bounds: esprit_market.dto.CartResponse
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[697,5] method does not override or implement a method from a supertype
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[710,37] incompatible types: esprit_market.dto.CartResponse cannot be converted to esprit_market.dto.cart.CartResponse
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[725,5] method does not override or implement a method from a supertype
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[759,39] cannot find symbol
+[ERROR]   symbol:   method getQuantityToCancel()
+[ERROR]   location: variable request of type esprit_market.dto.cart.CancelOrderItemRequest
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[759,79] cannot find symbol
+[ERROR]   symbol:   method getQuantityToCancel()
+[ERROR]   location: variable request of type esprit_market.dto.cart.CancelOrderItemRequest
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[819,5] method does not override or implement a method from a supertype
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[909,5] method does not override or implement a method from a supertype
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[973,30] cannot find symbol
+[ERROR]   symbol:   class RefundedItemDTO
+[ERROR]   location: class esprit_market.dto.cart.RefundSummaryDTO
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[975,46] cannot find symbol
+[ERROR]   symbol:   variable RefundedItemDTO
+[ERROR]   location: class esprit_market.dto.cart.RefundSummaryDTO
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/service/cartService/CartServiceImpl.java:[993,17] cannot find symbol
+[ERROR]   symbol:   method orderStatus(esprit_market.Enum.cartEnum.CartStatus)
+[ERROR]   location: class esprit_market.dto.cart.RefundSummaryDTO.RefundSummaryDTOBuilder
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/userController/UserController.java:[63,38] cannot find symbol
+[ERROR]   symbol:   class AuthResponse
+[ERROR]   location: class esprit_market.controller.userController.UserController
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/cartController/CartItemController.java:[40,68] incompatible types: java.util.List<esprit_market.dto.CartItemResponse> cannot be converted to java.util.List<esprit_market.dto.cart.CartItemResponse>
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/cartController/CartItemController.java:[50,70] incompatible types: @jakarta.validation.Valid esprit_market.dto.cart.AddToCartRequest cannot be converted to esprit_market.dto.AddToCartRequest
+[ERROR] /C:/Users/21694/Desktop/EspritMaket/PI-version-1/src/main/java/esprit_market/controller/cartController/CartItemController.java:[61,102] incompatible types: @jakarta.validation.Valid esprit_market.dto.cart.UpdateCartItemRequest cannot be converted to esprit_market.dto.UpdateCartItemRequest
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
