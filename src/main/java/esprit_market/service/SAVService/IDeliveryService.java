@@ -1,16 +1,28 @@
 package esprit_market.service.SAVService;
 
-import esprit_market.entity.SAV.Delivery;
-import org.bson.types.ObjectId;
+import esprit_market.dto.SAV.DeliveryRequestDTO;
+import esprit_market.dto.SAV.DeliveryResponseDTO;
 
 import java.util.List;
 
 public interface IDeliveryService {
-    List<Delivery> findAll();
+    // FR-DEL1
+    DeliveryResponseDTO createDelivery(DeliveryRequestDTO request);
 
-    Delivery save(Delivery delivery);
+    // FR-DEL2
+    DeliveryResponseDTO getDeliveryById(String id);
 
-    Delivery findById(ObjectId id);
+    List<DeliveryResponseDTO> getAllDeliveries();
 
-    void deleteById(ObjectId id);
+    List<DeliveryResponseDTO> getDeliveriesByUser(String userId);
+
+    List<DeliveryResponseDTO> getDeliveriesByCart(String cartId);
+
+    // FR-DEL3
+    DeliveryResponseDTO updateDelivery(String id, DeliveryRequestDTO request);
+
+    DeliveryResponseDTO updateDeliveryStatus(String id, String status);
+
+    // FR-DEL4
+    void deleteDelivery(String id);
 }

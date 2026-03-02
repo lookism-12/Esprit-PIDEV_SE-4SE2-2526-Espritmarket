@@ -1,16 +1,20 @@
 package esprit_market.service.carpoolingService;
 
-import esprit_market.entity.carpooling.RidePayment;
+import esprit_market.Enum.carpoolingEnum.PaymentStatus;
+import esprit_market.dto.carpooling.RidePaymentResponseDTO;
 import org.bson.types.ObjectId;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface IRidePaymentService {
-    List<RidePayment> findAll();
+    List<RidePaymentResponseDTO> findAll();
 
-    RidePayment save(RidePayment payment);
+    RidePaymentResponseDTO findById(ObjectId id);
 
-    RidePayment findById(ObjectId id);
+    Optional<RidePaymentResponseDTO> findByBookingId(ObjectId bookingId);
 
-    void deleteById(ObjectId id);
+    List<RidePaymentResponseDTO> findByStatus(PaymentStatus status);
+
+    RidePaymentResponseDTO updateStatus(ObjectId id, PaymentStatus status);
 }

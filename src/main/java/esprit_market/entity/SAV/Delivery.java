@@ -5,6 +5,8 @@ import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.time.LocalDateTime;
+
 @Document(collection = "deliveries")
 @Data
 @Builder
@@ -14,9 +16,14 @@ public class Delivery {
     @Id
     private ObjectId id;
     
-    // Cart — Delivery (OneToMany UNIDIRECTIONAL Delivery -> Cart)
-    private ObjectId cartId;
+    private String address;
     
-    private ObjectId deliveryAgentId;
-    private String status;
+    @Builder.Default
+    private LocalDateTime deliveryDate = LocalDateTime.now();
+    
+    private String status; // PENDING, ASSIGNED, IN_TRANSIT, DELIVERED, CANCELLED
+    
+    // Relations (Unidirectional as per standard MongoDB usage)
+    private ObjectId userId; // The assigned admin or delivery driver
+    private ObjectId cartId; // The Cart containing items for delivery
 }

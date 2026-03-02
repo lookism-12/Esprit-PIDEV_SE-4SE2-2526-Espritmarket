@@ -1,18 +1,20 @@
 package esprit_market.service.userService;
 
+import esprit_market.dto.userDto.UserDTO;
 import esprit_market.entity.user.User;
 import org.bson.types.ObjectId;
-
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface IUserService {
-    List<User> findAll();
 
-    User save(User user);
+    Page<UserDTO> findAll(Pageable pageable);
 
-    User findById(ObjectId id);
+    UserDTO findById(String id);
 
-    void deleteById(ObjectId id);
+    UserDTO save(User user);
+
+    void deleteById(String id);
 
     boolean existsByEmail(String email);
 
@@ -20,5 +22,9 @@ public interface IUserService {
 
     void completePasswordReset(String token, String newPassword);
 
-    User updateProfile(ObjectId userId, String firstName, String lastName);
+    UserDTO updateProfile(String userId, String firstName, String lastName);
+
+    User findByEmail(String email);
+
+    ObjectId resolveUserId(String email);
 }

@@ -8,4 +8,5 @@ import esprit_market.entity.marketplace.Favoris;
 
 @Repository
 public interface FavorisRepository extends MongoRepository<Favoris, ObjectId> {
+    java.util.List<Favoris> findByUserId(org.bson.types.ObjectId userId);
 }

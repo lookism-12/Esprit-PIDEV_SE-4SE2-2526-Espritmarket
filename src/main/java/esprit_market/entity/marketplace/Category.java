@@ -17,7 +17,7 @@ public class Category {
     @Id
     private ObjectId id;
     private String name;
-    
-    // Product — Category (ManyToMany BIDIRECTIONAL)
+
+    @Builder.Default
     private List<ObjectId> productIds = new ArrayList<>();
 }

@@ -5,6 +5,7 @@ import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,12 +17,12 @@ import java.util.List;
 public class Post {
     @Id
     private ObjectId id;
-    
-    // User — Post (OneToMany BIDIRECTIONAL)
     private ObjectId userId;
-    
+    private ObjectId categoryId;
     private String content;
-    
-    // Post — Comment (OneToMany BIDIRECTIONAL)
+    private LocalDateTime createdAt;
+    private boolean isPinned;
+    private boolean isApproved;
     private List<ObjectId> commentIds = new ArrayList<>();
+    private List<ObjectId> reactionIds = new ArrayList<>();
 }

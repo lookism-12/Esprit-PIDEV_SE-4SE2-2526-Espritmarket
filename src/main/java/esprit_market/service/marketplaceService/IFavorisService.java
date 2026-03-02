@@ -1,16 +1,21 @@
 package esprit_market.service.marketplaceService;
 
-import esprit_market.entity.marketplace.Favoris;
+import esprit_market.dto.marketplace.FavorisRequestDTO;
+import esprit_market.dto.marketplace.FavorisResponseDTO;
 import org.bson.types.ObjectId;
 
 import java.util.List;
 
 public interface IFavorisService {
-    List<Favoris> findAll();
+    List<FavorisResponseDTO> findAll();
 
-    Favoris save(Favoris favoris);
+    FavorisResponseDTO create(FavorisRequestDTO dto);
 
-    Favoris findById(ObjectId id);
+    List<FavorisResponseDTO> getByUserId(ObjectId userId);
 
-    void deleteById(ObjectId id);
+    FavorisResponseDTO update(ObjectId id, FavorisRequestDTO dto);
+
+    void delete(ObjectId id);
+
+    FavorisResponseDTO findById(ObjectId id);
 }

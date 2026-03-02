@@ -17,10 +17,9 @@ public class Group {
     @Id
     private ObjectId id;
     private String name;
-    
-    // User — Group (ManyToMany BIDIRECTIONAL)
+    private String topic;
+    private String level;
+    private String speciality;
     private List<ObjectId> memberIds = new ArrayList<>();
-    
-    // Group — Message (OneToMany UNIDIRECTIONAL Group -> Message only)
     private List<ObjectId> messageIds = new ArrayList<>();
 }

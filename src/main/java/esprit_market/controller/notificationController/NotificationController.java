@@ -66,11 +66,10 @@ public class NotificationController {
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "Supprimer une notification — ADMIN")
-    public ResponseEntity<Void> delete(@PathVariable String id, Authentication authentication) {
+    @Operation(summary = "Déactiver une notification (soft delete)")
+    public ResponseEntity<NotificationDTO> deactivate(@PathVariable String id, Authentication authentication) {
         ObjectId userId = resolveUserId(authentication);
-        notificationService.deleteNotification(new ObjectId(id), userId);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(notificationService.deactivateNotification(new ObjectId(id), userId));
     }
 
     // ─────────────────────────────────────────────────────────────

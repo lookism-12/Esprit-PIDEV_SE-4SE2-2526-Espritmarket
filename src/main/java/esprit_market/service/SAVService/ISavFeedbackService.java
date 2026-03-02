@@ -1,16 +1,28 @@
 package esprit_market.service.SAVService;
 
-import esprit_market.entity.SAV.SavFeedback;
-import org.bson.types.ObjectId;
+import esprit_market.dto.SAV.SavFeedbackRequestDTO;
+import esprit_market.dto.SAV.SavFeedbackResponseDTO;
 
 import java.util.List;
 
 public interface ISavFeedbackService {
-    List<SavFeedback> findAll();
+    // FR-SAV1
+    SavFeedbackResponseDTO createFeedback(SavFeedbackRequestDTO request);
 
-    SavFeedback save(SavFeedback feedback);
+    // FR-SAV2
+    SavFeedbackResponseDTO getFeedbackById(String id);
 
-    SavFeedback findById(ObjectId id);
+    List<SavFeedbackResponseDTO> getAllFeedbacks();
 
-    void deleteById(ObjectId id);
+    List<SavFeedbackResponseDTO> getFeedbacksByCartItem(String cartItemId);
+
+    List<SavFeedbackResponseDTO> getFeedbacksByType(String type);
+
+    // FR-SAV3
+    SavFeedbackResponseDTO updateFeedback(String id, SavFeedbackRequestDTO request);
+
+    SavFeedbackResponseDTO updateFeedbackStatus(String id, String status);
+
+    // FR-SAV4
+    void deleteFeedback(String id);
 }

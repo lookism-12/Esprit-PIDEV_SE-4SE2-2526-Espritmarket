@@ -1,29 +1,31 @@
 package esprit_market.service.negociationService;
 
-import esprit_market.dto.negociation.NegociationDTO;
-import esprit_market.dto.negociation.ProposalDTO;
 import esprit_market.Enum.negociationEnum.NegociationStatuts;
-import org.bson.types.ObjectId;
+import esprit_market.dto.negociation.NegociationRequest;
+import esprit_market.dto.negociation.NegociationResponse;
+import esprit_market.dto.negociation.ProposalRequest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
 public interface INegociationService {
 
-    NegociationDTO createNegociation(NegociationDTO dto, ObjectId clientId);
+    NegociationResponse createNegociation(NegociationRequest request, String clientId);
 
-    NegociationDTO getNegociationById(ObjectId id);
+    NegociationResponse getNegociationById(String id);
 
-    List<NegociationDTO> getAllNegociations();
+    Page<NegociationResponse> getAllNegociations(Pageable pageable);
 
-    List<NegociationDTO> getMyNegociations(ObjectId clientId);
+    List<NegociationResponse> getMyNegociations(String clientId);
 
-    List<NegociationDTO> getNegociationsByServiceId(ObjectId serviceId);
+    List<NegociationResponse> getNegociationsByServiceId(String serviceId);
 
-    List<NegociationDTO> getNegociationsByStatuts(NegociationStatuts statuts);
+    List<NegociationResponse> getNegociationsByStatus(NegociationStatuts status);
 
-    NegociationDTO updateStatuts(ObjectId id, NegociationStatuts statuts, ObjectId userId);
+    NegociationResponse updateStatus(String id, NegociationStatuts status, String userId);
 
-    NegociationDTO addProposal(ObjectId negociationId, ProposalDTO proposalDTO, ObjectId senderId);
+    NegociationResponse addProposal(String negociationId, ProposalRequest request, String senderId);
 
-    void deleteNegociation(ObjectId id, ObjectId clientId);
+    void deleteNegociation(String id, String clientId);
 }

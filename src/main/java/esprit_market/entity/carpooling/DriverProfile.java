@@ -2,11 +2,13 @@ package esprit_market.entity.carpooling;
 
 import lombok.*;
 import org.bson.types.ObjectId;
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.time.LocalDateTime;
 
 @Document(collection = "driver_profiles")
 @Data
@@ -16,13 +18,23 @@ import java.util.List;
 public class DriverProfile {
     @Id
     private ObjectId id;
-    
-    // Bidirectional OneToOne User <-> DriverProfile
+
+    @Indexed(unique = true)
     private ObjectId userId;
-    
-    // Bidirectional OneToMany DriverProfile <-> Vehicle
-    private List<ObjectId> vehicleIds = new ArrayList<>();
-    
-    // Bidirectional OneToMany DriverProfile <-> Ride
-    private List<ObjectId> rideIds = new ArrayList<>();
+
+    private String licenseNumber;
+    private String licenseDocument;
+    private Boolean isVerified;
+    private Float averageRating;
+    private Integer totalRidesCompleted;
+    private Float totalEarnings;
+
+    private java.util.List<ObjectId> rideIds;
+    private java.util.List<ObjectId> vehicleIds;
+
+    @CreatedDate
+    private LocalDateTime createdAt;
+
+    @LastModifiedDate
+    private LocalDateTime updatedAt;
 }

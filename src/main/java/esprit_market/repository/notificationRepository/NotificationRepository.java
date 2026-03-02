@@ -16,4 +16,8 @@ public interface NotificationRepository extends MongoRepository<Notification, Ob
     List<Notification> findByUserAndRead(User user, boolean read);
 
     List<Notification> findByType(NotificationType type);
+
+    List<Notification> findByUserAndNotificationStatusTrue(User user);
+
+    List<Notification> findByUserAndNotificationStatusTrueAndRead(User user, boolean read);
 }

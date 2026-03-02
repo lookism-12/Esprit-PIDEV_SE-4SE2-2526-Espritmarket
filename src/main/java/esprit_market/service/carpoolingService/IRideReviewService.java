@@ -1,16 +1,27 @@
 package esprit_market.service.carpoolingService;
 
-import esprit_market.entity.carpooling.RideReview;
+import esprit_market.dto.carpooling.RideReviewRequestDTO;
+import esprit_market.dto.carpooling.RideReviewResponseDTO;
 import org.bson.types.ObjectId;
 
 import java.util.List;
 
 public interface IRideReviewService {
-    List<RideReview> findAll();
+    List<RideReviewResponseDTO> findAll();
 
-    RideReview save(RideReview review);
-
-    RideReview findById(ObjectId id);
+    RideReviewResponseDTO findById(ObjectId id);
 
     void deleteById(ObjectId id);
+
+    List<RideReviewResponseDTO> findByRideId(ObjectId rideId);
+
+    List<RideReviewResponseDTO> findByReviewerId(ObjectId reviewerId);
+
+    List<RideReviewResponseDTO> findByRevieweeId(ObjectId revieweeId);
+
+    List<RideReviewResponseDTO> findByRating(Integer rating);
+
+    RideReviewResponseDTO submitReview(RideReviewRequestDTO dto, String reviewerEmail);
+
+    List<RideReviewResponseDTO> findReceivedReviews(String revieweeEmail);
 }

@@ -13,13 +13,12 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class Favoris {
     @Id
     private ObjectId id;
-    
-    // User — Favoris (OneToMany BIDIRECTIONAL)
+
     private ObjectId userId;
 
-    // Favoris — Product (ManyToOne UNIDIRECTIONAL)
     private ObjectId productId;
 
-    // Favoris — Service (ManyToOne UNIDIRECTIONAL)
     private ObjectId serviceId;
+
+    private java.time.LocalDateTime createdAt;
 }

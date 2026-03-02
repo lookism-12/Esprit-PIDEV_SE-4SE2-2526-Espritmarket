@@ -7,6 +7,7 @@ import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.time.LocalDateTime;
 
@@ -32,6 +33,10 @@ public class Notification {
     private String linkedObjectId; // ID de l'objet lié (ex: negotiationId, eventId, etc.)
 
     private boolean read;
+
+    @Builder.Default
+    @Field("notification_status")
+    private boolean notificationStatus = true; // true = active, false = deactivated (soft delete)
 
     private LocalDateTime createdAt;
 }

@@ -1,15 +1,14 @@
 package esprit_market.config;
 
+import esprit_market.Enum.cartEnum.DiscountType;
 import esprit_market.Enum.userEnum.Role;
+import esprit_market.entity.cart.Discount;
 import esprit_market.entity.marketplace.Category;
-import esprit_market.entity.marketplace.Event;
-import esprit_market.entity.marketplace.Promotion;
 import esprit_market.entity.marketplace.ServiceEntity;
 import esprit_market.entity.marketplace.Shop;
 import esprit_market.entity.user.User;
+import esprit_market.repository.cartRepository.DiscountRepository;
 import esprit_market.repository.marketplaceRepository.CategoryRepository;
-import esprit_market.repository.marketplaceRepository.EventRepository;
-import esprit_market.repository.marketplaceRepository.PromotionRepository;
 import esprit_market.repository.marketplaceRepository.ServiceRepository;
 import esprit_market.repository.marketplaceRepository.ShopRepository;
 import esprit_market.repository.userRepository.UserRepository;
@@ -21,7 +20,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -34,8 +33,7 @@ public class DataInitializer implements CommandLineRunner {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final EventRepository eventRepository;
-    private final PromotionRepository promotionRepository;
+    private final DiscountRepository discountRepository;
     private final CategoryRepository categoryRepository;
     private final ShopRepository shopRepository;
     private final ServiceRepository serviceRepository;
@@ -66,63 +64,48 @@ public class DataInitializer implements CommandLineRunner {
             log.info("Admin user already exists.");
         }
 
-        // Initialize Default Events
-        initializeEvents();
+        // Initialize Default Discounts (Cart module)
+        initializeDiscounts();
 
-        // Initialize Default Promotions
-        initializePromotions();
-
-        // Initialize Default Services for Negotiation
+        // Initialize Default Services for Negotiation (Marketplace module)
         initializeServices();
     }
 
-    private void initializeEvents() {
-        if (eventRepository.count() == 0) {
-            Event blackFriday = Event.builder()
-                    .name("Black Friday 2026")
-                    .description("Grande promotion annuelle")
-                    .date(LocalDateTime.of(2026, 11, 27, 0, 0))
-                    .build();
-            Event techConference = Event.builder()
-                    .name("Tech Conference")
-                    .description("Conférence sur les nouvelles technologies")
-                    .date(LocalDateTime.of(2026, 5, 15, 9, 0))
+    private void initializeDiscounts() {
+        if (discountRepository.count() == 0) {
+            Discount discount20 = Discount.builder()
+                    .name("Spring Sale 20%")
+                    .description("20% discount on all products")
+                    .discountType(DiscountType.PERCENTAGE)
+                    .discountValue(20.0)
+                    .startDate(LocalDate.now())
+                    .endDate(LocalDate.of(2026, 3, 31))
+                    .active(true)
+                    .minCartAmount(50.0)
+                    .autoActivate(true)
                     .build();
 
-            eventRepository.save(blackFriday);
-            eventRepository.save(techConference);
+            Discount flashSale = Discount.builder()
+                    .name("Flash Sale 50%")
+                    .description("Flash sale - 50% off limited time")
+                    .discountType(DiscountType.PERCENTAGE)
+                    .discountValue(50.0)
+                    .startDate(LocalDate.now())
+                    .endDate(LocalDate.of(2026, 2, 28))
+                    .active(true)
+                    .minCartAmount(100.0)
+                    .autoActivate(false)
+                    .build();
 
-            log.info("Default events created.");
-            log.info("Event ID 'Black Friday': {}", blackFriday.getId());
-            log.info("Event ID 'Tech Conference': {}", techConference.getId());
+            discountRepository.save(discount20);
+            discountRepository.save(flashSale);
+
+            log.info("Default discounts created.");
+            log.info("Discount ID 'Spring Sale 20%': {}", discount20.getId());
+            log.info("Discount ID 'Flash Sale 50%': {}", flashSale.getId());
         } else {
-            log.info("Events already initialized. Listing IDs for testing:");
-            eventRepository.findAll().forEach(e -> log.info("Event ID '{}': {}", e.getName(), e.getId()));
-        }
-    }
-
-    private void initializePromotions() {
-        if (promotionRepository.count() == 0) {
-            Promotion discount20 = Promotion.builder()
-                    .title("Discount 20%")
-                    .discountPercentage(20.0)
-                    .validUntil(LocalDateTime.of(2026, 3, 31, 23, 59))
-                    .build();
-            Promotion flashSale = Promotion.builder()
-                    .title("Flash Sale")
-                    .discountPercentage(50.0)
-                    .validUntil(LocalDateTime.of(2026, 2, 28, 23, 59))
-                    .build();
-
-            promotionRepository.save(discount20);
-            promotionRepository.save(flashSale);
-
-            log.info("Default promotions created.");
-            log.info("Promotion ID 'Discount 20%': {}", discount20.getId());
-            log.info("Promotion ID 'Flash Sale': {}", flashSale.getId());
-        } else {
-            log.info("Promotions already initialized. Listing IDs for testing:");
-            promotionRepository.findAll().forEach(p -> log.info("Promotion ID '{}': {}", p.getTitle(), p.getId()));
+            log.info("Discounts already initialized. Listing IDs for testing:");
+            discountRepository.findAll().forEach(d -> log.info("Discount ID '{}': {}", d.getName(), d.getId()));
         }
     }
 

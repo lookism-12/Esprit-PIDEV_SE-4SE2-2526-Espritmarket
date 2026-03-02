@@ -26,7 +26,8 @@ public interface INotificationService {
     // Broadcast global — ADMIN seulement (ex: Black Friday)
     NotificationDTO broadcast(NotificationDTO dto);
 
-    void deleteNotification(ObjectId id, ObjectId userId);
+    // Soft delete: deactivate notification instead of hard delete
+    NotificationDTO deactivateNotification(ObjectId id, ObjectId userId);
 
     void sendNotification(User user, String title, String description, NotificationType type, String linkedObjectId);
 }

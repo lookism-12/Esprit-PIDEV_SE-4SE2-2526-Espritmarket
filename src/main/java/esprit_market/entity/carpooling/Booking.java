@@ -1,9 +1,15 @@
 package esprit_market.entity.carpooling;
 
+import esprit_market.Enum.carpoolingEnum.BookingStatus;
 import lombok.*;
 import org.bson.types.ObjectId;
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
+
+import java.time.LocalDateTime;
 
 @Document(collection = "bookings")
 @Data
@@ -14,12 +20,26 @@ public class Booking {
     @Id
     private ObjectId id;
 
-    // Ride — Booking (OneToMany BIDIRECTIONAL)
+    @Indexed
     private ObjectId rideId;
 
-    // PassengerProfile — Booking (OneToMany BIDIRECTIONAL)
+    @Indexed
     private ObjectId passengerProfileId;
 
-    // Booking — RidePayment (OneToOne BIDIRECTIONAL)
-    private ObjectId paymentId;
+    private Integer numberOfSeats;
+    private String pickupLocation;
+    private String dropoffLocation;
+
+    @Indexed
+    private BookingStatus status;
+
+    private Float totalPrice;
+
+    @CreatedDate
+    private LocalDateTime createdAt;
+
+    @LastModifiedDate
+    private LocalDateTime updatedAt;
+
+    private LocalDateTime cancelledAt;
 }

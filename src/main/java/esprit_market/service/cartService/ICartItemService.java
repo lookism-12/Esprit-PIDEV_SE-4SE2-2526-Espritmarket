@@ -1,16 +1,18 @@
 package esprit_market.service.cartService;
 
-import esprit_market.entity.cart.CartItem;
+import esprit_market.dto.cartDto.CartItemResponse;
 import org.bson.types.ObjectId;
 
 import java.util.List;
 
 public interface ICartItemService {
-    List<CartItem> findAll();
+    List<CartItemResponse> findAll();
 
-    CartItem save(CartItem item);
-
-    CartItem findById(ObjectId id);
+    CartItemResponse findById(ObjectId id);
 
     void deleteById(ObjectId id);
+    
+    List<CartItemResponse> findByCartId(ObjectId cartId);
+    
+    void deleteByCartId(ObjectId cartId);
 }

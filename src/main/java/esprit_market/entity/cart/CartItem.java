@@ -1,5 +1,6 @@
 package esprit_market.entity.cart;
 
+import esprit_market.Enum.cartEnum.CartItemStatus;
 import lombok.*;
 import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
@@ -17,8 +18,27 @@ public class CartItem {
     // Cart — CartItem (OneToMany BIDIRECTIONAL)
     private ObjectId cartId;
     
-    // Product — CartItem (OneToMany UNIDIRECTIONAL CartItem -> Product)
+    // Product — CartItem (ManyToOne UNIDIRECTIONAL)
     private ObjectId productId;
     
-    private int quantity;
+    // Snapshot fields (to preserve data at time of purchase)
+    private String productName;
+    
+    private Integer quantity;
+    
+    private Double unitPrice;
+    
+    private Double subTotal;
+    
+    private Double discountApplied;
+    
+    // For partial cancellation/refund tracking
+    @Builder.Default
+    private CartItemStatus status = CartItemStatus.ACTIVE;
+    
+    private Integer cancelledQuantity;
+    
+    private Double refundAmount;
+    
+    private String cancellationReason;
 }

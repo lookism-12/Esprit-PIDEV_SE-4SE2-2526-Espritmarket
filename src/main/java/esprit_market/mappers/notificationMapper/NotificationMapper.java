@@ -22,6 +22,7 @@ public class NotificationMapper {
                 .type(n.getType())
                 .linkedObjectId(n.getLinkedObjectId())
                 .read(n.isRead())
+                .notification_status(n.isNotificationStatus())
                 .createdAt(n.getCreatedAt())
                 .build();
     }
@@ -36,6 +37,7 @@ public class NotificationMapper {
                 .type(dto.getType())
                 .linkedObjectId(dto.getLinkedObjectId())
                 .read(dto.isRead())
+                .notificationStatus(dto.isNotification_status())
                 .createdAt(dto.getCreatedAt())
                 .build();
     }
