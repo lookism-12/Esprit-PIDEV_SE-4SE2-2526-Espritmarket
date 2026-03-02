@@ -17,10 +17,12 @@ public class Group {
     @Id
     private ObjectId id;
     private String name;
-    
+
     // User — Group (ManyToMany BIDIRECTIONAL)
+    @Builder.Default
     private List<ObjectId> memberIds = new ArrayList<>();
-    
+
     // Group — Message (OneToMany UNIDIRECTIONAL Group -> Message only)
+    @Builder.Default
     private List<ObjectId> messageIds = new ArrayList<>();
 }

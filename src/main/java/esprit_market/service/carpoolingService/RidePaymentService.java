@@ -1,9 +1,11 @@
 package esprit_market.service.carpoolingService;
 
 import esprit_market.Enum.carpoolingEnum.PaymentStatus;
+import esprit_market.dto.carpooling.RidePaymentResponseDTO;
 import esprit_market.entity.carpooling.RidePayment;
 import esprit_market.repository.carpoolingRepository.RidePaymentRepository;
 import esprit_market.Enum.carpoolingEnum.BookingStatus;
+import esprit_market.mappers.carpooling.RidePaymentMapper;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
 import org.springframework.context.annotation.Lazy;
@@ -12,36 +14,43 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class RidePaymentService implements IRidePaymentService {
     private final RidePaymentRepository repository;
     private final @Lazy IBookingService bookingService;
+    private final RidePaymentMapper ridePaymentMapper;
 
     @Override
-    public List<RidePayment> findAll() {
-        return repository.findAll();
+    public List<RidePaymentResponseDTO> findAll() {
+        return repository.findAll().stream()
+                .map(ridePaymentMapper::toResponseDTO)
+                .collect(Collectors.toList());
     }
 
     @Override
-    public RidePayment findById(ObjectId id) {
-        return repository.findById(id).orElse(null);
+    public RidePaymentResponseDTO findById(ObjectId id) {
+        return ridePaymentMapper.toResponseDTO(repository.findById(id).orElse(null));
     }
 
     @Override
-    public Optional<RidePayment> findByBookingId(ObjectId bookingId) {
-        return repository.findByBookingId(bookingId);
+    public Optional<RidePaymentResponseDTO> findByBookingId(ObjectId bookingId) {
+        return repository.findByBookingId(bookingId)
+                .map(ridePaymentMapper::toResponseDTO);
     }
 
     @Override
-    public List<RidePayment> findByStatus(PaymentStatus status) {
-        return repository.findByStatus(status);
+    public List<RidePaymentResponseDTO> findByStatus(PaymentStatus status) {
+        return repository.findByStatus(status).stream()
+                .map(ridePaymentMapper::toResponseDTO)
+                .collect(Collectors.toList());
     }
 
     @Override
     @Transactional
-    public RidePayment updateStatus(ObjectId id, PaymentStatus status) {
+    public RidePaymentResponseDTO updateStatus(ObjectId id, PaymentStatus status) {
         RidePayment payment = repository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Payment not found"));
         payment.setStatus(status);
@@ -54,6 +63,6 @@ public class RidePaymentService implements IRidePaymentService {
             bookingService.updateStatus(payment.getBookingId(), BookingStatus.CANCELLED);
         }
 
-        return payment;
+        return ridePaymentMapper.toResponseDTO(payment);
     }
 }

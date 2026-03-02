@@ -1,8 +1,9 @@
 package esprit_market.controller.carpoolingController;
 
 import esprit_market.dto.carpooling.VehicleRequestDTO;
+import esprit_market.dto.carpooling.VehicleResponseDTO;
 import esprit_market.entity.carpooling.Vehicle;
-import esprit_market.service.carpoolingService.VehicleService;
+import esprit_market.service.carpoolingService.IVehicleService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -22,7 +23,7 @@ import java.util.List;
 @Tag(name = "Vehicle Management", description = "APIs for managing vehicles")
 public class VehicleController {
 
-    private final VehicleService vehicleService;
+    private final IVehicleService vehicleService;
 
     @PostMapping
     @Operation(summary = "Create a new vehicle", description = "Creates a new vehicle for the authenticated driver")
@@ -32,14 +33,14 @@ public class VehicleController {
             @ApiResponse(responseCode = "401", description = "Unauthorized - valid JWT token required"),
             @ApiResponse(responseCode = "403", description = "Forbidden - driver role required")
     })
-    public Vehicle create(@Valid @RequestBody VehicleRequestDTO dto,
+    public VehicleResponseDTO create(@Valid @RequestBody VehicleRequestDTO dto,
             @AuthenticationPrincipal UserDetails user) {
         return vehicleService.createVehicle(dto, user.getUsername());
     }
 
     @GetMapping("/my")
     @Operation(summary = "Get my vehicles", description = "Retrieves all vehicles for the authenticated driver")
-    public List<Vehicle> getMyVehicles(@AuthenticationPrincipal UserDetails user) {
+    public List<VehicleResponseDTO> getMyVehicles(@AuthenticationPrincipal UserDetails user) {
         return vehicleService.getMyVehicles(user.getUsername());
     }
 
@@ -49,7 +50,7 @@ public class VehicleController {
             @ApiResponse(responseCode = "200", description = "Vehicle found"),
             @ApiResponse(responseCode = "404", description = "Vehicle not found")
     })
-    public Vehicle getById(@PathVariable String id) {
+    public VehicleResponseDTO getById(@PathVariable String id) {
         return vehicleService.findById(new ObjectId(id));
     }
 
@@ -58,7 +59,7 @@ public class VehicleController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Vehicles retrieved successfully")
     })
-    public List<Vehicle> getByDriverProfileId(@PathVariable String driverProfileId) {
+    public List<VehicleResponseDTO> getByDriverProfileId(@PathVariable String driverProfileId) {
         return vehicleService.findByDriverProfileId(new ObjectId(driverProfileId));
     }
 
@@ -69,7 +70,7 @@ public class VehicleController {
             @ApiResponse(responseCode = "400", description = "Invalid input data"),
             @ApiResponse(responseCode = "404", description = "Vehicle not found")
     })
-    public Vehicle update(@PathVariable String id,
+    public VehicleResponseDTO update(@PathVariable String id,
             @Valid @RequestBody VehicleRequestDTO dto,
             @AuthenticationPrincipal UserDetails user) {
         return vehicleService.updateVehicle(id, dto, user.getUsername());

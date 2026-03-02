@@ -1,6 +1,7 @@
 package esprit_market.service.carpoolingService;
 
 import esprit_market.dto.carpooling.RideReviewRequestDTO;
+import esprit_market.dto.carpooling.RideReviewResponseDTO;
 import esprit_market.entity.carpooling.DriverProfile;
 import esprit_market.entity.carpooling.PassengerProfile;
 import esprit_market.entity.carpooling.RideReview;
@@ -14,12 +15,14 @@ import esprit_market.entity.user.User;
 import esprit_market.entity.carpooling.Ride;
 import esprit_market.Enum.carpoolingEnum.BookingStatus;
 import esprit_market.Enum.carpoolingEnum.RideStatus;
+import esprit_market.mappers.carpooling.RideReviewMapper;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -31,15 +34,18 @@ public class RideReviewService implements IRideReviewService {
     private final UserRepository userRepository;
     private final RideRepository rideRepository;
     private final BookingRepository bookingRepository;
+    private final RideReviewMapper rideReviewMapper;
 
     @Override
-    public List<RideReview> findAll() {
-        return rideReviewRepository.findAll();
+    public List<RideReviewResponseDTO> findAll() {
+        return rideReviewRepository.findAll().stream()
+                .map(rideReviewMapper::toResponseDTO)
+                .collect(Collectors.toList());
     }
 
     @Override
-    public RideReview findById(ObjectId id) {
-        return rideReviewRepository.findById(id).orElse(null);
+    public RideReviewResponseDTO findById(ObjectId id) {
+        return rideReviewMapper.toResponseDTO(rideReviewRepository.findById(id).orElse(null));
     }
 
     @Override
@@ -48,27 +54,35 @@ public class RideReviewService implements IRideReviewService {
     }
 
     @Override
-    public List<RideReview> findByRideId(ObjectId rideId) {
-        return rideReviewRepository.findByRideId(rideId);
+    public List<RideReviewResponseDTO> findByRideId(ObjectId rideId) {
+        return rideReviewRepository.findByRideId(rideId).stream()
+                .map(rideReviewMapper::toResponseDTO)
+                .collect(Collectors.toList());
     }
 
     @Override
-    public List<RideReview> findByReviewerId(ObjectId reviewerId) {
-        return rideReviewRepository.findByReviewerId(reviewerId);
+    public List<RideReviewResponseDTO> findByReviewerId(ObjectId reviewerId) {
+        return rideReviewRepository.findByReviewerId(reviewerId).stream()
+                .map(rideReviewMapper::toResponseDTO)
+                .collect(Collectors.toList());
     }
 
     @Override
-    public List<RideReview> findByRevieweeId(ObjectId revieweeId) {
-        return rideReviewRepository.findByRevieweeId(revieweeId);
+    public List<RideReviewResponseDTO> findByRevieweeId(ObjectId revieweeId) {
+        return rideReviewRepository.findByRevieweeId(revieweeId).stream()
+                .map(rideReviewMapper::toResponseDTO)
+                .collect(Collectors.toList());
     }
 
     @Override
-    public List<RideReview> findByRating(Integer rating) {
-        return rideReviewRepository.findByRating(rating);
+    public List<RideReviewResponseDTO> findByRating(Integer rating) {
+        return rideReviewRepository.findByRating(rating).stream()
+                .map(rideReviewMapper::toResponseDTO)
+                .collect(Collectors.toList());
     }
 
     @Transactional
-    public RideReview submitReview(RideReviewRequestDTO dto, String reviewerEmail) {
+    public RideReviewResponseDTO submitReview(RideReviewRequestDTO dto, String reviewerEmail) {
         User reviewer = userRepository.findByEmail(reviewerEmail)
                 .orElseThrow(() -> new IllegalArgumentException("Reviewer not found"));
 
@@ -129,13 +143,15 @@ public class RideReviewService implements IRideReviewService {
                 .build();
         review = rideReviewRepository.save(review);
         recalculateAverageRating(revieweeId);
-        return review;
+        return rideReviewMapper.toResponseDTO(review);
     }
 
-    public List<RideReview> findReceivedReviews(String email) {
+    public List<RideReviewResponseDTO> findReceivedReviews(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        return rideReviewRepository.findByRevieweeId(user.getId());
+        return rideReviewRepository.findByRevieweeId(user.getId()).stream()
+                .map(rideReviewMapper::toResponseDTO)
+                .collect(Collectors.toList());
     }
 
     private void recalculateAverageRating(ObjectId revieweeId) {

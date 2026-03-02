@@ -1,5 +1,7 @@
 package esprit_market.service.carpoolingService;
 
+import esprit_market.dto.carpooling.BookingRequestDTO;
+import esprit_market.dto.carpooling.BookingResponseDTO;
 import esprit_market.Enum.carpoolingEnum.BookingStatus;
 import esprit_market.entity.carpooling.Booking;
 import org.bson.types.ObjectId;
@@ -7,25 +9,29 @@ import org.bson.types.ObjectId;
 import java.util.List;
 
 public interface IBookingService {
-    List<Booking> findAll();
+    List<BookingResponseDTO> findAll();
 
-    Booking save(Booking booking);
+    Booking save(esprit_market.entity.carpooling.Booking booking);
 
-    Booking findById(ObjectId id);
+    BookingResponseDTO findById(ObjectId id);
 
-    Booking update(ObjectId id, Booking booking, ObjectId passengerProfileId);
+    BookingResponseDTO update(ObjectId id, BookingRequestDTO dto, String passengerEmail);
 
     void deleteById(ObjectId id);
 
-    List<Booking> findByRideId(ObjectId rideId);
+    List<BookingResponseDTO> findByRideId(ObjectId rideId);
 
-    List<Booking> findByPassengerProfileId(ObjectId passengerProfileId);
+    List<BookingResponseDTO> findByPassengerProfileId(ObjectId passengerProfileId);
 
-    List<Booking> findByStatus(BookingStatus status);
+    List<BookingResponseDTO> findByPassengerUserId(ObjectId userId);
 
-    Booking updateStatus(ObjectId id, BookingStatus status);
+    List<BookingResponseDTO> findMyBookings(String userEmail);
 
-    void cancelBooking(String bookingId, String passengerEmail, ObjectId passengerProfileId);
+    List<BookingResponseDTO> findByStatus(BookingStatus status);
 
-    esprit_market.dto.carpooling.BookingResponseDTO toResponseDTO(Booking booking);
+    BookingResponseDTO updateStatus(ObjectId id, BookingStatus status);
+
+    void cancelBooking(String bookingId, String passengerEmail);
+
+    BookingResponseDTO createBooking(BookingRequestDTO dto, String passengerEmail, ObjectId rideId);
 }

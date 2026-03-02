@@ -1,12 +1,14 @@
 package esprit_market.service.carpoolingService;
 
 import esprit_market.dto.carpooling.PassengerProfileRequestDTO;
+import esprit_market.dto.carpooling.PassengerProfileResponseDTO;
 import esprit_market.entity.carpooling.PassengerProfile;
 import esprit_market.entity.user.User;
 import esprit_market.Enum.userEnum.Role;
 import esprit_market.repository.carpoolingRepository.PassengerProfileRepository;
 import esprit_market.repository.userRepository.UserRepository;
 import esprit_market.repository.carpoolingRepository.BookingRepository;
+import esprit_market.mappers.carpooling.PassengerProfileMapper;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
 import org.springframework.stereotype.Service;
@@ -14,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.context.annotation.Lazy;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -23,20 +26,23 @@ public class PassengerProfileService implements IPassengerProfileService {
     private final UserRepository userRepository;
     private final BookingRepository bookingRepository;
     private final @Lazy IBookingService bookingService;
+    private final PassengerProfileMapper passengerProfileMapper;
 
     @Override
-    public List<PassengerProfile> findAll() {
-        return passengerProfileRepository.findAll();
+    public List<PassengerProfileResponseDTO> findAll() {
+        return passengerProfileRepository.findAll().stream()
+                .map(passengerProfileMapper::toResponseDTO)
+                .collect(Collectors.toList());
     }
 
     @Override
-    public PassengerProfile findById(ObjectId id) {
-        return passengerProfileRepository.findById(id).orElse(null);
+    public PassengerProfileResponseDTO findById(ObjectId id) {
+        return passengerProfileMapper.toResponseDTO(passengerProfileRepository.findById(id).orElse(null));
     }
 
     @Override
-    public PassengerProfile findByUserId(ObjectId userId) {
-        return passengerProfileRepository.findByUserId(userId).orElse(null);
+    public PassengerProfileResponseDTO findByUserId(ObjectId userId) {
+        return passengerProfileMapper.toResponseDTO(passengerProfileRepository.findByUserId(userId).orElse(null));
     }
 
     @Override
@@ -45,11 +51,11 @@ public class PassengerProfileService implements IPassengerProfileService {
     }
 
     @Override
-    public PassengerProfile update(ObjectId id, PassengerProfile profile) {
+    public PassengerProfileResponseDTO update(ObjectId id, PassengerProfile profile) {
         PassengerProfile existing = passengerProfileRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Passenger profile not found"));
         existing.setPreferences(profile.getPreferences());
-        return passengerProfileRepository.save(existing);
+        return passengerProfileMapper.toResponseDTO(passengerProfileRepository.save(existing));
     }
 
     @Override
@@ -67,7 +73,9 @@ public class PassengerProfileService implements IPassengerProfileService {
         for (esprit_market.entity.carpooling.Booking booking : bookings) {
             if (booking.getStatus() == esprit_market.Enum.carpoolingEnum.BookingStatus.CONFIRMED ||
                     booking.getStatus() == esprit_market.Enum.carpoolingEnum.BookingStatus.PENDING) {
-                bookingService.cancelBooking(booking.getId().toHexString(), passengerEmail, profile.getId());
+                if (passengerEmail != null) {
+                    bookingService.cancelBooking(booking.getId().toHexString(), passengerEmail);
+                }
             }
         }
 
@@ -83,7 +91,7 @@ public class PassengerProfileService implements IPassengerProfileService {
         passengerProfileRepository.deleteById(id);
     }
 
-    public PassengerProfile registerPassenger(String userEmail, PassengerProfileRequestDTO dto) {
+    public PassengerProfileResponseDTO registerPassenger(PassengerProfileRequestDTO dto, String userEmail) {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         if (passengerProfileRepository.existsByUserId(user.getId())) {
@@ -102,6 +110,23 @@ public class PassengerProfileService implements IPassengerProfileService {
             user.setRoles(List.of(Role.PASSENGER));
         }
         userRepository.save(user);
-        return profile;
+        return passengerProfileMapper.toResponseDTO(profile);
+    }
+
+    @Override
+    public PassengerProfileResponseDTO getMyProfile(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        return passengerProfileMapper.toResponseDTO(passengerProfileRepository.findByUserId(user.getId()).orElse(null));
+    }
+
+    @Override
+    public void incrementTotalRides(ObjectId passengerProfileId) {
+        PassengerProfile passenger = passengerProfileRepository.findById(passengerProfileId).orElse(null);
+        if (passenger != null) {
+            passenger.setTotalRidesCompleted(
+                    passenger.getTotalRidesCompleted() != null ? passenger.getTotalRidesCompleted() + 1 : 1);
+            passengerProfileRepository.save(passenger);
+        }
     }
 }

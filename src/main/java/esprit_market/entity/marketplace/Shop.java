@@ -17,10 +17,12 @@ public class Shop {
     @Id
     private ObjectId id;
     private ObjectId ownerId;
-    
+
     // Shop — Product (OneToMany BIDIRECTIONAL)
+    @Builder.Default
     private List<ObjectId> productIds = new ArrayList<>();
-    
+
     // Shop — Service (OneToMany BIDIRECTIONAL)
+    @Builder.Default
     private List<ObjectId> serviceIds = new ArrayList<>();
 }

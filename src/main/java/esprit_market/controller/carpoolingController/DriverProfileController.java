@@ -1,13 +1,13 @@
 package esprit_market.controller.carpoolingController;
 
 import esprit_market.dto.carpooling.DriverProfileRequestDTO;
+import esprit_market.dto.carpooling.DriverProfileResponseDTO;
 import esprit_market.dto.carpooling.DriverStatsDTO;
-import esprit_market.entity.carpooling.DriverProfile;
-import esprit_market.entity.carpooling.Ride;
-import esprit_market.entity.carpooling.Vehicle;
-import esprit_market.service.carpoolingService.DriverProfileService;
-import esprit_market.service.carpoolingService.RideService;
-import esprit_market.service.carpoolingService.VehicleService;
+import esprit_market.dto.carpooling.RideResponseDTO;
+import esprit_market.dto.carpooling.VehicleResponseDTO;
+import esprit_market.service.carpoolingService.IDriverProfileService;
+import esprit_market.service.carpoolingService.IRideService;
+import esprit_market.service.carpoolingService.IVehicleService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -27,50 +27,49 @@ import java.util.List;
 @Tag(name = "Driver Profile", description = "APIs for managing driver profiles")
 public class DriverProfileController {
 
-    private final DriverProfileService service;
-    private final RideService rideService;
-    private final VehicleService vehicleService;
+    private final IDriverProfileService service;
+    private final IRideService rideService;
+    private final IVehicleService vehicleService;
     private final esprit_market.repository.userRepository.UserRepository userRepository;
 
     @PostMapping
-    public DriverProfile create(@Valid @RequestBody DriverProfileRequestDTO dto,
+    public DriverProfileResponseDTO create(@Valid @RequestBody DriverProfileRequestDTO dto,
             @AuthenticationPrincipal UserDetails user) {
-        return service.registerDriver(user.getUsername(), dto);
+        return service.registerDriver(dto, user.getUsername());
     }
 
     @GetMapping("/me")
-    public DriverProfile getMyProfile(@AuthenticationPrincipal UserDetails user) {
-        esprit_market.entity.user.User u = userRepository.findByEmail(user.getUsername()).orElseThrow();
-        return service.findByUserId(u.getId());
+    public DriverProfileResponseDTO getMyProfile(@AuthenticationPrincipal UserDetails user) {
+        return service.getMyProfile(user.getUsername());
     }
 
     @GetMapping("/{id}")
-    public DriverProfile getById(@PathVariable String id) {
+    public DriverProfileResponseDTO getById(@PathVariable String id) {
         return service.findById(new ObjectId(id));
     }
 
     @GetMapping("/user/{userId}")
-    public DriverProfile getByUserId(@PathVariable String userId) {
+    public DriverProfileResponseDTO getByUserId(@PathVariable String userId) {
         return service.findByUserId(new ObjectId(userId));
     }
 
     @GetMapping("/{driverProfileId}/vehicles")
-    public List<Vehicle> getVehicles(@PathVariable String driverProfileId) {
+    public List<VehicleResponseDTO> getVehicles(@PathVariable String driverProfileId) {
         return vehicleService.findByDriverProfileId(new ObjectId(driverProfileId));
     }
 
     @GetMapping("/{driverProfileId}/rides")
-    public List<Ride> getRides(@PathVariable String driverProfileId) {
+    public List<RideResponseDTO> getRides(@PathVariable String driverProfileId) {
         return rideService.findByDriverProfileId(new ObjectId(driverProfileId));
     }
 
     @PatchMapping("/{id}")
     @Operation(summary = "Update driver profile", description = "Update own profile (owner) or any profile (admin)")
-    public DriverProfile update(@PathVariable String id,
+    public DriverProfileResponseDTO update(@PathVariable String id,
             @Valid @RequestBody DriverProfileRequestDTO dto,
             @AuthenticationPrincipal UserDetails user) {
         ObjectId profileId = new ObjectId(id);
-        DriverProfile existing = service.findById(profileId);
+        DriverProfileResponseDTO existing = service.findById(profileId);
         if (existing == null)
             throw new IllegalArgumentException("Driver profile not found");
 
@@ -84,7 +83,7 @@ public class DriverProfileController {
                         "Only the owner or admin can update this profile");
         }
 
-        DriverProfile profile = new DriverProfile();
+        esprit_market.entity.carpooling.DriverProfile profile = new esprit_market.entity.carpooling.DriverProfile();
         profile.setLicenseNumber(dto.getLicenseNumber());
         profile.setLicenseDocument(dto.getLicenseDocument());
         return service.update(profileId, profile);
@@ -93,7 +92,7 @@ public class DriverProfileController {
     @PatchMapping("/{id}/verify")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Admin: Verify driver", description = "Mark a driver profile as verified")
-    public DriverProfile verify(@PathVariable String id) {
+    public DriverProfileResponseDTO verify(@PathVariable String id) {
         service.verifyDriver(new ObjectId(id));
         return service.findById(new ObjectId(id));
     }
@@ -114,14 +113,14 @@ public class DriverProfileController {
     @GetMapping("/all")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Admin: List all driver profiles")
-    public List<DriverProfile> getAll() {
+    public List<DriverProfileResponseDTO> getAll() {
         return service.findAll();
     }
 
     @GetMapping("/unverified")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Admin: List unverified driver profiles")
-    public List<DriverProfile> getUnverified() {
+    public List<DriverProfileResponseDTO> getUnverified() {
         return service.findAll().stream()
                 .filter(d -> d.getIsVerified() == null || !d.getIsVerified())
                 .toList();

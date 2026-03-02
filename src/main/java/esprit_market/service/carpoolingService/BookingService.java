@@ -6,10 +6,13 @@ import esprit_market.dto.carpooling.BookingResponseDTO;
 import esprit_market.entity.carpooling.Booking;
 import esprit_market.entity.carpooling.Ride;
 import esprit_market.entity.carpooling.RidePayment;
+import esprit_market.entity.user.User;
 import esprit_market.repository.carpoolingRepository.BookingRepository;
 import esprit_market.repository.carpoolingRepository.PassengerProfileRepository;
 import esprit_market.repository.carpoolingRepository.RidePaymentRepository;
 import esprit_market.repository.carpoolingRepository.RideRepository;
+import esprit_market.repository.userRepository.UserRepository;
+import esprit_market.mappers.carpooling.BookingMapper;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
 import org.springframework.security.access.AccessDeniedException;
@@ -26,10 +29,14 @@ public class BookingService implements IBookingService {
     private final RideRepository rideRepository;
     private final RidePaymentRepository ridePaymentRepository;
     private final PassengerProfileRepository passengerProfileRepository;
+    private final UserRepository userRepository;
+    private final BookingMapper bookingMapper;
 
     @Override
-    public List<Booking> findAll() {
-        return bookingRepository.findAll();
+    public List<BookingResponseDTO> findAll() {
+        return bookingRepository.findAll().stream()
+                .map(bookingMapper::toResponseDTO)
+                .toList();
     }
 
     @Override
@@ -38,8 +45,8 @@ public class BookingService implements IBookingService {
     }
 
     @Override
-    public Booking findById(ObjectId id) {
-        return bookingRepository.findById(id).orElse(null);
+    public BookingResponseDTO findById(ObjectId id) {
+        return bookingMapper.toResponseDTO(bookingRepository.findById(id).orElse(null));
     }
 
     @Override
@@ -48,56 +55,80 @@ public class BookingService implements IBookingService {
     }
 
     @Override
-    public List<Booking> findByRideId(ObjectId rideId) {
-        return bookingRepository.findByRideId(rideId);
+    public List<BookingResponseDTO> findByRideId(ObjectId rideId) {
+        return bookingRepository.findByRideId(rideId).stream()
+                .map(bookingMapper::toResponseDTO)
+                .toList();
     }
 
     @Override
-    public List<Booking> findByPassengerProfileId(ObjectId passengerProfileId) {
-        return bookingRepository.findByPassengerProfileId(passengerProfileId);
+    public List<BookingResponseDTO> findByPassengerProfileId(ObjectId passengerProfileId) {
+        return bookingRepository.findByPassengerProfileId(passengerProfileId).stream()
+                .map(bookingMapper::toResponseDTO)
+                .toList();
     }
 
     @Override
-    public List<Booking> findByStatus(BookingStatus status) {
-        return bookingRepository.findByStatus(status);
+    public List<BookingResponseDTO> findByStatus(BookingStatus status) {
+        return bookingRepository.findByStatus(status).stream()
+                .map(bookingMapper::toResponseDTO)
+                .toList();
     }
 
     @Override
-    public Booking update(ObjectId id, Booking booking, ObjectId passengerProfileId) {
+    public List<BookingResponseDTO> findByPassengerUserId(ObjectId userId) {
+        var passengerProfile = passengerProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Passenger profile not found"));
+        return findByPassengerProfileId(passengerProfile.getId());
+    }
+
+    @Override
+    public List<BookingResponseDTO> findMyBookings(String userEmail) {
+        var user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        var passengerProfile = passengerProfileRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new IllegalArgumentException("Passenger profile not found"));
+        return findByPassengerProfileId(passengerProfile.getId());
+    }
+
+    @Override
+    public BookingResponseDTO update(ObjectId id, BookingRequestDTO dto, String passengerEmail) {
+        var user = userRepository.findByEmail(passengerEmail)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        var passengerProfile = passengerProfileRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new IllegalArgumentException("Passenger profile not found"));
+
         Booking existing = bookingRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Booking not found"));
 
-        if (!existing.getPassengerProfileId().equals(passengerProfileId)) {
+        if (!existing.getPassengerProfileId().equals(passengerProfile.getId())) {
             throw new org.springframework.security.access.AccessDeniedException(
                     "Only the booking owner can update this booking");
         }
 
-        if (booking.getNumberOfSeats() != null && !booking.getNumberOfSeats().equals(existing.getNumberOfSeats())) {
+        if (dto.getNumberOfSeats() != null && !dto.getNumberOfSeats().equals(existing.getNumberOfSeats())) {
             Ride ride = rideRepository.findById(existing.getRideId()).orElse(null);
             if (ride != null) {
-                int delta = booking.getNumberOfSeats() - existing.getNumberOfSeats();
+                int delta = dto.getNumberOfSeats() - existing.getNumberOfSeats();
                 if (ride.getAvailableSeats() < delta) {
                     throw new IllegalStateException("Not enough seats available");
                 }
                 ride.setAvailableSeats(ride.getAvailableSeats() - delta);
                 rideRepository.save(ride);
             }
-            existing.setNumberOfSeats(booking.getNumberOfSeats());
+            existing.setNumberOfSeats(dto.getNumberOfSeats());
         }
-        if (booking.getPickupLocation() != null) {
-            existing.setPickupLocation(booking.getPickupLocation());
+        if (dto.getPickupLocation() != null) {
+            existing.setPickupLocation(dto.getPickupLocation());
         }
-        if (booking.getDropoffLocation() != null) {
-            existing.setDropoffLocation(booking.getDropoffLocation());
+        if (dto.getDropoffLocation() != null) {
+            existing.setDropoffLocation(dto.getDropoffLocation());
         }
-        if (booking.getTotalPrice() != null) {
-            existing.setTotalPrice(booking.getTotalPrice());
-        }
-        return bookingRepository.save(existing);
+        return bookingMapper.toResponseDTO(bookingRepository.save(existing));
     }
 
     @Override
-    public Booking updateStatus(ObjectId id, BookingStatus status) {
+    public BookingResponseDTO updateStatus(ObjectId id, BookingStatus status) {
         Booking booking = bookingRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Booking not found"));
         booking.setStatus(status);
@@ -109,12 +140,18 @@ public class BookingService implements IBookingService {
             // Confirmed", "Your booking has been confirmed.");
         }
 
-        return bookingRepository.save(booking);
+        return bookingMapper.toResponseDTO(bookingRepository.save(booking));
     }
 
     @Transactional
-    public BookingResponseDTO createBooking(BookingRequestDTO dto, String passengerEmail, ObjectId passengerProfileId) {
-        ObjectId rideId = new ObjectId(dto.getRideId());
+    public BookingResponseDTO createBooking(BookingRequestDTO dto, String passengerEmail, ObjectId rideId) {
+        var user = userRepository.findByEmail(passengerEmail)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        var passengerProfile = passengerProfileRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Passenger profile not found. Register as passenger first."));
+        ObjectId passengerProfileId = passengerProfile.getId();
+
         Ride ride = rideRepository.findById(rideId).orElseThrow(() -> new IllegalArgumentException("Ride not found"));
 
         if (ride.getStatus() != esprit_market.Enum.carpoolingEnum.RideStatus.CONFIRMED) {
@@ -161,14 +198,19 @@ public class BookingService implements IBookingService {
                 .build();
         ridePaymentRepository.save(payment);
 
-        return toResponseDTO(savedBooking);
+        return bookingMapper.toResponseDTO(savedBooking);
     }
 
     @Transactional
-    public void cancelBooking(String bookingId, String passengerEmail, ObjectId passengerProfileId) {
+    public void cancelBooking(String bookingId, String passengerEmail) {
+        var user = userRepository.findByEmail(passengerEmail)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        var passengerProfile = passengerProfileRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new IllegalArgumentException("Passenger profile not found"));
+
         Booking booking = bookingRepository.findById(new ObjectId(bookingId))
                 .orElseThrow(() -> new IllegalArgumentException("Booking not found"));
-        if (!booking.getPassengerProfileId().equals(passengerProfileId)) {
+        if (!booking.getPassengerProfileId().equals(passengerProfile.getId())) {
             throw new AccessDeniedException("Only the booking owner can cancel");
         }
         // Fix Part 1 #3: Allow cancelling any non-terminal status (PENDING or
@@ -185,10 +227,6 @@ public class BookingService implements IBookingService {
         if (ride != null) {
             ride.setAvailableSeats(ride.getAvailableSeats() + booking.getNumberOfSeats());
             rideRepository.save(ride);
-
-            // Part 2: Notify driver
-            // notificationService.notifyDriver(ride.getDriverProfileId(), "Booking
-            // Cancelled", "A passenger has cancelled their booking.");
         }
 
         ridePaymentRepository.findByBookingId(booking.getId()).ifPresent(payment -> {
@@ -197,18 +235,4 @@ public class BookingService implements IBookingService {
         });
     }
 
-    public BookingResponseDTO toResponseDTO(Booking booking) {
-        return BookingResponseDTO.builder()
-                .bookingId(booking.getId().toHexString())
-                .rideId(booking.getRideId().toHexString())
-                .passengerProfileId(booking.getPassengerProfileId().toHexString())
-                .numberOfSeats(booking.getNumberOfSeats())
-                .pickupLocation(booking.getPickupLocation())
-                .dropoffLocation(booking.getDropoffLocation())
-                .status(booking.getStatus())
-                .totalPrice(booking.getTotalPrice())
-                .createdAt(booking.getCreatedAt())
-                .cancelledAt(booking.getCancelledAt())
-                .build();
-    }
 }

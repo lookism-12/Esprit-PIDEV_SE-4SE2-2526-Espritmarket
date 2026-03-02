@@ -5,7 +5,7 @@ import esprit_market.dto.carpooling.RideRequestDTO;
 import esprit_market.dto.carpooling.RideResponseDTO;
 import esprit_market.dto.carpooling.RideSearchRequestDTO;
 import esprit_market.entity.carpooling.Ride;
-import esprit_market.service.carpoolingService.RideService;
+import esprit_market.service.carpoolingService.IRideService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -29,7 +29,7 @@ import java.util.List;
 @Tag(name = "Ride Management", description = "APIs for managing carpool rides")
 public class RideController {
 
-        private final RideService rideService;
+        private final IRideService rideService;
 
         @PostMapping
         @Operation(summary = "Create a new ride", description = "Creates a new carpool ride for the authenticated driver")
@@ -51,10 +51,10 @@ public class RideController {
                         @ApiResponse(responseCode = "404", description = "Ride not found")
         })
         public RideResponseDTO getById(@PathVariable String id) {
-                Ride ride = rideService.findById(new ObjectId(id));
+                RideResponseDTO ride = rideService.findById(new ObjectId(id));
                 if (ride == null)
                         throw new IllegalArgumentException("Ride not found");
-                return rideService.toResponseDTO(ride);
+                return ride;
         }
 
         @GetMapping
@@ -69,9 +69,8 @@ public class RideController {
                         @Parameter(description = "Available seats filter") @RequestParam(required = false) Integer availableSeats,
                         @Parameter(description = "Ride status filter") @RequestParam(required = false) RideStatus status,
                         Pageable pageable) {
-                List<Ride> rides = rideService.findByFilters(departureLocation, destinationLocation, departureTime,
+                return rideService.findByFilters(departureLocation, destinationLocation, departureTime,
                                 availableSeats, status, pageable);
-                return rides.stream().map(rideService::toResponseDTO).toList();
         }
 
         @GetMapping("/driver/{driverUserId}")
@@ -80,13 +79,7 @@ public class RideController {
                         @ApiResponse(responseCode = "200", description = "Rides retrieved successfully")
         })
         public List<RideResponseDTO> getByDriver(@PathVariable String driverUserId) {
-                // Fix Part 1 #5: lookup DriverProfile by userId first
-                esprit_market.entity.carpooling.DriverProfile driverProfile = rideService
-                                .getDriverProfileByUserId(new ObjectId(driverUserId));
-                if (driverProfile == null)
-                        return java.util.Collections.emptyList();
-                List<Ride> rides = rideService.findByDriverProfileId(driverProfile.getId());
-                return rides.stream().map(rideService::toResponseDTO).toList();
+                return rideService.findByDriverUserId(driverUserId);
         }
 
         @GetMapping("/my")
@@ -119,8 +112,7 @@ public class RideController {
         @Operation(summary = "Admin: Update ride status", description = "Allows administrators to manually override ride status")
         public RideResponseDTO updateStatus(@PathVariable String id,
                         @Parameter(description = "New ride status") @RequestParam RideStatus status) {
-                Ride ride = rideService.updateStatus(new ObjectId(id), status);
-                return rideService.toResponseDTO(ride);
+                return rideService.updateStatus(new ObjectId(id), status);
         }
 
         @DeleteMapping("/{id}")

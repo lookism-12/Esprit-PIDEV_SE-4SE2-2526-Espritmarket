@@ -1,6 +1,7 @@
 package esprit_market.service.carpoolingService;
 
 import esprit_market.dto.carpooling.VehicleRequestDTO;
+import esprit_market.dto.carpooling.VehicleResponseDTO;
 import esprit_market.entity.carpooling.Vehicle;
 import lombok.extern.slf4j.Slf4j;
 import esprit_market.repository.carpoolingRepository.DriverProfileRepository;
@@ -8,12 +9,14 @@ import esprit_market.repository.carpoolingRepository.RideRepository;
 import esprit_market.repository.carpoolingRepository.VehicleRepository;
 import esprit_market.repository.userRepository.UserRepository;
 import esprit_market.Enum.carpoolingEnum.RideStatus;
+import esprit_market.mappers.carpooling.VehicleMapper;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -24,20 +27,22 @@ public class VehicleService implements IVehicleService {
     private final DriverProfileRepository driverProfileRepository;
     private final UserRepository userRepository;
     private final RideRepository rideRepository;
+    private final VehicleMapper vehicleMapper;
 
     @Override
-    public List<Vehicle> findAll() {
-        return vehicleRepository.findAll();
+    public List<esprit_market.dto.carpooling.VehicleResponseDTO> findAll() {
+        return vehicleRepository.findAll().stream()
+                .map(vehicleMapper::toResponseDTO)
+                .collect(Collectors.toList());
+    }
+
+    public esprit_market.dto.carpooling.VehicleResponseDTO save(Vehicle vehicle) {
+        return vehicleMapper.toResponseDTO(vehicleRepository.save(vehicle));
     }
 
     @Override
-    public Vehicle save(Vehicle vehicle) {
-        return vehicleRepository.save(vehicle);
-    }
-
-    @Override
-    public Vehicle findById(ObjectId id) {
-        return vehicleRepository.findById(id).orElse(null);
+    public VehicleResponseDTO findById(ObjectId id) {
+        return vehicleMapper.toResponseDTO(vehicleRepository.findById(id).orElse(null));
     }
 
     @Override
@@ -46,12 +51,14 @@ public class VehicleService implements IVehicleService {
     }
 
     @Override
-    public List<Vehicle> findByDriverProfileId(ObjectId driverProfileId) {
-        return vehicleRepository.findByDriverProfileId(driverProfileId);
+    public List<esprit_market.dto.carpooling.VehicleResponseDTO> findByDriverProfileId(ObjectId driverProfileId) {
+        return vehicleRepository.findByDriverProfileId(driverProfileId).stream()
+                .map(vehicleMapper::toResponseDTO)
+                .collect(Collectors.toList());
     }
 
     @Override
-    public Vehicle update(ObjectId id, Vehicle vehicle) {
+    public esprit_market.dto.carpooling.VehicleResponseDTO update(ObjectId id, Vehicle vehicle) {
         Vehicle existing = vehicleRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Vehicle not found"));
         if (vehicle.getMake() != null) {
@@ -66,10 +73,10 @@ public class VehicleService implements IVehicleService {
         if (vehicle.getNumberOfSeats() != null) {
             existing.setNumberOfSeats(vehicle.getNumberOfSeats());
         }
-        return vehicleRepository.save(existing);
+        return vehicleMapper.toResponseDTO(vehicleRepository.save(existing));
     }
 
-    public Vehicle createVehicle(VehicleRequestDTO dto, String driverEmail) {
+    public VehicleResponseDTO createVehicle(VehicleRequestDTO dto, String driverEmail) {
         log.info("Creating vehicle for driver: {}", driverEmail);
         var user = userRepository.findByEmail(driverEmail)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
@@ -95,18 +102,20 @@ public class VehicleService implements IVehicleService {
         driverProfile.getVehicleIds().add(vehicle.getId());
         driverProfileRepository.save(driverProfile);
 
-        return vehicle;
+        return vehicleMapper.toResponseDTO(vehicle);
     }
 
-    public List<Vehicle> getMyVehicles(String driverEmail) {
+    public List<VehicleResponseDTO> getMyVehicles(String driverEmail) {
         var user = userRepository.findByEmail(driverEmail)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         var driverProfile = driverProfileRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new IllegalArgumentException("Driver profile not found"));
-        return vehicleRepository.findByDriverProfileId(driverProfile.getId());
+        return vehicleRepository.findByDriverProfileId(driverProfile.getId()).stream()
+                .map(vehicleMapper::toResponseDTO)
+                .collect(Collectors.toList());
     }
 
-    public Vehicle updateVehicle(String vehicleId, VehicleRequestDTO dto, String driverEmail) {
+    public VehicleResponseDTO updateVehicle(String vehicleId, VehicleRequestDTO dto, String driverEmail) {
         ObjectId id = new ObjectId(vehicleId);
         Vehicle vehicle = vehicleRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Vehicle not found"));
@@ -129,7 +138,7 @@ public class VehicleService implements IVehicleService {
         if (dto.getNumberOfSeats() != null)
             vehicle.setNumberOfSeats(dto.getNumberOfSeats());
 
-        return vehicleRepository.save(vehicle);
+        return vehicleMapper.toResponseDTO(vehicleRepository.save(vehicle));
     }
 
     public void deleteVehicle(String vehicleId, String driverEmail) {

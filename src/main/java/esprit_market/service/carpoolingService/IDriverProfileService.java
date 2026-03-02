@@ -1,20 +1,31 @@
-package esprit_market.service.carpoolingService;
-
+import esprit_market.dto.carpooling.DriverProfileRequestDTO;
+import esprit_market.dto.carpooling.DriverProfileResponseDTO;
+import esprit_market.dto.carpooling.DriverStatsDTO;
 import esprit_market.entity.carpooling.DriverProfile;
 import org.bson.types.ObjectId;
 
 import java.util.List;
 
 public interface IDriverProfileService {
-    List<DriverProfile> findAll();
+    List<DriverProfileResponseDTO> findAll();
 
-    DriverProfile findById(ObjectId id);
+    DriverProfileResponseDTO findById(ObjectId id);
 
-    DriverProfile findByUserId(ObjectId userId);
+    DriverProfileResponseDTO findByUserId(ObjectId userId);
 
     DriverProfile save(DriverProfile profile);
 
-    DriverProfile update(ObjectId id, DriverProfile profile);
+    DriverProfileResponseDTO update(ObjectId id, DriverProfile profile);
 
     void delete(ObjectId id);
+
+    DriverProfileResponseDTO registerDriver(DriverProfileRequestDTO dto, String email);
+
+    DriverProfileResponseDTO getMyProfile(String email);
+
+    void verifyDriver(ObjectId id);
+
+    DriverStatsDTO getDriverStats(ObjectId id);
+
+    void incrementTotalRidesAndEarnings(ObjectId driverProfileId, float earnings);
 }

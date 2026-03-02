@@ -91,7 +91,7 @@ public class DataInitializer implements CommandLineRunner {
                             .licenseNumber("DRV-TEST-001")
                             .licenseDocument("test_license.pdf")
                             .build();
-                    driverProfileService.registerDriver(driverEmail, dto);
+                    driverProfileService.registerDriver(dto, driverEmail);
                     log.info("Driver profile created for existing user: {}", driverEmail);
                 } catch (Exception e) {
                     log.error("Failed to create driver profile for existing user {}: {}", driverEmail, e.getMessage());
@@ -108,7 +108,7 @@ public class DataInitializer implements CommandLineRunner {
                     PassengerProfileRequestDTO dto = PassengerProfileRequestDTO.builder()
                             .preferences("No smoking, quiet ride")
                             .build();
-                    passengerProfileService.registerPassenger(passengerEmail, dto);
+                    passengerProfileService.registerPassenger(dto, passengerEmail);
                     log.info("Passenger profile created for existing user: {}", passengerEmail);
                 } catch (Exception e) {
                     log.error("Failed to create passenger profile for existing user {}: {}", passengerEmail,

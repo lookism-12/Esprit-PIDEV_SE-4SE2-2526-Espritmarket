@@ -16,16 +16,18 @@ import java.util.List;
 public class Product {
     @Id
     private ObjectId id;
-    
+
     // Shop — Product (OneToMany BIDIRECTIONAL)
     private ObjectId shopId;
 
     // Product — ProductImage (OneToMany UNIDIRECTIONAL)
+    @Builder.Default
     private List<ProductImage> images = new ArrayList<>();
 
     // Product — Category (ManyToMany BIDIRECTIONAL)
+    @Builder.Default
     private List<ObjectId> categoryIds = new ArrayList<>();
-    
+
     private double price;
     private int stock;
 }

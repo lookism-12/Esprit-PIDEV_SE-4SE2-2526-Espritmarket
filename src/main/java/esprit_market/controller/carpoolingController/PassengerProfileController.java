@@ -1,10 +1,10 @@
 package esprit_market.controller.carpoolingController;
 
+import esprit_market.dto.carpooling.BookingResponseDTO;
 import esprit_market.dto.carpooling.PassengerProfileRequestDTO;
-import esprit_market.entity.carpooling.Booking;
-import esprit_market.entity.carpooling.PassengerProfile;
-import esprit_market.service.carpoolingService.BookingService;
-import esprit_market.service.carpoolingService.PassengerProfileService;
+import esprit_market.dto.carpooling.PassengerProfileResponseDTO;
+import esprit_market.service.carpoolingService.IBookingService;
+import esprit_market.service.carpoolingService.IPassengerProfileService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
@@ -19,41 +19,40 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PassengerProfileController {
 
-    private final PassengerProfileService passengerProfileService;
-    private final BookingService bookingService;
+    private final IPassengerProfileService passengerProfileService;
+    private final IBookingService bookingService;
     private final esprit_market.repository.userRepository.UserRepository userRepository;
 
     @PostMapping
-    public PassengerProfile create(@Valid @RequestBody PassengerProfileRequestDTO dto,
+    public PassengerProfileResponseDTO create(@Valid @RequestBody PassengerProfileRequestDTO dto,
             @AuthenticationPrincipal UserDetails user) {
-        return passengerProfileService.registerPassenger(user.getUsername(), dto);
+        return passengerProfileService.registerPassenger(dto, user.getUsername());
     }
 
     @GetMapping("/me")
-    public PassengerProfile getMyProfile(@AuthenticationPrincipal UserDetails user) {
-        esprit_market.entity.user.User u = userRepository.findByEmail(user.getUsername()).orElseThrow();
-        return passengerProfileService.findByUserId(u.getId());
+    public PassengerProfileResponseDTO getMyProfile(@AuthenticationPrincipal UserDetails user) {
+        return passengerProfileService.getMyProfile(user.getUsername());
     }
 
     @GetMapping("/{id}")
-    public PassengerProfile getById(@PathVariable String id) {
+    public PassengerProfileResponseDTO getById(@PathVariable String id) {
         return passengerProfileService.findById(new ObjectId(id));
     }
 
     @GetMapping("/user/{userId}")
-    public PassengerProfile getByUserId(@PathVariable String userId) {
+    public PassengerProfileResponseDTO getByUserId(@PathVariable String userId) {
         return passengerProfileService.findByUserId(new ObjectId(userId));
     }
 
     @GetMapping("/{id}/bookings")
-    public List<Booking> getBookings(@PathVariable String id) {
+    public List<BookingResponseDTO> getBookings(@PathVariable String id) {
         return bookingService.findByPassengerProfileId(new ObjectId(id));
     }
 
     @PatchMapping("/{id}")
-    public PassengerProfile update(@PathVariable String id,
+    public PassengerProfileResponseDTO update(@PathVariable String id,
             @Valid @RequestBody PassengerProfileRequestDTO dto) {
-        PassengerProfile profile = new PassengerProfile();
+        esprit_market.entity.carpooling.PassengerProfile profile = new esprit_market.entity.carpooling.PassengerProfile();
         profile.setPreferences(dto.getPreferences());
         return passengerProfileService.update(new ObjectId(id), profile);
     }

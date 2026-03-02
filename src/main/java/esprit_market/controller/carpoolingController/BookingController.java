@@ -3,10 +3,7 @@ package esprit_market.controller.carpoolingController;
 import esprit_market.Enum.carpoolingEnum.BookingStatus;
 import esprit_market.dto.carpooling.BookingRequestDTO;
 import esprit_market.dto.carpooling.BookingResponseDTO;
-import esprit_market.entity.carpooling.Booking;
-import esprit_market.repository.carpoolingRepository.PassengerProfileRepository;
-import esprit_market.repository.userRepository.UserRepository;
-import esprit_market.service.carpoolingService.BookingService;
+import esprit_market.service.carpoolingService.IBookingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -27,9 +24,7 @@ import java.util.List;
 @Tag(name = "Booking Management", description = "APIs for managing ride bookings")
 public class BookingController {
 
-        private final BookingService bookingService;
-        private final PassengerProfileRepository passengerProfileRepository;
-        private final UserRepository userRepository;
+        private final IBookingService bookingService;
 
         @PostMapping
         @Operation(summary = "Create a booking", description = "Creates a new booking for a ride")
@@ -40,12 +35,9 @@ public class BookingController {
                         @ApiResponse(responseCode = "403", description = "Forbidden - passenger role required")
         })
         public BookingResponseDTO create(@Valid @RequestBody BookingRequestDTO dto,
-                        @AuthenticationPrincipal UserDetails user) {
-                var u = userRepository.findByEmail(user.getUsername()).orElseThrow();
-                var passengerProfile = passengerProfileRepository.findByUserId(u.getId())
-                                .orElseThrow(() -> new IllegalArgumentException(
-                                                "Passenger profile not found. Register as passenger first."));
-                return bookingService.createBooking(dto, user.getUsername(), passengerProfile.getId());
+                        @AuthenticationPrincipal UserDetails user,
+                        @RequestParam String rideId) {
+                return bookingService.createBooking(dto, user.getUsername(), new ObjectId(rideId));
         }
 
         @GetMapping("/{id}")
@@ -55,10 +47,10 @@ public class BookingController {
                         @ApiResponse(responseCode = "404", description = "Booking not found")
         })
         public BookingResponseDTO getById(@PathVariable String id) {
-                Booking booking = bookingService.findById(new ObjectId(id));
+                BookingResponseDTO booking = bookingService.findById(new ObjectId(id));
                 if (booking == null)
                         throw new IllegalArgumentException("Booking not found");
-                return bookingService.toResponseDTO(booking);
+                return booking;
         }
 
         @GetMapping("/ride/{rideId}")
@@ -67,8 +59,7 @@ public class BookingController {
                         @ApiResponse(responseCode = "200", description = "Bookings retrieved successfully")
         })
         public List<BookingResponseDTO> getByRideId(@PathVariable String rideId) {
-                return bookingService.findByRideId(new ObjectId(rideId)).stream()
-                                .map(bookingService::toResponseDTO).toList();
+                return bookingService.findByRideId(new ObjectId(rideId));
         }
 
         @GetMapping("/passenger/{passengerUserId}")
@@ -77,21 +68,13 @@ public class BookingController {
                         @ApiResponse(responseCode = "200", description = "Bookings retrieved successfully")
         })
         public List<BookingResponseDTO> getByPassengerUserId(@PathVariable String passengerUserId) {
-                var passengerProfile = passengerProfileRepository.findByUserId(new ObjectId(passengerUserId))
-                                .orElseThrow(() -> new IllegalArgumentException("Passenger profile not found"));
-                return bookingService.findByPassengerProfileId(passengerProfile.getId()).stream()
-                                .map(bookingService::toResponseDTO).toList();
+                return bookingService.findByPassengerUserId(new ObjectId(passengerUserId));
         }
 
         @GetMapping("/my")
         @Operation(summary = "Get my bookings", description = "Returns all bookings of the authenticated passenger")
         public List<BookingResponseDTO> getMyBookings(@AuthenticationPrincipal UserDetails user) {
-                var u = userRepository.findByEmail(user.getUsername()).orElseThrow();
-                var passengerProfile = passengerProfileRepository.findByUserId(u.getId())
-                                .orElseThrow(() -> new IllegalArgumentException(
-                                                "Passenger profile not found. Register as passenger first."));
-                return bookingService.findByPassengerProfileId(passengerProfile.getId()).stream()
-                                .map(bookingService::toResponseDTO).toList();
+                return bookingService.findMyBookings(user.getUsername());
         }
 
         @GetMapping
@@ -103,11 +86,9 @@ public class BookingController {
                         @Parameter(description = "Booking status filter") @RequestParam(required = false) BookingStatus status) {
                 if (status == null) {
                         checkIsAdmin();
-                        return bookingService.findAll().stream()
-                                        .map(bookingService::toResponseDTO).toList();
+                        return bookingService.findAll();
                 }
-                return bookingService.findByStatus(status).stream()
-                                .map(bookingService::toResponseDTO).toList();
+                return bookingService.findByStatus(status);
         }
 
         private void checkIsAdmin() {
@@ -130,17 +111,7 @@ public class BookingController {
         public BookingResponseDTO update(@PathVariable String id,
                         @Valid @RequestBody BookingRequestDTO dto,
                         @AuthenticationPrincipal UserDetails user) {
-                var u = userRepository.findByEmail(user.getUsername()).orElseThrow();
-                var passengerProfile = passengerProfileRepository.findByUserId(u.getId())
-                                .orElseThrow(() -> new IllegalArgumentException("Passenger profile not found"));
-
-                Booking booking = new Booking();
-                booking.setNumberOfSeats(dto.getNumberOfSeats());
-                booking.setPickupLocation(dto.getPickupLocation());
-                booking.setDropoffLocation(dto.getDropoffLocation());
-
-                Booking updated = bookingService.update(new ObjectId(id), booking, passengerProfile.getId());
-                return bookingService.toResponseDTO(updated);
+                return bookingService.update(new ObjectId(id), dto, user.getUsername());
         }
 
         @PatchMapping("/{id}/status")
@@ -152,8 +123,7 @@ public class BookingController {
         @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
         public BookingResponseDTO updateStatus(@PathVariable String id,
                         @Parameter(description = "New booking status") @RequestParam BookingStatus status) {
-                Booking updated = bookingService.updateStatus(new ObjectId(id), status);
-                return bookingService.toResponseDTO(updated);
+                return bookingService.updateStatus(new ObjectId(id), status);
         }
 
         @DeleteMapping("/{id}")
@@ -166,9 +136,6 @@ public class BookingController {
                         @ApiResponse(responseCode = "404", description = "Booking not found")
         })
         public void delete(@PathVariable String id, @AuthenticationPrincipal UserDetails user) {
-                var u = userRepository.findByEmail(user.getUsername()).orElseThrow();
-                var passengerProfile = passengerProfileRepository.findByUserId(u.getId())
-                                .orElseThrow(() -> new IllegalArgumentException("Passenger profile not found"));
-                bookingService.cancelBooking(id, user.getUsername(), passengerProfile.getId());
+                bookingService.cancelBooking(id, user.getUsername());
         }
 }

@@ -16,7 +16,10 @@ import esprit_market.repository.carpoolingRepository.PassengerProfileRepository;
 import esprit_market.repository.carpoolingRepository.VehicleRepository;
 import esprit_market.repository.userRepository.UserRepository;
 import esprit_market.service.notificationService.NotificationService;
+import esprit_market.mappers.carpooling.RideMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.bson.types.ObjectId;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
@@ -30,6 +33,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class RideService implements IRideService {
 
     private final RideRepository rideRepository;
@@ -40,24 +44,29 @@ public class RideService implements IRideService {
     private final PassengerProfileRepository passengerProfileRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
+    private final @Lazy IPassengerProfileService passengerProfileService;
+    private final @Lazy IDriverProfileService driverProfileService;
+    private final RideMapper rideMapper;
 
     @Override
-    public List<Ride> findAll() {
-        return rideRepository.findAll();
+    public List<RideResponseDTO> findAll() {
+        return rideRepository.findAll().stream()
+                .map(rideMapper::toResponseDTO)
+                .collect(Collectors.toList());
     }
 
     @Override
-    public Ride findById(ObjectId id) {
-        return rideRepository.findById(id).orElse(null);
+    public RideResponseDTO findById(ObjectId id) {
+        return rideMapper.toResponseDTO(rideRepository.findById(id).orElse(null));
     }
 
     @Override
-    public Ride save(Ride ride) {
-        return rideRepository.save(ride);
+    public RideResponseDTO save(Ride ride) {
+        return rideMapper.toResponseDTO(rideRepository.save(ride));
     }
 
     @Override
-    public Ride update(ObjectId id, Ride ride) {
+    public RideResponseDTO update(ObjectId id, Ride ride) {
         Ride existing = rideRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Ride not found"));
         if (ride.getDepartureLocation() != null) {
@@ -75,7 +84,7 @@ public class RideService implements IRideService {
         if (ride.getPricePerSeat() != null) {
             existing.setPricePerSeat(ride.getPricePerSeat());
         }
-        return rideRepository.save(existing);
+        return rideMapper.toResponseDTO(rideRepository.save(existing));
     }
 
     @Override
@@ -84,12 +93,14 @@ public class RideService implements IRideService {
     }
 
     @Override
-    public List<Ride> findByDriverProfileId(ObjectId driverProfileId) {
-        return rideRepository.findByDriverProfileId(driverProfileId);
+    public List<RideResponseDTO> findByDriverProfileId(ObjectId driverProfileId) {
+        return rideRepository.findByDriverProfileId(driverProfileId).stream()
+                .map(rideMapper::toResponseDTO)
+                .collect(Collectors.toList());
     }
 
     @Override
-    public Ride updateStatus(ObjectId id, RideStatus status) {
+    public RideResponseDTO updateStatus(ObjectId id, RideStatus status) {
         Ride ride = rideRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Ride not found"));
 
@@ -101,7 +112,7 @@ public class RideService implements IRideService {
 
         if (status == RideStatus.CANCELLED) {
             cancelRide(ride.getId().toHexString(), null); // reuse cancel logic
-            return rideRepository.findById(ride.getId()).orElse(ride);
+            return rideMapper.toResponseDTO(rideRepository.findById(ride.getId()).orElse(ride));
         }
 
         if (status == RideStatus.COMPLETED) {
@@ -121,17 +132,13 @@ public class RideService implements IRideService {
         }
 
         ride.setStatus(status);
-        return rideRepository.save(ride);
+        return rideMapper.toResponseDTO(rideRepository.save(ride));
     }
 
     @Override
-    public List<Ride> findByFilters(String departureLocation, String destinationLocation, LocalDateTime departureTime,
+    public List<RideResponseDTO> findByFilters(String departureLocation, String destinationLocation,
+            LocalDateTime departureTime,
             Integer availableSeats, RideStatus status, Pageable pageable) {
-        // Fix Part 1 #12: Optimization (Simplified filtering, ideally use
-        // MongoTemplate)
-        // For now, I'll keep the stream but ensure it's efficient or use
-        // findByDepartureLocation... if possible
-        // Let's assume the user wants a more robust filtering.
         return rideRepository.findAll().stream()
                 .filter(r -> departureLocation == null || r.getDepartureLocation().equalsIgnoreCase(departureLocation))
                 .filter(r -> destinationLocation == null
@@ -140,6 +147,18 @@ public class RideService implements IRideService {
                         || r.getDepartureTime().isEqual(departureTime))
                 .filter(r -> availableSeats == null || r.getAvailableSeats() >= availableSeats)
                 .filter(r -> status == null || r.getStatus() == status)
+                .map(rideMapper::toResponseDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<RideResponseDTO> findByDriverUserId(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        DriverProfile driverProfile = driverProfileRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new IllegalArgumentException("Driver profile not found"));
+        return rideRepository.findByDriverProfileId(driverProfile.getId()).stream()
+                .map(rideMapper::toResponseDTO)
                 .collect(Collectors.toList());
     }
 
@@ -155,7 +174,7 @@ public class RideService implements IRideService {
                 .filter(r -> destinationLocation == null || r.getDestinationLocation().toLowerCase()
                         .contains(destinationLocation.toLowerCase()))
                 .collect(Collectors.toList());
-        return rides.stream().map(this::toResponseDTO).collect(Collectors.toList());
+        return rides.stream().map(rideMapper::toResponseDTO).collect(Collectors.toList());
     }
 
     @Override
@@ -165,7 +184,7 @@ public class RideService implements IRideService {
         DriverProfile driverProfile = driverProfileRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new IllegalArgumentException("Driver profile not found. Register as driver first."));
         return rideRepository.findByDriverProfileId(driverProfile.getId()).stream()
-                .map(this::toResponseDTO)
+                .map(rideMapper::toResponseDTO)
                 .collect(Collectors.toList());
     }
 
@@ -212,7 +231,7 @@ public class RideService implements IRideService {
         driverProfile.getRideIds().add(ride.getId());
         driverProfileRepository.save(driverProfile);
 
-        return toResponseDTO(ride);
+        return rideMapper.toResponseDTO(ride);
     }
 
     @Transactional
@@ -268,7 +287,7 @@ public class RideService implements IRideService {
         ride.setAvailableSeats(dto.getAvailableSeats());
         ride.setPricePerSeat(dto.getPricePerSeat());
         ride = rideRepository.save(ride);
-        return toResponseDTO(ride);
+        return rideMapper.toResponseDTO(ride);
     }
 
     @Transactional
@@ -313,35 +332,55 @@ public class RideService implements IRideService {
         }
     }
 
-    public RideResponseDTO toResponseDTO(Ride ride) {
-        String driverName = "";
-        String vehicleMake = "";
-        String vehicleModel = "";
-        var driverProfile = driverProfileRepository.findById(ride.getDriverProfileId()).orElse(null);
-        if (driverProfile != null) {
-            var user = userRepository.findById(driverProfile.getUserId()).orElse(null);
-            if (user != null)
-                driverName = user.getFirstName() + " " + user.getLastName();
+    @Override
+    @Transactional
+    public void processStatusTransitions() {
+        LocalDateTime now = LocalDateTime.now();
+
+        // 1. CONFIRMED -> IN_PROGRESS
+        List<Ride> confirmedRides = rideRepository.findByStatusAndDepartureTimeBefore(RideStatus.CONFIRMED, now);
+        for (Ride ride : confirmedRides) {
+            ride.setStatus(RideStatus.IN_PROGRESS);
+            rideRepository.save(ride);
+
+            // Cancel any remaining PENDING bookings when ride starts
+            List<Booking> pendingBookings = bookingRepository.findByRideIdAndStatus(ride.getId(),
+                    esprit_market.Enum.carpoolingEnum.BookingStatus.PENDING);
+            for (Booking b : pendingBookings) {
+                b.setStatus(esprit_market.Enum.carpoolingEnum.BookingStatus.CANCELLED);
+                bookingRepository.save(b);
+                log.debug("Pending booking {} cancelled because ride {} started", b.getId(), ride.getId());
+            }
+            log.debug("Ride {} transitioned to IN_PROGRESS", ride.getId());
         }
-        var vehicle = vehicleRepository.findById(ride.getVehicleId()).orElse(null);
-        if (vehicle != null) {
-            vehicleMake = vehicle.getMake();
-            vehicleModel = vehicle.getModel();
+
+        // 2. IN_PROGRESS -> COMPLETED
+        List<Ride> inProgressRides = rideRepository.findByStatus(RideStatus.IN_PROGRESS);
+        for (Ride ride : inProgressRides) {
+            int duration = ride.getEstimatedDurationMinutes() != null ? ride.getEstimatedDurationMinutes() : 120;
+            if (ride.getDepartureTime().plusMinutes(duration).isBefore(now)) {
+                ride.setStatus(RideStatus.COMPLETED);
+                ride.setCompletedAt(now);
+                rideRepository.save(ride);
+
+                List<Booking> bookings = bookingRepository.findByRideIdAndStatus(ride.getId(),
+                        esprit_market.Enum.carpoolingEnum.BookingStatus.CONFIRMED);
+                float totalEarnings = 0;
+                for (Booking b : bookings) {
+                    b.setStatus(esprit_market.Enum.carpoolingEnum.BookingStatus.COMPLETED);
+                    bookingRepository.save(b);
+
+                    passengerProfileService.incrementTotalRides(b.getPassengerProfileId());
+
+                    ridePaymentRepository.findByBookingId(b.getId()).ifPresent(payment -> {
+                        payment.setStatus(esprit_market.Enum.carpoolingEnum.PaymentStatus.COMPLETED);
+                        ridePaymentRepository.save(payment);
+                    });
+                    totalEarnings += b.getTotalPrice() != null ? b.getTotalPrice() : 0;
+                }
+                driverProfileService.incrementTotalRidesAndEarnings(ride.getDriverProfileId(), totalEarnings);
+                log.debug("Ride {} transitioned to COMPLETED", ride.getId());
+            }
         }
-        return RideResponseDTO.builder()
-                .rideId(ride.getId().toHexString())
-                .driverProfileId(ride.getDriverProfileId().toHexString())
-                .driverName(driverName)
-                .vehicleId(ride.getVehicleId().toHexString())
-                .vehicleMake(vehicleMake)
-                .vehicleModel(vehicleModel)
-                .departureLocation(ride.getDepartureLocation())
-                .destinationLocation(ride.getDestinationLocation())
-                .departureTime(ride.getDepartureTime())
-                .availableSeats(ride.getAvailableSeats())
-                .pricePerSeat(ride.getPricePerSeat())
-                .status(ride.getStatus())
-                .completedAt(ride.getCompletedAt())
-                .build();
     }
 }
