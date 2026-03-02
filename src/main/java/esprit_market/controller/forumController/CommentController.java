@@ -1,6 +1,7 @@
 package esprit_market.controller.forumController;
 
-import esprit_market.dto.forum.*;
+import esprit_market.dto.forum.CommentRequest;
+import esprit_market.dto.forum.CommentResponse;
 import esprit_market.entity.forum.Comment;
 import esprit_market.mappers.ForumMapper;
 import esprit_market.service.forumService.CommentService;
@@ -20,29 +21,29 @@ public class CommentController {
     private final CommentService service;
 
     @GetMapping
-    public List<CommentDto> findAll() {
-        return service.findAll().stream().map(ForumMapper::toCommentDto).collect(Collectors.toList());
+    public List<CommentResponse> findAll() {
+        return service.findAll().stream().map(ForumMapper::toCommentResponse).collect(Collectors.toList());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<CommentDto> findById(@PathVariable String id) {
+    public ResponseEntity<CommentResponse> findById(@PathVariable String id) {
         Comment entity = service.findById(new ObjectId(id));
         if (entity == null) return ResponseEntity.notFound().build();
-        return ResponseEntity.ok(ForumMapper.toCommentDto(entity));
+        return ResponseEntity.ok(ForumMapper.toCommentResponse(entity));
     }
    
     @PostMapping
-    public ResponseEntity<CommentDto> create(@RequestBody CreateCommentDto dto) {
+    public ResponseEntity<CommentResponse> create(@RequestBody CommentRequest dto) {
         Comment entity = service.create(dto);
         if (entity == null) return ResponseEntity.badRequest().build();
-        return ResponseEntity.status(HttpStatus.CREATED).body(ForumMapper.toCommentDto(entity));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ForumMapper.toCommentResponse(entity));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<CommentDto> update(@PathVariable String id, @RequestBody UpdateCommentDto dto) {
+    public ResponseEntity<CommentResponse> update(@PathVariable String id, @RequestBody CommentRequest dto) {
         Comment entity = service.update(new ObjectId(id), dto);
         if (entity == null) return ResponseEntity.notFound().build();
-        return ResponseEntity.ok(ForumMapper.toCommentDto(entity));
+        return ResponseEntity.ok(ForumMapper.toCommentResponse(entity));
     }
 
     @DeleteMapping("/{id}")

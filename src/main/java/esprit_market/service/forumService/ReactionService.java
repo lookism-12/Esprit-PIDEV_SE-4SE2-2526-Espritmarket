@@ -1,6 +1,6 @@
 package esprit_market.service.forumService;
 
-import esprit_market.dto.forum.CreateReactionDto;
+import esprit_market.dto.forum.ReactionRequest;
 import esprit_market.entity.forum.Reaction;
 import esprit_market.mappers.ForumMapper;
 import esprit_market.repository.forumRepository.ReactionRepository;
@@ -26,7 +26,7 @@ public class ReactionService implements IReactionService {
     }
 
     @Override
-    public Reaction create(CreateReactionDto dto) {
+    public Reaction create(ReactionRequest dto) {
         Reaction entity = ForumMapper.toReaction(dto);
         if (entity == null) return null;
         return repository.save(entity);

@@ -1,7 +1,6 @@
 package esprit_market.service.forumService;
 
-import esprit_market.dto.forum.CreateCategoryForumDto;
-import esprit_market.dto.forum.UpdateCategoryForumDto;
+import esprit_market.dto.forum.CategoryForumRequest;
 import esprit_market.entity.forum.CategoryForum;
 import esprit_market.mappers.ForumMapper;
 import esprit_market.repository.forumRepository.CategoryForumRepository;
@@ -27,14 +26,14 @@ public class CategoryForumService implements ICategoryForumService {
     }
 
     @Override
-    public CategoryForum create(CreateCategoryForumDto dto) {
+    public CategoryForum create(CategoryForumRequest dto) {
         CategoryForum entity = ForumMapper.toCategoryForum(dto);
         if (entity == null) return null;
         return repository.save(entity);
     }
 
     @Override
-    public CategoryForum update(ObjectId id, UpdateCategoryForumDto dto) {
+    public CategoryForum update(ObjectId id, CategoryForumRequest dto) {
         CategoryForum existing = repository.findById(id).orElse(null);
         if (existing == null || dto == null) return existing;
         if (dto.getName() != null) existing.setName(dto.getName());

@@ -34,17 +34,17 @@ public final class ForumMapper {
                 .collect(Collectors.toList());
     }
 
-    // CategoryForum
-    public static CategoryForumDto toCategoryForumDto(CategoryForum e) {
+    // CategoryForum Mapping
+    public static CategoryForumResponse toCategoryForumResponse(CategoryForum e) {
         if (e == null) return null;
-        return CategoryForumDto.builder()
+        return CategoryForumResponse.builder()
                 .id(toId(e.getId()))
                 .name(e.getName())
                 .description(e.getDescription())
                 .build();
     }
 
-    public static CategoryForum toCategoryForum(CreateCategoryForumDto dto) {
+    public static CategoryForum toCategoryForum(CategoryForumRequest dto) {
         if (dto == null) return null;
         return CategoryForum.builder()
                 .name(dto.getName())
@@ -52,10 +52,10 @@ public final class ForumMapper {
                 .build();
     }
 
-    // Group
-    public static GroupDto toGroupDto(Group e) {
+    // Group Mapping
+    public static GroupResponse toGroupResponse(Group e) {
         if (e == null) return null;
-        return GroupDto.builder()
+        return GroupResponse.builder()
                 .id(toId(e.getId()))
                 .name(e.getName())
                 .topic(e.getTopic())
@@ -66,7 +66,7 @@ public final class ForumMapper {
                 .build();
     }
 
-    public static Group toGroup(CreateGroupDto dto) {
+    public static Group toGroup(GroupRequest dto) {
         if (dto == null) return null;
         return Group.builder()
                 .name(dto.getName())
@@ -78,10 +78,10 @@ public final class ForumMapper {
                 .build();
     }
 
-    // Post
-    public static PostDto toPostDto(Post e) {
+    // Post Mapping
+    public static PostResponse toPostResponse(Post e) {
         if (e == null) return null;
-        return PostDto.builder()
+        return PostResponse.builder()
                 .id(toId(e.getId()))
                 .userId(toId(e.getUserId()))
                 .categoryId(toId(e.getCategoryId()))
@@ -94,7 +94,7 @@ public final class ForumMapper {
                 .build();
     }
 
-    public static Post toPost(CreatePostDto dto) {
+    public static Post toPost(PostRequest dto) {
         if (dto == null) return null;
         return Post.builder()
                 .userId(toObjectId(dto.getUserId()))
@@ -108,10 +108,10 @@ public final class ForumMapper {
                 .build();
     }
 
-    // Comment
-    public static CommentDto toCommentDto(Comment e) {
+    // Comment Mapping
+    public static CommentResponse toCommentResponse(Comment e) {
         if (e == null) return null;
-        return CommentDto.builder()
+        return CommentResponse.builder()
                 .id(toId(e.getId()))
                 .postId(toId(e.getPostId()))
                 .userId(toId(e.getUserId()))
@@ -122,7 +122,7 @@ public final class ForumMapper {
                 .build();
     }
 
-    public static Comment toComment(CreateCommentDto dto) {
+    public static Comment toComment(CommentRequest dto) {
         if (dto == null) return null;
         return Comment.builder()
                 .postId(toObjectId(dto.getPostId()))
@@ -134,10 +134,10 @@ public final class ForumMapper {
                 .build();
     }
 
-    // Message
-    public static MessageDto toMessageDto(Message e) {
+    // Message Mapping
+    public static MessageResponse toMessageResponse(Message e) {
         if (e == null) return null;
-        return MessageDto.builder()
+        return MessageResponse.builder()
                 .id(toId(e.getId()))
                 .senderId(toId(e.getSenderId()))
                 .groupId(toId(e.getGroupId()))
@@ -148,7 +148,7 @@ public final class ForumMapper {
                 .build();
     }
 
-    public static Message toMessage(CreateMessageDto dto) {
+    public static Message toMessage(MessageRequest dto) {
         if (dto == null) return null;
         return Message.builder()
                 .senderId(toObjectId(dto.getSenderId()))
@@ -160,10 +160,10 @@ public final class ForumMapper {
                 .build();
     }
 
-    // Reply
-    public static ReplyDto toReplyDto(Reply e) {
+    // Reply Mapping
+    public static ReplyResponse toReplyResponse(Reply e) {
         if (e == null) return null;
-        return ReplyDto.builder()
+        return ReplyResponse.builder()
                 .id(toId(e.getId()))
                 .commentId(toId(e.getCommentId()))
                 .userId(toId(e.getUserId()))
@@ -172,7 +172,7 @@ public final class ForumMapper {
                 .build();
     }
 
-    public static Reply toReply(CreateReplyDto dto) {
+    public static Reply toReply(ReplyRequest dto) {
         if (dto == null) return null;
         return Reply.builder()
                 .commentId(toObjectId(dto.getCommentId()))
@@ -182,10 +182,10 @@ public final class ForumMapper {
                 .build();
     }
 
-    // Reaction
-    public static ReactionDto toReactionDto(Reaction e) {
+    // Reaction Mapping
+    public static ReactionResponse toReactionResponse(Reaction e) {
         if (e == null) return null;
-        return ReactionDto.builder()
+        return ReactionResponse.builder()
                 .id(toId(e.getId()))
                 .type(e.getType() == null ? null : e.getType().name())
                 .userId(toId(e.getUserId()))
@@ -195,7 +195,7 @@ public final class ForumMapper {
                 .build();
     }
 
-    public static Reaction toReaction(CreateReactionDto dto) {
+    public static Reaction toReaction(ReactionRequest dto) {
         if (dto == null) return null;
         ReactionType type = null;
         if (dto.getType() != null && !dto.getType().isBlank()) {

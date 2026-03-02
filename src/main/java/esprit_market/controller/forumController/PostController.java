@@ -1,6 +1,7 @@
 package esprit_market.controller.forumController;
 
-import esprit_market.dto.forum.*;
+import esprit_market.dto.forum.PostRequest;
+import esprit_market.dto.forum.PostResponse;
 import esprit_market.entity.forum.Post;
 import esprit_market.mappers.ForumMapper;
 import esprit_market.service.forumService.PostService;
@@ -20,29 +21,29 @@ public class PostController {
     private final PostService service;
 
     @GetMapping
-    public List<PostDto> getAll() {
-        return service.findAll().stream().map(ForumMapper::toPostDto).collect(Collectors.toList());
+    public List<PostResponse> getAll() {
+        return service.findAll().stream().map(ForumMapper::toPostResponse).collect(Collectors.toList());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<PostDto> findById(@PathVariable String id) {
+    public ResponseEntity<PostResponse> findById(@PathVariable String id) {
         Post entity = service.findById(new ObjectId(id));
         if (entity == null) return ResponseEntity.notFound().build();
-        return ResponseEntity.ok(ForumMapper.toPostDto(entity));
+        return ResponseEntity.ok(ForumMapper.toPostResponse(entity));
     }
 
     @PostMapping
-    public ResponseEntity<PostDto> create(@RequestBody CreatePostDto dto) {
+    public ResponseEntity<PostResponse> create(@RequestBody PostRequest dto) {
         Post entity = service.create(dto);
         if (entity == null) return ResponseEntity.badRequest().build();
-        return ResponseEntity.status(HttpStatus.CREATED).body(ForumMapper.toPostDto(entity));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ForumMapper.toPostResponse(entity));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<PostDto> update(@PathVariable String id, @RequestBody UpdatePostDto dto) {
+    public ResponseEntity<PostResponse> update(@PathVariable String id, @RequestBody PostRequest dto) {
         Post entity = service.update(new ObjectId(id), dto);
         if (entity == null) return ResponseEntity.notFound().build();
-        return ResponseEntity.ok(ForumMapper.toPostDto(entity));
+        return ResponseEntity.ok(ForumMapper.toPostResponse(entity));
     }
 
     @DeleteMapping("/{id}")

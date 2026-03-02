@@ -4,12 +4,16 @@ import lombok.*;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * Response DTO for Post entity.
+ * Contains all fields that should be exposed to the client.
+ */
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class PostDto {
+public class PostResponse {
     private String id;
     private String userId;
     private String categoryId;

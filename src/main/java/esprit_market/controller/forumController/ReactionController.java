@@ -1,6 +1,7 @@
 package esprit_market.controller.forumController;
 
-import esprit_market.dto.forum.*;
+import esprit_market.dto.forum.ReactionRequest;
+import esprit_market.dto.forum.ReactionResponse;
 import esprit_market.entity.forum.Reaction;
 import esprit_market.mappers.ForumMapper;
 import esprit_market.service.forumService.ReactionService;
@@ -20,22 +21,22 @@ public class ReactionController {
     private final ReactionService service;
 
     @GetMapping
-    public List<ReactionDto> getAll() {
-        return service.findAll().stream().map(ForumMapper::toReactionDto).collect(Collectors.toList());
+    public List<ReactionResponse> getAll() {
+        return service.findAll().stream().map(ForumMapper::toReactionResponse).collect(Collectors.toList());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ReactionDto> findById(@PathVariable String id) {
+    public ResponseEntity<ReactionResponse> findById(@PathVariable String id) {
         Reaction entity = service.findById(new ObjectId(id));
         if (entity == null) return ResponseEntity.notFound().build();
-        return ResponseEntity.ok(ForumMapper.toReactionDto(entity));
+        return ResponseEntity.ok(ForumMapper.toReactionResponse(entity));
     }
 
     @PostMapping
-    public ResponseEntity<ReactionDto> create(@RequestBody CreateReactionDto dto) {
+    public ResponseEntity<ReactionResponse> create(@RequestBody ReactionRequest dto) {
         Reaction entity = service.create(dto);
         if (entity == null) return ResponseEntity.badRequest().build();
-        return ResponseEntity.status(HttpStatus.CREATED).body(ForumMapper.toReactionDto(entity));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ForumMapper.toReactionResponse(entity));
     }
 
     @DeleteMapping("/{id}")

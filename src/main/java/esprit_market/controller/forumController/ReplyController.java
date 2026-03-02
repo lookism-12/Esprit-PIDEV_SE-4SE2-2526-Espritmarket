@@ -1,6 +1,7 @@
 package esprit_market.controller.forumController;
 
-import esprit_market.dto.forum.*;
+import esprit_market.dto.forum.ReplyRequest;
+import esprit_market.dto.forum.ReplyResponse;
 import esprit_market.entity.forum.Reply;
 import esprit_market.mappers.ForumMapper;
 import esprit_market.service.forumService.ReplyService;
@@ -20,29 +21,29 @@ public class ReplyController {
     private final ReplyService service;
 
     @GetMapping
-    public List<ReplyDto> getAll() {
-        return service.findAll().stream().map(ForumMapper::toReplyDto).collect(Collectors.toList());
+    public List<ReplyResponse> getAll() {
+        return service.findAll().stream().map(ForumMapper::toReplyResponse).collect(Collectors.toList());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ReplyDto> findById(@PathVariable String id) {
+    public ResponseEntity<ReplyResponse> findById(@PathVariable String id) {
         Reply entity = service.findById(new ObjectId(id));
         if (entity == null) return ResponseEntity.notFound().build();
-        return ResponseEntity.ok(ForumMapper.toReplyDto(entity));
+        return ResponseEntity.ok(ForumMapper.toReplyResponse(entity));
     }
 
     @PostMapping
-    public ResponseEntity<ReplyDto> create(@RequestBody CreateReplyDto dto) {
+    public ResponseEntity<ReplyResponse> create(@RequestBody ReplyRequest dto) {
         Reply entity = service.create(dto);
         if (entity == null) return ResponseEntity.badRequest().build();
-        return ResponseEntity.status(HttpStatus.CREATED).body(ForumMapper.toReplyDto(entity));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ForumMapper.toReplyResponse(entity));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ReplyDto> update(@PathVariable String id, @RequestBody UpdateReplyDto dto) {
+    public ResponseEntity<ReplyResponse> update(@PathVariable String id, @RequestBody ReplyRequest dto) {
         Reply entity = service.update(new ObjectId(id), dto);
         if (entity == null) return ResponseEntity.notFound().build();
-        return ResponseEntity.ok(ForumMapper.toReplyDto(entity));
+        return ResponseEntity.ok(ForumMapper.toReplyResponse(entity));
     }
 
     @DeleteMapping("/{id}")

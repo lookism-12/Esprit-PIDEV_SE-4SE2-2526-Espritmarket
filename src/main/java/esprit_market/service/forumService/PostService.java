@@ -1,7 +1,6 @@
 package esprit_market.service.forumService;
 
-import esprit_market.dto.forum.CreatePostDto;
-import esprit_market.dto.forum.UpdatePostDto;
+import esprit_market.dto.forum.PostRequest;
 import esprit_market.entity.forum.Post;
 import esprit_market.mappers.ForumMapper;
 import esprit_market.repository.forumRepository.PostRepository;
@@ -27,14 +26,14 @@ public class PostService implements IPostService {
     }
 
     @Override
-    public Post create(CreatePostDto dto) {
+    public Post create(PostRequest dto) {
         Post entity = ForumMapper.toPost(dto);
         if (entity == null) return null;
         return repository.save(entity);
     }
 
     @Override
-    public Post update(ObjectId id, UpdatePostDto dto) {
+    public Post update(ObjectId id, PostRequest dto) {
         Post existing = repository.findById(id).orElse(null);
         if (existing == null || dto == null) return existing;
         if (dto.getContent() != null) existing.setContent(dto.getContent());

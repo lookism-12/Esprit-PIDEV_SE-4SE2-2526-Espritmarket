@@ -1,7 +1,6 @@
 package esprit_market.service.forumService;
 
-import esprit_market.dto.forum.CreateCommentDto;
-import esprit_market.dto.forum.UpdateCommentDto;
+import esprit_market.dto.forum.CommentRequest;
 import esprit_market.entity.forum.Comment;
 import esprit_market.mappers.ForumMapper;
 import esprit_market.repository.forumRepository.CommentRepository;
@@ -27,14 +26,14 @@ public class CommentService implements ICommentService {
     }
 
     @Override
-    public Comment create(CreateCommentDto dto) {
+    public Comment create(CommentRequest dto) {
         Comment entity = ForumMapper.toComment(dto);
         if (entity == null) return null;
         return repository.save(entity);
     }
 
     @Override
-    public Comment update(ObjectId id, UpdateCommentDto dto) {
+    public Comment update(ObjectId id, CommentRequest dto) {
         Comment existing = repository.findById(id).orElse(null);
         if (existing == null || dto == null) return existing;
         if (dto.getContent() != null) existing.setContent(dto.getContent());

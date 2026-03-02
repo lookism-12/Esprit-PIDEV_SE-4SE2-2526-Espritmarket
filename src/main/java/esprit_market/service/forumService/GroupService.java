@@ -1,7 +1,6 @@
 package esprit_market.service.forumService;
 
-import esprit_market.dto.forum.CreateGroupDto;
-import esprit_market.dto.forum.UpdateGroupDto;
+import esprit_market.dto.forum.GroupRequest;
 import esprit_market.entity.forum.Group;
 import esprit_market.mappers.ForumMapper;
 import esprit_market.repository.forumRepository.GroupRepository;
@@ -29,7 +28,7 @@ public class GroupService implements IGroupService {
     }
 
     @Override
-    public Group create(CreateGroupDto dto) {
+    public Group create(GroupRequest dto) {
         if (dto == null) return null;
         List<ObjectId> memberIds = ForumMapper.toObjectIdList(dto.getMemberIds());
         if (memberIds.size() < MIN_MEMBERS) {
@@ -40,7 +39,7 @@ public class GroupService implements IGroupService {
     }
 
     @Override
-    public Group update(ObjectId id, UpdateGroupDto dto) {
+    public Group update(ObjectId id, GroupRequest dto) {
         Group existing = repository.findById(id).orElse(null);
         if (existing == null) return null;
         if (dto == null) return existing;

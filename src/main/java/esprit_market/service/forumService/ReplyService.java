@@ -1,7 +1,6 @@
 package esprit_market.service.forumService;
 
-import esprit_market.dto.forum.CreateReplyDto;
-import esprit_market.dto.forum.UpdateReplyDto;
+import esprit_market.dto.forum.ReplyRequest;
 import esprit_market.entity.forum.Reply;
 import esprit_market.mappers.ForumMapper;
 import esprit_market.repository.forumRepository.ReplyRepository;
@@ -27,14 +26,14 @@ public class ReplyService implements IReplyService {
     }
 
     @Override
-    public Reply create(CreateReplyDto dto) {
+    public Reply create(ReplyRequest dto) {
         Reply entity = ForumMapper.toReply(dto);
         if (entity == null) return null;
         return repository.save(entity);
     }
 
     @Override
-    public Reply update(ObjectId id, UpdateReplyDto dto) {
+    public Reply update(ObjectId id, ReplyRequest dto) {
         Reply existing = repository.findById(id).orElse(null);
         if (existing == null || dto == null) return existing;
         if (dto.getContent() != null) existing.setContent(dto.getContent());

@@ -1,6 +1,7 @@
 package esprit_market.controller.forumController;
 
-import esprit_market.dto.forum.*;
+import esprit_market.dto.forum.GroupRequest;
+import esprit_market.dto.forum.GroupResponse;
 import esprit_market.entity.forum.Group;
 import esprit_market.mappers.ForumMapper;
 import esprit_market.service.forumService.GroupService;
@@ -20,33 +21,33 @@ public class GroupController {
     private final GroupService service;
 
     @GetMapping
-    public List<GroupDto> getAll() {
-        return service.findAll().stream().map(ForumMapper::toGroupDto).collect(Collectors.toList());
+    public List<GroupResponse> getAll() {
+        return service.findAll().stream().map(ForumMapper::toGroupResponse).collect(Collectors.toList());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<GroupDto> findById(@PathVariable String id) {
+    public ResponseEntity<GroupResponse> findById(@PathVariable String id) {
         Group entity = service.findById(new ObjectId(id));
         if (entity == null) return ResponseEntity.notFound().build();
-        return ResponseEntity.ok(ForumMapper.toGroupDto(entity));
+        return ResponseEntity.ok(ForumMapper.toGroupResponse(entity));
     }
 
     @PostMapping
-    public ResponseEntity<?> create(@RequestBody CreateGroupDto dto) {
+    public ResponseEntity<?> create(@RequestBody GroupRequest dto) {
         try {
             Group entity = service.create(dto);
-            return ResponseEntity.status(HttpStatus.CREATED).body(ForumMapper.toGroupDto(entity));
+            return ResponseEntity.status(HttpStatus.CREATED).body(ForumMapper.toGroupResponse(entity));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> update(@PathVariable String id, @RequestBody UpdateGroupDto dto) {
+    public ResponseEntity<?> update(@PathVariable String id, @RequestBody GroupRequest dto) {
         try {
             Group entity = service.update(new ObjectId(id), dto);
             if (entity == null) return ResponseEntity.notFound().build();
-            return ResponseEntity.ok(ForumMapper.toGroupDto(entity));
+            return ResponseEntity.ok(ForumMapper.toGroupResponse(entity));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
