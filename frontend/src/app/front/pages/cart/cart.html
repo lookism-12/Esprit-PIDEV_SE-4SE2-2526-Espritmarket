@@ -1,0 +1,257 @@
+<div class="bg-gray-50 min-h-screen py-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h1 class="text-3xl font-extrabold text-dark mb-10 text-center sm:text-left">Shopping Cart</h1>
+
+        <div class="flex flex-col lg:flex-row gap-12">
+            <!-- Item List -->
+            <div class="flex-1 space-y-6">
+                @for (item of cartItems(); track item.id) {
+                <div class="premium-card p-6 flex flex-col sm:flex-row items-center gap-6">
+                    <div class="w-24 h-24 bg-gray-100 rounded-2xl overflow-hidden flex-shrink-0">
+                        <img [src]="item.product.imageUrl" [alt]="item.product.name" class="w-full h-full object-cover">
+                    </div>
+
+                    <div class="flex-1">
+                        <span class="text-xs font-bold text-primary uppercase tracking-wider">{{ item.product.category }}</span>
+                        <h3 class="text-lg font-extrabold text-dark mt-1">{{ item.product.name }}</h3>
+                        <p class="text-sm text-gray-500">Seller: {{ item.product.sellerName }}</p>
+                        <!-- Stock Status -->
+                        @if (item.product.stockStatus === 'LOW_STOCK') {
+                            <p class="text-xs text-orange-500 font-semibold mt-1">Only {{ item.product.stock }} left in stock</p>
+                        }
+                    </div>
+
+                    <div class="flex items-center space-x-4">
+                        <div class="flex items-center ring-1 ring-gray-200 rounded-xl bg-white p-1">
+                            <button (click)="updateQuantity(item.id, -1)" 
+                                class="p-2 hover:text-primary transition-colors disabled:opacity-50"
+                                [disabled]="item.quantity <= 1">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
+                                </svg>
+                            </button>
+                            <span class="px-4 font-bold text-dark">{{ item.quantity }}</span>
+                            <button (click)="updateQuantity(item.id, 1)" 
+                                class="p-2 hover:text-primary transition-colors disabled:opacity-50"
+                                [disabled]="item.quantity >= item.maxQuantity">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div class="text-lg font-extrabold text-dark min-w-[100px] text-right">
+                            {{ (item.product.price || 0) * item.quantity | number:'1.2-2' }} TND
+                        </div>
+
+                        <button (click)="removeItem(item.id)"
+                            class="p-2 text-gray-300 hover:text-red-500 transition-colors">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                } @empty {
+                <div class="py-20 text-center premium-card">
+                    <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6 text-gray-400">
+                        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-dark">Your cart is empty</h3>
+                    <p class="text-gray-500 mb-8">Ready to start shopping for campus essentials?</p>
+                    <a routerLink="/products" class="btn-primary inline-flex">Explore Catalog</a>
+                </div>
+                }
+            </div>
+
+            <!-- Summary -->
+            @if (!isEmpty()) {
+            <div class="w-full lg:w-[420px]">
+                <div class="premium-card p-8 sticky top-24">
+                    <h3 class="text-xl font-bold text-dark mb-6">Order Summary</h3>
+
+                    <!-- Loyalty Status -->
+                    <div class="mb-6 p-4 rounded-2xl bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/10">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center gap-2">
+                                <span class="text-2xl">🏆</span>
+                                <span class="font-bold text-dark">Your Points</span>
+                            </div>
+                            <span class="px-3 py-1 rounded-full text-xs font-bold" [ngClass]="getLevelBadgeClass(loyaltyLevel())">
+                                {{ loyaltyLevel() }}
+                            </span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-2xl font-black text-primary">{{ loyaltyPoints() }}</span>
+                            <span class="text-sm text-gray-500">= {{ loyaltyPoints() / 100 | number:'1.2-2' }} TND</span>
+                        </div>
+                        
+                        <!-- Use Points Toggle -->
+                        <div class="mt-4 pt-4 border-t border-gray-200">
+                            <label class="flex items-center justify-between cursor-pointer">
+                                <span class="text-sm font-semibold text-gray-700">Use points for this order</span>
+                                <div class="relative">
+                                    <input type="checkbox" 
+                                        [checked]="usePoints()" 
+                                        (change)="toggleUsePoints()"
+                                        class="sr-only">
+                                    <div class="w-10 h-6 rounded-full transition-colors"
+                                        [ngClass]="usePoints() ? 'bg-primary' : 'bg-gray-300'">
+                                        <div class="w-4 h-4 bg-white rounded-full shadow transform transition-transform absolute top-1"
+                                            [ngClass]="usePoints() ? 'translate-x-5' : 'translate-x-1'"></div>
+                                    </div>
+                                </div>
+                            </label>
+                            @if (usePoints()) {
+                                <div class="mt-3">
+                                    <input type="range" 
+                                        [min]="0" 
+                                        [max]="maxRedeemablePoints()" 
+                                        [value]="pointsToRedeem()"
+                                        (input)="updatePointsToRedeem($any($event.target).valueAsNumber)"
+                                        class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary">
+                                    <div class="flex justify-between text-xs text-gray-500 mt-1">
+                                        <span>0 pts</span>
+                                        <span class="font-bold text-primary">{{ pointsToRedeem() }} pts = {{ pointsToRedeem() / 100 | number:'1.2-2' }} TND</span>
+                                        <span>{{ maxRedeemablePoints() }} pts</span>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Coupon Section -->
+                    <div class="mb-6">
+                        @if (!appliedCoupon()) {
+                        <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Coupon Code</label>
+                        <div class="flex gap-2">
+                            <input 
+                                type="text" 
+                                [value]="couponCode()"
+                                (input)="couponCode.set($any($event.target).value)"
+                                placeholder="Enter code"
+                                class="flex-1 px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-sm font-medium"
+                            >
+                            <button 
+                                (click)="applyCoupon()"
+                                [disabled]="isApplyingCoupon()"
+                                class="px-5 py-3 bg-dark text-white rounded-xl hover:bg-black transition-colors disabled:opacity-50 font-bold text-sm"
+                            >
+                                @if (isApplyingCoupon()) {
+                                    <svg class="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                    </svg>
+                                } @else {
+                                    Apply
+                                }
+                            </button>
+                        </div>
+                        @if (couponError()) {
+                            <p class="text-red-500 text-xs font-semibold mt-2">{{ couponError() }}</p>
+                        }
+                        <p class="text-xs text-gray-400 mt-2">Try: ESPRIT10, SAVE20, STUDENT15</p>
+                        } @else {
+                        <div class="flex items-center justify-between bg-green-50 border border-green-200 rounded-xl p-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <span class="text-green-700 font-bold">{{ appliedCoupon()!.code }}</span>
+                                    <p class="text-xs text-green-600">
+                                        @if (appliedCoupon()!.type === 'percentage') {
+                                            {{ appliedCoupon()!.discount }}% off
+                                        } @else {
+                                            {{ appliedCoupon()!.discount }} TND off
+                                        }
+                                    </p>
+                                </div>
+                            </div>
+                            <button (click)="removeCoupon()" class="text-red-500 hover:text-red-700 text-sm font-bold">Remove</button>
+                        </div>
+                        }
+                    </div>
+
+                    <!-- Price Breakdown -->
+                    <div class="space-y-3 mb-6">
+                        <div class="flex justify-between text-gray-600">
+                            <span>Subtotal ({{ itemCount() }} items)</span>
+                            <span class="font-bold">{{ subtotal() | number:'1.2-2' }} TND</span>
+                        </div>
+                        
+                        @if (couponDiscount() > 0) {
+                        <div class="flex justify-between text-green-600">
+                            <span>Coupon Discount</span>
+                            <span class="font-bold">-{{ couponDiscount() | number:'1.2-2' }} TND</span>
+                        </div>
+                        }
+                        
+                        @if (pointsDiscount() > 0) {
+                        <div class="flex justify-between text-purple-600">
+                            <span>Points Discount ({{ pointsToRedeem() }} pts)</span>
+                            <span class="font-bold">-{{ pointsDiscount() | number:'1.2-2' }} TND</span>
+                        </div>
+                        }
+
+                        <div class="flex justify-between text-gray-600">
+                            <span>Tax (TVA 19%)</span>
+                            <span class="font-bold">{{ tax() | number:'1.2-2' }} TND</span>
+                        </div>
+                        
+                        <div class="flex justify-between text-gray-600 border-b border-dashed border-gray-200 pb-4">
+                            <span>Shipping</span>
+                            @if (shipping() === 0) {
+                                <span class="text-green-600 font-bold">Free</span>
+                            } @else {
+                                <span class="font-bold">{{ shipping() | number:'1.2-2' }} TND</span>
+                            }
+                        </div>
+                        
+                        <div class="flex justify-between text-2xl font-extrabold text-dark pt-2">
+                            <span>Total</span>
+                            <span class="text-primary">{{ total() | number:'1.2-2' }} TND</span>
+                        </div>
+                    </div>
+
+                    <!-- Points Earned -->
+                    <div class="mb-6 p-3 bg-accent/10 rounded-xl border border-accent/20">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="text-lg">⭐</span>
+                                <span class="text-sm font-semibold text-gray-700">Points you'll earn</span>
+                            </div>
+                            <span class="font-black text-accent-dark">+{{ earnedPoints() }} pts</span>
+                        </div>
+                    </div>
+
+                    <button
+                        (click)="proceedToCheckout()"
+                        class="w-full btn-primary py-4 text-lg font-bold shadow-xl shadow-primary/20 mb-4 transition-transform active:scale-95">
+                        Proceed to Checkout
+                    </button>
+
+                    <div class="flex items-center justify-between text-sm text-gray-500 mb-4">
+                        <button (click)="clearCart()" class="hover:text-red-500 transition-colors">Clear Cart</button>
+                        <a routerLink="/products" class="hover:text-primary transition-colors">Continue Shopping</a>
+                    </div>
+
+                    <div class="flex items-center justify-center space-x-2 text-xs text-gray-400 font-bold uppercase tracking-widest">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                        <span>Secure Student Transaction</span>
+                    </div>
+                </div>
+            </div>
+            }
+        </div>
+    </div>
+</div>

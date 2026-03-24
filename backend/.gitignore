@@ -1,0 +1,27 @@
+### Maven ###
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+### IDE ###
+.idea/
+*.iml
+*.iws
+
+### Logs ###
+*.log
+
+### OS ###
+.DS_Store
+Thumbs.db
+
+### Application properties (sensible data) ###
+application.properties
+application.yml
+
+# Angular
+/front/node_modules
+/front/dist
+
+# Spring
+/back/target
+/back/.idea

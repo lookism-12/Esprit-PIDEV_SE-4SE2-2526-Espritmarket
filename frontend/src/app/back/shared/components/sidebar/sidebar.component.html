@@ -1,0 +1,85 @@
+<aside class="w-64 bg-gradient-to-b from-slate-900 via-red-950 to-black text-white flex flex-col h-full shadow-2xl border-r border-yellow-600/20">
+  <!-- Logo Section with Premium Touch -->
+  <div class="p-6 border-b border-yellow-600/30 flex items-center justify-center bg-gradient-to-b from-red-900/40 to-transparent">
+    <div class="flex flex-col items-center">
+      <div class="bg-gradient-to-br from-yellow-400 to-yellow-600 p-2.5 rounded-full mb-3 shadow-lg ring-2 ring-yellow-500/30">
+        <img src="assets/logo_esprit_market-removebg-preview (1).png" alt="Logo" class="w-12 h-12 object-contain filter brightness-0">
+      </div>
+      <h1 class="text-lg font-black tracking-widest text-white drop-shadow-lg">ESPRIT MARKET</h1>
+      <span class="text-xs text-yellow-400/80 font-semibold mt-1 tracking-wide">Admin Dashboard</span>
+    </div>
+  </div>
+
+  <!-- Navigation with Premium Styling -->
+  <nav class="flex-1 overflow-y-auto py-6">
+    <div class="space-y-2 px-3">
+      <ng-container *ngFor="let item of menuItems">
+        <a [routerLink]="item.route"
+          routerLinkActive="nav-item-active"
+          [routerLinkActiveOptions]="{exact: item.route === '/admin/dashboard'}"
+          class="nav-item flex items-center px-4 py-3.5 rounded-xl transition-all duration-300 hover:transition-all cursor-pointer group mb-1 relative overflow-hidden">
+
+          <!-- Background effect for hover -->
+          <span class="absolute inset-0 bg-gradient-to-r from-yellow-600/0 via-yellow-500/0 to-yellow-600/0 group-hover:from-yellow-600/10 group-hover:via-yellow-500/5 group-hover:to-yellow-600/10 transition-all duration-300"></span>
+
+          <!-- Icon with hover glow -->
+          <span class="mr-3 text-xl group-hover:scale-110 transition-transform duration-300 relative z-10">{{ item.icon }}</span>
+
+          <!-- Label -->
+          <span class="flex-1 font-medium text-gray-200 group-hover:text-white transition-colors duration-300 relative z-10">{{ item.label }}</span>
+
+          <!-- Badge -->
+          @if (item.badge) {
+            <span class="bg-gradient-to-r from-red-500 to-red-600 text-white text-xs font-bold px-2.5 py-1 rounded-full border border-yellow-400/30 shadow-lg group-hover:from-yellow-500 group-hover:to-yellow-600 transition-all duration-300 relative z-10">
+              {{ item.badge }}
+            </span>
+          }
+
+          <!-- Accent line on hover -->
+          <span class="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-gradient-to-b from-yellow-400 to-yellow-600 rounded-l-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 shadow-lg"></span>
+        </a>
+      </ng-container>
+    </div>
+  </nav>
+
+  <!-- Divider with Gold Accent -->
+  <div class="px-6 py-4">
+    <div class="h-px bg-gradient-to-r from-transparent via-yellow-600/50 to-transparent"></div>
+  </div>
+
+  <!-- User Profile (Bottom) with Premium Design -->
+  <div class="p-4 bg-gradient-to-t from-red-950/60 to-transparent">
+    <a routerLink="/admin/profile" 
+       routerLinkActive="bg-red-900/80" 
+       class="flex items-center p-3 rounded-xl hover:bg-red-900/60 transition-all duration-300 group cursor-pointer border border-yellow-600/20 hover:border-yellow-500/40">
+      
+      @if (currentUser(); as user) {
+        @if (user.avatarUrl) {
+          <img 
+            [src]="user.avatarUrl" 
+            [alt]="user.firstName + ' ' + user.lastName" 
+            class="w-10 h-10 rounded-full object-cover ring-2 ring-yellow-500/50 shadow-lg">
+        } @else {
+          <div class="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center text-black font-bold text-sm shadow-lg ring-2 ring-yellow-500/50">
+            {{ user.firstName.charAt(0) }}{{ user.lastName.charAt(0) }}
+          </div>
+        }
+        <div class="ml-3 overflow-hidden flex-1">
+          <p class="text-sm font-bold text-white truncate">{{ user.firstName }}</p>
+          <p class="text-xs text-yellow-300/70 truncate">{{ user.email }}</p>
+        </div>
+      } @else {
+        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center text-black font-bold text-sm shadow-lg ring-2 ring-yellow-500/50">
+          AU
+        </div>
+        <div class="ml-3 overflow-hidden flex-1">
+          <p class="text-sm font-bold text-white truncate">Admin User</p>
+          <p class="text-xs text-yellow-300/70 truncate">admin&#64;esprit.tn</p>
+        </div>
+      }
+
+      <!-- Active indicator -->
+      <span class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-yellow-400 to-yellow-600 rounded-r-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+    </a>
+  </div>
+</aside>

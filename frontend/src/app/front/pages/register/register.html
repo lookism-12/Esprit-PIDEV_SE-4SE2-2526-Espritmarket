@@ -1,0 +1,556 @@
+<div class="min-h-[calc(100vh-144px)] flex items-center justify-center p-4 sm:p-6 bg-gradient-to-br from-[#f8f9fa] via-[#ffffff] to-[#f0f2f5] animate-fadeIn">
+    <div class="max-w-6xl w-full flex flex-col lg:flex-row items-center gap-8 lg:gap-16">
+
+        <!-- Left Side: Animated GIF -->
+        <div class="hidden md:flex lg:w-1/2 items-center justify-center">
+            <div class="relative w-full max-w-xl">
+                <img src="assets/logingif.gif"
+                    alt="ESPRIT Market Registration"
+                    class="w-full h-auto drop-shadow-2xl rounded-3xl animate-slideIn">
+                <!-- Floating Elements Decor -->
+                <div class="absolute -top-10 -left-10 w-28 h-28 bg-primary/20 rounded-full blur-3xl animate-pulse">
+                </div>
+                <div
+                    class="absolute -bottom-10 -right-10 w-36 h-36 bg-accent/30 rounded-full blur-3xl animate-pulse delay-700">
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile: Small illustration -->
+        <div class="md:hidden w-32 h-32 mb-4">
+            <img src="assets/logingif.gif" alt="ESPRIT Market" class="w-full h-full object-contain rounded-2xl">
+        </div>
+
+        <!-- Right Side: Form Card -->
+        <div class="w-full lg:w-[540px]">
+            <div
+                class="glass-card rounded-[32px] sm:rounded-[40px] p-6 sm:p-10 lg:p-12 border border-white/50 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] overflow-hidden relative group backdrop-blur-xl bg-white/80 animate-slideUp">
+                <!-- Inner Gradient Glow -->
+                <div
+                    class="absolute inset-0 bg-gradient-to-br from-[#CD958F]/10 via-transparent to-[#CCD0B7]/10 pointer-events-none">
+                </div>
+
+                <div class="relative z-10">
+                    <!-- Step Indicator -->
+                    <div class="flex items-center justify-center mb-6 sm:mb-8">
+                        <div class="flex items-center gap-3" role="progressbar" aria-valuenow="{{currentStep()}}" aria-valuemin="1" aria-valuemax="2">
+                            <div [class]="currentStep() === 1 ? 'w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-primary text-white flex items-center justify-center font-black text-sm shadow-lg shadow-primary/30' : 'w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-primary/20 text-primary flex items-center justify-center font-black text-sm'"
+                                 [attr.aria-current]="currentStep() === 1 ? 'step' : null">
+                                1
+                            </div>
+                            <div class="w-10 sm:w-12 h-1 rounded-full transition-all duration-300" [class]="currentStep() === 2 ? 'bg-primary' : 'bg-gray-200'"></div>
+                            <div [class]="currentStep() === 2 ? 'w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-primary text-white flex items-center justify-center font-black text-sm shadow-lg shadow-primary/30' : 'w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gray-200 text-gray-400 flex items-center justify-center font-black text-sm'"
+                                 [attr.aria-current]="currentStep() === 2 ? 'step' : null">
+                                2
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- STEP 1: Role Selection -->
+                    @if (currentStep() === 1) {
+                        <div class="mb-6 sm:mb-8 text-center lg:text-left animate-scaleIn">
+                            <h1 class="text-2xl sm:text-3xl font-black text-dark mb-3 tracking-tight transition-colors group-hover:text-primary">
+                                Join ESPRIT Market
+                            </h1>
+                            <p class="text-gray-600 font-semibold text-sm">Choose how you want to use our platform.</p>
+                        </div>
+
+                        <!-- Role Cards -->
+                        <div class="space-y-3 sm:space-y-4 mb-6 sm:mb-8">
+                            @for (card of roleCards; track card.id) {
+                                <button 
+                                    type="button"
+                                    (click)="selectRoleGroup(card.id)"
+                                    [attr.aria-pressed]="selectedRoleGroup() === card.id"
+                                    [class]="selectedRoleGroup() === card.id 
+                                        ? 'w-full p-4 sm:p-5 bg-white rounded-xl sm:rounded-2xl shadow-md border-2 border-primary transition-all text-left' 
+                                        : 'w-full p-4 sm:p-5 bg-white/90 rounded-xl sm:rounded-2xl shadow-sm hover:shadow-md border-2 border-transparent transition-all text-left hover:border-primary/30'">
+                                    <div class="flex items-start gap-3 sm:gap-4">
+                                        <div class="text-2xl sm:text-3xl" aria-hidden="true">{{ card.icon }}</div>
+                                        <div class="flex-1">
+                                            <h3 class="font-black text-dark text-base sm:text-lg mb-1">{{ card.title }}</h3>
+                                            <p class="text-gray-600 text-xs sm:text-sm font-medium">{{ card.description }}</p>
+                                        </div>
+                                        @if (selectedRoleGroup() === card.id) {
+                                            <div class="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-primary flex items-center justify-center shadow-md shadow-primary/30">
+                                                <svg class="w-3 h-3 sm:w-4 sm:h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                                                </svg>
+                                            </div>
+                                        }
+                                    </div>
+                                </button>
+                            }
+                        </div>
+
+                        <!-- Sub-Role Selection (if applicable) -->
+                        @if (currentRoleCard()?.subRoles) {
+                            <div class="mb-6 sm:mb-8">
+                                <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-3">
+                                    Specify your role
+                                </label>
+                                <div class="flex gap-2 sm:gap-3" role="radiogroup">
+                                    @for (subRole of currentRoleCard()!.subRoles; track subRole.value) {
+                                        <button 
+                                            type="button"
+                                            role="radio"
+                                            [attr.aria-checked]="selectedSubRole() === subRole.value"
+                                            (click)="selectSubRole(subRole.value)"
+                                            [class]="selectedSubRole() === subRole.value 
+                                                ? 'flex-1 py-2.5 sm:py-3 px-3 sm:px-4 bg-primary text-white rounded-lg sm:rounded-xl font-bold text-xs sm:text-sm transition-all shadow-md shadow-primary/25' 
+                                                : 'flex-1 py-2.5 sm:py-3 px-3 sm:px-4 bg-white text-gray-600 rounded-lg sm:rounded-xl font-bold text-xs sm:text-sm shadow-sm hover:shadow-md transition-all'">
+                                            {{ subRole.label }}
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        <!-- Continue Button -->
+                        <button 
+                            type="button"
+                            (click)="goToStep2()"
+                            [disabled]="!selectedRoleGroup()"
+                            [class]="selectedRoleGroup() 
+                                ? 'w-full h-12 sm:h-14 bg-primary text-white rounded-xl sm:rounded-2xl font-black text-base sm:text-lg hover:bg-primary-dark hover:shadow-xl transition-all duration-300 shadow-lg shadow-primary/25 transform active:scale-[0.98]' 
+                                : 'w-full h-12 sm:h-14 bg-gray-300 text-gray-500 rounded-xl sm:rounded-2xl font-black text-base sm:text-lg cursor-not-allowed'">
+                            Continue
+                        </button>
+
+                        <p class="mt-6 sm:mt-8 text-center text-sm font-semibold text-gray-600">
+                            Already have an account?
+                            <a routerLink="/login" class="text-primary font-black hover:underline ml-1">Sign in now</a>
+                        </p>
+                    }
+
+                    <!-- STEP 2: Registration Form -->
+                    @if (currentStep() === 2) {
+                        <div class="mb-5 sm:mb-6 animate-scaleIn">
+                            <button 
+                                type="button"
+                                (click)="goToStep1()"
+                                aria-label="Go back to step 1"
+                                class="flex items-center gap-2 text-gray-600 hover:text-primary transition-colors mb-4">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                                </svg>
+                                <span class="font-bold text-sm">Back</span>
+                            </button>
+                            <h1 class="text-2xl sm:text-3xl font-black text-dark mb-3 tracking-tight">
+                                Create your account
+                            </h1>
+                            <p class="text-gray-600 font-semibold text-sm">
+                                Registering as <span class="text-primary font-bold">{{ currentRoleCard()?.title }}</span>
+                                @if (selectedSubRole()) {
+                                    <span class="text-dark"> ({{ selectedSubRole() }})</span>
+                                }
+                            </p>
+                        </div>
+
+                        <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="space-y-4 sm:space-y-5">
+                            <!-- Name Fields Row -->
+                            <div class="grid grid-cols-2 gap-3 sm:gap-4">
+                                <div>
+                                    <label for="firstName" class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">First Name</label>
+                                    <input 
+                                        id="firstName"
+                                        formControlName="firstName"
+                                        type="text"
+                                        aria-describedby="firstName-error"
+                                        [class]="isFieldInvalid('firstName') 
+                                            ? 'w-full h-11 sm:h-12 px-3 sm:px-4 bg-white border-2 border-red-400 rounded-lg sm:rounded-xl shadow-sm focus:ring-2 focus:ring-red-400/30 transition-all text-sm font-semibold placeholder:text-gray-500'
+                                            : 'w-full h-11 sm:h-12 px-3 sm:px-4 bg-white/90 border-2 border-transparent rounded-lg sm:rounded-xl shadow-sm hover:shadow-md focus:shadow-md focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all text-sm font-semibold placeholder:text-gray-500'"
+                                        placeholder="John">
+                                    @if (isFieldInvalid('firstName')) {
+                                        <p id="firstName-error" class="text-red-500 text-xs font-semibold mt-1" role="alert">{{ getFieldError('firstName') }}</p>
+                                    }
+                                </div>
+                                <div>
+                                    <label for="lastName" class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Last Name</label>
+                                    <input 
+                                        id="lastName"
+                                        formControlName="lastName"
+                                        type="text"
+                                        aria-describedby="lastName-error"
+                                        [class]="isFieldInvalid('lastName') 
+                                            ? 'w-full h-11 sm:h-12 px-3 sm:px-4 bg-white border-2 border-red-400 rounded-lg sm:rounded-xl shadow-sm focus:ring-2 focus:ring-red-400/30 transition-all text-sm font-semibold placeholder:text-gray-500'
+                                            : 'w-full h-11 sm:h-12 px-3 sm:px-4 bg-white/90 border-2 border-transparent rounded-lg sm:rounded-xl shadow-sm hover:shadow-md focus:shadow-md focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all text-sm font-semibold placeholder:text-gray-500'"
+                                        placeholder="Doe">
+                                    @if (isFieldInvalid('lastName')) {
+                                        <p id="lastName-error" class="text-red-500 text-xs font-semibold mt-1" role="alert">{{ getFieldError('lastName') }}</p>
+                                    }
+                                </div>
+                            </div>
+
+                            <!-- Email -->
+                            <div>
+                                <label for="reg-email" class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Email</label>
+                                <input 
+                                    id="reg-email"
+                                    formControlName="email"
+                                    type="email"
+                                    autocomplete="email"
+                                    aria-describedby="reg-email-error"
+                                    [class]="isFieldInvalid('email') 
+                                        ? 'w-full h-11 sm:h-12 px-3 sm:px-4 bg-white border-2 border-red-400 rounded-lg sm:rounded-xl shadow-sm focus:ring-2 focus:ring-red-400/30 transition-all text-sm font-semibold placeholder:text-gray-500'
+                                        : 'w-full h-11 sm:h-12 px-3 sm:px-4 bg-white/90 border-2 border-transparent rounded-lg sm:rounded-xl shadow-sm hover:shadow-md focus:shadow-md focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all text-sm font-semibold placeholder:text-gray-500'"
+                                    placeholder="john.doe@esprit.tn">
+                                @if (isFieldInvalid('email')) {
+                                    <p id="reg-email-error" class="text-red-500 text-xs font-semibold mt-1" role="alert">{{ getFieldError('email') }}</p>
+                                }
+                            </div>
+
+                            <!-- Phone -->
+                            <div>
+                                <label for="phone" class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Phone Number</label>
+                                <div class="flex gap-2">
+                                    <div class="w-20 sm:w-24 flex-shrink-0">
+                                        <div class="h-11 sm:h-12 px-3 bg-gray-100 border-2 border-transparent rounded-lg sm:rounded-xl flex items-center justify-center text-sm font-semibold text-gray-600">
+                                            +216
+                                        </div>
+                                    </div>
+                                    <input 
+                                        id="phone"
+                                        formControlName="phone"
+                                        type="tel"
+                                        aria-describedby="phone-error"
+                                        [class]="isFieldInvalid('phone') 
+                                            ? 'flex-1 h-11 sm:h-12 px-3 sm:px-4 bg-white border-2 border-red-400 rounded-lg sm:rounded-xl shadow-sm focus:ring-2 focus:ring-red-400/30 transition-all text-sm font-semibold placeholder:text-gray-500'
+                                            : 'flex-1 h-11 sm:h-12 px-3 sm:px-4 bg-white/90 border-2 border-transparent rounded-lg sm:rounded-xl shadow-sm hover:shadow-md focus:shadow-md focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all text-sm font-semibold placeholder:text-gray-500'"
+                                        placeholder="12 345 678">
+                                </div>
+                                @if (isFieldInvalid('phone')) {
+                                    <p id="phone-error" class="text-red-500 text-xs font-semibold mt-1" role="alert">{{ getFieldError('phone') }}</p>
+                                }
+                            </div>
+
+                            <!-- Password Fields Row -->
+                            <div class="grid grid-cols-2 gap-3 sm:gap-4">
+                                <div class="relative">
+                                    <label for="reg-password" class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Password</label>
+                                    <input 
+                                        id="reg-password"
+                                        formControlName="password"
+                                        [type]="showPassword() ? 'text' : 'password'"
+                                        autocomplete="new-password"
+                                        aria-describedby="reg-password-error password-strength"
+                                        [class]="isFieldInvalid('password') 
+                                            ? 'w-full h-11 sm:h-12 px-3 sm:px-4 pr-10 sm:pr-12 bg-white border-2 border-red-400 rounded-lg sm:rounded-xl shadow-sm focus:ring-2 focus:ring-red-400/30 transition-all text-sm font-semibold placeholder:text-gray-500'
+                                            : 'w-full h-11 sm:h-12 px-3 sm:px-4 pr-10 sm:pr-12 bg-white/90 border-2 border-transparent rounded-lg sm:rounded-xl shadow-sm hover:shadow-md focus:shadow-md focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all text-sm font-semibold placeholder:text-gray-500'"
+                                        placeholder="••••••••">
+                                    <button 
+                                        type="button"
+                                        (click)="togglePassword()"
+                                        aria-label="{{ showPassword() ? 'Hide password' : 'Show password' }}"
+                                        class="absolute right-3 sm:right-4 top-8 sm:top-9 text-gray-500 hover:text-primary transition-colors">
+                                        <svg class="h-4 w-4 sm:h-5 sm:w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                    </button>
+                                    @if (isFieldInvalid('password')) {
+                                        <p id="reg-password-error" class="text-red-500 text-xs font-semibold mt-1" role="alert">{{ getFieldError('password') }}</p>
+                                    }
+                                </div>
+                                <div class="relative">
+                                    <label for="confirmPassword" class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Confirm Password</label>
+                                    <input 
+                                        id="confirmPassword"
+                                        formControlName="confirmPassword"
+                                        [type]="showConfirmPassword() ? 'text' : 'password'"
+                                        autocomplete="new-password"
+                                        aria-describedby="confirmPassword-error"
+                                        [class]="isFieldInvalid('confirmPassword') 
+                                            ? 'w-full h-11 sm:h-12 px-3 sm:px-4 pr-10 sm:pr-12 bg-white border-2 border-red-400 rounded-lg sm:rounded-xl shadow-sm focus:ring-2 focus:ring-red-400/30 transition-all text-sm font-semibold placeholder:text-gray-500'
+                                            : 'w-full h-11 sm:h-12 px-3 sm:px-4 pr-10 sm:pr-12 bg-white/90 border-2 border-transparent rounded-lg sm:rounded-xl shadow-sm hover:shadow-md focus:shadow-md focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all text-sm font-semibold placeholder:text-gray-500'"
+                                        placeholder="••••••••">
+                                    <button 
+                                        type="button"
+                                        (click)="toggleConfirmPassword()"
+                                        aria-label="{{ showConfirmPassword() ? 'Hide password' : 'Show password' }}"
+                                        class="absolute right-3 sm:right-4 top-8 sm:top-9 text-gray-500 hover:text-primary transition-colors">
+                                        <svg class="h-4 w-4 sm:h-5 sm:w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                    </button>
+                                    @if (isFieldInvalid('confirmPassword')) {
+                                        <p id="confirmPassword-error" class="text-red-500 text-xs font-semibold mt-1" role="alert">{{ getFieldError('confirmPassword') }}</p>
+                                    }
+                                </div>
+                            </div>
+
+                            <!-- Password Strength Indicator -->
+                            @if (registerForm.get('password')?.value) {
+                                <div id="password-strength" class="space-y-2" aria-live="polite">
+                                    <div class="flex gap-1">
+                                        <div class="h-1 flex-1 rounded-full transition-all duration-300"
+                                             [class]="registerForm.get('password')?.value?.length >= 1 ? 'bg-red-400' : 'bg-gray-200'"></div>
+                                        <div class="h-1 flex-1 rounded-full transition-all duration-300"
+                                             [class]="registerForm.get('password')?.value?.length >= 4 ? 'bg-orange-400' : 'bg-gray-200'"></div>
+                                        <div class="h-1 flex-1 rounded-full transition-all duration-300"
+                                             [class]="registerForm.get('password')?.value?.length >= 6 ? 'bg-yellow-400' : 'bg-gray-200'"></div>
+                                        <div class="h-1 flex-1 rounded-full transition-all duration-300"
+                                             [class]="registerForm.get('password')?.value?.length >= 8 ? 'bg-green-500' : 'bg-gray-200'"></div>
+                                    </div>
+                                    <p class="text-xs font-medium" 
+                                       [class]="registerForm.get('password')?.value?.length >= 8 ? 'text-green-600' : 'text-gray-500'">
+                                        @if (registerForm.get('password')?.value?.length < 4) {
+                                            Weak - Add more characters
+                                        } @else if (registerForm.get('password')?.value?.length < 6) {
+                                            Fair - Keep going
+                                        } @else if (registerForm.get('password')?.value?.length < 8) {
+                                            Good - Almost there
+                                        } @else {
+                                            Strong password ✓
+                                        }
+                                    </p>
+                                </div>
+                            }
+
+                            <!-- CLIENT FIELDS -->
+                            @if (selectedRoleGroup() === 'client') {
+                                <div>
+                                    <label for="address" class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Address (Optional)</label>
+                                    <input 
+                                        id="address"
+                                        formControlName="address"
+                                        type="text"
+                                        class="w-full h-11 sm:h-12 px-3 sm:px-4 bg-white/90 border-2 border-transparent rounded-lg sm:rounded-xl shadow-sm hover:shadow-md focus:shadow-md focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all text-sm font-semibold placeholder:text-gray-500"
+                                        placeholder="Your delivery address">
+                                </div>
+                            }
+
+                            <!-- PROVIDER FIELDS -->
+                            @if (selectedRoleGroup() === 'provider') {
+                                <div>
+                                    <label for="businessName" class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Business Name</label>
+                                    <input 
+                                        id="businessName"
+                                        formControlName="businessName"
+                                        type="text"
+                                        aria-describedby="businessName-error"
+                                        [class]="isFieldInvalid('businessName') 
+                                            ? 'w-full h-11 sm:h-12 px-3 sm:px-4 bg-white border-2 border-red-400 rounded-lg sm:rounded-xl shadow-sm focus:ring-2 focus:ring-red-400/30 transition-all text-sm font-semibold placeholder:text-gray-500'
+                                            : 'w-full h-11 sm:h-12 px-3 sm:px-4 bg-white/90 border-2 border-transparent rounded-lg sm:rounded-xl shadow-sm hover:shadow-md focus:shadow-md focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all text-sm font-semibold placeholder:text-gray-500'"
+                                        placeholder="Your Business Name">
+                                    @if (isFieldInvalid('businessName')) {
+                                        <p id="businessName-error" class="text-red-500 text-xs font-semibold mt-1" role="alert">{{ getFieldError('businessName') }}</p>
+                                    }
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-3 sm:gap-4">
+                                    <div>
+                                        <label for="businessType" class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Business Type</label>
+                                        <select 
+                                            id="businessType"
+                                            formControlName="businessType"
+                                            aria-describedby="businessType-error"
+                                            [class]="isFieldInvalid('businessType') 
+                                                ? 'w-full h-11 sm:h-12 px-3 sm:px-4 bg-white border-2 border-red-400 rounded-lg sm:rounded-xl shadow-sm focus:ring-2 focus:ring-red-400/30 transition-all text-sm font-semibold'
+                                                : 'w-full h-11 sm:h-12 px-3 sm:px-4 bg-white/90 border-2 border-transparent rounded-lg sm:rounded-xl shadow-sm hover:shadow-md focus:shadow-md focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all text-sm font-semibold'">
+                                            <option value="">Select type</option>
+                                            @for (type of businessTypes; track type) {
+                                                <option [value]="type">{{ type }}</option>
+                                            }
+                                        </select>
+                                        @if (isFieldInvalid('businessType')) {
+                                            <p id="businessType-error" class="text-red-500 text-xs font-semibold mt-1" role="alert">{{ getFieldError('businessType') }}</p>
+                                        }
+                                    </div>
+                                    <div>
+                                        <label for="taxId" class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Tax ID</label>
+                                        <input 
+                                            id="taxId"
+                                            formControlName="taxId"
+                                            type="text"
+                                            aria-describedby="taxId-error"
+                                            [class]="isFieldInvalid('taxId') 
+                                                ? 'w-full h-11 sm:h-12 px-3 sm:px-4 bg-white border-2 border-red-400 rounded-lg sm:rounded-xl shadow-sm focus:ring-2 focus:ring-red-400/30 transition-all text-sm font-semibold placeholder:text-gray-500'
+                                                : 'w-full h-11 sm:h-12 px-3 sm:px-4 bg-white/90 border-2 border-transparent rounded-lg sm:rounded-xl shadow-sm hover:shadow-md focus:shadow-md focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all text-sm font-semibold placeholder:text-gray-500'"
+                                            placeholder="Tax ID">
+                                        @if (isFieldInvalid('taxId')) {
+                                            <p id="taxId-error" class="text-red-500 text-xs font-semibold mt-1" role="alert">{{ getFieldError('taxId') }}</p>
+                                        }
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label for="description" class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Description (Optional)</label>
+                                    <textarea 
+                                        id="description"
+                                        formControlName="description"
+                                        rows="2"
+                                        class="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-white/90 border-2 border-transparent rounded-lg sm:rounded-xl shadow-sm hover:shadow-md focus:shadow-md focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all text-sm font-semibold placeholder:text-gray-500 resize-none"
+                                        placeholder="Tell us about your business..."></textarea>
+                                </div>
+                            }
+
+                            <!-- DRIVER FIELDS -->
+                            @if (selectedRoleGroup() === 'logistics' && selectedSubRole() === 'DRIVER') {
+                                <div class="grid grid-cols-2 gap-3 sm:gap-4">
+                                    <div>
+                                        <label for="drivingLicenseNumber" class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">License Number</label>
+                                        <input 
+                                            id="drivingLicenseNumber"
+                                            formControlName="drivingLicenseNumber"
+                                            type="text"
+                                            aria-describedby="drivingLicenseNumber-error"
+                                            [class]="isFieldInvalid('drivingLicenseNumber') 
+                                                ? 'w-full h-11 sm:h-12 px-3 sm:px-4 bg-white border-2 border-red-400 rounded-lg sm:rounded-xl shadow-sm focus:ring-2 focus:ring-red-400/30 transition-all text-sm font-semibold placeholder:text-gray-500'
+                                                : 'w-full h-11 sm:h-12 px-3 sm:px-4 bg-white/90 border-2 border-transparent rounded-lg sm:rounded-xl shadow-sm hover:shadow-md focus:shadow-md focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all text-sm font-semibold placeholder:text-gray-500'"
+                                            placeholder="DL-12345">
+                                        @if (isFieldInvalid('drivingLicenseNumber')) {
+                                            <p id="drivingLicenseNumber-error" class="text-red-500 text-xs font-semibold mt-1" role="alert">{{ getFieldError('drivingLicenseNumber') }}</p>
+                                        }
+                                    </div>
+                                    <div>
+                                        <label for="vehicleType-driver" class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Vehicle Type</label>
+                                        <select 
+                                            id="vehicleType-driver"
+                                            formControlName="vehicleType"
+                                            aria-describedby="vehicleType-driver-error"
+                                            [class]="isFieldInvalid('vehicleType') 
+                                                ? 'w-full h-11 sm:h-12 px-3 sm:px-4 bg-white border-2 border-red-400 rounded-lg sm:rounded-xl shadow-sm focus:ring-2 focus:ring-red-400/30 transition-all text-sm font-semibold'
+                                                : 'w-full h-11 sm:h-12 px-3 sm:px-4 bg-white/90 border-2 border-transparent rounded-lg sm:rounded-xl shadow-sm hover:shadow-md focus:shadow-md focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all text-sm font-semibold'">
+                                            <option value="">Select vehicle</option>
+                                            @for (vehicle of vehicleTypes; track vehicle) {
+                                                <option [value]="vehicle">{{ vehicle }}</option>
+                                            }
+                                        </select>
+                                        @if (isFieldInvalid('vehicleType')) {
+                                            <p id="vehicleType-driver-error" class="text-red-500 text-xs font-semibold mt-1" role="alert">{{ getFieldError('vehicleType') }}</p>
+                                        }
+                                    </div>
+                                </div>
+                            }
+
+                            <!-- DELIVERY FIELDS -->
+                            @if (selectedRoleGroup() === 'logistics' && selectedSubRole() === 'DELIVERY') {
+                                <div class="grid grid-cols-2 gap-3 sm:gap-4">
+                                    <div>
+                                        <label for="vehicleType-delivery" class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Vehicle Type</label>
+                                        <select 
+                                            id="vehicleType-delivery"
+                                            formControlName="vehicleType"
+                                            aria-describedby="vehicleType-delivery-error"
+                                            [class]="isFieldInvalid('vehicleType') 
+                                                ? 'w-full h-11 sm:h-12 px-3 sm:px-4 bg-white border-2 border-red-400 rounded-lg sm:rounded-xl shadow-sm focus:ring-2 focus:ring-red-400/30 transition-all text-sm font-semibold'
+                                                : 'w-full h-11 sm:h-12 px-3 sm:px-4 bg-white/90 border-2 border-transparent rounded-lg sm:rounded-xl shadow-sm hover:shadow-md focus:shadow-md focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all text-sm font-semibold'">
+                                            <option value="">Select vehicle</option>
+                                            @for (vehicle of vehicleTypes; track vehicle) {
+                                                <option [value]="vehicle">{{ vehicle }}</option>
+                                            }
+                                        </select>
+                                        @if (isFieldInvalid('vehicleType')) {
+                                            <p id="vehicleType-delivery-error" class="text-red-500 text-xs font-semibold mt-1" role="alert">{{ getFieldError('vehicleType') }}</p>
+                                        }
+                                    </div>
+                                    <div>
+                                        <label for="deliveryZone" class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Delivery Zone</label>
+                                        <input 
+                                            id="deliveryZone"
+                                            formControlName="deliveryZone"
+                                            type="text"
+                                            aria-describedby="deliveryZone-error"
+                                            [class]="isFieldInvalid('deliveryZone') 
+                                                ? 'w-full h-11 sm:h-12 px-3 sm:px-4 bg-white border-2 border-red-400 rounded-lg sm:rounded-xl shadow-sm focus:ring-2 focus:ring-red-400/30 transition-all text-sm font-semibold placeholder:text-gray-500'
+                                                : 'w-full h-11 sm:h-12 px-3 sm:px-4 bg-white/90 border-2 border-transparent rounded-lg sm:rounded-xl shadow-sm hover:shadow-md focus:shadow-md focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all text-sm font-semibold placeholder:text-gray-500'"
+                                            placeholder="e.g., Tunis, Ariana">
+                                        @if (isFieldInvalid('deliveryZone')) {
+                                            <p id="deliveryZone-error" class="text-red-500 text-xs font-semibold mt-1" role="alert">{{ getFieldError('deliveryZone') }}</p>
+                                        }
+                                    </div>
+                                </div>
+                            }
+
+                            <!-- Error Message Alert -->
+                            @if (errorMessage()) {
+                                <div class="p-4 sm:p-5 rounded-lg sm:rounded-xl bg-red-50 border-l-4 border-red-500 flex items-start gap-3 animate-slideDown" role="alert">
+                                    <svg class="w-5 h-5 sm:w-6 sm:h-6 text-red-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                                    </svg>
+                                    <div class="flex-1">
+                                        <p class="text-red-800 font-semibold text-sm sm:text-base">{{ errorMessage() }}</p>
+                                        @if (errorMessage() && (errorMessage()!.toLowerCase().includes('already') || errorMessage()!.toLowerCase().includes('409'))) {
+                                            <p class="text-red-700 text-xs sm:text-sm mt-1">
+                                                <a routerLink="/login" class="underline font-bold hover:text-red-900">Sign in to your existing account</a> or use a different email.
+                                            </p>
+                                        }
+                                    </div>
+                                    <button 
+                                        type="button"
+                                        (click)="errorMessage.set(null)"
+                                        class="text-red-500 hover:text-red-700 flex-shrink-0"
+                                        aria-label="Dismiss error">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            }
+
+                            <!-- Submit Button -->
+                            <button 
+                                type="submit"
+                                [disabled]="isSubmitting()"
+                                class="w-full h-12 sm:h-14 bg-primary text-white rounded-xl sm:rounded-2xl font-black text-base sm:text-lg hover:bg-primary-dark hover:shadow-xl transition-all duration-300 shadow-lg shadow-primary/25 transform active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                                @if (isSubmitting()) {
+                                    <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    <span>Creating account...</span>
+                                } @else {
+                                    <span>Create Account</span>
+                                }
+                            </button>
+                        </form>
+
+                        <!-- Social Login -->
+                        <div class="mt-5 sm:mt-6">
+                            <div class="relative flex items-center justify-center mb-5 sm:mb-6">
+                                <div class="flex-grow border-t border-gray-200"></div>
+                                <span class="mx-4 text-xs font-bold text-gray-500 uppercase tracking-wider bg-transparent">Or</span>
+                                <div class="flex-grow border-t border-gray-200"></div>
+                            </div>
+
+                            <div class="grid grid-cols-3 gap-3 sm:gap-4">
+                                <button type="button"
+                                    [disabled]="isSubmitting()"
+                                    aria-label="Sign up with Google"
+                                    class="flex items-center justify-center h-11 sm:h-12 bg-white rounded-xl sm:rounded-2xl shadow-sm hover:shadow-md hover:scale-105 transition-all duration-300 border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100">
+                                    <img src="https://www.google.com/favicon.ico"
+                                        class="w-5 h-5 sm:w-6 sm:h-6" alt="">
+                                </button>
+                                <button type="button"
+                                    [disabled]="isSubmitting()"
+                                    aria-label="Sign up with GitHub"
+                                    class="flex items-center justify-center h-11 sm:h-12 bg-white rounded-xl sm:rounded-2xl shadow-sm hover:shadow-md hover:scale-105 transition-all duration-300 border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100">
+                                    <img src="https://github.com/favicon.ico"
+                                        class="w-5 h-5 sm:w-6 sm:h-6" alt="">
+                                </button>
+                                <button type="button"
+                                    [disabled]="isSubmitting()"
+                                    aria-label="Sign up with Facebook"
+                                    class="flex items-center justify-center h-11 sm:h-12 bg-white rounded-xl sm:rounded-2xl shadow-sm hover:shadow-md hover:scale-105 transition-all duration-300 border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100">
+                                    <img src="https://www.facebook.com/favicon.ico"
+                                        class="w-5 h-5 sm:w-6 sm:h-6" alt="">
+                                </button>
+                            </div>
+
+                            <p class="mt-5 sm:mt-6 text-center text-sm font-semibold text-gray-600">
+                                Already have an account?
+                                <a routerLink="/login" class="text-primary font-black hover:underline ml-1">Sign in now</a>
+                            </p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,223 @@
+import { Component, signal, computed, OnInit, OnDestroy } from '@angular/core';
+import { ProductCard } from '../../shared/components/product-card/product-card';
+import { Product, StockStatus, ProductCondition } from '../../models/product';
+import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
+
+interface Promotion {
+  id: string;
+  title: string;
+  description: string;
+  discount: number;
+  type: 'percentage' | 'fixed';
+  code: string;
+  expiresAt: Date;
+  imageUrl: string;
+  backgroundColor: string;
+}
+
+@Component({
+  selector: 'app-home',
+  imports: [ProductCard, CommonModule, RouterLink],
+  templateUrl: './home.html',
+  styleUrl: './home.scss',
+})
+export class Home implements OnInit, OnDestroy {
+  // Countdown timer
+  countdown = signal({ days: 3, hours: 23, minutes: 19, seconds: 56 });
+  private countdownInterval: ReturnType<typeof setInterval> | null = null;
+
+  featuredProducts = signal<Product[]>([
+    {
+      id: '1',
+      name: 'Modern Laptop Stand',
+      description: 'Ergonomic aluminum laptop stand for better productivity.',
+      price: 120,
+      category: 'Electronics',
+      imageUrl: 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?q=80&w=870&auto=format&fit=crop',
+      sellerId: 'seller1',
+      sellerName: 'Amine K.',
+      rating: 4.8,
+      reviewsCount: 12,
+      stock: 5,
+      stockStatus: StockStatus.IN_STOCK,
+      condition: ProductCondition.NEW,
+      isNegotiable: false
+    },
+    {
+      id: '2',
+      name: 'Wireless Noise Cancelling Headphones',
+      description: 'Premium sound quality with long battery life.',
+      price: 350,
+      originalPrice: 400,
+      category: 'Electronics',
+      imageUrl: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=870&auto=format&fit=crop',
+      sellerId: 'seller2',
+      sellerName: 'Sarra M.',
+      rating: 4.5,
+      reviewsCount: 25,
+      stock: 2,
+      stockStatus: StockStatus.LOW_STOCK,
+      condition: ProductCondition.LIKE_NEW,
+      isNegotiable: true
+    },
+    {
+      id: '3',
+      name: 'Calculus Made Easy',
+      description: 'Perfect textbook for first-year engineering students.',
+      price: 45,
+      category: 'Books',
+      imageUrl: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?q=80&w=774&auto=format&fit=crop',
+      sellerId: 'seller3',
+      sellerName: 'Mehdi B.',
+      rating: 4.9,
+      reviewsCount: 8,
+      stock: 10,
+      stockStatus: StockStatus.IN_STOCK,
+      condition: ProductCondition.GOOD,
+      isNegotiable: true
+    },
+    {
+      id: '4',
+      name: 'Ergonomic Office Chair',
+      description: 'Very comfortable chair, barely used.',
+      price: 250,
+      originalPrice: 320,
+      category: 'Furniture',
+      imageUrl: 'https://images.unsplash.com/photo-1505797149-43b007664e31?q=80&w=870&auto=format&fit=crop',
+      sellerId: 'seller4',
+      sellerName: 'Ines T.',
+      rating: 4.2,
+      reviewsCount: 15,
+      stock: 1,
+      stockStatus: StockStatus.LOW_STOCK,
+      condition: ProductCondition.LIKE_NEW,
+      isNegotiable: true
+    }
+  ]);
+
+  // Promotions
+  promotions = signal<Promotion[]>([
+    {
+      id: '1',
+      title: 'Student Welcome',
+      description: 'New to ESPRIT Market? Get 15% off your first purchase!',
+      discount: 15,
+      type: 'percentage',
+      code: 'WELCOME15',
+      expiresAt: new Date('2024-03-31'),
+      imageUrl: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=400',
+      backgroundColor: 'from-primary to-primary-dark'
+    },
+    {
+      id: '2',
+      title: 'Electronics Week',
+      description: 'Save big on laptops, headphones, and more!',
+      discount: 20,
+      type: 'percentage',
+      code: 'TECH20',
+      expiresAt: new Date('2024-03-15'),
+      imageUrl: 'https://images.unsplash.com/photo-1468495244123-6c6c332eeece?q=80&w=400',
+      backgroundColor: 'from-blue-600 to-blue-800'
+    },
+    {
+      id: '3',
+      title: 'Books Sale',
+      description: 'All textbooks and study materials at reduced prices',
+      discount: 10,
+      type: 'fixed',
+      code: 'BOOKS10',
+      expiresAt: new Date('2024-03-20'),
+      imageUrl: 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?q=80&w=400',
+      backgroundColor: 'from-green-600 to-green-800'
+    }
+  ]);
+
+  // AI Recommendations (placeholder)
+  recommendedProducts = signal<Product[]>([
+    {
+      id: '5',
+      name: 'Mechanical Keyboard RGB',
+      description: 'Cherry MX switches, full RGB backlighting.',
+      price: 180,
+      category: 'Gaming',
+      imageUrl: 'https://images.unsplash.com/photo-1511467687858-23d96c32e4ae?q=80&w=870&auto=format&fit=crop',
+      sellerId: 'seller5',
+      sellerName: 'Yassine R.',
+      rating: 4.7,
+      reviewsCount: 18,
+      stock: 8,
+      stockStatus: StockStatus.IN_STOCK,
+      condition: ProductCondition.NEW,
+      isNegotiable: false
+    },
+    {
+      id: '6',
+      name: 'USB-C Hub 7-in-1',
+      description: 'All ports you need in one compact hub.',
+      price: 65,
+      category: 'Electronics',
+      imageUrl: 'https://images.unsplash.com/photo-1625723044792-44de16ccb4e9?q=80&w=870&auto=format&fit=crop',
+      sellerId: 'seller6',
+      sellerName: 'Ahmed S.',
+      rating: 4.6,
+      reviewsCount: 9,
+      stock: 12,
+      stockStatus: StockStatus.IN_STOCK,
+      condition: ProductCondition.NEW,
+      isNegotiable: true
+    }
+  ]);
+
+  // Categories
+  categories = signal([
+    { name: 'Electronics', icon: '💻', count: 156, slug: 'electronics' },
+    { name: 'Books', icon: '📚', count: 89, slug: 'books' },
+    { name: 'Gaming', icon: '🎮', count: 45, slug: 'gaming' },
+    { name: 'Furniture', icon: '🪑', count: 32, slug: 'furniture' },
+    { name: 'Services', icon: '🛠️', count: 28, slug: 'services' },
+    { name: 'Sports', icon: '⚽', count: 21, slug: 'sports' }
+  ]);
+
+  ngOnInit(): void {
+    this.startCountdown();
+  }
+
+  ngOnDestroy(): void {
+    if (this.countdownInterval) {
+      clearInterval(this.countdownInterval);
+    }
+  }
+
+  private startCountdown(): void {
+    this.countdownInterval = setInterval(() => {
+      this.countdown.update(c => {
+        let { days, hours, minutes, seconds } = c;
+        seconds--;
+        if (seconds < 0) {
+          seconds = 59;
+          minutes--;
+        }
+        if (minutes < 0) {
+          minutes = 59;
+          hours--;
+        }
+        if (hours < 0) {
+          hours = 23;
+          days--;
+        }
+        if (days < 0) {
+          days = 0;
+          hours = 0;
+          minutes = 0;
+          seconds = 0;
+        }
+        return { days, hours, minutes, seconds };
+      });
+    }, 1000);
+  }
+
+  copyPromoCode(code: string): void {
+    navigator.clipboard.writeText(code);
+  }
+}
