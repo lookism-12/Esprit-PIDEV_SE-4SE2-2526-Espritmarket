@@ -58,7 +58,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/users/register", "/api/users/login", "/api/users/forgot-password",
                                 "/api/users/reset-password")
                         .permitAll()
-                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                        .requestMatchers("/v3/api-docs/**", "/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/error").permitAll()
                         .requestMatchers("/uploads/**").permitAll()
                         .requestMatchers("/api/uploads/**").permitAll()
