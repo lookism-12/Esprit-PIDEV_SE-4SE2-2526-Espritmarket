@@ -328,11 +328,47 @@
 
       <!-- Drawer Content -->
       <div class="drawer-content overflow-y-auto h-[calc(100vh-88px)] pb-24">
-        <!-- User Quick Actions (Mobile) -->
-        <div class="p-4 border-b border-white/10 sm:hidden">
+        
+        <!-- User Profile Section (NEW) -->
+        <div *ngIf="isUserLoggedIn()" class="p-6 border-b border-white/10 bg-white/5">
+          <div class="flex items-center gap-4 mb-6">
+            <div class="relative">
+              <img [src]="userAvatar() || 'assets/logo.png'" class="w-16 h-16 rounded-full border-2 border-primary/50 object-cover shadow-lg" alt="Profile">
+              <span class="absolute bottom-1 right-1 w-3.5 h-3.5 bg-green-500 border-2 border-gray-900 rounded-full"></span>
+            </div>
+            <div class="flex-1">
+              <h3 class="text-white font-bold text-lg leading-tight">{{ userFullName() }}</h3>
+              <div class="flex items-center gap-2 mt-1">
+                <span class="text-[10px] font-bold text-green-400 uppercase tracking-widest bg-green-400/10 px-2 py-0.5 rounded">Active</span>
+                <span *ngIf="isAdmin()" class="text-[10px] font-bold text-primary-light uppercase tracking-widest bg-primary/10 px-2 py-0.5 rounded">Admin</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Admin Dashboard Quick Access -->
+          <a *ngIf="isAdmin()" 
+             routerLink="/admin/dashboard" 
+             (click)="closeDrawer()"
+             class="flex items-center justify-center gap-2 w-full py-3 mb-2 bg-[#7D0408] hover:bg-[#9D050A] text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-primary/20 border border-white/10 uppercase tracking-widest text-xs">
+            <span class="text-lg">📊</span>
+            Admin Dashboard
+          </a>
+          
+          <div class="flex gap-2 mt-4">
+            <button (click)="goToProfile()" class="flex-1 py-2 px-4 bg-white/5 hover:bg-white/10 text-white text-xs font-bold rounded-lg border border-white/10 transition-colors">
+              Settings
+            </button>
+            <button (click)="logout()" class="flex-1 py-2 px-4 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-bold rounded-lg border border-red-500/20 transition-colors">
+              Logout
+            </button>
+          </div>
+        </div>
+
+        <!-- User Quick Actions (Mobile - Only show if NOT logged in) -->
+        <div *ngIf="!isUserLoggedIn()" class="p-4 border-b border-white/10 sm:hidden">
           <a routerLink="/login" 
-            (click)="closeDrawer()"
-            class="flex items-center justify-center gap-2 w-full py-3 bg-primary hover:bg-primary-dark text-white font-bold rounded-xl transition-colors">
+             (click)="closeDrawer()"
+             class="flex items-center justify-center gap-2 w-full py-3 bg-primary hover:bg-primary-dark text-white font-bold rounded-xl transition-colors">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
             </svg>

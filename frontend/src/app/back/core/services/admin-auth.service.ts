@@ -128,6 +128,6 @@ export class AdminAuthService {
     this.currentUser.set(null);
     this.userSubject.next(null);  // ← Clear subject as well
     this.isAuthenticated.set(false);
-    this.router.navigate(['/login']);
+    this.router.navigate(['/login']); // Redirect to Sign In page
   }
 }

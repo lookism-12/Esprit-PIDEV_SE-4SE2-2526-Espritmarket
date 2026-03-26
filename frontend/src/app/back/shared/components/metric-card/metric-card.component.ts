@@ -6,59 +6,54 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow border-l-4"
-         [ngClass]="getBorderColor()">
-      <div class="flex items-start justify-between">
-        <div class="flex-1">
-          <p class="text-gray-600 text-sm font-medium">{{ data.label }}</p>
-          <h3 class="text-3xl font-bold mt-2 text-gray-800">{{ data.value }}</h3>
-          <p class="text-sm text-gray-500 mt-2">{{ data.subtitle }}</p>
-        </div>
-        <div [ngClass]="getIconBgClass()" 
-             class="w-12 h-12 rounded-full flex items-center justify-center text-2xl">
-          {{ data.icon }}
-        </div>
+    <div class="bg-[#F8F9FA] rounded-[10px] border border-[#7D0408] flex items-center h-24 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+      <!-- Colored Left Strip -->
+      <div class="w-1.5 h-full opacity-80" [ngClass]="getBgColorClass()"></div>
+      
+      <!-- Icon Container -->
+      <div class="w-16 flex items-center justify-center shrink-0">
+        <span class="text-3xl" [ngClass]="getTextColorClass()">{{ data.icon }}</span>
       </div>
-      <div class="mt-4 flex items-center justify-between" *ngIf="data.change">
-        <span [ngClass]="data.trend === 'up' ? 'text-green-600' : 'text-red-600'" 
-              class="text-sm font-medium flex items-center">
-          <span class="mr-1">{{ data.trend === 'up' ? '↑' : '↓' }}</span>
-          {{ data.change }}
-        </span>
-        <span *ngIf="data.progress" class="text-xs text-gray-400">
-           {{ data.progress }}% Goal
-        </span>
+      
+      <!-- Vertical Divider -->
+      <div class="h-10 w-px bg-gray-300"></div>
+      
+      <!-- Text Container -->
+      <div class="flex-1 flex flex-col justify-center items-center">
+        <p class="text-[12px] text-gray-500 font-medium mb-1">{{ data.label }}</p>
+        <h3 class="text-[24px] font-bold text-gray-900 leading-none">{{ data.value }}</h3>
       </div>
     </div>
   `,
   styles: [`
     :host {
       display: block;
+      height: 100%;
     }
   `]
 })
 export class MetricCardComponent {
   @Input() data: any;
 
-  getBorderColor(): string {
+  getBgColorClass(): string {
     const colors: Record<string, string> = {
-      blue: 'border-blue-500',
-      green: 'border-green-500',
-      purple: 'border-purple-500',
-      orange: 'border-orange-500',
-      red: 'border-red-500'
+      blue: 'bg-cyan-600',
+      green: 'bg-teal-500',
+      purple: 'bg-indigo-500',
+      orange: 'bg-amber-500',
+      red: 'bg-red-500'
     };
-    return colors[this.data.color] || 'border-gray-300';
+    return colors[this.data.color] || 'bg-gray-400';
   }
 
-  getIconBgClass(): string {
+  getTextColorClass(): string {
     const colors: Record<string, string> = {
-      blue: 'bg-blue-100',
-      green: 'bg-green-100',
-      purple: 'bg-purple-100',
-      orange: 'bg-orange-100',
-      red: 'bg-red-100'
+      blue: 'text-cyan-600',
+      green: 'text-teal-500',
+      purple: 'text-indigo-500',
+      orange: 'text-amber-500',
+      red: 'text-red-500'
     };
-    return colors[this.data.color] || 'bg-gray-100';
+    return colors[this.data.color] || 'text-gray-400';
   }
 }

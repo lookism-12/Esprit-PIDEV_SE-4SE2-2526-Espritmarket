@@ -1,41 +1,38 @@
-<div class="min-h-[calc(100vh-144px)] flex items-center justify-center p-4 sm:p-6 bg-gradient-to-br from-[#f8f9fa] via-[#ffffff] to-[#f0f2f5] animate-fadeIn">
-    <div class="max-w-6xl w-full flex flex-col lg:flex-row items-center gap-8 lg:gap-16">
-
-        <!-- Left Side: Animated GIF -->
-        <div class="hidden md:flex lg:w-1/2 items-center justify-center">
-            <div class="relative w-full max-w-xl">
-                <img src="assets/logingif.gif"
-                    alt="ESPRIT Market Shopping Experience"
-                    class="w-full h-auto drop-shadow-2xl rounded-3xl animate-slideIn">
-                <!-- Floating Elements Decor -->
-                <div class="absolute -top-10 -left-10 w-28 h-28 bg-primary/20 rounded-full blur-3xl animate-pulse">
-                </div>
-                <div
-                    class="absolute -bottom-10 -right-10 w-36 h-36 bg-accent/30 rounded-full blur-3xl animate-pulse delay-700">
-                </div>
-            </div>
-        </div>
-
-        <!-- Mobile: Small illustration -->
-        <div class="md:hidden w-32 h-32 mb-4">
-            <img src="assets/logingif.gif" alt="ESPRIT Market" class="w-full h-full object-contain rounded-2xl">
-        </div>
-
+<div class="relative min-h-[calc(100vh-144px)] flex items-center justify-center bg-gray-100 overflow-hidden animate-fadeIn">
+    <!-- Background Video Container (Full Screen) -->
+    <div class="absolute inset-0 z-0 overflow-hidden">
+        <video 
+            autoplay 
+            loop 
+            muted 
+            playsinline 
+            class="w-full h-full object-cover">
+            <source src="assets/Video%20Publicitaire.mp4" type="video/mp4">
+        </video>
+        <!-- Video Overlay -->
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-[2px]"></div>
+    </div>
+    
+    <div class="relative z-10 max-w-7xl w-full flex flex-col lg:flex-row items-center justify-end px-6 sm:px-16 lg:px-24">
         <!-- Right Side: Form Card -->
-        <div class="w-full lg:w-[520px]">
+        <div class="w-full max-w-[460px]">
             <div
-                class="glass-card rounded-[32px] sm:rounded-[40px] p-6 sm:p-10 lg:p-12 border border-white/50 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] overflow-hidden relative group backdrop-blur-xl bg-white/80 animate-slideUp">
+                class="glass-card rounded-[32px] sm:rounded-[40px] p-8 sm:p-10 border border-white/40 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.15)] overflow-hidden relative group backdrop-blur-xl bg-white/90 animate-slideUp">
                 <!-- Inner Gradient Glow -->
                 <div
-                    class="absolute inset-0 bg-gradient-to-br from-[#CD958F]/10 via-transparent to-[#CCD0B7]/10 pointer-events-none">
+                    class="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 pointer-events-none">
                 </div>
-
+                
                 <div class="relative z-10">
-                    <div class="mb-8 text-center lg:text-left">
+                    <div class="mb-10 text-center lg:text-left">
                         <h1
-                            class="text-2xl sm:text-3xl font-black text-dark mb-3 tracking-tight transition-colors group-hover:text-primary">
+                            class="text-3xl sm:text-4xl font-extrabold text-dark mb-3 tracking-tight transition-colors group-hover:text-primary">
                             Welcome Back</h1>
-                        <p class="text-secondary font-semibold text-sm">Sign in to continue your journey with ESPRIT Market</p>
+                        <p class="text-black font-semibold text-base leading-relaxed mb-4">Sign in to continue your journey with <span class="text-primary font-bold">ESPRIT Market</span></p>
+                        <p class="text-gray-500 font-medium text-sm">
+                            New here? 
+                            <a routerLink="/register" class="text-primary font-bold hover:underline ml-1">Create an account</a>
+                        </p>
                     </div>
 
                     <!-- Error Message -->
@@ -177,8 +174,7 @@
 
                         <p class="mt-6 sm:mt-8 text-center text-sm font-semibold text-gray-600">
                             Don't have an account yet?
-                            <a routerLink="/register" class="text-primary font-black hover:underline ml-1">Register for
-                                free</a>
+                            <a routerLink="/register" class="text-primary font-black hover:underline ml-1">Sign Up</a>
                         </p>
                     </div>
                 </div>

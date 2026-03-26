@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, computed, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { AdminAuthService } from '../../../core/services/admin-auth.service';
@@ -9,28 +9,35 @@ import { AdminAuthService } from '../../../core/services/admin-auth.service';
     imports: [CommonModule, RouterLink],
     templateUrl: './header.component.html'
 })
-export class HeaderComponent implements OnInit {
+export class HeaderComponent {
+    private adminAuthService = inject(AdminAuthService);
+    
     showProfileMenu = signal(false);
-    userInitials = signal('AU');
-    userName = signal('Admin User');
-    userEmail = signal('admin@esprit.tn');
+    
+    // Direct reference to the reactive user signal
+    readonly currentUser = this.adminAuthService.currentUser;
 
-    constructor(private adminAuthService: AdminAuthService) {}
+    // Computed signals that instantly update when currentUser changes
+    readonly userName = computed(() => {
+        const user = this.currentUser();
+        return user ? `${user.firstName} ${user.lastName}` : 'Admin User';
+    });
 
-    ngOnInit(): void {
-        // Get user info from admin auth service
-        this.userInitials.set(this.adminAuthService.getUserInitials());
-        this.userName.set(this.adminAuthService.getFullName());
-        this.userEmail.set(this.adminAuthService.getEmail());
+    readonly userEmail = computed(() => {
+        const user = this.currentUser();
+        return user?.email || 'admin@esprit.tn';
+    });
 
-        // Subscribe to user changes
-        const user = this.adminAuthService.currentUser();
-        if (user) {
-            this.userName.set(`${user.firstName} ${user.lastName}`);
-            this.userInitials.set(`${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase());
-            this.userEmail.set(user.email);
-        }
-    }
+    readonly userInitials = computed(() => {
+        const user = this.currentUser();
+        if (!user) return 'AU';
+        return `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
+    });
+
+    readonly userAvatar = computed(() => {
+        const user = this.currentUser();
+        return user?.avatarUrl || 'assets/logo.png';
+    });
 
     toggleProfileMenu(): void {
         this.showProfileMenu.update(v => !v);

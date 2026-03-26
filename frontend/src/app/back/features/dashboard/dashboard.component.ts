@@ -1,5 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { MetricCardComponent } from '../../shared/components/metric-card/metric-card.component';
 import { KycTableComponent } from './components/kyc-table/kyc-table.component';
 import { DashboardService } from '../../core/services/dashboard.service';
@@ -7,7 +8,7 @@ import { DashboardService } from '../../core/services/dashboard.service';
 @Component({
     selector: 'app-dashboard',
     standalone: true,
-    imports: [CommonModule, MetricCardComponent, KycTableComponent],
+    imports: [CommonModule, MetricCardComponent, KycTableComponent, RouterLink],
     templateUrl: './dashboard.component.html'
 })
 export class DashboardComponent implements OnInit {
@@ -63,10 +64,55 @@ export class DashboardComponent implements OnInit {
         { label: 'New Feedback', value: '14', icon: '✉️', color: 'text-blue-600' }
     ];
 
+    // Calendar state
+    currentDate = signal(new Date());
+    
+    calendarMonthYear = computed(() => {
+      const date = this.currentDate();
+      return date.toLocaleString('default', { month: 'long', year: 'numeric' });
+    });
+
+    calendarDays = computed(() => {
+      const date = this.currentDate();
+      const year = date.getFullYear();
+      const month = date.getMonth();
+      
+      const firstDayOfMonth = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      
+      const days = [];
+      const prevMonthLastDay = new Date(year, month, 0).getDate();
+      
+      // Padding from previous month
+      for (let i = firstDayOfMonth - 1; i >= 0; i--) {
+        days.push({ day: prevMonthLastDay - i, currentMonth: false });
+      }
+      
+      // Current month days
+      for (let i = 1; i <= daysInMonth; i++) {
+        days.push({ day: i, currentMonth: true, isToday: this.isToday(i, month, year) });
+      }
+      
+      // Padding for next month to fill the grid (6 rows * 7 days = 42)
+      const totalCells = 42;
+      const nextMonthDays = totalCells - days.length;
+      for (let i = 1; i <= nextMonthDays; i++) {
+        days.push({ day: i, currentMonth: false });
+      }
+      
+      return days;
+    });
+
     kycApplications: any[] = [];
     recentActivities: any[] = [];
     systemStatus: any[] = [];
     serverLoad = 42;
+
+    actionableAlerts = [
+      { title: 'Pending KYC', value: '12', subtitle: 'Awaiting Verification', icon: '🆔', color: 'bg-[#7D0408]', route: '/admin/moderation' },
+      { title: 'Flagged Content', value: '5', subtitle: 'Reported by Users', icon: '🚩', color: 'bg-[#C5A023]', route: '/admin/moderation' },
+      { title: 'Open Tickets', value: '8', subtitle: 'Support Required', icon: '🎧', color: 'bg-[#508D96]', route: '/admin/support' }
+    ];
 
     constructor(private dashboardService: DashboardService) { }
 
@@ -75,6 +121,19 @@ export class DashboardComponent implements OnInit {
         this.dashboardService.getKycApplications().subscribe(data => this.kycApplications = data);
         this.dashboardService.getRecentActivities().subscribe(data => this.recentActivities = data);
         this.dashboardService.getSystemStatus().subscribe(data => this.systemStatus = data);
+    }
+
+    private isToday(day: number, month: number, year: number): boolean {
+      const today = new Date();
+      return today.getDate() === day && today.getMonth() === month && today.getFullYear() === year;
+    }
+
+    prevMonth() {
+      this.currentDate.update((d: Date) => new Date(d.getFullYear(), d.getMonth() - 1, 1));
+    }
+
+    nextMonth() {
+      this.currentDate.update((d: Date) => new Date(d.getFullYear(), d.getMonth() + 1, 1));
     }
 
     getActivityIconClass(type: string): string {

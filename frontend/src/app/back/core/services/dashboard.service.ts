@@ -9,7 +9,7 @@ export class DashboardService {
             {
                 label: 'Total Users',
                 value: '8,542',
-                icon: 'users',
+                icon: '👥',
                 change: '+12.5%',
                 trend: 'up',
                 color: 'blue',
@@ -19,7 +19,7 @@ export class DashboardService {
             {
                 label: 'Total Revenue',
                 value: '$45.2K',
-                icon: 'dollar-sign',
+                icon: '💰',
                 change: '+8.2%',
                 trend: 'up',
                 color: 'green',
@@ -29,7 +29,7 @@ export class DashboardService {
             {
                 label: 'Active Listings',
                 value: '1,234',
-                icon: 'shopping-bag',
+                icon: '🛍️',
                 change: '-2.4%',
                 trend: 'down',
                 color: 'orange',
@@ -39,7 +39,7 @@ export class DashboardService {
             {
                 label: 'Pending KYC',
                 value: '12',
-                icon: 'shield',
+                icon: '🛡️',
                 change: '+5',
                 trend: 'up',
                 color: 'purple',

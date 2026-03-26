@@ -3,6 +3,7 @@ import { CommonModule, DOCUMENT } from '@angular/common';
 import { RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/auth.service';
+import { UserRole } from '../../models/user.model';
 import { CartService } from '../../core/cart.service';
 import { NotificationType, NotificationPriority } from '../../models/notification.model';
 import { filter, Subscription } from 'rxjs';
@@ -60,6 +61,7 @@ export class Navbar implements OnDestroy {
   userFullName = computed(() => this.authService.getFullName() || 'User');
   userInitials = computed(() => this.authService.getInitials() || 'U');
   userAvatar = computed(() => this.authService.userAvatar() || null);
+  isAdmin = computed(() => this.authService.userRole() === UserRole.ADMIN);
 
   // Menu sections for the drawer
   menuSections: MenuSection[] = [

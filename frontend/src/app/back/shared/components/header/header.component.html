@@ -1,32 +1,44 @@
-<header class="bg-gradient-header h-16 flex items-center justify-between px-6 shadow-md z-20">
+<header class="bg-gradient-to-r from-primary to-primary-dark h-16 flex items-center justify-between px-6 z-20 shadow-md relative border-b border-black/20 w-full">
     <!-- Left Section -->
-    <div class="flex items-center gap-4">
+    <div class="flex items-center gap-6">
         <div class="md:hidden">
-            <button class="text-white hover:text-gray-200 transition-colors">
+            <button class="text-white hover:text-white/80 transition-colors">
                 ☰
             </button>
         </div>
-        <h2 class="text-lg font-bold text-white tracking-wide">Admin Dashboard</h2>
+        
+        <div class="flex items-center gap-4">
+            <img src="assets/logo.png" alt="Esprit Market" class="h-9 object-contain filter brightness-0 invert drop-shadow-md">
+            
+            <div class="h-6 w-px bg-white/20 hidden md:block"></div>
+            
+            <h2 class="text-[18px] font-extrabold text-white tracking-tight drop-shadow-sm hidden lg:block uppercase tracking-widest">Admin Panel</h2>
+        </div>
+        
+        <div class="hidden xl:flex items-center bg-white/10 px-3 py-1 rounded-full border border-white/20 shadow-inner ml-4">
+            <span class="w-2 h-2 rounded-full bg-green-400 mr-2 shadow-[0_0_8px_rgba(74,222,128,0.8)]"></span>
+            <span class="text-[11px] font-bold text-white uppercase tracking-wider">All Systems Operational</span>
+        </div>
     </div>
 
     <!-- Right Section -->
-    <div class="flex items-center gap-4">
+    <div class="flex items-center gap-5">
         <!-- Search Bar -->
         <div class="relative hidden lg:block">
             <input type="text" placeholder="Search..."
-                class="bg-white/10 border border-white/20 rounded-full px-4 py-1.5 pl-10 text-sm text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-white/50 w-64 transition-all" />
-            <span class="absolute left-3 top-2 text-gray-300">🔍</span>
+                class="bg-white/10 border border-white/20 rounded-full px-4 py-1.5 pl-10 text-sm text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/40 w-64 transition-all shadow-inner" />
+            <span class="absolute left-3.5 top-2 text-white/60 text-sm">🔍</span>
         </div>
 
-        <div class="h-6 w-px bg-white/20 mx-2 hidden md:block"></div>
+        <div class="h-6 w-px bg-white/20 hidden md:block"></div>
 
         <!-- Icons -->
-        <div class="flex items-center space-x-3 text-white">
-            <button class="p-1 hover:bg-white/10 rounded-full transition-colors relative">
+        <div class="flex items-center space-x-1 text-white">
+            <button class="p-2 hover:bg-white/10 rounded-full transition-colors relative text-lg">
                 🔔
-                <span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+                <span class="absolute top-1 right-1 w-2 h-2 bg-yellow-400 rounded-full border border-[#7D0408] text-xs shadow-sm shadow-black/20"></span>
             </button>
-            <button class="p-1 hover:bg-white/10 rounded-full transition-colors">
+            <button class="p-2 hover:bg-white/10 rounded-full transition-colors text-lg">
                 ✉️
             </button>
         </div>
@@ -35,64 +47,72 @@
         <div class="relative ml-2">
             <button 
                 (click)="toggleProfileMenu()"
-                class="flex items-center gap-2 cursor-pointer hover:bg-white/10 rounded-full px-2 py-1 transition-colors">
-                <div
-                    class="w-8 h-8 rounded-full bg-white text-primary font-bold flex items-center justify-center border-2 border-white/50">
-                    {{ userInitials() }}
+                class="flex items-center gap-3 cursor-pointer hover:bg-white/10 rounded-full py-1 pr-3 pl-1.5 transition-colors border border-transparent hover:border-white/20 shadow-sm">
+                
+                <img [src]="userAvatar()" alt="Admin Profile" class="w-9 h-9 rounded-full object-contain bg-white p-0.5 ring-2 ring-white/30 shadow-md">
+                
+                <div class="hidden md:block text-left">
+                    <p class="text-sm font-bold text-white leading-tight drop-shadow-sm">{{ userName() }}</p>
+                    <p class="text-[11px] text-white/80 leading-tight">Super Admin</p>
                 </div>
-                <span class="text-white/80 hidden md:block">▼</span>
+                <span class="text-white/60 text-xs hidden md:block drop-shadow-sm">▼</span>
             </button>
 
             <!-- Dropdown Menu -->
             @if (showProfileMenu()) {
-                <div class="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden z-50 animate-fade-in">
+                <div class="absolute right-0 mt-3 w-64 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-50 animate-fade-in divide-y divide-gray-100 ring-1 ring-black/5">
                     <!-- User Info -->
-                    <div class="p-4 bg-gradient-to-r from-primary to-primary-dark text-white">
-                        <div class="flex items-center gap-3">
-                            <div class="w-12 h-12 rounded-full bg-white text-primary font-bold flex items-center justify-center text-lg">
-                                {{ userInitials() }}
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <p class="font-bold text-sm truncate">{{ userName() }}</p>
-                                <p class="text-xs opacity-90 truncate">{{ userEmail() }}</p>
-                            </div>
+                    <div class="p-5 bg-gradient-to-br from-gray-50 to-gray-100">
+                        <div class="flex flex-col items-center text-center">
+                            <img [src]="userAvatar()" alt="Admin Profile" class="w-16 h-16 rounded-full object-contain bg-white p-1.5 shadow-md ring-4 ring-white mb-3">
+                            <p class="font-bold text-gray-900 text-base truncate w-full">{{ userName() }}</p>
+                            <p class="text-xs text-gray-500 font-medium truncate w-full">{{ userEmail() }}</p>
+                            <span class="mt-2 text-[10px] font-bold text-[#7D0408] bg-red-50 px-2.5 py-1 rounded-full uppercase tracking-wider">Super Admin</span>
                         </div>
                     </div>
 
                     <!-- Menu Items -->
-                    <div class="py-2">
+                    <div class="py-2 bg-white">
+                        <a 
+                            routerLink="/admin/dashboard"
+                            (click)="toggleProfileMenu()"
+                            class="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors cursor-pointer text-gray-700">
+                            <div class="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center text-lg shadow-sm border border-red-100">📊</div>
+                            <div>
+                                <p class="text-sm font-bold text-gray-900">Dashboard</p>
+                                <p class="text-[11px] text-gray-500 font-medium">Main overview</p>
+                            </div>
+                        </a>
+
                         <a 
                             routerLink="/admin/profile"
                             (click)="toggleProfileMenu()"
-                            class="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer">
-                            <span class="text-lg">👤</span>
+                            class="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors cursor-pointer text-gray-700">
+                            <div class="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center text-lg shadow-sm border border-gray-100">👤</div>
                             <div>
-                                <p class="text-sm font-semibold text-gray-900">My Profile</p>
-                                <p class="text-xs text-gray-500">View and edit profile</p>
+                                <p class="text-sm font-bold text-gray-900">My Profile</p>
+                                <p class="text-[11px] text-gray-500 font-medium">Account configurations</p>
                             </div>
                         </a>
 
                         <a 
-                            routerLink="/admin/settings"
+                            routerLink="/"
                             (click)="toggleProfileMenu()"
-                            class="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer">
-                            <span class="text-lg">⚙️</span>
+                            class="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors cursor-pointer text-gray-700">
+                            <div class="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center text-lg shadow-sm border border-gray-100">🏠</div>
                             <div>
-                                <p class="text-sm font-semibold text-gray-900">Settings</p>
-                                <p class="text-xs text-gray-500">System preferences</p>
+                                <p class="text-sm font-bold text-gray-900">Back to Front</p>
+                                <p class="text-[11px] text-gray-500 font-medium">Public marketplace</p>
                             </div>
                         </a>
-
-                        <div class="border-t border-gray-200 my-2"></div>
-
+                    </div>
+                    
+                    <div class="p-2 bg-gray-50">
                         <button 
                             (click)="logout()"
-                            class="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-50 transition-colors text-left">
+                            class="w-full flex items-center justify-center gap-2 px-4 py-2.5 hover:bg-red-50 bg-white rounded-lg transition-colors text-center text-red-600 shadow-sm border border-red-100 font-bold text-sm">
                             <span class="text-lg">🚪</span>
-                            <div>
-                                <p class="text-sm font-semibold text-red-600">Logout</p>
-                                <p class="text-xs text-red-500">Sign out from admin panel</p>
-                            </div>
+                            Logout Securely
                         </button>
                     </div>
                 </div>

@@ -11,14 +11,16 @@ import { ToastComponent } from '../../shared/components/toast/toast.component';
   standalone: true,
   imports: [CommonModule, RouterOutlet, SidebarComponent, HeaderComponent, FooterComponent, ToastComponent],
   template: `
-    <div class="flex h-screen overflow-hidden bg-gray-50">
-      <app-sidebar class="shrink-0" />
-      <div class="flex flex-col flex-1 overflow-hidden min-w-0">
-        <app-header />
-        <main class="flex-1 overflow-y-auto p-6">
-          <router-outlet />
-        </main>
-        <app-footer />
+    <div class="flex flex-col h-screen overflow-hidden bg-gray-50">
+      <app-header class="z-30 relative shrink-0 shadow-md" />
+      <div class="flex flex-1 overflow-hidden min-w-0 z-10 relative">
+        <app-sidebar class="shrink-0" />
+        <div class="flex-1 overflow-y-auto flex flex-col hide-scrollbar relative z-0">
+          <main class="flex-1 p-6">
+            <router-outlet />
+          </main>
+          <app-footer />
+        </div>
       </div>
       <app-toast />
     </div>

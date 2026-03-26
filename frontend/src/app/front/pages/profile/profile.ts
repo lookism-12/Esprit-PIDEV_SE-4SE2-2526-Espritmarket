@@ -24,39 +24,8 @@ type ProfileTab = 'listings' | 'orders' | 'loyalty' | 'preferences' | 'settings'
     AvatarUploadModal,
     PasswordChangeModal
   ],
-  template: `
-<div class="profile-container">
-    <div class="profile-header">
-        <h1>{{ user().firstName }} {{ user().lastName }}</h1>
-        <p>{{ user().email }}</p>
-    </div>
-
-    <div class="tabs">
-        <button (click)="setActiveTab('listings')" [class.active]="activeTab() === 'listings'">Listings</button>
-        <button (click)="setActiveTab('orders')" [class.active]="activeTab() === 'orders'">Orders</button>
-        <button (click)="setActiveTab('loyalty')" [class.active]="activeTab() === 'loyalty'">Loyalty</button>
-        <button (click)="setActiveTab('settings')" [class.active]="activeTab() === 'settings'">Settings</button>
-    </div>
-
-    <div class="tab-content">
-        @if (activeTab() === 'settings') {
-            <form [formGroup]="profileForm" (ngSubmit)="saveProfile()">
-                <input formControlName="firstName" placeholder="First Name">
-                <input formControlName="lastName" placeholder="Last Name">
-                <input formControlName="email" type="email" placeholder="Email">
-                <input formControlName="phone" type="tel" placeholder="Phone">
-                <button type="submit" [disabled]="isSaving()">Save Profile</button>
-            </form>
-        }
-        @if (activeTab() === 'loyalty') {
-            <div class="loyalty-info">
-                <div class="progress-bar" [style.width.%]="loyaltyProgress()"></div>
-            </div>
-        }
-    </div>
-</div>
-  `,
-  styles: [],
+  templateUrl: './profile.html',
+  styleUrl: './profile.scss',
 })
 export class Profile implements OnInit {
   private fb = inject(FormBuilder);
