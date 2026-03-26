@@ -1,0 +1,139 @@
+﻿
+ RUN  v4.1.1 C:/Users/MSI/Desktop/espritmarket/Espritmarket/frontend
+
+ ÔØ» src/app/front/pages/login/login.spec.ts (8 tests | 8 failed) 66ms
+     ├ù should create 36ms
+       ├ù should be invalid when empty 5ms
+       ├ù should validate email format 4ms
+       ├ù should require password 4ms
+       ├ù should call authService.login on valid submit 4ms
+       ├ù should handle login error 3ms
+       ├ù should not call authService if form is invalid 3ms
+       ├ù should toggle password visibility 3ms
+node.exe : 
+Au caractère 
+C:\Program Files\nodejs
+\npx.ps1:29 : 3
++   & $NODE_EXE 
+$NPX_CLI_JS $args
++   ~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~
+    + CategoryInfo     
+         : NotSpecifi  
+  ed: (:String) [],    
+ RemoteException
+    + FullyQualifiedEr 
+   rorId : NativeComm  
+  andError
+ 
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ» 
+Failed Tests 8 
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»
+
+ FAIL  src/app/front/pa
+ges/login/login.spec.ts
+ > Login Component > 
+should create
+Unknown Error: Failed 
+to load ./login.html
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ
+»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»Ô
+Ä»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»
+ÔÄ»[1/8]ÔÄ»
+
+ FAIL  src/app/front/pa
+ges/login/login.spec.ts
+ > Login Component > 
+Form Validation > 
+should be invalid when 
+empty
+Unknown Error: Failed 
+to load ./login.html
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ
+»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»Ô
+Ä»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»
+ÔÄ»[2/8]ÔÄ»
+
+ FAIL  src/app/front/pa
+ges/login/login.spec.ts
+ > Login Component > 
+Form Validation > 
+should validate email 
+format
+Unknown Error: Failed 
+to load ./login.html
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ
+»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»Ô
+Ä»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»
+ÔÄ»[3/8]ÔÄ»
+
+ FAIL  src/app/front/pa
+ges/login/login.spec.ts
+ > Login Component > 
+Form Validation > 
+should require password
+Unknown Error: Failed 
+to load ./login.html
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ
+»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»Ô
+Ä»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»
+ÔÄ»[4/8]ÔÄ»
+
+ FAIL  src/app/front/pa
+ges/login/login.spec.ts
+ > Login Component > 
+onSubmit > should call 
+authService.login on 
+valid submit
+Unknown Error: Failed 
+to load ./login.html
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ
+»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»Ô
+Ä»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»
+ÔÄ»[5/8]ÔÄ»
+
+ FAIL  src/app/front/pa
+ges/login/login.spec.ts
+ > Login Component > 
+onSubmit > should 
+handle login error
+Unknown Error: Failed 
+to load ./login.html
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ
+»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»Ô
+Ä»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»
+ÔÄ»[6/8]ÔÄ»
+
+ FAIL  src/app/front/pa
+ges/login/login.spec.ts
+ > Login Component > 
+onSubmit > should not 
+call authService if 
+form is invalid
+Unknown Error: Failed 
+to load ./login.html
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ
+»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»Ô
+Ä»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»
+ÔÄ»[7/8]ÔÄ»
+
+ FAIL  src/app/front/pa
+ges/login/login.spec.ts
+ > Login Component > 
+UI helpers > should 
+toggle password 
+visibility
+Unknown Error: Failed 
+to load ./login.html
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ
+»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»Ô
+Ä»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»
+ÔÄ»[8/8]ÔÄ»
+
+
+ Test Files  1 failed (1)
+      Tests  8 failed (8)
+   Start at  15:19:30
+   Duration  1.52s (transform 106ms, setup 352ms, import 160ms, tests 66ms, environment 752ms)
+
+

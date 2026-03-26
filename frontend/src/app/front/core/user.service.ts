@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
@@ -44,7 +44,9 @@ export class UserService {
   readonly isLoading = signal<boolean>(false);
   readonly error = signal<string | null>(null);
 
-  constructor(private http: HttpClient) {}
+  private http = inject(HttpClient);
+
+  constructor() {}
 
   /**
    * Get current user's profile
@@ -52,7 +54,13 @@ export class UserService {
    */
   getProfile(): Observable<User> {
     this.isLoading.set(true);
-    return this.http.get<User>(`${this.apiUrl}/me`);
+    return this.http.get<User>(`${this.apiUrl}/me`).pipe(
+      tap(() => this.isLoading.set(false)),
+      catchError(error => {
+        this.isLoading.set(false);
+        throw error;
+      })
+    );
   }
 
   /**

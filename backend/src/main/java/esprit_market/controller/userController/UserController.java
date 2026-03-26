@@ -392,10 +392,10 @@ public class UserController {
             log.info("12. Verifying password was saved to database...");
             User verifyUser = userService.findByEmail(userEmail);
             boolean passwordChangeVerified = passwordEncoder.matches(newPassword, verifyUser.getPassword());
-            log.info("13. Password verification: {}", passwordChangeVerified ? "✅ SUCCESS" : "❌ FAILED");
+            log.info("13. Password verification: {}", passwordChangeVerified ? " SUCCESS" : " FAILED");
             
             if (!passwordChangeVerified) {
-                log.error("❌ PASSWORD VERIFICATION FAILED - Password was not actually saved!");
+                log.error(" PASSWORD VERIFICATION FAILED - Password was not actually saved!");
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                         .body(Map.of("success", false, "error", "Password change failed during verification"));
             }

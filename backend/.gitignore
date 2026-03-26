@@ -15,7 +15,7 @@ target/
 Thumbs.db
 
 ### Application properties (sensible data) ###
-application.properties
+.env
 application.yml
 
 # Angular

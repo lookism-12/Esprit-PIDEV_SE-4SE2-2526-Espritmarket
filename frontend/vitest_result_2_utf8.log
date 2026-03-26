@@ -1,0 +1,196 @@
+﻿
+ RUN  v4.1.1 C:/Users/MSI/Desktop/espritmarket/Espritmarket/frontend
+
+node.exe : stderr | src
+/app/front/core/user.se
+rvice.spec.ts > 
+UserService > 
+updateProfile > should 
+handle update errors
+Au caractère 
+C:\Program Files\nodejs
+\npx.ps1:29 : 3
++   & $NODE_EXE 
+$NPX_CLI_JS $args
++   ~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~
+    + CategoryInfo     
+         : NotSpecifi  
+  ed: (stderr | src/   
+ ap...e update erro    
+rs:String) [], Rem    
+oteException
+    + FullyQualifiedEr 
+   rorId : NativeComm  
+  andError
+ 
+ÔØî Profile update 
+failed: 
+HttpErrorResponse {
+  headers: HttpHeaders 
+{
+    headers: Map(0) {},
+    normalizedNames: 
+Map(0) {},
+    lazyInit: 
+[90mundefined[39m,
+    lazyUpdate: 
+[1mnull[22m
+  },
+  status: 
+[33m500[39m,
+  statusText: 
+[32m'Server 
+Error'[39m,
+  url: [32m'http://loc
+alhost:8090/api/users/m
+e'[39m,
+  ok: [33mfalse[39m,
+  type: 
+[90mundefined[39m,
+  redirected: 
+[90mundefined[39m,
+  responseType: 
+[90mundefined[39m,
+  name: [32m'HttpError
+Response'[39m,
+  message: [32m'Http 
+failure response for ht
+tp://localhost:8090/api
+/users/me: 500 Server 
+Error'[39m,
+  error: 
+[32m'Error'[39m
+}
+
+ Ô£ô src/app/front/core/user.service.spec.ts (9 tests) 43ms
+stdout | src/app/front/core/auth.service.spec.ts > AuthService > login > should perform login, store token, and load user profile
+­ƒöÉ Login attempt started with email: test@example.com
+­ƒîÉ API URL: http://localhost:8090/api/users/login
+Ô£à Backend response received: { token: [32m'mock-jwt-token'[39m, userId: [32m'user-1'[39m }
+­ƒÆ¥ Token and userId stored in localStorage
+Ô£à Login: Token stored, isAuthenticated set to true
+­ƒÄ¡ Extracted role from JWT: CLIENT
+­ƒôî Immediate redirect based on JWT role: CLIENT
+­ƒöÇ Redirecting user with role: CLIENT
+­ƒôÑ Loading user profile...
+­ƒÆ¥ Stored role in localStorage: CLIENT
+Ô£à User signals updated: { id: [32m'user-1'[39m, role: [32m'CLIENT'[39m, firstName: [32m'John'[39m, avatar: [1mnull[22m }
+Ô£à Login complete, user profile loaded: {
+  id: [32m'user-1'[39m,
+  firstName: [32m'John'[39m,
+  lastName: [32m'Doe'[39m,
+  email: [32m'test@example.com'[39m,
+  phone: [32m''[39m,
+  role: [32m'CLIENT'[39m,
+  isVerified: [33mtrue[39m,
+  createdAt: [35m2026-03-26T13:49:41.298Z[39m,
+  updatedAt: [35m2026-03-26T13:49:41.298Z[39m,
+  avatar: [90mundefined[39m
+}
+­ƒöÇ Final redirect with role: CLIENT
+­ƒöÇ Redirecting user with role: CLIENT
+
+stdout | src/app/front/core/auth.service.spec.ts > AuthService > login > should handle login error and clear storage
+­ƒöÉ Login attempt started with email: test@example.com
+­ƒîÉ API URL: http://localhost:8090/api/users/login
+stderr | src/app/front/
+core/auth.service.spec.
+ts > AuthService > 
+login > should handle 
+login error and clear 
+storage
+ÔØî Login failed with 
+error: 
+HttpErrorResponse {
+  headers: HttpHeaders 
+{
+    headers: Map(0) {},
+    normalizedNames: 
+Map(0) {},
+    lazyInit: 
+[90mundefined[39m,
+    lazyUpdate: 
+[1mnull[22m
+  },
+  status: 
+[33m401[39m,
+  statusText: [32m'Una
+uthorized'[39m,
+  url: [32m'http://loc
+alhost:8090/api/users/l
+ogin'[39m,
+  ok: [33mfalse[39m,
+  type: 
+[90mundefined[39m,
+  redirected: 
+[90mundefined[39m,
+  responseType: 
+[90mundefined[39m,
+  name: [32m'HttpError
+Response'[39m,
+  message: [32m'Http 
+failure response for ht
+tp://localhost:8090/api
+/users/login: 401 
+Unauthorized'[39m,
+  error: [32m'Unauthor
+ized'[39m
+}
+ÔØî Error status: 
+[33m401[39m
+ÔØî Error message: 
+Http failure response 
+for http://localhost:80
+90/api/users/login: 
+401 Unauthorized
+ÔØî Error body: 
+Unauthorized
+
+
+stdout | src/app/front/core/auth.service.spec.ts > AuthService > logout > should clear localStorage and reset signals
+­ƒöä Starting logout process...
+Ô£à Logout: localStorage cleared, all signals reset
+
+stdout | src/app/front/core/auth.service.spec.ts > AuthService > logout > should clear localStorage and reset signals
+Ô£à Successfully navigated to /login
+
+stdout | src/app/front/core/auth.service.spec.ts > AuthService > register > should send registration request and return user data
+­ƒôñ Sending registration payload to backend: {
+  email: [32m'new@example.com'[39m,
+  password: [32m'pass'[39m,
+  firstName: [32m'New'[39m,
+  lastName: [32m'User'[39m,
+  phone: [32m'12345678'[39m,
+  role: [32m'CLIENT'[39m
+}
+Ô£à Registration successful: {
+  email: [32m'new@example.com'[39m,
+  password: [32m'pass'[39m,
+  firstName: [32m'New'[39m,
+  lastName: [32m'User'[39m,
+  phone: [32m'12345678'[39m,
+  role: [32m'CLIENT'[39m,
+  id: [32m'user-2'[39m,
+  roles: [ [32m'CLIENT'[39m ],
+  enabled: [33mtrue[39m
+}
+
+stdout | src/app/front/core/auth.service.spec.ts > AuthService > loadCurrentUser > should update signals with user data from backend
+­ƒôÀ Avatar URL set: http://localhost:8090/avatars/1.png
+­ƒÆ¥ Stored role in localStorage: ADMIN
+Ô£à User signals updated: {
+  id: [32m'user-1'[39m,
+  role: [32m'ADMIN'[39m,
+  firstName: [32m'John'[39m,
+  avatar: [32m'http://localhost:8090/avatars/1.png'[39m
+}
+
+ Ô£ô src/app/front/core/auth.service.spec.ts (6 tests) 44ms
+
+ Test Files  2 passed (2)
+      Tests  15 passed (15)
+   Start at  14:49:39
+   Duration  1.43s (transform 151ms, setup 713ms, import 163ms, tests 87ms, environment 1.50s)
+
+

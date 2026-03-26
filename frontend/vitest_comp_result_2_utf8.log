@@ -1,0 +1,446 @@
+﻿
+ RUN  v4.1.1 C:/Users/MSI/Desktop/espritmarket/Espritmarket/frontend
+
+ ÔØ» src/app/front/pages/login/login.spec.ts (8 tests | 8 failed) 16ms
+     ├ù should create 6ms
+       ├ù should be invalid when empty 1ms
+       ├ù should validate email format 1ms
+       ├ù should require password 1ms
+       ├ù should call authService.login on valid submit 1ms
+       ├ù should handle login error 1ms
+       ├ù should not call authService if form is invalid 0ms
+       ├ù should toggle password visibility 0ms
+ ÔØ» src/app/front/pages/register/register.spec.ts (9 tests | 9 failed) 17ms
+     ├ù should create 6ms
+       ├ù should start at step 1 1ms
+       ├ù should go to step 2 when role selected 1ms
+       ├ù should not go to step 2 if no role selected 1ms
+       ├ù should require businessName for provider 1ms
+       ├ù should require taxId for provider 1ms
+       ├ù should validate password match 0ms
+       ├ù should build correct payload and call authService.register 0ms
+       ├ù should handle registration error 1ms
+ ÔØ» src/app/front/pages/profile/profile.spec.ts (7 tests | 7 failed) 14ms
+     ├ù should create 6ms
+     ├ù should initialize with user data from AuthService 1ms
+       ├ù should set active tab from query params on init 1ms
+       ├ù should change active tab when setActiveTab is called 1ms
+       ├ù should call userService.updateProfile with form data 1ms
+       ├ù should not save if form is invalid 1ms
+       ├ù should calculate loyalty progress correctly 1ms
+node.exe : 
+Au caractère 
+C:\Program Files\nodejs
+\npx.ps1:29 : 3
++   & $NODE_EXE 
+$NPX_CLI_JS $args
++   ~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~
+    + CategoryInfo     
+         : NotSpecifi  
+  ed: (:String) [],    
+ RemoteException
+    + FullyQualifiedEr 
+   rorId : NativeComm  
+  andError
+ 
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ» 
+Failed Tests 24 
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»
+
+ FAIL  src/app/front/pa
+ges/login/login.spec.ts
+ > Login Component > 
+should create
+ FAIL  src/app/front/pa
+ges/login/login.spec.ts
+ > Login Component > 
+Form Validation > 
+should be invalid when 
+empty
+ FAIL  src/app/front/pa
+ges/login/login.spec.ts
+ > Login Component > 
+Form Validation > 
+should validate email 
+format
+ FAIL  src/app/front/pa
+ges/login/login.spec.ts
+ > Login Component > 
+Form Validation > 
+should require password
+ FAIL  src/app/front/pa
+ges/login/login.spec.ts
+ > Login Component > 
+onSubmit > should call 
+authService.login on 
+valid submit
+ FAIL  src/app/front/pa
+ges/login/login.spec.ts
+ > Login Component > 
+onSubmit > should 
+handle login error
+ FAIL  src/app/front/pa
+ges/login/login.spec.ts
+ > Login Component > 
+onSubmit > should not 
+call authService if 
+form is invalid
+ FAIL  src/app/front/pa
+ges/login/login.spec.ts
+ > Login Component > 
+UI helpers > should 
+toggle password 
+visibility
+Error: Component 
+'Login' is not 
+resolved:
+ - templateUrl: 
+./login.html
+ - styleUrl: 
+./login.scss
+Did you run and wait 
+for 'resolveComponentRe
+sources()'?
+ ÔØ» Function.get ../da
+rwin_arm64-fastbuild-ST
+-fdfa778d11ba/bin/packa
+ges/core/src/render3/ji
+t/directive.ts:106:16
+ ÔØ» ╔Ácmp ../darwin_ar
+m64-fastbuild-ST-fdfa77
+8d11ba/bin/packages/cor
+e/testing/src/test_bed_
+compiler.ts:1116:24
+ ÔØ» getComponentDef ..
+/darwin_arm64-fastbuild
+-ST-fdfa778d11ba/bin/pa
+ckages/core/testing/src
+/test_bed_compiler.ts:1
+109:14
+ ÔØ» 
+isStandaloneComponent .
+./darwin_arm64-fastbuil
+d-ST-fdfa778d11ba/bin/p
+ackages/core/testing/sr
+c/test_bed_compiler.ts:
+784:19
+ ÔØ» queueTypesFromModu
+lesArrayRecur ../darwin
+_arm64-fastbuild-ST-fdf
+a778d11ba/bin/packages/
+core/testing/src/test_b
+ed_compiler.ts:808:4
+ ÔØ» queueTypesFromModu
+lesArray ../darwin_arm6
+4-fastbuild-ST-fdfa778d
+11ba/bin/packages/core/
+testing/src/test_bed_co
+mpiler.ts:226:11
+ ÔØ» 
+configureTestingModule 
+../darwin_arm64-fastbui
+ld-ST-fdfa778d11ba/bin/
+packages/core/testing/s
+rc/test_bed.ts:584:18
+ ÔØ» 
+configureTestingModule 
+../darwin_arm64-fastbui
+ld-ST-fdfa778d11ba/bin/
+packages/core/testing/s
+rc/test_bed.ts:319:32
+ ÔØ» src/app/front/page
+s/login/login.spec.ts:4
+2:19
+     40|     });
+     41|
+     42|     await Test
+Bed.configureTestingMod
+ule({
+       |               
+    ^
+     43|       
+imports: 
+[ReactiveFormsModule, 
+Login],
+     44|       
+providers: [
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ
+»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»Ô
+Ä»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»
+[1/24]ÔÄ»
+
+ FAIL  src/app/front/pa
+ges/profile/profile.spe
+c.ts > Profile 
+Component > should 
+create
+ FAIL  src/app/front/pa
+ges/profile/profile.spe
+c.ts > Profile 
+Component > should 
+initialize with user 
+data from AuthService
+ FAIL  src/app/front/pa
+ges/profile/profile.spe
+c.ts > Profile 
+Component > Tab 
+Management > should 
+set active tab from 
+query params on init
+ FAIL  src/app/front/pa
+ges/profile/profile.spe
+c.ts > Profile 
+Component > Tab 
+Management > should 
+change active tab when 
+setActiveTab is called
+ FAIL  src/app/front/pa
+ges/profile/profile.spe
+c.ts > Profile 
+Component > Profile 
+Update > should call us
+erService.updateProfile
+ with form data
+ FAIL  src/app/front/pa
+ges/profile/profile.spe
+c.ts > Profile 
+Component > Profile 
+Update > should not 
+save if form is invalid
+ FAIL  src/app/front/pa
+ges/profile/profile.spe
+c.ts > Profile 
+Component > Loyalty 
+Progress > should 
+calculate loyalty 
+progress correctly
+Error: Component 
+'Profile' is not 
+resolved:
+ - templateUrl: 
+./profile.html
+ - styleUrl: 
+./profile.scss
+Did you run and wait 
+for 'resolveComponentRe
+sources()'?
+ ÔØ» Function.get ../da
+rwin_arm64-fastbuild-ST
+-fdfa778d11ba/bin/packa
+ges/core/src/render3/ji
+t/directive.ts:106:16
+ ÔØ» ╔Ácmp ../darwin_ar
+m64-fastbuild-ST-fdfa77
+8d11ba/bin/packages/cor
+e/testing/src/test_bed_
+compiler.ts:1116:24
+ ÔØ» getComponentDef ..
+/darwin_arm64-fastbuild
+-ST-fdfa778d11ba/bin/pa
+ckages/core/testing/src
+/test_bed_compiler.ts:1
+109:14
+ ÔØ» 
+isStandaloneComponent .
+./darwin_arm64-fastbuil
+d-ST-fdfa778d11ba/bin/p
+ackages/core/testing/sr
+c/test_bed_compiler.ts:
+784:19
+ ÔØ» queueTypesFromModu
+lesArrayRecur ../darwin
+_arm64-fastbuild-ST-fdf
+a778d11ba/bin/packages/
+core/testing/src/test_b
+ed_compiler.ts:808:4
+ ÔØ» queueTypesFromModu
+lesArray ../darwin_arm6
+4-fastbuild-ST-fdfa778d
+11ba/bin/packages/core/
+testing/src/test_bed_co
+mpiler.ts:226:11
+ ÔØ» 
+configureTestingModule 
+../darwin_arm64-fastbui
+ld-ST-fdfa778d11ba/bin/
+packages/core/testing/s
+rc/test_bed.ts:584:18
+ ÔØ» 
+configureTestingModule 
+../darwin_arm64-fastbui
+ld-ST-fdfa778d11ba/bin/
+packages/core/testing/s
+rc/test_bed.ts:319:32
+ ÔØ» src/app/front/page
+s/profile/profile.spec.
+ts:57:19
+     55|     TestBed.ov
+errideComponent(Passwor
+dChangeModal, { set: { 
+template: ÔÇª
+     56|
+     57|     await Test
+Bed.configureTestingMod
+ule({
+       |               
+    ^
+     58|       
+imports: 
+[ReactiveFormsModule, 
+Profile],
+     59|       
+providers: [
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ
+»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»Ô
+Ä»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»
+[2/24]ÔÄ»
+
+ FAIL  src/app/front/pa
+ges/register/register.s
+pec.ts > Register 
+Component > should 
+create
+ FAIL  src/app/front/pa
+ges/register/register.s
+pec.ts > Register 
+Component > Step 
+Management > should 
+start at step 1
+ FAIL  src/app/front/pa
+ges/register/register.s
+pec.ts > Register 
+Component > Step 
+Management > should go 
+to step 2 when role 
+selected
+ FAIL  src/app/front/pa
+ges/register/register.s
+pec.ts > Register 
+Component > Step 
+Management > should 
+not go to step 2 if no 
+role selected
+ FAIL  src/app/front/pa
+ges/register/register.s
+pec.ts > Register 
+Component > Form 
+Validation - Role 
+Based > should require 
+businessName for 
+provider
+ FAIL  src/app/front/pa
+ges/register/register.s
+pec.ts > Register 
+Component > Form 
+Validation - Role 
+Based > should require 
+taxId for provider
+ FAIL  src/app/front/pa
+ges/register/register.s
+pec.ts > Register 
+Component > Form 
+Validation - Role 
+Based > should 
+validate password match
+ FAIL  src/app/front/pa
+ges/register/register.s
+pec.ts > Register 
+Component > onSubmit > 
+should build correct 
+payload and call 
+authService.register
+ FAIL  src/app/front/pa
+ges/register/register.s
+pec.ts > Register 
+Component > onSubmit > 
+should handle 
+registration error
+Error: Component 
+'Register' is not 
+resolved:
+ - templateUrl: 
+./register.html
+ - styleUrl: 
+./register.scss
+Did you run and wait 
+for 'resolveComponentRe
+sources()'?
+ ÔØ» Function.get ../da
+rwin_arm64-fastbuild-ST
+-fdfa778d11ba/bin/packa
+ges/core/src/render3/ji
+t/directive.ts:106:16
+ ÔØ» ╔Ácmp ../darwin_ar
+m64-fastbuild-ST-fdfa77
+8d11ba/bin/packages/cor
+e/testing/src/test_bed_
+compiler.ts:1116:24
+ ÔØ» getComponentDef ..
+/darwin_arm64-fastbuild
+-ST-fdfa778d11ba/bin/pa
+ckages/core/testing/src
+/test_bed_compiler.ts:1
+109:14
+ ÔØ» 
+isStandaloneComponent .
+./darwin_arm64-fastbuil
+d-ST-fdfa778d11ba/bin/p
+ackages/core/testing/sr
+c/test_bed_compiler.ts:
+784:19
+ ÔØ» queueTypesFromModu
+lesArrayRecur ../darwin
+_arm64-fastbuild-ST-fdf
+a778d11ba/bin/packages/
+core/testing/src/test_b
+ed_compiler.ts:808:4
+ ÔØ» queueTypesFromModu
+lesArray ../darwin_arm6
+4-fastbuild-ST-fdfa778d
+11ba/bin/packages/core/
+testing/src/test_bed_co
+mpiler.ts:226:11
+ ÔØ» 
+configureTestingModule 
+../darwin_arm64-fastbui
+ld-ST-fdfa778d11ba/bin/
+packages/core/testing/s
+rc/test_bed.ts:584:18
+ ÔØ» 
+configureTestingModule 
+../darwin_arm64-fastbui
+ld-ST-fdfa778d11ba/bin/
+packages/core/testing/s
+rc/test_bed.ts:319:32
+ ÔØ» src/app/front/page
+s/register/register.spe
+c.ts:31:19
+     29|     });
+     30|
+     31|     await Test
+Bed.configureTestingMod
+ule({
+       |               
+    ^
+     32|       
+imports: 
+[ReactiveFormsModule, 
+Register],
+     33|       
+providers: [
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ
+»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»Ô
+Ä»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»
+[3/24]ÔÄ»
+
+
+ Test Files  3 failed (3)
+      Tests  24 failed (24)
+   Start at  14:52:09
+   Duration  2.95s (transform 1.35s, setup 1.11s, import 1.58s, tests 47ms, environment 2.22s)
+
+

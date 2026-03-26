@@ -1,0 +1,604 @@
+﻿
+ RUN  v4.1.1 C:/Users/MSI/Desktop/espritmarket/Espritmarket/frontend
+
+stdout | src/app/front/core/user.service.advanced.spec.ts > UserService - Advanced Tests > uploadAvatar > should upload valid image file
+­ƒôñ Uploading file with details:
+  File name: avatar.png
+  File size: 0.00 MB
+  Content type: image/png
+­ƒôª FormData prepared, sending POST to /me/avatar
+
+node.exe : stderr | src
+/app/front/core/user.se
+rvice.spec.ts > 
+UserService > 
+updateProfile > should 
+handle update errors
+Au caractère 
+C:\Program Files\nodejs
+\npx.ps1:29 : 3
++   & $NODE_EXE 
+$NPX_CLI_JS $args
++   ~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~
+    + CategoryInfo     
+         : NotSpecifi  
+  ed: (stderr | src/   
+ ap...e update erro    
+rs:String) [], Rem    
+oteException
+    + FullyQualifiedEr 
+   rorId : NativeComm  
+  andError
+ 
+ÔØî Profile update 
+failed: 
+HttpErrorResponse {
+  headers: HttpHeaders 
+{
+    headers: Map(0) {},
+    normalizedNames: 
+Map(0) {},
+    lazyInit: 
+[90mundefined[39m,
+    lazyUpdate: 
+[1mnull[22m
+  },
+  status: 
+[33m500[39m,
+  statusText: 
+[32m'Server 
+Error'[39m,
+  url: [32m'http://loc
+alhost:8090/api/users/m
+e'[39m,
+  ok: [33mfalse[39m,
+  type: 
+[90mundefined[39m,
+  redirected: 
+[90mundefined[39m,
+  responseType: 
+[90mundefined[39m,
+  name: [32m'HttpError
+Response'[39m,
+  message: [32m'Http 
+failure response for ht
+tp://localhost:8090/api
+/users/me: 500 Server 
+Error'[39m,
+  error: 
+[32m'Error'[39m
+}
+
+stdout | src/app/front/core/auth.service.spec.ts > AuthService > login > should perform login, store token, and load user profile
+­ƒöÉ Login attempt started with email: test@example.com
+­ƒîÉ API URL: http://localhost:8090/api/users/login
+Ô£à Backend response received: { token: [32m'mock-jwt-token'[39m, userId: [32m'user-1'[39m }
+­ƒÆ¥ Token and userId stored in localStorage
+Ô£à Login: Token stored, isAuthenticated set to true
+­ƒÄ¡ Extracted role from JWT: CLIENT
+­ƒôî Immediate redirect based on JWT role: CLIENT
+­ƒöÇ Redirecting user with role: CLIENT
+­ƒôÑ Loading user profile...
+­ƒÆ¥ Stored role in localStorage: CLIENT
+Ô£à User signals updated: { id: [32m'user-1'[39m, role: [32m'CLIENT'[39m, firstName: [32m'John'[39m, avatar: [1mnull[22m }
+Ô£à Login complete, user profile loaded: {
+  id: [32m'user-1'[39m,
+  firstName: [32m'John'[39m,
+  lastName: [32m'Doe'[39m,
+  email: [32m'test@example.com'[39m,
+  phone: [32m''[39m,
+  role: [32m'CLIENT'[39m,
+  isVerified: [33mtrue[39m,
+  createdAt: [35m2026-03-26T14:04:15.150Z[39m,
+  updatedAt: [35m2026-03-26T14:04:15.150Z[39m,
+  avatar: [90mundefined[39m
+}
+­ƒöÇ Final redirect with role: CLIENT
+­ƒöÇ Redirecting user with role: CLIENT
+
+stdout | src/app/front/core/auth.service.spec.ts > AuthService > login > should handle login error and clear storage
+­ƒöÉ Login attempt started with email: test@example.com
+­ƒîÉ API URL: http://localhost:8090/api/users/login
+
+stderr | src/app/front/
+core/auth.service.spec.
+ts > AuthService > 
+login > should handle 
+login error and clear 
+storage
+ÔØî Login failed with 
+error: 
+HttpErrorResponse {
+  headers: HttpHeaders 
+{
+    headers: Map(0) {},
+    normalizedNames: 
+Map(0) {},
+    lazyInit: 
+[90mundefined[39m,
+    lazyUpdate: 
+[1mnull[22m
+  },
+  status: 
+[33m401[39m,
+  statusText: [32m'Una
+uthorized'[39m,
+  url: [32m'http://loc
+alhost:8090/api/users/l
+ogin'[39m,
+  ok: [33mfalse[39m,
+  type: 
+[90mundefined[39m,
+  redirected: 
+[90mundefined[39m,
+  responseType: 
+[90mundefined[39m,
+  name: [32m'HttpError
+Response'[39m,
+  message: [32m'Http 
+failure response for ht
+tp://localhost:8090/api
+/users/login: 401 
+Unauthorized'[39m,
+  error: [32m'Unauthor
+ized'[39m
+}
+ÔØî Error status: 
+[33m401[39m
+ÔØî Error message: 
+Http failure response 
+for http://localhost:80
+90/api/users/login: 
+401 Unauthorized
+ÔØî Error body: 
+Unauthorized
+
+ Ô£ô src/app/front/core/user.service.advanced.spec.ts (6 tests) 69ms
+stdout | src/app/front/core/auth.service.spec.ts > AuthService > logout > should clear localStorage and reset signals
+­ƒöä Starting logout process...
+Ô£à Logout: localStorage cleared, all signals reset
+
+stdout | src/app/front/core/auth.service.spec.ts > AuthService > logout > should clear localStorage and reset signals
+Ô£à Successfully navigated to /login
+
+ Ô£ô src/app/front/core/user.service.spec.ts (9 tests) 86ms
+stdout | src/app/front/core/auth.service.spec.ts > AuthService > register > should send registration request and return user data
+­ƒôñ Sending registration payload to backend: {
+  email: [32m'new@example.com'[39m,
+  password: [32m'pass'[39m,
+  firstName: [32m'New'[39m,
+  lastName: [32m'User'[39m,
+  phone: [32m'12345678'[39m,
+  role: [32m'CLIENT'[39m
+}
+Ô£à Registration successful: {
+  email: [32m'new@example.com'[39m,
+  password: [32m'pass'[39m,
+  firstName: [32m'New'[39m,
+  lastName: [32m'User'[39m,
+  phone: [32m'12345678'[39m,
+  role: [32m'CLIENT'[39m,
+  id: [32m'user-2'[39m,
+  roles: [ [32m'CLIENT'[39m ],
+  enabled: [33mtrue[39m
+}
+
+stdout | src/app/front/core/auth.service.spec.ts > AuthService > loadCurrentUser > should update signals with user data from backend
+­ƒôÀ Avatar URL set: http://localhost:8090/avatars/1.png
+­ƒÆ¥ Stored role in localStorage: ADMIN
+Ô£à User signals updated: {
+  id: [32m'user-1'[39m,
+  role: [32m'ADMIN'[39m,
+  firstName: [32m'John'[39m,
+  avatar: [32m'http://localhost:8090/avatars/1.png'[39m
+}
+
+ Ô£ô src/app/front/core/auth.service.spec.ts (6 tests) 75ms
+ ÔØ» src/app/front/pages/login/login.spec.ts (8 tests | 8 failed) 27ms
+     ├ù should create 8ms
+       ├ù should be invalid when empty 3ms
+       ├ù should validate email format 1ms
+       ├ù should require password 1ms
+       ├ù should call authService.login on valid submit 2ms
+       ├ù should handle login error 1ms
+       ├ù should not call authService if form is invalid 1ms
+       ├ù should toggle password visibility 1ms
+ ÔØ» src/app/front/pages/register/register.spec.ts (9 tests | 9 failed) 89ms
+     ├ù should create 24ms
+       ├ù should start at step 1 4ms
+       ├ù should go to step 2 when role selected 4ms
+       ├ù should not go to step 2 if no role selected 3ms
+       ├ù should require businessName for provider 3ms
+       ├ù should require taxId for provider 1ms
+       ├ù should validate password match 1ms
+       ├ù should build correct payload and call authService.register 1ms
+       ├ù should handle registration error 2ms
+ ÔØ» src/app/front/pages/profile/profile.spec.ts (7 tests | 7 failed) 51ms
+     ├ù should create 18ms
+     ├ù should initialize with user data from AuthService 4ms
+       ├ù should set active tab from query params on init 3ms
+       ├ù should change active tab when setActiveTab is called 2ms
+       ├ù should call userService.updateProfile with form data 4ms
+       ├ù should not save if form is invalid 2ms
+       ├ù should calculate loyalty progress correctly 4ms
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ» 
+Failed Tests 24 
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»
+
+ FAIL  src/app/front/pa
+ges/login/login.spec.ts
+ > Login Component > 
+should create
+ FAIL  src/app/front/pa
+ges/login/login.spec.ts
+ > Login Component > 
+Form Validation > 
+should be invalid when 
+empty
+ FAIL  src/app/front/pa
+ges/login/login.spec.ts
+ > Login Component > 
+Form Validation > 
+should validate email 
+format
+ FAIL  src/app/front/pa
+ges/login/login.spec.ts
+ > Login Component > 
+Form Validation > 
+should require password
+ FAIL  src/app/front/pa
+ges/login/login.spec.ts
+ > Login Component > 
+onSubmit > should call 
+authService.login on 
+valid submit
+ FAIL  src/app/front/pa
+ges/login/login.spec.ts
+ > Login Component > 
+onSubmit > should 
+handle login error
+ FAIL  src/app/front/pa
+ges/login/login.spec.ts
+ > Login Component > 
+onSubmit > should not 
+call authService if 
+form is invalid
+ FAIL  src/app/front/pa
+ges/login/login.spec.ts
+ > Login Component > 
+UI helpers > should 
+toggle password 
+visibility
+Error: Component 
+'Login' is not 
+resolved:
+ - templateUrl: 
+./login.html
+ - styleUrl: 
+./login.scss
+Did you run and wait 
+for 'resolveComponentRe
+sources()'?
+ ÔØ» Function.get ../da
+rwin_arm64-fastbuild-ST
+-fdfa778d11ba/bin/packa
+ges/core/src/render3/ji
+t/directive.ts:106:16
+ ÔØ» NG_COMP_DEF ../dar
+win_arm64-fastbuild-ST-
+fdfa778d11ba/bin/packag
+es/core/src/render3/def
+_getters.ts:41:14
+ ÔØ» getComponentDef ..
+/darwin_arm64-fastbuild
+-ST-fdfa778d11ba/bin/pa
+ckages/core/src/render3
+/jit/directive.ts:415:7
+ ÔØ» addDirectiveDefToU
+ndecoratedParents ../da
+rwin_arm64-fastbuild-ST
+-fdfa778d11ba/bin/packa
+ges/core/src/render3/ji
+t/directive.ts:162:12
+ ÔØ» ╔Ácmp ../darwin_ar
+m64-fastbuild-ST-fdfa77
+8d11ba/bin/packages/cor
+e/testing/src/test_bed_
+compiler.ts:1116:24
+ ÔØ» getComponentDef ..
+/darwin_arm64-fastbuild
+-ST-fdfa778d11ba/bin/pa
+ckages/core/testing/src
+/test_bed_compiler.ts:1
+109:14
+ ÔØ» 
+isStandaloneComponent .
+./darwin_arm64-fastbuil
+d-ST-fdfa778d11ba/bin/p
+ackages/core/testing/sr
+c/test_bed_compiler.ts:
+784:19
+ ÔØ» queueTypesFromModu
+lesArrayRecur ../darwin
+_arm64-fastbuild-ST-fdf
+a778d11ba/bin/packages/
+core/testing/src/test_b
+ed_compiler.ts:808:4
+ ÔØ» queueTypesFromModu
+lesArray ../darwin_arm6
+4-fastbuild-ST-fdfa778d
+11ba/bin/packages/core/
+testing/src/test_bed_co
+mpiler.ts:226:11
+ ÔØ» 
+configureTestingModule 
+../darwin_arm64-fastbui
+ld-ST-fdfa778d11ba/bin/
+packages/core/testing/s
+rc/test_bed.ts:584:18
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ
+»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»Ô
+Ä»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»
+[1/24]ÔÄ»
+
+ FAIL  src/app/front/pa
+ges/profile/profile.spe
+c.ts > Profile 
+Component > should 
+create
+ FAIL  src/app/front/pa
+ges/profile/profile.spe
+c.ts > Profile 
+Component > should 
+initialize with user 
+data from AuthService
+ FAIL  src/app/front/pa
+ges/profile/profile.spe
+c.ts > Profile 
+Component > Tab 
+Management > should 
+set active tab from 
+query params on init
+ FAIL  src/app/front/pa
+ges/profile/profile.spe
+c.ts > Profile 
+Component > Tab 
+Management > should 
+change active tab when 
+setActiveTab is called
+ FAIL  src/app/front/pa
+ges/profile/profile.spe
+c.ts > Profile 
+Component > Profile 
+Update > should call us
+erService.updateProfile
+ with form data
+ FAIL  src/app/front/pa
+ges/profile/profile.spe
+c.ts > Profile 
+Component > Profile 
+Update > should not 
+save if form is invalid
+ FAIL  src/app/front/pa
+ges/profile/profile.spe
+c.ts > Profile 
+Component > Loyalty 
+Progress > should 
+calculate loyalty 
+progress correctly
+Error: Component 
+'Profile' is not 
+resolved:
+ - templateUrl: 
+./profile.html
+ - styleUrl: 
+./profile.scss
+Did you run and wait 
+for 'resolveComponentRe
+sources()'?
+ ÔØ» Function.get ../da
+rwin_arm64-fastbuild-ST
+-fdfa778d11ba/bin/packa
+ges/core/src/render3/ji
+t/directive.ts:106:16
+ ÔØ» NG_COMP_DEF ../dar
+win_arm64-fastbuild-ST-
+fdfa778d11ba/bin/packag
+es/core/src/render3/def
+_getters.ts:41:14
+ ÔØ» getComponentDef ..
+/darwin_arm64-fastbuild
+-ST-fdfa778d11ba/bin/pa
+ckages/core/src/render3
+/jit/directive.ts:415:7
+ ÔØ» addDirectiveDefToU
+ndecoratedParents ../da
+rwin_arm64-fastbuild-ST
+-fdfa778d11ba/bin/packa
+ges/core/src/render3/ji
+t/directive.ts:162:12
+ ÔØ» ╔Ácmp ../darwin_ar
+m64-fastbuild-ST-fdfa77
+8d11ba/bin/packages/cor
+e/testing/src/test_bed_
+compiler.ts:1116:24
+ ÔØ» getComponentDef ..
+/darwin_arm64-fastbuild
+-ST-fdfa778d11ba/bin/pa
+ckages/core/testing/src
+/test_bed_compiler.ts:1
+109:14
+ ÔØ» 
+isStandaloneComponent .
+./darwin_arm64-fastbuil
+d-ST-fdfa778d11ba/bin/p
+ackages/core/testing/sr
+c/test_bed_compiler.ts:
+784:19
+ ÔØ» queueTypesFromModu
+lesArrayRecur ../darwin
+_arm64-fastbuild-ST-fdf
+a778d11ba/bin/packages/
+core/testing/src/test_b
+ed_compiler.ts:808:4
+ ÔØ» queueTypesFromModu
+lesArray ../darwin_arm6
+4-fastbuild-ST-fdfa778d
+11ba/bin/packages/core/
+testing/src/test_bed_co
+mpiler.ts:226:11
+ ÔØ» 
+configureTestingModule 
+../darwin_arm64-fastbui
+ld-ST-fdfa778d11ba/bin/
+packages/core/testing/s
+rc/test_bed.ts:584:18
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ
+»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»Ô
+Ä»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»
+[2/24]ÔÄ»
+
+ FAIL  src/app/front/pa
+ges/register/register.s
+pec.ts > Register 
+Component > should 
+create
+ FAIL  src/app/front/pa
+ges/register/register.s
+pec.ts > Register 
+Component > Step 
+Management > should 
+start at step 1
+ FAIL  src/app/front/pa
+ges/register/register.s
+pec.ts > Register 
+Component > Step 
+Management > should go 
+to step 2 when role 
+selected
+ FAIL  src/app/front/pa
+ges/register/register.s
+pec.ts > Register 
+Component > Step 
+Management > should 
+not go to step 2 if no 
+role selected
+ FAIL  src/app/front/pa
+ges/register/register.s
+pec.ts > Register 
+Component > Form 
+Validation - Role 
+Based > should require 
+businessName for 
+provider
+ FAIL  src/app/front/pa
+ges/register/register.s
+pec.ts > Register 
+Component > Form 
+Validation - Role 
+Based > should require 
+taxId for provider
+ FAIL  src/app/front/pa
+ges/register/register.s
+pec.ts > Register 
+Component > Form 
+Validation - Role 
+Based > should 
+validate password match
+ FAIL  src/app/front/pa
+ges/register/register.s
+pec.ts > Register 
+Component > onSubmit > 
+should build correct 
+payload and call 
+authService.register
+ FAIL  src/app/front/pa
+ges/register/register.s
+pec.ts > Register 
+Component > onSubmit > 
+should handle 
+registration error
+Error: Component 
+'Register' is not 
+resolved:
+ - templateUrl: 
+./register.html
+ - styleUrl: 
+./register.scss
+Did you run and wait 
+for 'resolveComponentRe
+sources()'?
+ ÔØ» Function.get ../da
+rwin_arm64-fastbuild-ST
+-fdfa778d11ba/bin/packa
+ges/core/src/render3/ji
+t/directive.ts:106:16
+ ÔØ» NG_COMP_DEF ../dar
+win_arm64-fastbuild-ST-
+fdfa778d11ba/bin/packag
+es/core/src/render3/def
+_getters.ts:41:14
+ ÔØ» getComponentDef ..
+/darwin_arm64-fastbuild
+-ST-fdfa778d11ba/bin/pa
+ckages/core/src/render3
+/jit/directive.ts:415:7
+ ÔØ» addDirectiveDefToU
+ndecoratedParents ../da
+rwin_arm64-fastbuild-ST
+-fdfa778d11ba/bin/packa
+ges/core/src/render3/ji
+t/directive.ts:162:12
+ ÔØ» ╔Ácmp ../darwin_ar
+m64-fastbuild-ST-fdfa77
+8d11ba/bin/packages/cor
+e/testing/src/test_bed_
+compiler.ts:1116:24
+ ÔØ» getComponentDef ..
+/darwin_arm64-fastbuild
+-ST-fdfa778d11ba/bin/pa
+ckages/core/testing/src
+/test_bed_compiler.ts:1
+109:14
+ ÔØ» 
+isStandaloneComponent .
+./darwin_arm64-fastbuil
+d-ST-fdfa778d11ba/bin/p
+ackages/core/testing/sr
+c/test_bed_compiler.ts:
+784:19
+ ÔØ» queueTypesFromModu
+lesArrayRecur ../darwin
+_arm64-fastbuild-ST-fdf
+a778d11ba/bin/packages/
+core/testing/src/test_b
+ed_compiler.ts:808:4
+ ÔØ» queueTypesFromModu
+lesArray ../darwin_arm6
+4-fastbuild-ST-fdfa778d
+11ba/bin/packages/core/
+testing/src/test_bed_co
+mpiler.ts:226:11
+ ÔØ» 
+configureTestingModule 
+../darwin_arm64-fastbui
+ld-ST-fdfa778d11ba/bin/
+packages/core/testing/s
+rc/test_bed.ts:584:18
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ
+»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»Ô
+Ä»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»
+[3/24]ÔÄ»
+
+
+ Test Files  3 failed | 3 passed (6)
+      Tests  24 failed | 21 passed (45)
+   Start at  15:04:13
+   Duration  16.31s (transform 9.44s, setup 3.39s, import 13.61s, tests 397ms, environment 6.45s)
+
+

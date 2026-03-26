@@ -1,0 +1,557 @@
+﻿
+ RUN  v4.1.1 C:/Users/MSI/Desktop/espritmarket/Espritmarket/frontend
+
+stdout | src/app/front/core/user.service.advanced.spec.ts > UserService - Advanced Tests > uploadAvatar > should upload valid image file
+­ƒôñ Uploading file with details:
+  File name: avatar.png
+  File size: 0.00 MB
+  Content type: image/png
+­ƒôª FormData prepared, sending POST to /me/avatar
+
+node.exe : stderr | src
+/app/front/core/user.se
+rvice.spec.ts > 
+UserService > 
+updateProfile > should 
+handle update errors
+Au caractère 
+C:\Program Files\nodejs
+\npx.ps1:29 : 3
++   & $NODE_EXE 
+$NPX_CLI_JS $args
++   ~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~
+    + CategoryInfo     
+         : NotSpecifi  
+  ed: (stderr | src/   
+ ap...e update erro    
+rs:String) [], Rem    
+oteException
+    + FullyQualifiedEr 
+   rorId : NativeComm  
+  andError
+ 
+ÔØî Profile update 
+failed: 
+HttpErrorResponse {
+  headers: HttpHeaders 
+{
+    headers: Map(0) {},
+    normalizedNames: 
+Map(0) {},
+    lazyInit: 
+[90mundefined[39m,
+    lazyUpdate: 
+[1mnull[22m
+  },
+  status: 
+[33m500[39m,
+  statusText: 
+[32m'Server 
+Error'[39m,
+  url: [32m'http://loc
+alhost:8090/api/users/m
+e'[39m,
+  ok: [33mfalse[39m,
+  type: 
+[90mundefined[39m,
+  redirected: 
+[90mundefined[39m,
+  responseType: 
+[90mundefined[39m,
+  name: [32m'HttpError
+Response'[39m,
+  message: [32m'Http 
+failure response for ht
+tp://localhost:8090/api
+/users/me: 500 Server 
+Error'[39m,
+  error: 
+[32m'Error'[39m
+}
+
+ Ô£ô src/app/front/core/user.service.advanced.spec.ts (6 tests) 43ms
+ Ô£ô src/app/front/core/user.service.spec.ts (9 tests) 63ms
+stdout | src/app/front/core/auth.service.spec.ts > AuthService > login > should perform login, store token, and load user profile
+­ƒöÉ Login attempt started with email: test@example.com
+­ƒîÉ API URL: http://localhost:8090/api/users/login
+Ô£à Backend response received: { token: [32m'mock-jwt-token'[39m, userId: [32m'user-1'[39m }
+­ƒÆ¥ Token and userId stored in localStorage
+Ô£à Login: Token stored, isAuthenticated set to true
+­ƒÄ¡ Extracted role from JWT: CLIENT
+­ƒôî Immediate redirect based on JWT role: CLIENT
+­ƒöÇ Redirecting user with role: CLIENT
+­ƒôÑ Loading user profile...
+­ƒÆ¥ Stored role in localStorage: CLIENT
+Ô£à User signals updated: { id: [32m'user-1'[39m, role: [32m'CLIENT'[39m, firstName: [32m'John'[39m, avatar: [1mnull[22m }
+Ô£à Login complete, user profile loaded: {
+  id: [32m'user-1'[39m,
+  firstName: [32m'John'[39m,
+  lastName: [32m'Doe'[39m,
+  email: [32m'test@example.com'[39m,
+  phone: [32m''[39m,
+  role: [32m'CLIENT'[39m,
+  isVerified: [33mtrue[39m,
+  createdAt: [35m2026-03-26T14:38:43.457Z[39m,
+  updatedAt: [35m2026-03-26T14:38:43.457Z[39m,
+  avatar: [90mundefined[39m
+}
+­ƒöÇ Final redirect with role: CLIENT
+­ƒöÇ Redirecting user with role: CLIENT
+
+stdout | src/app/front/core/auth.service.spec.ts > AuthService > login > should handle login error and clear storage
+­ƒöÉ Login attempt started with email: test@example.com
+­ƒîÉ API URL: http://localhost:8090/api/users/login
+
+stderr | src/app/front/
+core/auth.service.spec.
+ts > AuthService > 
+login > should handle 
+login error and clear 
+storage
+ÔØî Login failed with 
+error: 
+HttpErrorResponse {
+  headers: HttpHeaders 
+{
+    headers: Map(0) {},
+    normalizedNames: 
+Map(0) {},
+    lazyInit: 
+[90mundefined[39m,
+    lazyUpdate: 
+[1mnull[22m
+  },
+  status: 
+[33m401[39m,
+  statusText: [32m'Una
+uthorized'[39m,
+  url: [32m'http://loc
+alhost:8090/api/users/l
+ogin'[39m,
+  ok: [33mfalse[39m,
+  type: 
+[90mundefined[39m,
+  redirected: 
+[90mundefined[39m,
+  responseType: 
+[90mundefined[39m,
+  name: [32m'HttpError
+Response'[39m,
+  message: [32m'Http 
+failure response for ht
+tp://localhost:8090/api
+/users/login: 401 
+Unauthorized'[39m,
+  error: [32m'Unauthor
+ized'[39m
+}
+ÔØî Error status: 
+[33m401[39m
+ÔØî Error message: 
+Http failure response 
+for http://localhost:80
+90/api/users/login: 
+401 Unauthorized
+ÔØî Error body: 
+Unauthorized
+
+stdout | src/app/front/core/auth.service.spec.ts > AuthService > logout > should clear localStorage and reset signals
+­ƒöä Starting logout process...
+Ô£à Logout: localStorage cleared, all signals reset
+
+stdout | src/app/front/core/auth.service.spec.ts > AuthService > logout > should clear localStorage and reset signals
+Ô£à Successfully navigated to /login
+
+stdout | src/app/front/core/auth.service.spec.ts > AuthService > register > should send registration request and return user data
+­ƒôñ Sending registration payload to backend: {
+  email: [32m'new@example.com'[39m,
+  password: [32m'pass'[39m,
+  firstName: [32m'New'[39m,
+  lastName: [32m'User'[39m,
+  phone: [32m'12345678'[39m,
+  role: [32m'CLIENT'[39m
+}
+Ô£à Registration successful: {
+  email: [32m'new@example.com'[39m,
+  password: [32m'pass'[39m,
+  firstName: [32m'New'[39m,
+  lastName: [32m'User'[39m,
+  phone: [32m'12345678'[39m,
+  role: [32m'CLIENT'[39m,
+  id: [32m'user-2'[39m,
+  roles: [ [32m'CLIENT'[39m ],
+  enabled: [33mtrue[39m
+}
+
+stdout | src/app/front/core/auth.service.spec.ts > AuthService > loadCurrentUser > should update signals with user data from backend
+­ƒôÀ Avatar URL set: http://localhost:8090/avatars/1.png
+­ƒÆ¥ Stored role in localStorage: ADMIN
+Ô£à User signals updated: {
+  id: [32m'user-1'[39m,
+  role: [32m'ADMIN'[39m,
+  firstName: [32m'John'[39m,
+  avatar: [32m'http://localhost:8090/avatars/1.png'[39m
+}
+
+ Ô£ô src/app/front/core/auth.service.spec.ts (6 tests) 56ms
+stdout | src/app/front/pages/login/login.spec.ts > Login Component > onSubmit > should call authService.login on valid submit
+­ƒÜÇ Login form submitted
+­ƒôØ Form valid: [33mtrue[39m
+­ƒôØ Form value: {
+  email: [32m'test@example.com'[39m,
+  password: [32m'password123'[39m,
+  rememberMe: [33mfalse[39m
+}
+­ƒôº Logging in with email: test@example.com
+­ƒöÆ Password length: [33m11[39m
+Ô£à Login successful: {
+  id: [32m'1'[39m,
+  email: [32m'test@example.com'[39m,
+  firstName: [32m'John'[39m,
+  lastName: [32m'Doe'[39m,
+  role: [32m'CLIENT'[39m,
+  isVerified: [33mtrue[39m,
+  createdAt: [35m2026-03-26T14:38:43.450Z[39m,
+  updatedAt: [35m2026-03-26T14:38:43.450Z[39m
+}
+
+stdout | src/app/front/pages/login/login.spec.ts > Login Component > onSubmit > should handle login error
+­ƒÜÇ Login form submitted
+­ƒôØ Form valid: [33mtrue[39m
+­ƒôØ Form value: {
+  email: [32m'test@example.com'[39m,
+  password: [32m'wrong-password'[39m,
+  rememberMe: [33mfalse[39m
+}
+­ƒôº Logging in with email: test@example.com
+­ƒöÆ Password length: [33m14[39m
+
+stderr | src/app/front/
+pages/login/login.spec.
+ts > Login Component > 
+onSubmit > should 
+handle login error
+ÔØî Login failed: { 
+status: [33m401[39m }
+
+ ÔØ» src/app/front/pages/register/register.spec.ts (9 tests | 9 failed) 93ms
+     ├ù should create 44ms
+       ├ù should start at step 1 7ms
+       ├ù should go to step 2 when role selected 5ms
+       ├ù should not go to step 2 if no role selected 5ms
+       ├ù should require businessName for provider 5ms
+       ├ù should require taxId for provider 4ms
+       ├ù should validate password match 4ms
+       ├ù should build correct payload and call authService.register 5ms
+       ├ù should handle registration error 6ms
+stdout | src/app/front/pages/login/login.spec.ts > Login Component > onSubmit > should not call authService if form is invalid
+­ƒÜÇ Login form submitted
+­ƒôØ Form valid: [33mfalse[39m
+­ƒôØ Form value: { email: [32m'invalid'[39m, password: [32m''[39m, rememberMe: [33mfalse[39m }
+
+stderr | src/app/front/
+pages/login/login.spec.
+ts > Login Component > 
+onSubmit > should not 
+call authService if 
+form is invalid
+ÔÜá´©Å Form is 
+invalid, marking all 
+fields as touched
+
+ ÔØ» src/app/front/pages/profile/profile.spec.ts (7 tests | 7 failed) 72ms
+     ├ù should create 34ms
+     ├ù should initialize with user data from AuthService 8ms
+       ├ù should set active tab from query params on init 6ms
+       ├ù should change active tab when setActiveTab is called 5ms
+       ├ù should call userService.updateProfile with form data 5ms
+       ├ù should not save if form is invalid 4ms
+       ├ù should calculate loyalty progress correctly 4ms
+ Ô£ô src/app/front/pages/login/login.spec.ts (8 tests) 120ms
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ» 
+Failed Tests 16 
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»
+
+ FAIL  src/app/front/pa
+ges/profile/profile.spe
+c.ts > Profile 
+Component > should 
+create
+ FAIL  src/app/front/pa
+ges/profile/profile.spe
+c.ts > Profile 
+Component > should 
+initialize with user 
+data from AuthService
+ FAIL  src/app/front/pa
+ges/profile/profile.spe
+c.ts > Profile 
+Component > Tab 
+Management > should 
+set active tab from 
+query params on init
+ FAIL  src/app/front/pa
+ges/profile/profile.spe
+c.ts > Profile 
+Component > Tab 
+Management > should 
+change active tab when 
+setActiveTab is called
+ FAIL  src/app/front/pa
+ges/profile/profile.spe
+c.ts > Profile 
+Component > Profile 
+Update > should call us
+erService.updateProfile
+ with form data
+ FAIL  src/app/front/pa
+ges/profile/profile.spe
+c.ts > Profile 
+Component > Profile 
+Update > should not 
+save if form is invalid
+ FAIL  src/app/front/pa
+ges/profile/profile.spe
+c.ts > Profile 
+Component > Loyalty 
+Progress > should 
+calculate loyalty 
+progress correctly
+Error: NG0202: This 
+constructor is not 
+compatible with 
+Angular Dependency 
+Injection because its 
+dependency at index 0 
+of the parameter list 
+is invalid.
+This can happen if the 
+dependency type is a 
+primitive like a 
+string or if an 
+ancestor of this class 
+is missing an Angular 
+decorator.
+
+Please check that 1) 
+the type for the 
+parameter at index 0 
+is correct and 2) the 
+correct Angular 
+decorators are defined 
+for this class and its 
+ancestors.
+ ÔØ» 
+╔Á╔ÁinvalidFactoryDep .
+./darwin_arm64-fastbuil
+d-ST-fdfa778d11ba/bin/p
+ackages/core/src/di/inj
+ector_compatibility.ts:
+160:8
+ ÔØ» Object.OrderServic
+e_Factory [as factory] 
+ng:/OrderService/╔Áfac.
+js:5:56
+ ÔØ» factory ../darwin_
+arm64-fastbuild-ST-fdfa
+778d11ba/bin/packages/c
+ore/src/di/r3_injector.
+ts:535:34
+ ÔØ» callback ../darwin
+_arm64-fastbuild-ST-fdf
+a778d11ba/bin/packages/
+core/src/render3/debug/
+injector_profiler.ts:38
+7:4
+ ÔØ» runInInjectorProfi
+lerContext ../darwin_ar
+m64-fastbuild-ST-fdfa77
+8d11ba/bin/packages/cor
+e/src/di/r3_injector.ts
+:533:10
+ ÔØ» hydrate ../darwin_
+arm64-fastbuild-ST-fdfa
+778d11ba/bin/packages/c
+ore/src/di/r3_injector.
+ts:370:22
+ ÔØ» get ../darwin_arm6
+4-fastbuild-ST-fdfa778d
+11ba/bin/packages/core/
+src/di/r3_injector.ts:3
+83:26
+ ÔØ» get ../darwin_arm6
+4-fastbuild-ST-fdfa778d
+11ba/bin/packages/core/
+src/render3/chained_inj
+ector.ts:43:31
+ ÔØ» get ../darwin_arm6
+4-fastbuild-ST-fdfa778d
+11ba/bin/packages/core/
+src/render3/di.ts:426:6
+3
+ ÔØ» lookupTokenUsingMo
+duleInjector ../darwin_
+arm64-fastbuild-ST-fdfa
+778d11ba/bin/packages/c
+ore/src/render3/di.ts:4
+93:9
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ
+»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»Ô
+Ä»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»
+[1/16]ÔÄ»
+
+ FAIL  src/app/front/pa
+ges/register/register.s
+pec.ts > Register 
+Component > should 
+create
+ FAIL  src/app/front/pa
+ges/register/register.s
+pec.ts > Register 
+Component > Step 
+Management > should 
+start at step 1
+ FAIL  src/app/front/pa
+ges/register/register.s
+pec.ts > Register 
+Component > Step 
+Management > should go 
+to step 2 when role 
+selected
+ FAIL  src/app/front/pa
+ges/register/register.s
+pec.ts > Register 
+Component > Step 
+Management > should 
+not go to step 2 if no 
+role selected
+ FAIL  src/app/front/pa
+ges/register/register.s
+pec.ts > Register 
+Component > Form 
+Validation - Role 
+Based > should require 
+businessName for 
+provider
+ FAIL  src/app/front/pa
+ges/register/register.s
+pec.ts > Register 
+Component > Form 
+Validation - Role 
+Based > should require 
+taxId for provider
+ FAIL  src/app/front/pa
+ges/register/register.s
+pec.ts > Register 
+Component > Form 
+Validation - Role 
+Based > should 
+validate password match
+ FAIL  src/app/front/pa
+ges/register/register.s
+pec.ts > Register 
+Component > onSubmit > 
+should build correct 
+payload and call 
+authService.register
+ FAIL  src/app/front/pa
+ges/register/register.s
+pec.ts > Register 
+Component > onSubmit > 
+should handle 
+registration error
+Error: NG0202: This 
+constructor is not 
+compatible with 
+Angular Dependency 
+Injection because its 
+dependency at index 0 
+of the parameter list 
+is invalid.
+This can happen if the 
+dependency type is a 
+primitive like a 
+string or if an 
+ancestor of this class 
+is missing an Angular 
+decorator.
+
+Please check that 1) 
+the type for the 
+parameter at index 0 
+is correct and 2) the 
+correct Angular 
+decorators are defined 
+for this class and its 
+ancestors.
+ ÔØ» 
+╔Á╔ÁinvalidFactoryDep .
+./darwin_arm64-fastbuil
+d-ST-fdfa778d11ba/bin/p
+ackages/core/src/di/inj
+ector_compatibility.ts:
+160:8
+ ÔØ» NodeInjectorFactor
+y.Register_Factory [as 
+factory] ng:/Register/╔
+Áfac.js:5:52
+ ÔØ» factory ../darwin_
+arm64-fastbuild-ST-fdfa
+778d11ba/bin/packages/c
+ore/src/render3/di.ts:7
+85:37
+ ÔØ» getNodeInjectable 
+../darwin_arm64-fastbui
+ld-ST-fdfa778d11ba/bin/
+packages/core/src/rende
+r3/instructions/shared.
+ts:408:22
+ ÔØ» instantiateAllDire
+ctives ../darwin_arm64-
+fastbuild-ST-fdfa778d11
+ba/bin/packages/core/sr
+c/render3/instructions/
+shared.ts:124:2
+ ÔØ» createDirectivesIn
+stances ../darwin_arm64
+-fastbuild-ST-fdfa778d1
+1ba/bin/packages/core/s
+rc/render3/component_re
+f.ts:366:6
+ ÔØ» 
+createComponentRef ../d
+arwin_arm64-fastbuild-S
+T-fdfa778d11ba/bin/pack
+ages/core/src/render3/c
+omponent_ref.ts:292:20
+ ÔØ» create ../darwin_a
+rm64-fastbuild-ST-fdfa7
+78d11ba/bin/packages/co
+re/testing/src/test_bed
+.ts:695:44
+ ÔØ» apply ../darwin_ar
+m64-fastbuild-ST-fdfa77
+8d11ba/bin/packages/cor
+e/src/zone/ng_zone.ts:5
+65:14
+ ÔØ» run ../darwin_arm6
+4-fastbuild-ST-fdfa778d
+11ba/bin/packages/core/
+testing/src/test_bed.ts
+:707:36
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ
+»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»Ô
+Ä»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»
+[2/16]ÔÄ»
+
+
+ Test Files  2 failed | 4 passed (6)
+      Tests  16 failed | 29 passed (45)
+   Start at  15:38:41
+   Duration  4.82s (transform 457ms, setup 3.05s, import 856ms, tests 446ms, environment 5.85s)
+
+

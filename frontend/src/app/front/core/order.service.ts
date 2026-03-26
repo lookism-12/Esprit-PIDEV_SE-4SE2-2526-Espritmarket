@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { Order, OrderStatus, CreateOrderRequest } from '../models/order.model';
@@ -28,6 +28,7 @@ export interface UpdateOrderStatusRequest {
   providedIn: 'root'
 })
 export class OrderService {
+  private http = inject(HttpClient);
   private readonly apiUrl = '/api/orders'; // TODO: Configure environment
 
   // Reactive state
@@ -36,7 +37,7 @@ export class OrderService {
   readonly isLoading = signal<boolean>(false);
   readonly error = signal<string | null>(null);
 
-  constructor(private http: HttpClient) {}
+  constructor() {}
 
   /**
    * Create a new order from cart

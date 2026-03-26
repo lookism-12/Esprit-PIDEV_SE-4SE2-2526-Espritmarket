@@ -1,0 +1,1 @@
+src/app/app.config.ts(1,29): error TS2305: Module '"@angular/core"' has no exported member 'provideBrowserGlobalErrorListeners'.

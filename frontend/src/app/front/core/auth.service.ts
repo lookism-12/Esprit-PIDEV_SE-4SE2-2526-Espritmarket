@@ -104,7 +104,9 @@ export class AuthService {
   readonly userAvatar = signal<string | null>(null);
   readonly userRole = signal<UserRole | null>(null);
 
-  constructor(private http: HttpClient) {
+  private http = inject(HttpClient);
+
+  constructor() {
     // Check for existing token on service initialization
     this.initializeAuthState();
   }

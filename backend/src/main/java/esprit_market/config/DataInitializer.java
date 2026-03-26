@@ -48,12 +48,14 @@ public class DataInitializer implements CommandLineRunner {
 
         // Initialize Admin User
         String adminEmail = "admin@espritmarket.tn";
+        String adminPassword = "admin123";
+
         if (!userRepository.existsByEmail(adminEmail)) {
             User admin = User.builder()
                     .firstName("Admin")
                     .lastName("Esprit")
                     .email(adminEmail)
-                    .password(passwordEncoder.encode("admin"))
+                    .password(passwordEncoder.encode(adminPassword))
                     .roles(Collections.singletonList(Role.ADMIN))
                     .enabled(true)
                     .build();
@@ -61,7 +63,19 @@ public class DataInitializer implements CommandLineRunner {
             userRepository.save(admin);
             log.info("Admin user created with email: {}", adminEmail);
         } else {
-            log.info("Admin user already exists.");
+            // Force reset password to 'admin123' if it doesn't match
+            userRepository.findByEmail(adminEmail).ifPresent(admin -> {
+                String stored = admin.getPassword();
+                boolean matches = stored != null && passwordEncoder.matches(adminPassword, stored);
+                if (!matches) {
+                    log.warn("Admin password hash doesn't match 'admin123'. Forcing reset...");
+                    admin.setPassword(passwordEncoder.encode(adminPassword));
+                    userRepository.save(admin);
+                    log.info("Admin password has been reset to 'admin123'.");
+                } else {
+                    log.info("Admin user already has the correct password ('admin123').");
+                }
+            });
         }
 
         // Initialize Default Discounts (Cart module)

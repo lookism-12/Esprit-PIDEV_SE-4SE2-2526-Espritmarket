@@ -1,4 +1,4 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
@@ -17,10 +17,74 @@ interface RoleCard {
   selector: 'app-register',
   standalone: true,
   imports: [CommonModule, RouterLink, ReactiveFormsModule],
-  templateUrl: './register.html',
-  styleUrl: './register.scss',
+  template: `
+<div class="register-container">
+    @if (currentStep() === 1) {
+        <div class="step-1">
+            <h1>Join ESPRIT Market</h1>
+            <div class="role-selection">
+                @for (card of roleCards; track card.id) {
+                    <button type="button" (click)="selectRoleGroup(card.id)" [class.selected]="selectedRoleGroup() === card.id">
+                        {{ card.title }}
+                    </button>
+                }
+            </div>
+            <button type="button" (click)="goToStep2()" [disabled]="!selectedRoleGroup()">Continue</button>
+        </div>
+    }
+
+    @if (currentStep() === 2) {
+        <div class="step-2">
+            <button type="button" (click)="goToStep1()">Back</button>
+            <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+                <input formControlName="firstName" placeholder="First Name">
+                <input formControlName="lastName" placeholder="Last Name">
+                <input formControlName="email" type="email" placeholder="Email">
+                <input formControlName="phone" type="tel" placeholder="Phone">
+                <input formControlName="password" type="password" placeholder="Password">
+                <input formControlName="confirmPassword" type="password" placeholder="Confirm Password">
+                
+                @if (selectedRoleGroup() === 'provider') {
+                    <input formControlName="businessName" placeholder="Business Name">
+                    <select formControlName="businessType">
+                        @for (type of businessTypes; track type) {
+                            <option [value]="type">{{ type }}</option>
+                        }
+                    </select>
+                    <input formControlName="taxId" placeholder="Tax ID">
+                }
+
+                @if (selectedRoleGroup() === 'logistics') {
+                    <select formControlName="vehicleType">
+                        @for (v of vehicleTypes; track v) {
+                            <option [value]="v">{{ v }}</option>
+                        }
+                    </select>
+                    @if (selectedSubRole() === 'DRIVER') {
+                        <input formControlName="drivingLicenseNumber" placeholder="License">
+                    }
+                    @if (selectedSubRole() === 'DELIVERY') {
+                        <input formControlName="deliveryZone" placeholder="Zone">
+                    }
+                }
+
+                @if (errorMessage()) {
+                    <div class="error">{{ errorMessage() }}</div>
+                }
+
+                <button type="submit" [disabled]="isSubmitting()">Create Account</button>
+            </form>
+        </div>
+    }
+</div>
+  `,
+  styles: [],
 })
 export class Register {
+  private fb = inject(FormBuilder);
+  private authService = inject(AuthService);
+  private router = inject(Router);
+
   // Step management
   currentStep = signal<1 | 2>(1);
   
@@ -96,11 +160,7 @@ export class Register {
     }
   });
 
-  constructor(
-    private fb: FormBuilder,
-    private authService: AuthService,
-    private router: Router
-  ) {
+  constructor() {
     this.registerForm = this.createBaseForm();
   }
 

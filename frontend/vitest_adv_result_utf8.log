@@ -1,0 +1,18 @@
+﻿
+ RUN  v4.1.1 C:/Users/MSI/Desktop/espritmarket/Espritmarket/frontend
+
+stdout | src/app/front/core/user.service.advanced.spec.ts > UserService - Advanced Tests > uploadAvatar > should upload valid image file
+­ƒôñ Uploading file with details:
+  File name: avatar.png
+  File size: 0.00 MB
+  Content type: image/png
+­ƒôª FormData prepared, sending POST to /me/avatar
+
+ Ô£ô src/app/front/core/user.service.advanced.spec.ts (6 tests) 37ms
+
+ Test Files  1 passed (1)
+      Tests  6 passed (6)
+   Start at  14:50:05
+   Duration  1.30s (transform 74ms, setup 335ms, import 55ms, tests 37ms, environment 717ms)
+
+

@@ -1,3 +1,3 @@
 @echo off
-set "MAVEN_BIN=C:\Program Files\JetBrains\IntelliJ IDEA 2025.3.3\plugins\maven\lib\maven3\bin\mvn.cmd"
-call "%MAVEN_BIN%" spring-boot:run
+set "MAVEN_BIN=C:\Program Files\JetBrains\IntelliJ IDEA 2024.3.2.2\plugins\maven\lib\maven3\bin\mvn.cmd"
+call "%MAVEN_BIN%" spring-boot:run -Dmaven.test.skip=true

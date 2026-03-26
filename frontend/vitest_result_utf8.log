@@ -1,0 +1,303 @@
+﻿
+ RUN  v4.1.1 C:/Users/MSI/Desktop/espritmarket/Espritmarket/frontend
+
+node.exe : stderr | src
+/app/front/core/user.se
+rvice.spec.ts > 
+UserService > 
+updateProfile > should 
+handle update errors
+Au caractère 
+C:\Program Files\nodejs
+\npx.ps1:29 : 3
++   & $NODE_EXE 
+$NPX_CLI_JS $args
++   ~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~
+    + CategoryInfo     
+         : NotSpecifi  
+  ed: (stderr | src/   
+ ap...e update erro    
+rs:String) [], Rem    
+oteException
+    + FullyQualifiedEr 
+   rorId : NativeComm  
+  andError
+ 
+ÔØî Profile update 
+failed: 
+HttpErrorResponse {
+  headers: HttpHeaders 
+{
+    headers: Map(0) {},
+    normalizedNames: 
+Map(0) {},
+    lazyInit: 
+[90mundefined[39m,
+    lazyUpdate: 
+[1mnull[22m
+  },
+  status: 
+[33m500[39m,
+  statusText: 
+[32m'Server 
+Error'[39m,
+  url: [32m'http://loc
+alhost:8090/api/users/m
+e'[39m,
+  ok: [33mfalse[39m,
+  type: 
+[90mundefined[39m,
+  redirected: 
+[90mundefined[39m,
+  responseType: 
+[90mundefined[39m,
+  name: [32m'HttpError
+Response'[39m,
+  message: [32m'Http 
+failure response for ht
+tp://localhost:8090/api
+/users/me: 500 Server 
+Error'[39m,
+  error: 
+[32m'Error'[39m
+}
+
+ Ô£ô src/app/front/core/user.service.spec.ts (9 tests) 47ms
+stdout | src/app/front/core/auth.service.spec.ts > AuthService > login > should handle login error and clear storage
+­ƒöÉ Login attempt started with email: test@example.com
+­ƒîÉ API URL: http://localhost:8090/api/users/login
+
+stderr | src/app/front/
+core/auth.service.spec.
+ts > AuthService > 
+login > should handle 
+login error and clear 
+storage
+ÔØî Login failed with 
+error: 
+HttpErrorResponse {
+  headers: HttpHeaders 
+{
+    headers: Map(0) {},
+    normalizedNames: 
+Map(0) {},
+    lazyInit: 
+[90mundefined[39m,
+    lazyUpdate: 
+[1mnull[22m
+  },
+  status: 
+[33m401[39m,
+  statusText: [32m'Una
+uthorized'[39m,
+  url: [32m'http://loc
+alhost:8090/api/users/l
+ogin'[39m,
+  ok: [33mfalse[39m,
+  type: 
+[90mundefined[39m,
+  redirected: 
+[90mundefined[39m,
+  responseType: 
+[90mundefined[39m,
+  name: [32m'HttpError
+Response'[39m,
+  message: [32m'Http 
+failure response for ht
+tp://localhost:8090/api
+/users/login: 401 
+Unauthorized'[39m,
+  error: [32m'Unauthor
+ized'[39m
+}
+ÔØî Error status: 
+[33m401[39m
+ÔØî Error message: 
+Http failure response 
+for http://localhost:80
+90/api/users/login: 
+401 Unauthorized
+ÔØî Error body: 
+Unauthorized
+
+stdout | src/app/front/core/auth.service.spec.ts > AuthService > register > should send registration request and return user data
+­ƒôñ Sending registration payload to backend: {
+  email: [32m'new@example.com'[39m,
+  password: [32m'pass'[39m,
+  firstName: [32m'New'[39m,
+  lastName: [32m'User'[39m,
+  phone: [32m'12345678'[39m,
+  role: [32m'CLIENT'[39m
+}
+Ô£à Registration successful: {
+  email: [32m'new@example.com'[39m,
+  password: [32m'pass'[39m,
+  firstName: [32m'New'[39m,
+  lastName: [32m'User'[39m,
+  phone: [32m'12345678'[39m,
+  role: [32m'CLIENT'[39m,
+  id: [32m'user-2'[39m,
+  roles: [ [32m'CLIENT'[39m ],
+  enabled: [33mtrue[39m
+}
+
+stdout | src/app/front/core/auth.service.spec.ts > AuthService > loadCurrentUser > should update signals with user data from backend
+­ƒôÀ Avatar URL set: http://localhost:8090/avatars/1.png
+­ƒÆ¥ Stored role in localStorage: ADMIN
+Ô£à User signals updated: {
+  id: [32m'user-1'[39m,
+  role: [32m'ADMIN'[39m,
+  firstName: [32m'John'[39m,
+  avatar: [32m'http://localhost:8090/avatars/1.png'[39m
+}
+
+ ÔØ» src/app/front/core/auth.service.spec.ts (6 tests | 2 failed) 40ms
+     Ô£ô should be created 14ms
+       ├ù should perform login, store token, and load user profile 4ms
+       Ô£ô should handle login error and clear storage 6ms
+       ├ù should clear localStorage and reset signals 3ms
+       Ô£ô should send registration request and return user data 4ms
+       Ô£ô should update signals with user data from backend 4ms
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ» 
+Failed Tests 2 
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»
+
+ FAIL  src/app/front/co
+re/auth.service.spec.ts
+ > AuthService > login 
+> should perform 
+login, store token, 
+and load user profile
+ FAIL  src/app/front/co
+re/auth.service.spec.ts
+ > AuthService > 
+logout > should clear 
+localStorage and reset 
+signals
+Error: Expected to be 
+running in 
+'ProxyZone', but it 
+was not found.
+ ÔØ» 
+Function.assertPresent 
+node_modules/zone.js/fe
+sm2015/zone-testing.js:
+882:13
+ ÔØ» fakeAsyncFn node_m
+odules/zone.js/fesm2015
+/zone-testing.js:1647:4
+2
+ ÔØ» new 
+ZoneAwarePromise node_m
+odules/zone.js/fesm2015
+/zone.js:2221:23
+ ÔØ» new 
+ZoneAwarePromise node_m
+odules/zone.js/fesm2015
+/zone.js:2221:23
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ
+»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»Ô
+Ä»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»
+ÔÄ»[1/2]ÔÄ»
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ» 
+Unhandled Errors 
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»
+
+Vitest caught 1 
+unhandled error during 
+the test run.
+This might cause false 
+positive tests. 
+Resolve unhandled 
+errors to make sure 
+your tests are not 
+affected.
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ» 
+Uncaught Exception 
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»
+AssertionError: 
+expected true to be 
+false // Object.is 
+equality
+ ÔØ» Object.next src/ap
+p/front/core/user.servi
+ce.spec.ts:50:37
+     48|       service.
+getProfile().subscribe(
+user => {
+     49|         expect
+(user).toEqual(mockUser
+);
+     50|         expect
+(service.isLoading()).t
+oBe(false);
+       |               
+                      ^
+     51|       });
+     52|
+ ÔØ» 
+ConsumerObserver.next n
+ode_modules/rxjs/dist/c
+js/internal/Subscriber.
+js:113:33
+ ÔØ» SafeSubscriber.Sub
+scriber._next node_modu
+les/rxjs/dist/cjs/inter
+nal/Subscriber.js:80:26
+ ÔØ» SafeSubscriber.Sub
+scriber.next node_modul
+es/rxjs/dist/cjs/intern
+al/Subscriber.js:51:18
+ ÔØ» node_modules/rxjs/
+dist/cjs/internal/opera
+tors/map.js:10:24
+ ÔØ» OperatorSubscriber
+._this._next node_modul
+es/rxjs/dist/cjs/intern
+al/operators/OperatorSu
+bscriber.js:33:21
+ ÔØ» OperatorSubscriber
+.Subscriber.next node_m
+odules/rxjs/dist/cjs/in
+ternal/Subscriber.js:51
+:18
+ ÔØ» node_modules/rxjs/
+dist/cjs/internal/opera
+tors/filter.js:9:164
+ ÔØ» OperatorSubscriber
+._this._next node_modul
+es/rxjs/dist/cjs/intern
+al/operators/OperatorSu
+bscriber.js:33:21
+ ÔØ» OperatorSubscriber
+.Subscriber.next node_m
+odules/rxjs/dist/cjs/in
+ternal/Subscriber.js:51
+:18
+
+This error originated 
+in "src/app/front/core/
+user.service.spec.ts" 
+test file. It doesn't 
+mean the error was 
+thrown inside the file 
+itself, but while it 
+was running.
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ
+»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»Ô
+Ä»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  2 failed | 13 passed (15)
+     Errors  1 error
+   Start at  14:48:21
+   Duration  1.41s (transform 156ms, setup 712ms, import 174ms, tests 88ms, environment 1.44s)
+
+
