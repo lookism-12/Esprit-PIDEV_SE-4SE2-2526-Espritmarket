@@ -2,13 +2,12 @@ import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { MetricCardComponent } from '../../shared/components/metric-card/metric-card.component';
-import { KycTableComponent } from './components/kyc-table/kyc-table.component';
 import { DashboardService } from '../../core/services/dashboard.service';
 
 @Component({
     selector: 'app-dashboard',
     standalone: true,
-    imports: [CommonModule, MetricCardComponent, KycTableComponent, RouterLink],
+    imports: [CommonModule, MetricCardComponent, RouterLink],
     templateUrl: './dashboard.component.html'
 })
 export class DashboardComponent implements OnInit {
