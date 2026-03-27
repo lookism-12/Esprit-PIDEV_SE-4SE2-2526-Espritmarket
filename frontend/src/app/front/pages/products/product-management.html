@@ -1,0 +1,128 @@
+<div class="management-container">
+  <!-- Header Section -->
+  <header class="management-header">
+    <div class="header-content">
+      <h1>Store Management</h1>
+      <p class="subtitle">Overview of your listed products and store performance</p>
+    </div>
+    <div class="header-actions">
+      <a routerLink="/front/products/shop-settings" class="btn btn-outline">
+        <i class="fas fa-store"></i> Shop Settings
+      </a>
+      <a routerLink="/front/products/create" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Add New Product
+      </a>
+    </div>
+  </header>
+
+  <!-- Stats Grid -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon bg-blue-50 text-blue-600">
+        <i class="fas fa-box"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Total Products</span>
+        <span class="stat-value">{{ totalProducts() }}</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon bg-green-50 text-green-600">
+        <i class="fas fa-tags"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Stock Value</span>
+        <span class="stat-value">{{ totalStockValue() | currency:'TND':'code' }}</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon bg-yellow-50 text-yellow-600">
+        <i class="fas fa-exclamation-triangle"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Low Stock Items</span>
+        <span class="stat-value text-yellow-600">{{ lowStockCount() }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Products List Section -->
+  <div class="content-card">
+    <div class="card-header">
+      <h2>Your Products</h2>
+      <div class="search-bar">
+        <i class="fas fa-search"></i>
+        <input type="text" placeholder="Search products...">
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="isLoading()" class="loading-state">
+      <div class="spinner"></div>
+      <p>Loading your products...</p>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="!isLoading() && products().length === 0" class="empty-state">
+      <div class="empty-icon">📦</div>
+      <h3>No products found</h3>
+      <p>Start selling by adding your first product to the marketplace!</p>
+      <a routerLink="/front/products/create" class="btn btn-outline">Add First Product</a>
+    </div>
+
+    <!-- Products Table -->
+    <div *ngIf="!isLoading() && products().length > 0" class="table-container">
+      <table class="products-table">
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th>Category</th>
+            <th>Price</th>
+            <th>Stock</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let product of products()">
+            <td class="product-info-cell">
+              <img [src]="product.imageUrl" [alt]="product.name" class="table-img">
+              <div class="product-details">
+                <span class="name">{{ product.name }}</span>
+                <span class="id">SKU: {{ product.id?.substring(0,8) }}</span>
+              </div>
+            </td>
+            <td>
+              <span class="category-badge">{{ product.category }}</span>
+            </td>
+            <td>
+              <span class="price">{{ product.price | currency:'TND':'code' }}</span>
+              <span *ngIf="product.originalPrice" class="org-price">{{ product.originalPrice | currency:'TND':'code' }}</span>
+            </td>
+            <td>
+              <div class="stock-info">
+                <span class="stock-count">{{ product.stock }} items</span>
+                <span [class]="'status-indicator ' + getStockStatusClass(product.stockStatus)">
+                  {{ product.stockStatus.replace('_', ' ') }}
+                </span>
+              </div>
+            </td>
+            <td>
+              <span class="status-badge active">Public</span>
+            </td>
+            <td class="actions-cell">
+              <div class="action-buttons">
+                <a [routerLink]="['/front/products/edit', product.id]" class="btn-icon" title="Edit">
+                  <i class="fas fa-edit"></i>
+                </a>
+                <button (click)="deleteProduct(product.id)" class="btn-icon delete" title="Delete">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

@@ -8,9 +8,10 @@ import esprit_market.entity.marketplace.ServiceEntity;
 import esprit_market.entity.marketplace.Shop;
 import esprit_market.entity.user.User;
 import esprit_market.repository.cartRepository.DiscountRepository;
-import esprit_market.repository.marketplaceRepository.CategoryRepository;
-import esprit_market.repository.marketplaceRepository.ServiceRepository;
-import esprit_market.repository.marketplaceRepository.ShopRepository;
+import esprit_market.entity.marketplace.Product;
+import esprit_market.entity.marketplace.ProductImage;
+import esprit_market.repository.marketplaceRepository.*;
+import esprit_market.repository.cartRepository.DiscountRepository;
 import esprit_market.repository.userRepository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -21,6 +22,8 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -37,6 +40,7 @@ public class DataInitializer implements CommandLineRunner {
     private final CategoryRepository categoryRepository;
     private final ShopRepository shopRepository;
     private final ServiceRepository serviceRepository;
+    private final ProductRepository productRepository;
     private final MongoTemplate mongoTemplate;
 
     @Override
@@ -83,6 +87,63 @@ public class DataInitializer implements CommandLineRunner {
 
         // Initialize Default Services for Negotiation (Marketplace module)
         initializeServices();
+
+        // Initialize Products
+        initializeProducts();
+    }
+
+    private void initializeProducts() {
+        if (productRepository.count() == 0) {
+            Category category = categoryRepository.findAll().stream().findFirst().orElseGet(() -> {
+                Category newCat = Category.builder().name("Electronics").build();
+                return categoryRepository.save(newCat);
+            });
+
+            User admin = userRepository.findByEmail("admin@espritmarket.tn").orElse(null);
+            Shop shop = shopRepository.findAll().stream().findFirst().orElseGet(() -> {
+                Shop newShop = Shop.builder()
+                        .name("Esprit Official Store")
+                        .description("Official Esprit Market flagship store")
+                        .ownerId(admin != null ? admin.getId() : null)
+                        .build();
+                return shopRepository.save(newShop);
+            });
+
+            Product p1 = Product.builder()
+                    .name("MacBook Pro M2")
+                    .description("Apple MacBook Pro with M2 chip, 16GB RAM, 512GB SSD. Space Gray.")
+                    .price(6500.0)
+                    .originalPrice(7200.0)
+                    .stock(15)
+                    .shopId(shop.getId())
+                    .categoryIds(Collections.singletonList(category.getId()))
+                    .images(Collections.singletonList(new ProductImage("https://store.storeimages.cdn-apple.com/4668/as-images.apple.com/is/mbp-spacegray-select-202206?wid=904&hei=840&fmt=jpeg&qlt=90&.v=1664497359473", "MacBook Pro")))
+                    .build();
+
+            Product p2 = Product.builder()
+                    .name("iPhone 15 Pro")
+                    .description("Latest iPhone with Titanium design and A17 Pro chip.")
+                    .price(4200.0)
+                    .stock(25)
+                    .shopId(shop.getId())
+                    .categoryIds(Collections.singletonList(category.getId()))
+                    .images(Collections.singletonList(new ProductImage("https://store.storeimages.cdn-apple.com/4668/as-images.apple.com/is/iphone-15-pro-finish-select-202309-6-1inch-naturaltitanium?wid=5120&hei=2880&fmt=p-jpg&qlt=80&.v=1692846360609", "iPhone 15 Pro")))
+                    .build();
+
+            Product p3 = Product.builder()
+                    .name("Sony WH-1000XM5")
+                    .description("Industry leading noise canceling headphones.")
+                    .price(1200.0)
+                    .originalPrice(1450.0)
+                    .stock(5)
+                    .shopId(shop.getId())
+                    .categoryIds(Collections.singletonList(category.getId()))
+                    .images(Collections.singletonList(new ProductImage("https://www.sony.tn/image/5d02da5df552836db894ce56d601a37c?fmt=p-jpg&wid=1014&hei=396&bgcolor=F1F5F9&bgc=F1F5F9", "Sony Headphones")))
+                    .build();
+
+            productRepository.saveAll(Arrays.asList(p1, p2, p3));
+            log.info("Default products created.");
+        }
     }
 
     private void initializeDiscounts() {

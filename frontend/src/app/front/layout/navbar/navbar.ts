@@ -28,6 +28,7 @@ interface MenuItem {
   label: string;
   route: string;
   icon?: string;
+  providerOnly?: boolean;
 }
 
 @Component({
@@ -55,6 +56,7 @@ export class Navbar implements OnDestroy {
   // Search state
   isSearchFocused = signal(false);
   showMobileSearch = signal(false);
+  showSellMenu = signal(false);
 
   // User profile state (NEW)
   isUserLoggedIn = computed(() => this.authService.isAuthenticated());
@@ -62,6 +64,7 @@ export class Navbar implements OnDestroy {
   userInitials = computed(() => this.authService.getInitials() || 'U');
   userAvatar = computed(() => this.authService.userAvatar() || null);
   isAdmin = computed(() => this.authService.userRole() === UserRole.ADMIN);
+  isProvider = computed(() => this.authService.userRole() === UserRole.PROVIDER);
 
   // Menu sections for the drawer
   menuSections: MenuSection[] = [
@@ -72,7 +75,8 @@ export class Navbar implements OnDestroy {
         { label: 'Browse Products', route: '/products', icon: '📦' },
         { label: 'Services', route: '/services', icon: '🔧' },
         { label: 'Promotions', route: '/promotions', icon: '🏷️' },
-        { label: 'Favorites', route: '/favorites', icon: '❤️' }
+        { label: 'Favorites', route: '/favorites', icon: '❤️' },
+        { label: 'Manage Store', route: '/products/manage', icon: '🏪', providerOnly: true }
       ]
     },
     {
@@ -184,9 +188,13 @@ export class Navbar implements OnDestroy {
     if (!target.closest('.user-menu-dropdown') && !target.closest('.user-menu-trigger')) {
       this.showUserMenu.set(false);
     }
-    // Close profile dropdown when clicking outside
+    // Close Profile dropdown when clicking outside
     if (!target.closest('.profile-dropdown') && !target.closest('.profile-avatar-btn')) {
       this.showProfileDropdown.set(false);
+    }
+    // Close Sell dropdown when clicking outside
+    if (!target.closest('.sell-dropdown') && !target.closest('.sell-trigger')) {
+      this.showSellMenu.set(false);
     }
   }
 

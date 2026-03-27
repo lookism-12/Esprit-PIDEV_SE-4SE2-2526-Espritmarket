@@ -1,10 +1,12 @@
 package esprit_market.entity.marketplace;
 
+import esprit_market.Enum.marketplaceEnum.ProductCondition;
 import lombok.*;
 import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,5 +30,14 @@ public class Product {
     private List<ObjectId> categoryIds = new ArrayList<>();
 
     private double price;
+    private Double originalPrice;
     private int stock;
+    
+    private Double rating;
+    private Integer reviewsCount;
+    private ProductCondition condition;
+    private boolean isNegotiable;
+    
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

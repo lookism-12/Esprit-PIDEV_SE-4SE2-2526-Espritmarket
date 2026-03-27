@@ -1,5 +1,6 @@
 package esprit_market.mappers.marketplace;
 
+import esprit_market.Enum.marketplaceEnum.ProductCondition;
 import esprit_market.dto.marketplace.ProductImageDTO;
 import esprit_market.dto.marketplace.ProductRequestDTO;
 import esprit_market.dto.marketplace.ProductResponseDTO;
@@ -36,7 +37,12 @@ public class ProductMapper {
                 .shopId(product.getShopId() != null ? product.getShopId().toHexString() : null)
                 .categoryIds(categoryIds)
                 .price(product.getPrice())
+                .originalPrice(product.getOriginalPrice())
                 .stock(product.getStock())
+                .rating(product.getRating())
+                .reviewsCount(product.getReviewsCount())
+                .condition(product.getCondition())
+                .isNegotiable(product.isNegotiable())
                 .images(images)
                 .build();
     }
@@ -61,7 +67,12 @@ public class ProductMapper {
                 .shopId(dto.getShopId() != null ? new ObjectId(dto.getShopId()) : null)
                 .categoryIds(categoryIds)
                 .price(dto.getPrice())
+                .originalPrice(dto.getOriginalPrice())
                 .stock(dto.getStock())
+                .rating(dto.getRating())
+                .reviewsCount(dto.getReviewsCount())
+                .condition(dto.getCondition())
+                .isNegotiable(dto.isNegotiable())
                 .images(images)
                 .build();
     }

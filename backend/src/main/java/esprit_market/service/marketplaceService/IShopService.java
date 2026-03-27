@@ -15,5 +15,7 @@ public interface IShopService {
 
     ShopResponseDTO update(ObjectId id, ShopRequestDTO dto);
 
+    ShopResponseDTO findByOwnerId(ObjectId ownerId);
+
     void deleteById(ObjectId id);
 }

@@ -177,10 +177,50 @@
                     </div>
 
                     <div class="flex items-center gap-3">
+                        @if (isProvider()) {
+                            <div class="relative">
+                                <button (click)="showAddMenu.update(v => !v)" 
+                                    class="flex items-center gap-2 px-5 py-2.5 bg-primary text-white text-sm font-bold rounded-xl hover:bg-primary-dark transition-all shadow-md hover:shadow-lg active:scale-95 group">
+                                    <svg class="w-5 h-5 group-hover:rotate-90 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                    </svg>
+                                    <span>Vendre</span>
+                                    <svg class="w-4 h-4 transition-transform" [class.rotate-180]="showAddMenu()" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </button>
+                                
+                                <!-- Add Menu Dropdown -->
+                                @if (showAddMenu()) {
+                                    <div class="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-30 animate-in fade-in slide-in-from-top-2 duration-200">
+                                        <a routerLink="/front/products/create" (click)="showAddMenu.set(false)"
+                                            class="flex items-center gap-3 px-4 py-3 text-sm font-bold text-gray-700 hover:bg-gray-50 hover:text-primary transition-colors">
+                                            <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                                </svg>
+                                            </div>
+                                            Ajouter un Produit
+                                        </a>
+                                        <a routerLink="/front/services/create" (click)="showAddMenu.set(false)"
+                                            class="flex items-center gap-3 px-4 py-3 text-sm font-bold text-gray-700 hover:bg-gray-50 hover:text-accent-dark transition-colors">
+                                            <div class="w-8 h-8 rounded-lg bg-accent/20 flex items-center justify-center text-accent-dark">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                                </svg>
+                                            </div>
+                                            Ajouter un Service
+                                        </a>
+                                    </div>
+                                    <!-- Backdrop for click-away -->
+                                    <div class="fixed inset-0 z-20" (click)="showAddMenu.set(false)"></div>
+                                }
+                            </div>
+                        }
                         <select 
                             [value]="sortBy()"
                             (change)="updateSort($any($event.target).value)"
-                            class="bg-white border border-gray-200 text-gray-600 text-sm rounded-xl focus:ring-primary focus:border-primary px-4 py-2.5 font-medium">
+                            class="bg-white border border-gray-200 text-gray-600 text-sm rounded-xl focus:ring-primary focus:border-primary px-4 py-2.5 font-medium shadow-sm">
                             <option value="newest">Sort by: Newest</option>
                             <option value="price-low">Price: Low to High</option>
                             <option value="price-high">Price: High to Low</option>
@@ -229,7 +269,7 @@
                 @if (viewMode() === 'grid') {
                 <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
                     @for (product of paginatedProducts(); track product.id) {
-                        <app-product-card [product]="product"></app-product-card>
+                        <app-product-card [product]="product" (quickView)="openQuickView($event)"></app-product-card>
                     } @empty {
                         <div class="col-span-full py-24 text-center">
                             <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400">
@@ -248,14 +288,14 @@
                 <div class="space-y-4">
                     @for (product of paginatedProducts(); track product.id) {
                         <div class="premium-card p-4 flex gap-4 hover:shadow-lg transition-shadow">
-                            <a [routerLink]="['/product', product.id]" class="w-32 h-32 flex-shrink-0 rounded-xl overflow-hidden bg-gray-100">
+                            <a (click)="openQuickView(product); $event.preventDefault()" class="w-32 h-32 flex-shrink-0 rounded-xl overflow-hidden bg-gray-100 cursor-pointer">
                                 <img [src]="product.imageUrl" [alt]="product.name" class="w-full h-full object-cover">
                             </a>
                             <div class="flex-1 min-w-0">
                                 <div class="flex items-start justify-between gap-4">
                                     <div>
                                         <span class="text-[10px] font-bold text-primary uppercase tracking-wider">{{ product.category }}</span>
-                                        <a [routerLink]="['/product', product.id]">
+                                        <a (click)="openQuickView(product); $event.preventDefault()" class="cursor-pointer">
                                             <h3 class="font-bold text-dark text-lg hover:text-primary transition-colors">{{ product.name }}</h3>
                                         </a>
                                         <p class="text-sm text-gray-500 mt-1 line-clamp-2">{{ product.description }}</p>
@@ -362,8 +402,148 @@
                     Our AI analyzes your browsing patterns, favorites, and purchase history to suggest products you'll love. 
                     Sign in to unlock personalized recommendations!
                 </p>
-                <a routerLink="/login" class="btn-primary inline-flex">Sign In for Recommendations</a>
+                <a routerLink="/login" class="btn-primary inline-flex px-8 py-2">Sign In for Recommendations</a>
             </div>
         </section>
     </div>
 </div>
+
+<!-- Quick View Modal -->
+@if (selectedProduct(); as product) {
+<div class="fixed inset-0 z-50 overflow-y-auto" (click)="closeQuickView()">
+    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"></div>
+    <div class="flex min-h-full items-center justify-center p-4">
+        <div class="relative w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden animate-[fadeInUp_0.3s_ease-out]" (click)="$event.stopPropagation()">
+            <!-- Close Button -->
+            <button (click)="closeQuickView()" class="absolute top-4 right-4 z-10 w-10 h-10 bg-white/90 rounded-full shadow-lg flex items-center justify-center text-gray-500 hover:text-dark hover:bg-white transition-all">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+
+            <div class="grid grid-cols-1 md:grid-cols-2">
+                <!-- Product Image -->
+                <div class="relative aspect-square bg-gray-50 overflow-hidden">
+                    <img [src]="product.imageUrl" [alt]="product.name" class="w-full h-full object-cover">
+                    <!-- Condition Badge -->
+                    <div class="absolute top-4 left-4">
+                        <span class="px-3 py-1 bg-dark text-white text-xs font-bold rounded-full">
+                            {{ getConditionText(product.condition) }}
+                        </span>
+                    </div>
+                    <!-- Stock Overlay if Out of Stock -->
+                    @if (product.stockStatus === 'OUT_OF_STOCK') {
+                        <div class="absolute inset-0 flex items-center justify-center bg-black/30">
+                            <span class="px-6 py-3 bg-red-500 text-white font-bold rounded-full text-lg">Out of Stock</span>
+                        </div>
+                    }
+                </div>
+
+                <!-- Product Info -->
+                <div class="p-8 flex flex-col">
+                    <!-- Category & Stock -->
+                    <div class="flex items-center gap-3 mb-3">
+                        <span class="px-3 py-1 bg-primary/10 text-primary text-xs font-bold rounded-full uppercase tracking-wider">
+                            {{ product.category }}
+                        </span>
+                        <span class="px-3 py-1 text-xs font-bold rounded-full" [ngClass]="getStockStatusClass(product.stockStatus)">
+                            {{ getStockStatusText(product.stockStatus) }}
+                        </span>
+                    </div>
+
+                    <!-- Name -->
+                    <h2 class="text-2xl font-extrabold text-dark mb-2">{{ product.name }}</h2>
+
+                    <!-- Rating -->
+                    <div class="flex items-center gap-2 mb-4">
+                        <div class="flex text-accent">
+                            @for (i of [1,2,3,4,5]; track i) {
+                                <svg class="w-4 h-4" [class.fill-current]="i <= product.rating" [class.text-gray-200]="i > product.rating" viewBox="0 0 20 20">
+                                    <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+                                </svg>
+                            }
+                        </div>
+                        <span class="text-sm font-bold text-dark">{{ product.rating }}</span>
+                        <span class="text-sm text-gray-400">({{ product.reviewsCount }} reviews)</span>
+                    </div>
+
+                    <!-- Price -->
+                    <div class="flex items-end gap-3 mb-4">
+                        <span class="text-3xl font-extrabold text-primary">{{ product.price }} <span class="text-base">TND</span></span>
+                        @if (product.originalPrice && product.originalPrice > product.price) {
+                            <span class="text-lg text-gray-400 line-through">{{ product.originalPrice }} TND</span>
+                            <span class="px-2 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full">
+                                -{{ ((product.originalPrice - product.price) / product.originalPrice * 100) | number:'1.0-0' }}%
+                            </span>
+                        }
+                    </div>
+
+                    <!-- Negotiable -->
+                    @if (product.isNegotiable) {
+                        <div class="flex items-center gap-2 mb-4 p-3 bg-accent/10 rounded-xl border border-accent/20">
+                            <svg class="w-5 h-5 text-accent-dark flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                            </svg>
+                            <span class="text-sm font-bold text-accent-dark">Price Negotiable</span>
+                        </div>
+                    }
+
+                    <!-- Description -->
+                    <p class="text-gray-600 text-sm leading-relaxed mb-6 flex-1">{{ product.description }}</p>
+
+                    <!-- Seller -->
+                    <div class="flex items-center gap-3 mb-6 p-3 bg-gray-50 rounded-xl">
+                        <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold">
+                            {{ product.sellerName.charAt(0) }}
+                        </div>
+                        <div>
+                            <p class="font-bold text-dark text-sm">{{ product.sellerName }}</p>
+                            <div class="flex items-center gap-1">
+                                <svg class="w-3.5 h-3.5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                </svg>
+                                <span class="text-xs text-green-600 font-semibold">ESPRIT Verified</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="flex gap-3">
+                        <button
+                            [disabled]="product.stockStatus === 'OUT_OF_STOCK'"
+                            class="flex-1 btn-primary py-3 font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z" />
+                            </svg>
+                            Add to Cart
+                        </button>
+                        <a [routerLink]="['/product', product.id]" (click)="closeQuickView()"
+                            class="px-6 py-3 bg-dark text-white rounded-xl font-bold text-sm hover:bg-black transition-colors flex items-center gap-2">
+                            View Full Details
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                            </svg>
+                        </a>
+                    </div>
+
+                    <!-- Features -->
+                    <div class="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-gray-100">
+                        <div class="flex items-center text-xs text-gray-500">
+                            <svg class="h-4 w-4 text-green-500 mr-1.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            On-campus pickup
+                        </div>
+                        <div class="flex items-center text-xs text-gray-500">
+                            <svg class="h-4 w-4 text-green-500 mr-1.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            Secure payment
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+}

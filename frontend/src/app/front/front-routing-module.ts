@@ -11,6 +11,30 @@ export const FRONT_ROUTES: Routes = [
         loadComponent: () => import('./pages/products/products').then(m => m.Products)
     },
     {
+        path: 'products/manage',
+        loadComponent: () => import('./pages/products/product-management').then(m => m.ProductManagement)
+    },
+    {
+        path: 'products/create',
+        loadComponent: () => import('./pages/products/product-form').then(m => m.ProductForm)
+    },
+    {
+        path: 'products/edit/:id',
+        loadComponent: () => import('./pages/products/product-form').then(m => m.ProductForm)
+    },
+    {
+        path: 'products/shop-settings',
+        loadComponent: () => import('./pages/products/shop-settings').then(m => m.ShopSettings)
+    },
+    {
+        path: 'services/create',
+        loadComponent: () => import('./pages/services/service-form').then(m => m.ServiceForm)
+    },
+    {
+        path: 'services/edit/:id',
+        loadComponent: () => import('./pages/services/service-form').then(m => m.ServiceForm)
+    },
+    {
         path: 'product/:id',
         loadComponent: () => import('./pages/product-details/product-details').then(m => m.ProductDetails)
     },

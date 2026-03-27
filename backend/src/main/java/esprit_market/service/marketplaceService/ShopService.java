@@ -68,6 +68,13 @@ public class ShopService implements IShopService {
     }
 
     @Override
+    public ShopResponseDTO findByOwnerId(ObjectId ownerId) {
+        Shop shop = repository.findByOwnerId(ownerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Shop not found for owner: " + ownerId));
+        return mapper.toDTO(shop);
+    }
+
+    @Override
     public void deleteById(ObjectId id) {
         if (!repository.existsById(id)) {
             throw new ResourceNotFoundException("Shop not found with id: " + id);

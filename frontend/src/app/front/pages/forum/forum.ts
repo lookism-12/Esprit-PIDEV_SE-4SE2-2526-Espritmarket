@@ -2,29 +2,8 @@ import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { ForumCategory, Post, PostStatus, ModerationBadge, ReactionType, ReactionSummary, Comment } from '../../models/forum.model';
-
-interface SimplePost {
-  id: string;
-  author: {
-    name: string;
-    avatar?: string;
-    badge?: string;
-  };
-  category: string;
-  categoryColor: string;
-  title: string;
-  content: string;
-  time: Date;
-  likes: number;
-  loves: number;
-  comments: number;
-  tags: string[];
-  isPinned?: boolean;
-  isLocked?: boolean;
-  moderationBadge?: ModerationBadge;
-  userReaction?: ReactionType;
-}
+import { ForumService, Post } from '../../core/forum.service';
+import { ForumCategory, ModerationBadge, ReactionType, ReactionSummary, Comment } from '../../models/forum.model';
 
 @Component({
   selector: 'app-forum',
@@ -35,6 +14,7 @@ interface SimplePost {
 })
 export class Forum implements OnInit {
   private fb = inject(FormBuilder);
+  private forumService = inject(ForumService);
 
   readonly ReactionType = ReactionType;
 
@@ -44,6 +24,7 @@ export class Forum implements OnInit {
   sortBy = signal<'recent' | 'popular' | 'comments'>('recent');
   showCreatePostModal = signal(false);
   isCreatingPost = signal(false);
+  isLoading = signal(false);
   expandedPostId = signal<string | null>(null);
 
   // Forms
@@ -127,81 +108,7 @@ export class Forum implements OnInit {
   ]);
 
   // Posts
-  posts = signal<SimplePost[]>([
-    {
-      id: '1',
-      author: { name: 'Ahmed B.', badge: 'Expert' },
-      category: 'Study & Exams',
-      categoryColor: 'bg-green-500',
-      title: 'Previous Exam Papers for Probability and Statistics',
-      content: 'Does anyone have the previous exam papers for Probability and Statistics? I really need them for revision. Any help would be appreciated!',
-      time: new Date(Date.now() - 2 * 60 * 60 * 1000),
-      likes: 12,
-      loves: 3,
-      comments: 5,
-      tags: ['Exams', 'Help', '2nd Year'],
-      isPinned: false,
-      userReaction: undefined
-    },
-    {
-      id: '2',
-      author: { name: 'Selima K.', avatar: 'https://ui-avatars.com/api/?name=SK&background=8B0000&color=fff' },
-      category: 'Events & Clubs',
-      categoryColor: 'bg-pink-500',
-      title: 'AI Club Event Tomorrow - Don\'t Miss It!',
-      content: 'The AI Club is hosting an amazing event tomorrow at the main hall! We\'ll have guest speakers from leading tech companies. Free pizza for all attendees! 🍕',
-      time: new Date(Date.now() - 5 * 60 * 60 * 1000),
-      likes: 24,
-      loves: 8,
-      comments: 12,
-      tags: ['Event', 'AI Club', 'Free Food'],
-      isPinned: true,
-      moderationBadge: ModerationBadge.PINNED
-    },
-    {
-      id: '3',
-      author: { name: 'ESPRIT Official', badge: 'Official' },
-      category: 'General Discussion',
-      categoryColor: 'bg-blue-500',
-      title: 'Important: New Library Hours Starting Next Week',
-      content: 'Starting next Monday, the library will have extended hours from 7 AM to 11 PM on weekdays. Weekend hours remain unchanged.',
-      time: new Date(Date.now() - 24 * 60 * 60 * 1000),
-      likes: 45,
-      loves: 12,
-      comments: 8,
-      tags: ['Announcement', 'Library'],
-      isPinned: true,
-      moderationBadge: ModerationBadge.OFFICIAL
-    },
-    {
-      id: '4',
-      author: { name: 'Yassine R.' },
-      category: 'Tech & Projects',
-      categoryColor: 'bg-orange-500',
-      title: 'Looking for teammates for PFE project - Mobile App',
-      content: 'I\'m working on a mobile app for campus navigation and looking for 2 teammates. Tech stack: React Native, Firebase. DM if interested!',
-      time: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-      likes: 18,
-      loves: 5,
-      comments: 15,
-      tags: ['PFE', 'Mobile', 'Team'],
-      userReaction: ReactionType.LIKE
-    },
-    {
-      id: '5',
-      author: { name: 'Meriam L.' },
-      category: 'Jobs & Internships',
-      categoryColor: 'bg-purple-500',
-      title: 'Internship Experience at Vermeg - AMA',
-      content: 'Just finished my 6-month internship at Vermeg. Happy to answer any questions about the application process, daily work, and what they look for in candidates.',
-      time: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-      likes: 56,
-      loves: 15,
-      comments: 32,
-      tags: ['Internship', 'Experience', 'AMA'],
-      moderationBadge: ModerationBadge.TRENDING
-    }
-  ]);
+  posts = signal<Post[]>([]);
 
   // Comments for expanded post
   comments = signal<Comment[]>([]);
@@ -231,23 +138,38 @@ export class Forum implements OnInit {
     // Sorting
     switch (this.sortBy()) {
       case 'popular':
-        filtered = [...filtered].sort((a, b) => (b.likes + b.loves) - (a.likes + a.loves));
+        filtered = [...filtered].sort((a, b) => b.likesCount - a.likesCount);
         break;
       case 'comments':
-        filtered = [...filtered].sort((a, b) => b.comments - a.comments);
+        filtered = [...filtered].sort((a, b) => b.commentsCount - a.commentsCount);
         break;
       case 'recent':
       default:
-        filtered = [...filtered].sort((a, b) => b.time.getTime() - a.time.getTime());
+        filtered = [...filtered].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
         break;
     }
-
-    // Pinned posts first
-    return [...filtered.filter(p => p.isPinned), ...filtered.filter(p => !p.isPinned)];
+ 
+    // Pinned posts first (if isPinned exists on backend, otherwise fallback)
+    return filtered;
   });
 
   ngOnInit(): void {
     this.initForms();
+    this.fetchPosts();
+  }
+ 
+  fetchPosts(): void {
+    this.isLoading.set(true);
+    this.forumService.getAll(this.activeCategory(), this.searchQuery()).subscribe({
+      next: (posts) => {
+        this.posts.set(posts);
+        this.isLoading.set(false);
+      },
+      error: (err) => {
+        console.error('Error fetching posts:', err);
+        this.isLoading.set(false);
+      }
+    });
   }
 
   private initForms(): void {
@@ -289,26 +211,25 @@ export class Forum implements OnInit {
     this.isCreatingPost.set(true);
     const formValue = this.createPostForm.value;
     const category = this.categories().find(c => c.id === formValue.categoryId);
-
-    setTimeout(() => {
-      const newPost: SimplePost = {
-        id: 'new-' + Date.now(),
-        author: { name: 'You' },
-        category: category?.name || 'General',
-        categoryColor: category?.color || 'bg-blue-500',
-        title: formValue.title,
-        content: formValue.content,
-        time: new Date(),
-        likes: 0,
-        loves: 0,
-        comments: 0,
-        tags: formValue.tags ? formValue.tags.split(',').map((t: string) => t.trim()) : []
-      };
-
-      this.posts.update(posts => [newPost, ...posts]);
-      this.isCreatingPost.set(false);
-      this.closeCreatePostModal();
-    }, 1000);
+ 
+    const postData = {
+      title: formValue.title,
+      content: formValue.content,
+      category: category?.name || 'General',
+      tags: formValue.tags ? formValue.tags.split(',').map((t: string) => t.trim()) : []
+    };
+ 
+    this.forumService.create(postData).subscribe({
+      next: () => {
+        this.isCreatingPost.set(false);
+        this.closeCreatePostModal();
+        this.fetchPosts();
+      },
+      error: (err) => {
+        console.error('Error creating post:', err);
+        this.isCreatingPost.set(false);
+      }
+    });
   }
 
   togglePostExpansion(postId: string): void {
@@ -316,32 +237,19 @@ export class Forum implements OnInit {
   }
 
   reactToPost(postId: string, reaction: ReactionType): void {
-    this.posts.update(posts =>
-      posts.map(p => {
-        if (p.id === postId) {
-          const wasReacted = p.userReaction === reaction;
-          return {
-            ...p,
-            userReaction: wasReacted ? undefined : reaction,
-            likes: reaction === ReactionType.LIKE ? (wasReacted ? p.likes - 1 : p.likes + 1) : p.likes,
-            loves: reaction === ReactionType.LOVE ? (wasReacted ? p.loves - 1 : p.loves + 1) : p.loves
-          };
-        }
-        return p;
-      })
-    );
+    // Only supporting Like for now based on backend
+    if (reaction === ReactionType.LIKE) {
+      this.forumService.like(postId).subscribe({
+        next: () => this.fetchPosts(),
+        error: (err) => console.error('Error liking post:', err)
+      });
+    }
   }
-
+ 
   submitComment(postId: string): void {
     if (this.commentForm.invalid) return;
     
-    // Mock comment submission
-    console.log('Submitting comment for post:', postId, this.commentForm.value);
-    
-    this.posts.update(posts =>
-      posts.map(p => p.id === postId ? { ...p, comments: p.comments + 1 } : p)
-    );
-    
+    // Mock comment submission for now
     this.commentForm.reset();
   }
 

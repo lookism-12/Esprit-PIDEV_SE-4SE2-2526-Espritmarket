@@ -1,6 +1,6 @@
 package esprit_market.mappers.userMapper;
 
-import esprit_market.dto.userDto.UserDTO;
+import esprit_market.dto.user.UserDTO;
 import esprit_market.entity.user.User;
 import org.springframework.stereotype.Component;
 

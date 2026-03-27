@@ -1,0 +1,70 @@
+<div class="settings-container">
+  <header class="settings-header">
+    <div class="header-content">
+      <a routerLink="/front/products/manage" class="back-link">
+        <i class="fas fa-arrow-left"></i> Back to Dashboard
+      </a>
+      <h1>Shop Settings</h1>
+      <p class="subtitle">Customize your shop profile and marketplace identity</p>
+    </div>
+  </header>
+
+  <div class="settings-grid">
+    <!-- Preview Card -->
+    <div class="preview-card card">
+      <h3>Shop Preview</h3>
+      <div class="shop-preview">
+        <div class="banner-preview">
+          <img [src]="shopForm.get('banner')?.value || 'assets/images/default-shop-banner.jpg'" alt="Banner">
+        </div>
+        <div class="shop-info">
+          <img [src]="shopForm.get('logo')?.value || 'assets/images/default-shop-logo.png'" alt="Logo" class="logo-preview">
+          <div class="details">
+            <h4 class="name">{{ shopForm.get('name')?.value || 'Your Shop Name' }}</h4>
+            <div class="stats">
+              <span>⭐ {{ shop()?.rating || 0 }}</span>
+              <span>• {{ shop()?.reviewsCount || 0 }} reviews</span>
+            </div>
+          </div>
+        </div>
+        <p class="description">{{ shopForm.get('description')?.value || 'No description yet...' }}</p>
+      </div>
+    </div>
+
+    <!-- Edit Form -->
+    <form [formGroup]="shopForm" (ngSubmit)="onSubmit()" class="settings-form card">
+      <div class="form-section">
+        <h3>General Information</h3>
+        <div class="form-group">
+          <label for="name">Shop Name</label>
+          <input id="name" type="text" formControlName="name" placeholder="Enter your business name">
+          <span *ngIf="isFieldInvalid('name')" class="error-msg">Shop name is required</span>
+        </div>
+        <div class="form-group">
+          <label for="description">Business Description</label>
+          <textarea id="description" formControlName="description" rows="4" placeholder="Tell customers about your shop..."></textarea>
+          <span *ngIf="isFieldInvalid('description')" class="error-msg">A short description is required (min 20 chars)</span>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>Branding & Media</h3>
+        <div class="form-group">
+          <label for="logo">Shop Logo (URL)</label>
+          <input id="logo" type="text" formControlName="logo" placeholder="HTTPS://...">
+        </div>
+        <div class="form-group">
+          <label for="banner">Shop Banner (URL)</label>
+          <input id="banner" type="text" formControlName="banner" placeholder="HTTPS://...">
+        </div>
+      </div>
+
+      <div class="form-footer">
+        <button type="button" routerLink="/front/products/manage" class="btn btn-outline">Cancel</button>
+        <button type="submit" class="btn btn-primary" [disabled]="isSaving() || isLoading()">
+          {{ isSaving() ? 'Saving Changes...' : 'Save Changes' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

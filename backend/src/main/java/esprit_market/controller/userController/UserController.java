@@ -5,7 +5,7 @@ import esprit_market.config.Exceptions.DuplicateResourceException;
 import esprit_market.config.Exceptions.BadRequestException;
 import esprit_market.config.Exceptions.ResourceNotFoundException;
 import esprit_market.config.JwtUtil;
-import esprit_market.dto.userDto.*;
+import esprit_market.dto.user.*;
 import esprit_market.entity.user.User;
 import esprit_market.mappers.userMapper.UserMapper;
 import esprit_market.service.userService.IUserService;

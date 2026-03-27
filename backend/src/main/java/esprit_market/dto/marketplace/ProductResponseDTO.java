@@ -1,9 +1,10 @@
 package esprit_market.dto.marketplace;
 
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import esprit_market.Enum.marketplaceEnum.ProductCondition;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,7 +21,14 @@ public class ProductResponseDTO {
     @Builder.Default
     private List<String> categoryIds = new ArrayList<>();
     private double price;
+    private Double originalPrice;
     private int stock;
+    
+    private Double rating;
+    private Integer reviewsCount;
+    private ProductCondition condition;
+    private boolean isNegotiable;
+    
     @Builder.Default
     private List<ProductImageDTO> images = new ArrayList<>();
 }

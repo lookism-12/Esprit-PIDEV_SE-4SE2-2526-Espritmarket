@@ -3,10 +3,12 @@ package esprit_market.controller.marketplaceController;
 import esprit_market.dto.marketplace.ShopRequestDTO;
 import esprit_market.dto.marketplace.ShopResponseDTO;
 import esprit_market.service.marketplaceService.IShopService;
+import esprit_market.service.userService.IUserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,6 +19,15 @@ import java.util.List;
 @Tag(name = "Shop", description = "Shop management APIs")
 public class ShopController {
     private final IShopService service;
+    private final IUserService userService;
+
+    @GetMapping("/my")
+    @Operation(summary = "Get current provider's shop")
+    public ShopResponseDTO getMyShop() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        ObjectId userId = userService.resolveUserId(email);
+        return service.findByOwnerId(userId);
+    }
 
     @GetMapping
     @Operation(summary = "Get all shops")

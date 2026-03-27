@@ -1,4 +1,4 @@
-import { Component, input, computed } from '@angular/core';
+import { Component, input, computed, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Product } from '../../../models/product';
@@ -12,6 +12,7 @@ import { Product } from '../../../models/product';
 })
 export class ProductCard {
   product = input.required<Product>();
+  quickView = output<Product>();
 
   // Generate star array based on rating
   readonly stars = computed(() => {

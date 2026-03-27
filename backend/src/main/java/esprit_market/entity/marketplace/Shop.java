@@ -5,8 +5,7 @@ import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.time.LocalDateTime;
 
 @Document(collection = "shops")
 @Data
@@ -17,4 +16,14 @@ public class Shop {
     @Id
     private ObjectId id;
     private ObjectId ownerId;
+    
+    private String name;
+    private String description;
+    private String logo;
+    private String banner;
+    
+    private Double rating;
+    private Integer reviewsCount;
+    
+    private LocalDateTime joinedAt;
 }

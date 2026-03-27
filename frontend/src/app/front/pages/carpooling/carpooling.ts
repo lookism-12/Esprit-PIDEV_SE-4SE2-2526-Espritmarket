@@ -3,22 +3,7 @@ import { CommonModule, CurrencyPipe } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AuthService } from '../../core/auth.service';
 import { UserRole } from '../../models/user.model';
-
-interface Ride {
-  id: string;
-  driver: string;
-  driverRating: number;
-  from: string;
-  to: string;
-  date: Date;
-  time: string;
-  price: number;
-  seats: number;
-  availableSeats: number;
-  vehicleType: string;
-  recurring: boolean;
-  status: 'active' | 'full' | 'completed' | 'cancelled';
-}
+import { RideService, Ride, RideFilter } from '../../core/ride.service';
 
 @Component({
   selector: 'app-carpooling',
@@ -30,12 +15,14 @@ interface Ride {
 export class Carpooling implements OnInit {
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
+  private rideService = inject(RideService);
 
   // State
   searchQuery = signal('');
   activeView = signal<'passenger' | 'driver'>('passenger');
   showCreateRideModal = signal(false);
   isCreatingRide = signal(false);
+  isLoading = signal(false);
 
   // Forms
   searchForm!: FormGroup;
@@ -47,87 +34,10 @@ export class Carpooling implements OnInit {
     return user?.role === UserRole.DRIVER;
   });
 
-  rides = signal<Ride[]>([
-    {
-      id: '1',
-      driver: 'Firas G.',
-      driverRating: 4.8,
-      from: 'Tunis (Bardo)',
-      to: 'ESPRIT (Ghazela)',
-      date: new Date(),
-      time: '08:00 AM',
-      price: 2.5,
-      seats: 3,
-      availableSeats: 2,
-      vehicleType: 'Car',
-      recurring: true,
-      status: 'active'
-    },
-    {
-      id: '2',
-      driver: 'Meriam L.',
-      driverRating: 4.9,
-      from: 'Ariana',
-      to: 'ESPRIT (Ghazela)',
-      date: new Date(),
-      time: '08:30 AM',
-      price: 1.5,
-      seats: 4,
-      availableSeats: 4,
-      vehicleType: 'Car',
-      recurring: false,
-      status: 'active'
-    },
-    {
-      id: '3',
-      driver: 'Ahmed K.',
-      driverRating: 4.7,
-      from: 'La Marsa',
-      to: 'ESPRIT (Ghazela)',
-      date: new Date(),
-      time: '07:45 AM',
-      price: 3.0,
-      seats: 4,
-      availableSeats: 1,
-      vehicleType: 'Car',
-      recurring: true,
-      status: 'active'
-    },
-    {
-      id: '4',
-      driver: 'Sarra M.',
-      driverRating: 5.0,
-      from: 'Manouba',
-      to: 'ESPRIT (Ghazela)',
-      date: new Date(),
-      time: '09:00 AM',
-      price: 2.0,
-      seats: 3,
-      availableSeats: 0,
-      vehicleType: 'Car',
-      recurring: false,
-      status: 'full'
-    }
-  ]);
+  rides = signal<Ride[]>([]);
 
   // My rides (for drivers)
-  myRides = signal<Ride[]>([
-    {
-      id: '5',
-      driver: 'Me',
-      driverRating: 4.8,
-      from: 'Tunis Center',
-      to: 'ESPRIT (Ghazela)',
-      date: new Date(),
-      time: '08:15 AM',
-      price: 2.5,
-      seats: 4,
-      availableSeats: 2,
-      vehicleType: 'Car',
-      recurring: true,
-      status: 'active'
-    }
-  ]);
+  myRides = signal<Ride[]>([]);
 
   // Filtered rides
   filteredRides = computed(() => {
@@ -141,6 +51,32 @@ export class Carpooling implements OnInit {
 
   ngOnInit(): void {
     this.initForms();
+    this.fetchRides();
+    this.fetchMyRides();
+  }
+ 
+  fetchRides(): void {
+    const filter: RideFilter = {};
+    if (this.searchQuery()) filter.departureLocation = this.searchQuery();
+    
+    this.isLoading.set(true);
+    this.rideService.getAll(filter).subscribe({
+      next: (rides) => {
+        this.rides.set(rides);
+        this.isLoading.set(false);
+      },
+      error: (err) => {
+        console.error('Error fetching rides:', err);
+        this.isLoading.set(false);
+      }
+    });
+  }
+ 
+  fetchMyRides(): void {
+    this.rideService.getMyRides().subscribe({
+      next: (rides) => this.myRides.set(rides),
+      error: (err) => console.error('Error fetching my rides:', err)
+    });
   }
 
   private initForms(): void {
@@ -211,36 +147,44 @@ export class Carpooling implements OnInit {
 
     this.isCreatingRide.set(true);
     const formValue = this.createRideForm.value;
-
-    // Mock creation
-    setTimeout(() => {
-      const newRide: Ride = {
-        id: 'new-' + Date.now(),
-        driver: 'Me',
-        driverRating: 4.8,
-        from: formValue.from,
-        to: formValue.to,
-        date: new Date(formValue.date),
-        time: formValue.time,
-        price: formValue.price,
-        seats: formValue.seats,
-        availableSeats: formValue.seats,
-        vehicleType: formValue.vehicleType,
-        recurring: formValue.recurring,
-        status: 'active'
-      };
-
-      this.myRides.update(rides => [...rides, newRide]);
-      this.isCreatingRide.set(false);
-      this.closeCreateRideModal();
-    }, 1000);
+    
+    // Combine date and time
+    const [hours, minutes] = formValue.time.split(':');
+    const departureTime = new Date(formValue.date);
+    departureTime.setHours(parseInt(hours || '0'), parseInt(minutes || '0'));
+ 
+    const rideData = {
+      departureLocation: formValue.from,
+      destinationLocation: formValue.to,
+      departureTime: departureTime.toISOString(),
+      availableSeats: formValue.seats,
+      pricePerSeat: formValue.price,
+      vehicleId: null
+    };
+ 
+    this.rideService.create(rideData).subscribe({
+      next: () => {
+        this.isCreatingRide.set(false);
+        this.closeCreateRideModal();
+        this.fetchMyRides();
+        this.fetchRides();
+      },
+      error: (err) => {
+        console.error('Error creating ride:', err);
+        this.isCreatingRide.set(false);
+      }
+    });
   }
 
   cancelRide(rideId: string): void {
     if (confirm('Are you sure you want to cancel this ride?')) {
-      this.myRides.update(rides => 
-        rides.map(r => r.id === rideId ? { ...r, status: 'cancelled' as const } : r)
-      );
+      this.rideService.cancel(rideId).subscribe({
+        next: () => {
+          this.fetchMyRides();
+          this.fetchRides();
+        },
+        error: (err) => console.error('Error cancelling ride:', err)
+      });
     }
   }
 

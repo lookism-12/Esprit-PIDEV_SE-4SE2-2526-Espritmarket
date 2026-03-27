@@ -33,10 +33,13 @@ export { FavoriteService } from './favorite.service';
 export { NegotiationService } from './negotiation.service';
 export { DeliveryService, SavService } from './delivery.service';
 export { CarpoolingService } from './carpooling.service';
-export { ForumService, GroupService, ChatService } from './forum.service';
+export { ForumService } from './forum.service';
 export { LoyaltyService } from './loyalty.service';
 export { PreferencesService } from './preferences.service';
-export { ShopService, CategoryService } from './shop.service';
+export { ShopService } from './shop.service';
+export { CategoryService } from './category.service';
+export { MarketplaceService } from './marketplace-service.service';
+export type { ServiceEntity } from './marketplace-service.service';
 
 // Guards
 export { authGuard, guestGuard } from './auth.guard';

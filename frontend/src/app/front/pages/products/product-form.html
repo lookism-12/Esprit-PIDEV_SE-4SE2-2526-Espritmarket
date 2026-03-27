@@ -1,0 +1,112 @@
+<div class="form-container">
+  <header class="form-header">
+    <div class="header-content">
+      <a routerLink="/front/products/manage" class="back-link">
+        <i class="fas fa-arrow-left"></i> Back to Products
+      </a>
+      <h1>{{ isEditMode() ? 'Edit Product' : 'Add New Product' }}</h1>
+      <p class="subtitle">{{ isEditMode() ? 'Update your product details and pricing' : 'List a new item on the marketplace' }}</p>
+    </div>
+  </header>
+
+  <form [formGroup]="productForm" (ngSubmit)="onSubmit()" class="product-form card">
+    <div class="form-grid">
+      <!-- Basic Info Section -->
+      <section class="form-section">
+        <h3>Basic Information</h3>
+        
+        <div class="form-group">
+          <label for="name">Product Name</label>
+          <input id="name" type="text" formControlName="name" placeholder="e.g. iPhone 15 Pro Max"
+                 [class.invalid]="isFieldInvalid('name')">
+          <span *ngIf="isFieldInvalid('name')" class="error-msg">Name is required (min 3 chars)</span>
+        </div>
+
+        <div class="form-group">
+          <label for="description">Description</label>
+          <textarea id="description" formControlName="description" rows="5"
+                    placeholder="Describe your product in detail..."
+                    [class.invalid]="isFieldInvalid('description')"></textarea>
+          <span *ngIf="isFieldInvalid('description')" class="error-msg">Detailed description is required (min 20 chars)</span>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="categoryIds">Category</label>
+            <select id="categoryIds" formControlName="categoryIds" multiple
+                    [class.invalid]="isFieldInvalid('categoryIds')">
+              <option *ngFor="let cat of categories()" [value]="cat.id">{{ cat.name }}</option>
+            </select>
+            <span *ngIf="isFieldInvalid('categoryIds')" class="error-msg">Select at least one category</span>
+          </div>
+
+          <div class="form-group">
+            <label for="condition">Condition</label>
+            <select id="condition" formControlName="condition">
+              <option *ngFor="let cond of conditions" [value]="cond">{{ cond }}</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <!-- Pricing & Inventory Section -->
+      <section class="form-section">
+        <h3>Pricing & Inventory</h3>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="price">Sale Price (TND)</label>
+            <input id="price" type="number" formControlName="price" step="0.01"
+                   [class.invalid]="isFieldInvalid('price')">
+            <span *ngIf="isFieldInvalid('price')" class="error-msg">Valid price is required</span>
+          </div>
+
+          <div class="form-group">
+            <label for="originalPrice">Original Price (Optional)</label>
+            <input id="originalPrice" type="number" formControlName="originalPrice" step="0.01"
+                   placeholder="e.g. 1500">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="stock">Initial Stock</label>
+            <input id="stock" type="number" formControlName="stock"
+                   [class.invalid]="isFieldInvalid('stock')">
+            <span *ngIf="isFieldInvalid('stock')" class="error-msg">Enter quantity</span>
+          </div>
+          
+          <div class="form-group checkbox-group">
+            <label class="checkbox-container">
+              <input type="checkbox" formControlName="isNegotiable">
+              <span class="checkmark"></span>
+              Price is Negotiable
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <!-- Media Section -->
+      <section class="form-section full-width">
+        <h3>Media</h3>
+        <div class="form-group">
+          <label for="imageUrl">Main Image URL</label>
+          <div class="url-input-group">
+            <input id="imageUrl" type="text" formControlName="imageUrl" placeholder="HTTPS://...">
+          </div>
+          <div *ngIf="productForm.get('imageUrl')?.value" class="image-preview">
+            <img [src]="productForm.get('imageUrl')?.value" alt="Preview">
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Footer Actions -->
+    <div class="form-footer">
+      <button type="button" routerLink="/front/products/manage" class="btn btn-outline">Cancel</button>
+      <button type="submit" class="btn btn-primary" [disabled]="isSubmitting()">
+        {{ isSubmitting() ? 'Saving...' : (isEditMode() ? 'Update Product' : 'Create Product') }}
+      </button>
+    </div>
+  </form>
+</div>

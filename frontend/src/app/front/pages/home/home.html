@@ -151,12 +151,12 @@
         <!-- Products for Flash Sales -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             @for (product of featuredProducts(); track product.id) {
-            <app-product-card [product]="product"></app-product-card>
+            <app-product-card [product]="product" (quickView)="openQuickView($event)"></app-product-card>
             }
         </div>
 
         <div class="text-center mt-10">
-            <a routerLink="/products" class="btn-primary inline-flex px-10">View All Products</a>
+            <a routerLink="/products" class="btn-primary inline-flex px-8 py-2.5 text-sm">View All Products</a>
         </div>
     </section>
 
@@ -192,48 +192,66 @@
                 </span>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <!-- AI Info Card -->
-                <div class="premium-card p-8 bg-gradient-to-br from-primary/5 to-accent/5 border border-primary/10">
-                    <div class="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-6">
-                        <svg class="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            @if (isAuthenticated()) {
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- AI Info Card -->
+                    <div class="premium-card p-8 bg-gradient-to-br from-primary/5 to-accent/5 border border-primary/10">
+                        <div class="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-6">
+                            <svg class="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-dark mb-3">Smart Recommendations</h3>
+                        <p class="text-gray-600 text-sm mb-6">Our AI analyzes your preferences, browsing history, and academic interests to suggest products you'll love.</p>
+                        <ul class="space-y-3 text-sm">
+                            <li class="flex items-center gap-2 text-gray-600">
+                                <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                </svg>
+                                Personalized suggestions
+                            </li>
+                            <li class="flex items-center gap-2 text-gray-600">
+                                <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                </svg>
+                                Based on your department
+                            </li>
+                            <li class="flex items-center gap-2 text-gray-600">
+                                <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                </svg>
+                                Price-matched to budget
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Recommended Products -->
+                    <div class="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        @for (product of recommendedProducts(); track product.id) {
+                            <app-product-card [product]="product" (quickView)="openQuickView($event)"></app-product-card>
+                        }
+                    </div>
+                </div>
+            } @else {
+                <!-- Guest View: AI Sign In Placeholder -->
+                <div class="bg-white/80 backdrop-blur-sm border border-gray-100 rounded-[2rem] p-12 text-center shadow-sm max-w-4xl mx-auto animate-fadeIn group">
+                    <div class="w-20 h-20 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-8 group-hover:scale-110 transition-transform duration-500">
+                        <svg class="w-10 h-10 text-[#800000]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                         </svg>
                     </div>
-                    <h3 class="text-xl font-bold text-dark mb-3">Smart Recommendations</h3>
-                    <p class="text-gray-600 text-sm mb-6">Our AI analyzes your preferences, browsing history, and academic interests to suggest products you'll love.</p>
-                    <ul class="space-y-3 text-sm">
-                        <li class="flex items-center gap-2 text-gray-600">
-                            <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                            </svg>
-                            Personalized suggestions
-                        </li>
-                        <li class="flex items-center gap-2 text-gray-600">
-                            <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                            </svg>
-                            Based on your department
-                        </li>
-                        <li class="flex items-center gap-2 text-gray-600">
-                            <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                            </svg>
-                            Price-matched to budget
-                        </li>
-                    </ul>
-                    <a routerLink="/profile" [queryParams]="{tab: 'preferences'}" class="mt-6 text-primary font-bold text-sm hover:underline block">
-                        Set Your Preferences →
+                    
+                    <h3 class="text-2xl font-black text-gray-900 mb-4 tracking-tight">Smart Product Recommendations</h3>
+                    <p class="text-gray-500 text-sm max-w-lg mx-auto leading-relaxed mb-10">
+                        Our AI analyzes your browsing patterns, favorites, and purchase history to suggest products you'll love. 
+                        Sign in to unlock <span class="text-[#800000] font-bold">personalized recommendations</span>!
+                    </p>
+
+                    <a routerLink="/login" class="inline-flex h-10 px-8 bg-[#800000] text-white font-bold rounded-xl items-center justify-center shadow-lg shadow-red-900/10 hover:bg-[#a00000] transition-all hover:-translate-y-0.5 text-xs">
+                        Sign In for Recommendations
                     </a>
                 </div>
-
-                <!-- Recommended Products -->
-                <div class="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    @for (product of recommendedProducts(); track product.id) {
-                        <app-product-card [product]="product"></app-product-card>
-                    }
-                </div>
-            </div>
+            }
         </div>
     </section>
 
@@ -278,3 +296,132 @@
         </div>
     </section>
 </div>
+
+<!-- Quick View Modal -->
+@if (selectedProduct(); as product) {
+<div class="fixed inset-0 z-50 overflow-y-auto" (click)="closeQuickView()">
+    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm"></div>
+    <div class="flex min-h-full items-center justify-center p-4">
+        <div class="relative w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden animate-[scaleIn_0.4s_cubic-bezier(0.16,1,0.3,1)]" (click)="$event.stopPropagation()">
+            <!-- Close Button -->
+            <button (click)="closeQuickView()" class="absolute top-4 right-4 z-10 w-10 h-10 bg-white/90 rounded-full shadow-lg flex items-center justify-center text-gray-500 hover:text-dark hover:bg-white transition-all hover:rotate-90 duration-300">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+
+            <div class="grid grid-cols-1 md:grid-cols-2">
+                <!-- Product Image -->
+                <div class="relative aspect-square bg-gray-50 overflow-hidden">
+                    <img [src]="product.imageUrl" [alt]="product.name" class="w-full h-full object-cover animate-[zoomIn_0.6s_ease-out]">
+                    <div class="absolute top-4 left-4">
+                        <span class="px-3 py-1 bg-dark text-white text-xs font-bold rounded-full">
+                            {{ getConditionText(product.condition) }}
+                        </span>
+                    </div>
+                    @if (product.stockStatus === 'OUT_OF_STOCK') {
+                        <div class="absolute inset-0 flex items-center justify-center bg-black/30">
+                            <span class="px-6 py-3 bg-red-500 text-white font-bold rounded-full text-lg">Out of Stock</span>
+                        </div>
+                    }
+                </div>
+
+                <!-- Product Info -->
+                <div class="p-8 flex flex-col animate-[slideInRight_0.5s_ease-out]">
+                    <div class="flex items-center gap-3 mb-3">
+                        <span class="px-3 py-1 bg-primary/10 text-primary text-xs font-bold rounded-full uppercase tracking-wider">
+                            {{ product.category }}
+                        </span>
+                        <span class="px-3 py-1 text-xs font-bold rounded-full" [ngClass]="getStockStatusClass(product.stockStatus)">
+                            {{ getStockStatusText(product.stockStatus) }}
+                        </span>
+                    </div>
+
+                    <h2 class="text-2xl font-extrabold text-dark mb-2">{{ product.name }}</h2>
+
+                    <div class="flex items-center gap-2 mb-4">
+                        <div class="flex text-accent">
+                            @for (i of [1,2,3,4,5]; track i) {
+                                <svg class="w-4 h-4" [class.fill-current]="i <= product.rating" [class.text-gray-200]="i > product.rating" viewBox="0 0 20 20">
+                                    <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+                                </svg>
+                            }
+                        </div>
+                        <span class="text-sm font-bold text-dark">{{ product.rating }}</span>
+                        <span class="text-sm text-gray-400">({{ product.reviewsCount }} reviews)</span>
+                    </div>
+
+                    <div class="flex items-end gap-3 mb-4">
+                        <span class="text-3xl font-extrabold text-primary">{{ product.price }} <span class="text-base">TND</span></span>
+                        @if (product.originalPrice && product.originalPrice > product.price) {
+                            <span class="text-lg text-gray-400 line-through">{{ product.originalPrice }} TND</span>
+                            <span class="px-2 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full">
+                                -{{ ((product.originalPrice - product.price) / product.originalPrice * 100) | number:'1.0-0' }}%
+                            </span>
+                        }
+                    </div>
+
+                    @if (product.isNegotiable) {
+                        <div class="flex items-center gap-2 mb-4 p-3 bg-accent/10 rounded-xl border border-accent/20">
+                            <svg class="w-5 h-5 text-accent-dark flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                            </svg>
+                            <span class="text-sm font-bold text-accent-dark">Price Negotiable</span>
+                        </div>
+                    }
+
+                    <p class="text-gray-600 text-sm leading-relaxed mb-6 flex-1">{{ product.description }}</p>
+
+                    <div class="flex items-center gap-3 mb-6 p-3 bg-gray-50 rounded-xl">
+                        <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold">
+                            {{ product.sellerName.charAt(0) }}
+                        </div>
+                        <div>
+                            <p class="font-bold text-dark text-sm">{{ product.sellerName }}</p>
+                            <div class="flex items-center gap-1">
+                                <svg class="w-3.5 h-3.5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                </svg>
+                                <span class="text-xs text-green-600 font-semibold">ESPRIT Verified</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-3">
+                        <button
+                            [disabled]="product.stockStatus === 'OUT_OF_STOCK'"
+                            class="flex-1 btn-primary py-3 font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z" />
+                            </svg>
+                            Add to Cart
+                        </button>
+                        <a [routerLink]="['/product', product.id]" (click)="closeQuickView()"
+                            class="px-6 py-3 bg-dark text-white rounded-xl font-bold text-sm hover:bg-black transition-colors flex items-center gap-2">
+                            View Full Details
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                            </svg>
+                        </a>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-gray-100">
+                        <div class="flex items-center text-xs text-gray-500">
+                            <svg class="h-4 w-4 text-green-500 mr-1.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            On-campus pickup
+                        </div>
+                        <div class="flex items-center text-xs text-gray-500">
+                            <svg class="h-4 w-4 text-green-500 mr-1.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            Secure payment
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+}

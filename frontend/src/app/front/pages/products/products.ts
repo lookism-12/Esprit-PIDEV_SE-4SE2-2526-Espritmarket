@@ -3,8 +3,10 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, ActivatedRoute } from '@angular/router';
 import { ProductCard } from '../../shared/components/product-card/product-card';
+import { ProductService, ProductFilter } from '../../core/product.service';
+import { AuthService } from '../../core/auth.service';
 import { Product, StockStatus, ProductCondition } from '../../models/product';
-import { ProductService } from '../../core/product.service';
+import { UserRole } from '../../models/user.model';
 
 @Component({
   selector: 'app-products',
@@ -16,107 +18,13 @@ import { ProductService } from '../../core/product.service';
 export class Products implements OnInit {
   private route = inject(ActivatedRoute);
   private productService = inject(ProductService);
+  private authService = inject(AuthService);
+
+  // Auth signals
+  isProvider = computed(() => this.authService.userRole() === UserRole.PROVIDER);
 
   // Products data
-  products = signal<Product[]>([
-    {
-      id: '1',
-      name: 'Modern Laptop Stand',
-      description: 'Ergonomic aluminum laptop stand for better productivity.',
-      price: 120,
-      category: 'Electronics',
-      imageUrl: 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?q=80&w=870&auto=format&fit=crop',
-      sellerId: 'seller1',
-      sellerName: 'Amine K.',
-      rating: 4.8,
-      reviewsCount: 12,
-      stock: 5,
-      stockStatus: StockStatus.IN_STOCK,
-      condition: ProductCondition.NEW,
-      isNegotiable: false
-    },
-    {
-      id: '2',
-      name: 'Wireless Headphones',
-      description: 'Noise cancelling premium headphones.',
-      price: 350,
-      originalPrice: 400,
-      category: 'Electronics',
-      imageUrl: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=870&auto=format&fit=crop',
-      sellerId: 'seller2',
-      sellerName: 'Sarra M.',
-      rating: 4.5,
-      reviewsCount: 25,
-      stock: 2,
-      stockStatus: StockStatus.LOW_STOCK,
-      condition: ProductCondition.LIKE_NEW,
-      isNegotiable: true
-    },
-    {
-      id: '5',
-      name: 'Mechanical Keyboard',
-      description: 'RGB mechanical keyboard with Cherry MX switches.',
-      price: 180,
-      category: 'Gaming',
-      imageUrl: 'https://images.unsplash.com/photo-1511467687858-23d96c32e4ae?q=80&w=870&auto=format&fit=crop',
-      sellerId: 'seller3',
-      sellerName: 'Yassine R.',
-      rating: 4.7,
-      reviewsCount: 18,
-      stock: 8,
-      stockStatus: StockStatus.IN_STOCK,
-      condition: ProductCondition.NEW,
-      isNegotiable: false
-    },
-    {
-      id: '6',
-      name: 'Organic Chemistry Notes',
-      description: 'Comprehensive notes for engineering students.',
-      price: 15,
-      category: 'Books',
-      imageUrl: 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?q=80&w=773&auto=format&fit=crop',
-      sellerId: 'seller4',
-      sellerName: 'Leila J.',
-      rating: 5.0,
-      reviewsCount: 42,
-      stock: 20,
-      stockStatus: StockStatus.IN_STOCK,
-      condition: ProductCondition.GOOD,
-      isNegotiable: true
-    },
-    {
-      id: '7',
-      name: 'IKEA Desk Lamp',
-      description: 'LED desk lamp with adjustable arm.',
-      price: 35,
-      category: 'Furniture',
-      imageUrl: 'https://images.unsplash.com/photo-1534073828943-f801091bb18c?q=80&w=774&auto=format&fit=crop',
-      sellerId: 'seller5',
-      sellerName: 'Karim O.',
-      rating: 4.3,
-      reviewsCount: 10,
-      stock: 0,
-      stockStatus: StockStatus.OUT_OF_STOCK,
-      condition: ProductCondition.GOOD,
-      isNegotiable: true
-    },
-    {
-      id: '8',
-      name: 'Scientific Calculator TI-84',
-      description: 'Essential for engineering exams.',
-      price: 85,
-      category: 'Electronics',
-      imageUrl: 'https://images.unsplash.com/photo-1564466809058-bf4114d55352?q=80&w=400',
-      sellerId: 'seller6',
-      sellerName: 'Ahmed S.',
-      rating: 4.9,
-      reviewsCount: 33,
-      stock: 4,
-      stockStatus: StockStatus.IN_STOCK,
-      condition: ProductCondition.LIKE_NEW,
-      isNegotiable: false
-    }
-  ]);
+  products = signal<Product[]>([]);
 
   // Filter state
   searchQuery = signal<string>('');
@@ -135,6 +43,8 @@ export class Products implements OnInit {
   isLoading = signal<boolean>(false);
   viewMode = signal<'grid' | 'list'>('grid');
   showFilters = signal<boolean>(true);
+  selectedProduct = signal<Product | null>(null);
+  showAddMenu = signal<boolean>(false);
 
   // Categories
   categories = ['All', 'Electronics', 'Books', 'Furniture', 'Gaming', 'Services', 'Others'];
@@ -220,6 +130,25 @@ export class Products implements OnInit {
       if (params['category']) {
         this.selectedCategory.set(params['category']);
       }
+      this.fetchProducts();
+    });
+  }
+ 
+  fetchProducts(): void {
+    const filter: ProductFilter = {};
+    if (this.selectedCategory() !== 'All') filter.category = this.selectedCategory();
+    if (this.searchQuery()) filter.search = this.searchQuery();
+    
+    this.isLoading.set(true);
+    this.productService.getAll(filter).subscribe({
+      next: (products) => {
+        this.products.set(products);
+        this.isLoading.set(false);
+      },
+      error: (err) => {
+        console.error('Error fetching products:', err);
+        this.isLoading.set(false);
+      }
     });
   }
 
@@ -293,5 +222,19 @@ export class Products implements OnInit {
       case StockStatus.OUT_OF_STOCK: return 'Out of Stock';
       default: return 'Unknown';
     }
+  }
+
+  openQuickView(product: Product): void {
+    this.selectedProduct.set(product);
+    document.body.style.overflow = 'hidden';
+  }
+
+  closeQuickView(): void {
+    this.selectedProduct.set(null);
+    document.body.style.overflow = '';
+  }
+
+  getConditionText(condition: ProductCondition): string {
+    return condition.replace('_', ' ');
   }
 }

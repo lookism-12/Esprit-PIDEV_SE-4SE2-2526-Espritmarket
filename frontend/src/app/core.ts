@@ -47,10 +47,11 @@ export { FavoriteService } from './front/core/favorite.service';
 export { NegotiationService } from './front/core/negotiation.service';
 export { DeliveryService, SavService } from './front/core/delivery.service';
 export { CarpoolingService } from './front/core/carpooling.service';
-export { ForumService, GroupService, ChatService } from './front/core/forum.service';
+export { ForumService } from './front/core/forum.service';
 export { LoyaltyService } from './front/core/loyalty.service';
 export { PreferencesService } from './front/core/preferences.service';
-export { ShopService, CategoryService } from './front/core/shop.service';
+export { ShopService } from './front/core/shop.service';
+export { CategoryService } from './front/core/category.service';
 
 // ==================== Front-End Guards ====================
 export { authGuard, guestGuard } from './front/core/auth.guard';

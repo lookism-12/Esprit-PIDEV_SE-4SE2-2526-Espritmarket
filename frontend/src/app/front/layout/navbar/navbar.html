@@ -11,9 +11,9 @@
 
 <!-- Main Header -->
 <header class="navbar-header sticky top-0 z-50">
-  <div class="navbar-gradient">
+  <div class="dark-luxury-gradient shadow-xl border-b border-white/5">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="navbar-container flex items-center justify-between h-28 sm:h-32 lg:h-36 gap-4">
+      <div class="navbar-container flex items-center justify-between h-16 lg:h-20 gap-4">
         
         <!-- LEFT: Logo -->
         <div class="navbar-logo flex-shrink-0">
@@ -21,32 +21,32 @@
             <img 
               src="assets/logo.png" 
               alt="ESPRIT Market" 
-              class="logo-image w-auto object-contain"
+              class="logo-image h-10 lg:h-14 w-auto object-contain brightness-0 invert opacity-90 hover:opacity-100 transition-opacity"
             />
           </a>
         </div>
 
         <!-- CENTER: Navigation Links (Desktop) -->
-        <nav class="navbar-nav hidden lg:flex items-center gap-8">
+        <nav class="navbar-nav hidden lg:flex items-center gap-8 text-sm uppercase tracking-widest font-black">
           <a routerLink="/products" 
-             routerLinkActive="nav-active" 
+             routerLinkActive="text-primary-light" 
              [routerLinkActiveOptions]="{exact: false}"
-             class="nav-link">
+             class="text-white/70 hover:text-white transition-all duration-300">
             Marketplace
           </a>
           <a routerLink="/carpooling" 
-             routerLinkActive="nav-active"
-             class="nav-link">
+             routerLinkActive="text-primary-light"
+             class="text-white/70 hover:text-white transition-all duration-300">
             Carpooling
           </a>
           <a routerLink="/forum" 
-             routerLinkActive="nav-active"
-             class="nav-link">
+             routerLinkActive="text-primary-light"
+             class="text-white/70 hover:text-white transition-all duration-300">
             Forum
           </a>
           <a routerLink="/about" 
-             routerLinkActive="nav-active"
-             class="nav-link">
+             routerLinkActive="text-primary-light"
+             class="text-white/70 hover:text-white transition-all duration-300">
             About
           </a>
         </nav>
@@ -182,10 +182,60 @@
             </a>
           </div>
 
+          <!-- Sell Button (Provider Only) -->
+          @if (isUserLoggedIn() && isProvider()) {
+            <div class="relative sell-dropdown">
+              <button (click)="showSellMenu.update(v => !v)" 
+                class="sell-trigger nav-sell-btn hidden md:flex items-center gap-2 px-4 py-2 bg-primary text-white font-bold rounded-xl transition-all hover:bg-primary-dark shadow-lg shadow-primary/20">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                <span>Vendre</span>
+                <svg class="w-4 h-4 transition-transform duration-200" [class.rotate-180]="showSellMenu()" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              <!-- Sell Dropdown Menu -->
+              @if (showSellMenu()) {
+                <div class="absolute right-0 top-full mt-2 w-56 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 py-2 z-[60] animate-in fade-in slide-in-from-top-2 duration-200">
+                  <a routerLink="/front/products/create" (click)="showSellMenu.set(false)"
+                    class="flex items-center gap-3 px-4 py-3 text-sm font-bold text-gray-700 hover:bg-primary/5 hover:text-primary transition-all">
+                    <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                      </svg>
+                    </div>
+                    Ajouter un Produit
+                  </a>
+                  <a routerLink="/front/services/create" (click)="showSellMenu.set(false)"
+                    class="flex items-center gap-3 px-4 py-3 text-sm font-bold text-gray-700 hover:bg-accent/10 hover:text-accent-dark transition-all">
+                    <div class="w-8 h-8 rounded-lg bg-accent/20 flex items-center justify-center text-accent-dark">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    Ajouter un Service
+                  </a>
+                  <div class="h-px bg-gray-100 my-1"></div>
+                  <a routerLink="/front/products/manage" (click)="showSellMenu.set(false)"
+                    class="flex items-center gap-3 px-4 py-3 text-sm font-bold text-gray-500 hover:bg-gray-50 hover:text-dark transition-all">
+                    <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                      </svg>
+                    </div>
+                    Gérer ma Boutique
+                  </a>
+                </div>
+              }
+            </div>
+          }
+
           <!-- Sign In / Profile Avatar Button - Dynamic -->
           @if (!isUserLoggedIn()) {
             <!-- Show "Sign In" when NOT authenticated -->
-            <button (click)="navigateToSignIn()" class="signin-btn hidden sm:flex items-center gap-2">
+            <button (click)="navigateToSignIn()" class="nav-signin-btn hidden sm:flex">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
               </svg>
@@ -240,6 +290,19 @@
                       <span>Profile</span>
                     </button>
 
+                    <!-- Manage Store (Provider Only) -->
+                    <button 
+                      *ngIf="isProvider()"
+                      (click)="router.navigate(['/front/products/manage']); closeProfileDropdown()"
+                      type="button"
+                      class="w-full flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 text-sm">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                          d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                      </svg>
+                      <span>Manage Store</span>
+                    </button>
+
                     <!-- Divider -->
                     <div class="h-px bg-gray-100 my-1"></div>
 
@@ -263,7 +326,7 @@
           <!-- Hamburger Menu -->
           <button 
             (click)="toggleDrawer()"
-            class="hamburger-btn"
+            class="hamburger-btn text-white"
             [class.is-active]="isMenuOpen()"
             aria-label="Open menu">
             <div class="hamburger-icon">
@@ -307,11 +370,11 @@
 <!-- Drawer Overlay & Side Menu -->
 @if (isMenuOpen()) {
   <div 
-    class="drawer-overlay fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] animate-fadeIn"
+    class="drawer-overlay fixed inset-0 bg-black/40 backdrop-blur-md z-[100] animate-fadeIn"
     (click)="onOverlayClick($event)">
     
     <!-- Drawer Panel -->
-    <div class="drawer-panel fixed top-0 right-0 h-full w-full max-w-md bg-gradient-to-b from-gray-900 to-black shadow-2xl z-[101] animate-slideInRight">
+    <div class="drawer-panel fixed top-0 right-0 h-full w-full max-w-md bg-gradient-to-b from-[#8B0000] to-[#400000] shadow-2xl z-[101] animate-slideInRight" style="box-shadow: -10px 0 30px rgba(0,0,0,0.5);">
       <!-- Drawer Header -->
       <div class="flex items-center justify-between p-6 border-b border-white/10">
         <div class="flex items-center gap-3">
@@ -390,6 +453,7 @@
               <div class="space-y-1">
                 @for (item of section.items; track item.route) {
                   <a 
+                    *ngIf="!item.providerOnly || isProvider()"
                     [routerLink]="item.route"
                     routerLinkActive="menu-item-active"
                     (click)="closeDrawer()"

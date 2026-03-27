@@ -1,0 +1,18 @@
+@import '../../../../styles.scss';
+
+.premium-card {
+    background: white;
+    border-radius: 2rem;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
+}
+
+.btn-primary {
+    @apply bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/20 
+           hover:bg-primary-dark hover:shadow-xl hover:shadow-primary/30 
+           active:scale-95 transition-all duration-300;
+}
+
+input, textarea, select {
+    @apply focus:border-primary outline-none;
+}

@@ -1,0 +1,95 @@
+<div class="min-h-screen bg-gray-50 py-12">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Header -->
+        <div class="mb-8">
+            <a routerLink="/front/products/manage" class="inline-flex items-center text-sm font-semibold text-primary hover:text-primary-dark mb-4 transition-colors">
+                <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7 7-7" />
+                </svg>
+                Retour à la gestion
+            </a>
+            <h1 class="text-3xl font-black text-dark">{{ isEditMode() ? 'Modifier le Service' : 'Ajouter un nouveau Service' }}</h1>
+            <p class="text-gray-500 mt-2">Détaillez votre offre de service pour attirer des clients.</p>
+        </div>
+
+        <!-- Form Card -->
+        <div class="premium-card p-8">
+            <form [formGroup]="serviceForm" (ngSubmit)="onSubmit()" class="space-y-6">
+                
+                <!-- Name -->
+                <div class="space-y-2">
+                    <label class="text-sm font-bold text-dark">Nom du Service</label>
+                    <input type="text" formControlName="name"
+                        class="w-full px-4 py-3 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-primary focus:bg-white transition-all"
+                        [class.border-red-500]="isFieldInvalid('name')"
+                        placeholder="Ex: Cours de Programmation, Coaching...">
+                    @if (isFieldInvalid('name')) {
+                        <p class="text-xs text-red-500 font-medium">Le nom est requis (min 3 caractères).</p>
+                    }
+                </div>
+
+                <!-- Description -->
+                <div class="space-y-2">
+                    <label class="text-sm font-bold text-dark">Description</label>
+                    <textarea formControlName="description" rows="4"
+                        class="w-full px-4 py-3 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-primary focus:bg-white transition-all"
+                        [class.border-red-500]="isFieldInvalid('description')"
+                        placeholder="Décrivez précisément votre service..."></textarea>
+                    @if (isFieldInvalid('description')) {
+                        <p class="text-xs text-red-500 font-medium">La description est requise (min 20 caractères).</p>
+                    }
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Price -->
+                    <div class="space-y-2">
+                        <label class="text-sm font-bold text-dark">Prix (TND / Heure ou Forfait)</label>
+                        <div class="relative">
+                            <input type="number" formControlName="price"
+                                class="w-full pl-4 pr-12 py-3 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-primary focus:bg-white transition-all"
+                                [class.border-red-500]="isFieldInvalid('price')">
+                            <span class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">TND</span>
+                        </div>
+                        @if (isFieldInvalid('price')) {
+                            <p class="text-xs text-red-500 font-medium">Prix invalide.</p>
+                        }
+                    </div>
+
+                    <!-- Category -->
+                    <div class="space-y-2">
+                        <label class="text-sm font-bold text-dark">Catégorie</label>
+                        <select formControlName="categoryId"
+                            class="w-full px-4 py-3 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-primary focus:bg-white transition-all"
+                            [class.border-red-500]="isFieldInvalid('categoryId')">
+                            <option value="">Sélectionnez une catégorie</option>
+                            @for (cat of categories(); track cat.id) {
+                                <option [value]="cat.id">{{ cat.name }}</option>
+                            }
+                        </select>
+                        @if (isFieldInvalid('categoryId')) {
+                            <p class="text-xs text-red-500 font-medium">Veuillez choisir une catégorie.</p>
+                        }
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="pt-6 flex items-center justify-end gap-4 border-t border-gray-100">
+                    <button type="button" routerLink="/front/products/manage" 
+                        class="px-6 py-3 text-sm font-bold text-gray-500 hover:text-dark transition-colors">
+                        Annuler
+                    </button>
+                    <button type="submit" [disabled]="isSubmitting()"
+                        class="btn-primary px-8 py-3 flex items-center gap-2 disabled:opacity-50">
+                        @if (isSubmitting()) {
+                            <svg class="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        }
+                        {{ isEditMode() ? 'Mettre à jour' : 'Publier le Service' }}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

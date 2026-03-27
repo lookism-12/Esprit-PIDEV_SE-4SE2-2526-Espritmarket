@@ -1,77 +1,58 @@
 import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
-import { Shop, ProductCategory } from '../models/product';
+import { Observable, map, tap } from 'rxjs';
+import { environment } from '../../../environment';
+import { Shop } from '../models/product';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ShopService {
-  private readonly apiUrl = '/api/shops';
+  private readonly apiUrl = `${environment.apiUrl}/shops`;
 
-  readonly currentShop = signal<Shop | null>(null);
+  // State
+  readonly myShop = signal<Shop | null>(null);
   readonly isLoading = signal<boolean>(false);
-  readonly error = signal<string | null>(null);
 
   constructor(private http: HttpClient) {}
 
-  getShopById(id: string): Observable<Shop> {
-    // TODO: Implement HTTP call
-    console.log('ShopService.getShopById() called with:', id);
-    return of({} as Shop);
-  }
-
-  getShopBySlug(slug: string): Observable<Shop> {
-    // TODO: Implement HTTP call
-    console.log('ShopService.getShopBySlug() called with:', slug);
-    return of({} as Shop);
-  }
-
-  getShopByUserId(userId: string): Observable<Shop> {
-    // TODO: Implement HTTP call
-    console.log('ShopService.getShopByUserId() called with:', userId);
-    return of({} as Shop);
+  private mapShop(s: any): Shop {
+    return {
+      id: s.id,
+      userId: s.ownerId,
+      name: s.name,
+      slug: s.name.toLowerCase().replace(/\s+/g, '-'),
+      description: s.description,
+      logo: s.logo || 'assets/images/default-shop-logo.png',
+      banner: s.banner || 'assets/images/default-shop-banner.jpg',
+      rating: s.rating || 0,
+      reviewsCount: s.reviewsCount || 0,
+      productCount: 0,
+      totalSales: 0,
+      isVerified: false,
+      joinedAt: new Date(s.joinedAt)
+    };
   }
 
   getMyShop(): Observable<Shop> {
-    // TODO: Implement HTTP call
-    console.log('ShopService.getMyShop() called');
-    return of({} as Shop);
+    this.isLoading.set(true);
+    return this.http.get<any>(`${this.apiUrl}/my`).pipe(
+      map(s => this.mapShop(s)),
+      tap(shop => {
+        this.myShop.set(shop);
+        this.isLoading.set(false);
+      })
+    );
   }
 
-  updateShop(data: Partial<Shop>): Observable<Shop> {
-    // TODO: Implement HTTP call
-    console.log('ShopService.updateShop() called with:', data);
-    return of({} as Shop);
-  }
-}
-
-@Injectable({
-  providedIn: 'root'
-})
-export class CategoryService {
-  private readonly apiUrl = '/api/categories';
-
-  readonly categories = signal<ProductCategory[]>([]);
-  readonly isLoading = signal<boolean>(false);
-
-  constructor(private http: HttpClient) {}
-
-  getCategories(): Observable<ProductCategory[]> {
-    // TODO: Implement HTTP call
-    console.log('CategoryService.getCategories() called');
-    return of([]);
-  }
-
-  getCategoryById(id: string): Observable<ProductCategory> {
-    // TODO: Implement HTTP call
-    console.log('CategoryService.getCategoryById() called with:', id);
-    return of({} as ProductCategory);
-  }
-
-  getCategoryBySlug(slug: string): Observable<ProductCategory> {
-    // TODO: Implement HTTP call
-    console.log('CategoryService.getCategoryBySlug() called with:', slug);
-    return of({} as ProductCategory);
+  updateShop(id: string, data: any): Observable<Shop> {
+    this.isLoading.set(true);
+    return this.http.put<any>(`${this.apiUrl}/${id}`, data).pipe(
+      map(s => this.mapShop(s)),
+      tap(shop => {
+        this.myShop.set(shop);
+        this.isLoading.set(false);
+      })
+    );
   }
 }

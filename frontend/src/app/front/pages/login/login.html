@@ -1,184 +1,112 @@
-<div class="relative min-h-[calc(100vh-144px)] flex items-center justify-center bg-gray-100 overflow-hidden animate-fadeIn">
-    <!-- Background Video Container (Full Screen) -->
-    <div class="absolute inset-0 z-0 overflow-hidden">
-        <video 
-            autoplay 
-            loop 
-            muted 
-            playsinline 
-            class="w-full h-full object-cover">
-            <source src="assets/Video%20Publicitaire.mp4" type="video/mp4">
-        </video>
-        <!-- Video Overlay -->
-        <div class="absolute inset-0 bg-black/40 backdrop-blur-[2px]"></div>
-    </div>
+<div class="auth-dark-immersive min-h-screen flex items-center justify-center p-4">
     
-    <div class="relative z-10 max-w-7xl w-full flex flex-col lg:flex-row items-center justify-end px-6 sm:px-16 lg:px-24">
-        <!-- Right Side: Form Card -->
-        <div class="w-full max-w-[460px]">
-            <div
-                class="glass-card rounded-[32px] sm:rounded-[40px] p-8 sm:p-10 border border-white/40 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.15)] overflow-hidden relative group backdrop-blur-xl bg-white/90 animate-slideUp">
-                <!-- Inner Gradient Glow -->
-                <div
-                    class="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 pointer-events-none">
-                </div>
-                
-                <div class="relative z-10">
-                    <div class="mb-10 text-center lg:text-left">
-                        <h1
-                            class="text-3xl sm:text-4xl font-extrabold text-dark mb-3 tracking-tight transition-colors group-hover:text-primary">
-                            Welcome Back</h1>
-                        <p class="text-black font-semibold text-base leading-relaxed mb-4">Sign in to continue your journey with <span class="text-primary font-bold">ESPRIT Market</span></p>
-                        <p class="text-gray-500 font-medium text-sm">
-                            New here? 
-                            <a routerLink="/register" class="text-primary font-bold hover:underline ml-1">Create an account</a>
-                        </p>
-                    </div>
+    <!-- Outer Container -->
+    <div class="relative w-full max-w-6xl aspect-[16/10] bg-white shadow-[0_100px_200px_-50px_rgba(0,0,0,0.15)] flex overflow-hidden rounded-[2.5rem] animate-fadeIn border border-gray-100">
+        
+        <!-- The Frame (Subtle) -->
+        <div class="maroon-glowing-frame inset-6 rounded-[2.2rem] border-[3px]"></div>
 
-                    <!-- Error Message -->
-                    @if (errorMessage()) {
-                        <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-2xl">
-                            <div class="flex items-center gap-3">
-                                <svg class="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                <span class="text-red-700 text-sm font-medium">{{ errorMessage() }}</span>
-                            </div>
-                        </div>
-                    }
-
-                    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="space-y-5 sm:space-y-6">
-                        <div>
-                            <label for="email"
-                                class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Email Address</label>
-                            <input 
-                                id="email" 
-                                formControlName="email"
-                                type="email" 
-                                autocomplete="email"
-                                aria-describedby="email-error"
-                                [class]="isFieldInvalid('email') 
-                                    ? 'w-full h-12 sm:h-14 px-4 sm:px-5 bg-white border-2 border-red-400 rounded-xl sm:rounded-2xl shadow-sm focus:ring-2 focus:ring-red-400/30 transition-all text-sm font-semibold placeholder:text-gray-500'
-                                    : 'w-full h-12 sm:h-14 px-4 sm:px-5 bg-white/90 border-2 border-transparent rounded-xl sm:rounded-2xl shadow-sm hover:shadow-md focus:shadow-md focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all text-sm font-semibold placeholder:text-gray-500'"
-                                placeholder="username@esprit.tn">
-                            @if (isFieldInvalid('email')) {
-                                <p id="email-error" class="text-red-500 text-xs font-semibold mt-2" role="alert">{{ getFieldError('email') }}</p>
-                            }
-                        </div>
-
-                        <div class="relative">
-                            <label for="password"
-                                class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Password</label>
-                            <input 
-                                id="password" 
-                                formControlName="password"
-                                [type]="showPassword() ? 'text' : 'password'" 
-                                autocomplete="current-password"
-                                aria-describedby="password-error"
-                                [class]="isFieldInvalid('password') 
-                                    ? 'w-full h-12 sm:h-14 px-4 sm:px-5 bg-white border-2 border-red-400 rounded-xl sm:rounded-2xl shadow-sm focus:ring-2 focus:ring-red-400/30 transition-all text-sm font-semibold placeholder:text-gray-500'
-                                    : 'w-full h-12 sm:h-14 px-4 sm:px-5 bg-white/90 border-2 border-transparent rounded-xl sm:rounded-2xl shadow-sm hover:shadow-md focus:shadow-md focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all text-sm font-semibold placeholder:text-gray-500'"
-                                placeholder="••••••••">
-                            <button 
-                                type="button"
-                                (click)="togglePassword()"
-                                aria-label="{{ showPassword() ? 'Hide password' : 'Show password' }}"
-                                class="absolute right-4 sm:right-5 top-9 sm:top-10 text-gray-500 hover:text-primary transition-colors p-1">
-                                @if (showPassword()) {
-                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                                    </svg>
-                                } @else {
-                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                    </svg>
-                                }
-                            </button>
-                            @if (isFieldInvalid('password')) {
-                                <p id="password-error" class="text-red-500 text-xs font-semibold mt-2" role="alert">{{ getFieldError('password') }}</p>
-                            }
-                        </div>
-
-                        <div class="flex items-center justify-between py-2">
-                            <div class="flex items-center">
-                                <input 
-                                    id="remember-me" 
-                                    formControlName="rememberMe"
-                                    type="checkbox"
-                                    class="h-5 w-5 text-primary focus:ring-primary border-2 border-gray-300 rounded-lg bg-white shadow-sm cursor-pointer transition-all hover:border-primary">
-                                <label for="remember-me"
-                                    class="ml-3 block text-sm text-gray-600 font-semibold cursor-pointer">Remember
-                                    me</label>
-                            </div>
-                            <a routerLink="/forgot-password" class="text-sm font-bold text-primary hover:underline transition-all">Forgot password?</a>
-                        </div>
-
-                        <button 
-                            type="submit"
-                            [disabled]="isLoading()"
-                            class="w-full h-12 sm:h-14 bg-primary text-white rounded-xl sm:rounded-2xl font-black text-base sm:text-lg hover:bg-primary-dark hover:shadow-xl transition-all duration-300 shadow-lg shadow-primary/25 transform active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-                            @if (isLoading()) {
-                                <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                <span>Signing in...</span>
-                            } @else {
-                                <span>Sign in</span>
-                            }
-                        </button>
-                    </form>
-
-                    <div class="mt-6 sm:mt-8">
-                        <div class="relative flex items-center justify-center mb-5 sm:mb-6">
-                            <div class="flex-grow border-t border-gray-200"></div>
-                            <span
-                                class="mx-4 text-xs font-bold text-gray-500 uppercase tracking-wider bg-transparent">Or
-                                Continue With</span>
-                            <div class="flex-grow border-t border-gray-200"></div>
-                        </div>
-
-                        <div class="grid grid-cols-3 gap-3 sm:gap-4">
-                            <button
-                                type="button"
-                                (click)="loginWithGoogle()"
-                                [disabled]="isLoading()"
-                                aria-label="Sign in with Google"
-                                class="flex items-center justify-center h-11 sm:h-12 bg-white rounded-xl sm:rounded-2xl shadow-sm hover:shadow-md hover:scale-105 transition-all duration-300 border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100">
-                                <img src="https://www.google.com/favicon.ico"
-                                    class="w-5 h-5 sm:w-6 sm:h-6" alt="">
-                            </button>
-                            <button
-                                type="button"
-                                (click)="loginWithGithub()"
-                                [disabled]="isLoading()"
-                                aria-label="Sign in with GitHub"
-                                class="flex items-center justify-center h-11 sm:h-12 bg-white rounded-xl sm:rounded-2xl shadow-sm hover:shadow-md hover:scale-105 transition-all duration-300 border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100">
-                                <img src="https://github.com/favicon.ico"
-                                    class="w-5 h-5 sm:w-6 sm:h-6" alt="">
-                            </button>
-                            <button
-                                type="button"
-                                (click)="loginWithFacebook()"
-                                [disabled]="isLoading()"
-                                aria-label="Sign in with Facebook"
-                                class="flex items-center justify-center h-11 sm:h-12 bg-white rounded-xl sm:rounded-2xl shadow-sm hover:shadow-md hover:scale-105 transition-all duration-300 border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100">
-                                <img src="https://www.facebook.com/favicon.ico"
-                                    class="w-5 h-5 sm:w-6 sm:h-6" alt="">
-                            </button>
-                        </div>
-
-                        <p class="mt-6 sm:mt-8 text-center text-sm font-semibold text-gray-600">
-                            Don't have an account yet?
-                            <a routerLink="/register" class="text-primary font-black hover:underline ml-1">Sign Up</a>
-                        </p>
-                    </div>
-                </div>
+        <!-- Left side: Form (45%) -->
+        <div class="relative w-[45%] h-full flex flex-col justify-center px-16 lg:px-20 z-30">
+            <div class="mb-8 group/header">
+                <h1 class="text-gray-900 text-3xl font-extrabold mb-1 tracking-tight hover:text-[#800000] transition-all duration-300 cursor-default">Welcome Back</h1>
+                <p class="text-gray-600 text-xs font-medium leading-relaxed italic">Sign in to <span class="text-[#800000] font-bold">ESPRIT Market</span></p>
             </div>
+
+            <!-- Error Notification -->
+            @if (errorMessage()) {
+                <div class="mb-6 p-4 bg-red-50 border-l-4 border-red-600 rounded-xl animate-fadeIn">
+                    <p class="text-red-700 text-xs font-bold">{{ errorMessage() }}</p>
+                </div>
+            }
+
+            <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="space-y-5">
+                <!-- Email -->
+                <div class="space-y-2">
+                    <label class="text-xs font-bold text-gray-500 px-1">EMAIL ADDRESS</label>
+                    <input 
+                        formControlName="email"
+                        type="email" 
+                        class="input-box"
+                        [class.border-red-500]="isFieldInvalid('email')"
+                        placeholder="username@esprit.tn">
+                    <p *ngIf="isFieldInvalid('email')" class="text-[10px] text-red-600 font-bold px-1 animate-fadeIn">{{ getFieldError('email') }}</p>
+                </div>
+
+                <!-- Password -->
+                <div class="space-y-2">
+                    <label class="text-xs font-bold text-gray-500 px-1">PASSWORD</label>
+                    <div class="relative">
+                        <input 
+                            formControlName="password"
+                            [type]="showPassword() ? 'text' : 'password'" 
+                            class="input-box pr-14"
+                            [class.border-red-500]="isFieldInvalid('password')"
+                            placeholder="••••••••">
+                        <p *ngIf="isFieldInvalid('password')" class="text-[10px] text-red-600 font-bold px-1 animate-fadeIn mt-1">{{ getFieldError('password') }}</p>
+                        <button 
+                            type="button" 
+                            (click)="togglePassword()"
+                            class="absolute right-6 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#800000] transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Checkbox & Forgot -->
+                <div class="flex items-center justify-between px-1">
+                    <label class="flex items-center gap-2 cursor-pointer group">
+                        <input type="checkbox" class="w-4 h-4 rounded border-gray-200 text-[#800000] focus:ring-[#800000]">
+                        <span class="text-sm text-gray-400 font-bold group-hover:text-gray-600 transition-colors">Remember me</span>
+                    </label>
+                    <a routerLink="/forgot-password" class="text-sm text-[#800000] font-extrabold hover:underline">Forgot password?</a>
+                </div>
+
+                <!-- Action Button -->
+                <div class="pt-4">
+                    <button 
+                        type="submit"
+                        [disabled]="isLoading()"
+                        class="btn-auth-gradient">
+                        <span *ngIf="!isLoading()">Sign in</span>
+                        <div *ngIf="isLoading()" class="animate-spin rounded-full h-5 w-5 border-b-2 border-white mx-auto"></div>
+                    </button>
+                </div>
+
+                <!-- Divider -->
+                <div class="relative my-8">
+                    <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-100"></div></div>
+                    <div class="relative flex justify-center text-sm">
+                        <span class="px-4 bg-white text-gray-600 font-bold uppercase tracking-widest text-[10px]">Or continue with</span>
+                    </div>
+                </div>
+
+                <!-- Social Grid -->
+                <div class="grid grid-cols-3 gap-4">
+                    <button type="button" class="social-btn">
+                        <img src="https://www.google.com/favicon.ico" class="w-5 h-5" alt="Google">
+                    </button>
+                    <button type="button" class="social-btn">
+                        <img src="https://github.com/favicon.ico" class="w-5 h-5" alt="GitHub">
+                    </button>
+                    <button type="button" class="social-btn">
+                        <img src="https://www.facebook.com/favicon.ico" class="w-5 h-5 shadow-sm" alt="Facebook">
+                    </button>
+                </div>
+            </form>
+
+            <div class="mt-4 text-center">
+                <p class="text-xs text-gray-600 font-bold">Don't have an account yet? <a routerLink="/register" class="text-[#800000] font-extrabold hover:underline">Register for free</a></p>
+            </div>
+        </div>
+
+        <!-- Right side: Media (55%) -->
+        <div class="relative w-[55%] h-full overflow-hidden bg-black flex items-center justify-center">
+            <video autoplay muted loop playsinline class="absolute inset-0 w-full h-full object-cover opacity-80 scale-110">
+                <source src="assets/Video Publicitaire.mp4" type="video/mp4">
+            </video>
+            <div class="absolute inset-0 bg-gradient-to-r from-white via-transparent to-transparent z-10 opacity-20"></div>
+            <div class="absolute right-10 top-1/2 -translate-y-1/2 vertical-text text-[11px] font-black text-white/40 uppercase tracking-[1em] z-20">Esprit Market</div>
         </div>
     </div>
 </div>
