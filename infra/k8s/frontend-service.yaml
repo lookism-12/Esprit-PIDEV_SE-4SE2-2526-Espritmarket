@@ -1,0 +1,19 @@
+# ============================================
+# ESPRIT MARKET - Frontend Service
+# ============================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: esprit-market-frontend
+  namespace: esprit-market
+  labels:
+    app: esprit-market-frontend
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 80
+    protocol: TCP
+    name: http
+  selector:
+    app: esprit-market-frontend

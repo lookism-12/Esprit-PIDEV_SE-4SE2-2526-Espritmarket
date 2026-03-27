@@ -1,0 +1,10 @@
+# ============================================
+# ESPRIT MARKET - Kubernetes Namespace
+# ============================================
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: esprit-market
+  labels:
+    name: esprit-market
+    app: esprit-market

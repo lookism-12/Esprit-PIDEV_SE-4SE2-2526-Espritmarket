@@ -1,0 +1,107 @@
+# ============================================
+# ESPRIT MARKET - Backend Deployment
+# ============================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: esprit-market-backend
+  namespace: esprit-market
+  labels:
+    app: esprit-market-backend
+    component: backend
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: esprit-market-backend
+  template:
+    metadata:
+      labels:
+        app: esprit-market-backend
+        component: backend
+    spec:
+      containers:
+      - name: backend
+        image: espritmarket/esprit-market-backend:latest
+        imagePullPolicy: IfNotPresent
+        
+        ports:
+        - name: http
+          containerPort: 8089
+          protocol: TCP
+        
+        # Environment variables
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "production"
+        - name: SERVER_PORT
+          value: "8089"
+        # MongoDB connection from secret
+        - name: SPRING_DATA_MONGODB_URI
+          valueFrom:
+            secretKeyRef:
+              name: esprit-market-secrets
+              key: mongodb-uri
+        # JWT secret from secret
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: esprit-market-secrets
+              key: jwt-secret
+        - name: JWT_EXPIRATION_MS
+          value: "86400000"
+        - name: APP_UPLOAD_DIR
+          value: "/app/uploads"
+        # CORS configuration
+        - name: CORS_ORIGINS
+          valueFrom:
+            configMapKeyRef:
+              name: esprit-market-config
+              key: cors-origins
+        
+        # Resource management
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        
+        # Liveness probe - restart if unresponsive
+        livenessProbe:
+          httpGet:
+            path: /api/users
+            port: 8089
+          initialDelaySeconds: 45
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+        
+        # Readiness probe - accept traffic when ready
+        readinessProbe:
+          httpGet:
+            path: /api/users
+            port: 8089
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 3
+        
+        # Volume for uploads
+        volumeMounts:
+        - name: uploads
+          mountPath: /app/uploads
+      
+      # Volumes
+      volumes:
+      - name: uploads
+        emptyDir: {}
+      
+      # Graceful termination
+      terminationGracePeriodSeconds: 30

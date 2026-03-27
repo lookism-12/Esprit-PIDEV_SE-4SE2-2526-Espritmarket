@@ -1,0 +1,87 @@
+# ============================================
+# ESPRIT MARKET - Frontend Deployment
+# ============================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: esprit-market-frontend
+  namespace: esprit-market
+  labels:
+    app: esprit-market-frontend
+    component: frontend
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: esprit-market-frontend
+  template:
+    metadata:
+      labels:
+        app: esprit-market-frontend
+        component: frontend
+    spec:
+      containers:
+      - name: frontend
+        image: espritmarket/esprit-market-frontend:latest
+        imagePullPolicy: IfNotPresent
+        
+        ports:
+        - name: http
+          containerPort: 80
+          protocol: TCP
+        
+        # Environment variables
+        env:
+        - name: ENVIRONMENT
+          value: "production"
+        
+        # Resource management
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "500m"
+        
+        # Liveness probe - restart if unresponsive
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 10
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+        
+        # Readiness probe - accept traffic when ready
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 2
+          failureThreshold: 2
+        
+        # Volume mounts for nginx
+        volumeMounts:
+        - name: nginx-cache
+          mountPath: /var/cache/nginx
+        - name: nginx-pid
+          mountPath: /var/run
+      
+      # Volumes
+      volumes:
+      - name: nginx-cache
+        emptyDir: {}
+      - name: nginx-pid
+        emptyDir: {}
+      
+      # Graceful termination
+      terminationGracePeriodSeconds: 30

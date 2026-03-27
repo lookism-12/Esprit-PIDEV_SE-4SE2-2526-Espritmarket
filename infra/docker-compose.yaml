@@ -1,0 +1,72 @@
+# ============================================
+# ESPRIT MARKET - Docker Compose (Local Dev)
+# ============================================
+# Use this for local development/testing before K8s deployment
+
+version: '3.8'
+
+services:
+  # Frontend - Angular served by Nginx
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    container_name: esprit-market-frontend
+    ports:
+      - "80:80"
+    environment:
+      - ENVIRONMENT=development
+    depends_on:
+      - backend
+    networks:
+      - esprit-market-network
+    restart: unless-stopped
+
+  # Backend - Spring Boot
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: esprit-market-backend
+    ports:
+      - "8089:8089"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SERVER_PORT=8089
+      - SPRING_DATA_MONGODB_URI=${MONGODB_URI:-mongodb://mongo:27017/esprit_market}
+      - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-here-min-256-bits}
+      - JWT_EXPIRATION_MS=86400000
+      - APP_UPLOAD_DIR=/app/uploads
+    volumes:
+      - backend-uploads:/app/uploads
+    networks:
+      - esprit-market-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8089/api/users"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 45s
+
+  # MongoDB (optional - for local dev only)
+  mongo:
+    image: mongo:6
+    container_name: esprit-market-mongo
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=esprit_market
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - esprit-market-network
+    restart: unless-stopped
+
+networks:
+  esprit-market-network:
+    driver: bridge
+
+volumes:
+  backend-uploads:
+  mongo-data:

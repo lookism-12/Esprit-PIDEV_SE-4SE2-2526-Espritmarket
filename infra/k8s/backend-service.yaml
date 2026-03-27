@@ -1,0 +1,19 @@
+# ============================================
+# ESPRIT MARKET - Backend Service
+# ============================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: esprit-market-backend
+  namespace: esprit-market
+  labels:
+    app: esprit-market-backend
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8089
+    targetPort: 8089
+    protocol: TCP
+    name: http
+  selector:
+    app: esprit-market-backend
