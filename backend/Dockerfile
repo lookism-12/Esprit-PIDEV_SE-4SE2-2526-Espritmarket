@@ -3,34 +3,39 @@
 # Multi-stage build: Maven → JRE Runtime
 # ============================================
 
+# --------------------------
 # Stage 1: Build with Maven
-FROM maven:3.9-eclipse-temurin-17-alpine AS builder
+# --------------------------
+FROM maven:3.9.6-eclipse-temurin-17 AS builder
 
 WORKDIR /app
 
 # Copy pom.xml first for dependency caching
 COPY pom.xml .
 
-# Download dependencies (cached layer)
-RUN mvn dependency:go-offline -B
+# Download dependencies offline (skip tests)
+RUN mvn dependency:go-offline -Dmaven.test.skip=true -B
 
-# Copy source code
+# Copy all source code (main + resources)
 COPY src ./src
 
-# Build application (skip tests - they run in CI)
-RUN mvn clean package -DskipTests -B
+# Build application - skip all tests and test compilation
+RUN mvn clean package -DskipTests -Dmaven.test.skip=true -B
 
+# --------------------------
 # Stage 2: Production Runtime
-FROM eclipse-temurin:17-jre-alpine
+# --------------------------
+FROM eclipse-temurin:17-jre
 
 WORKDIR /app
 
 # Install curl for health checks
-RUN apk add --no-cache curl
+RUN apt-get update && apt-get install -y --no-install-recommends curl && \
+    rm -rf /var/lib/apt/lists/*
 
 # Create non-root user for security
-RUN addgroup -g 1000 spring && \
-    adduser -D -u 1000 -G spring spring
+RUN groupadd -g 1001 spring && \
+    useradd -u 1001 -g spring -m spring
 
 # Create uploads directory
 RUN mkdir -p /app/uploads && chown -R spring:spring /app
@@ -38,14 +43,14 @@ RUN mkdir -p /app/uploads && chown -R spring:spring /app
 # Copy JAR from builder stage
 COPY --from=builder /app/target/EspritMarket-*.jar app.jar
 
-# Change ownership
+# Change ownership of JAR
 RUN chown spring:spring /app/app.jar
 
 # Switch to non-root user
 USER spring
 
 # Expose application port
-EXPOSE 8090
+EXPOSE 8089
 
 # JVM options optimized for containers
 ENV JAVA_OPTS="-Xms256m -Xmx512m -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
