@@ -9,19 +9,7 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['src/vitest.setup.ts'],
     include: ['src/**/*.spec.ts'],
-    exclude: ['node_modules'],
-    pool: 'forks',
-    coverage: {
-      provider: 'v8',
-      reporter: ['text', 'json', 'html'],
-      exclude: [
-        'node_modules/',
-        'src/test.ts',
-      ]
-    },
-    mockReset: true,
-    restoreMocks: true,
-    clearMocks: true,
+    pool: 'threads', // Faster and better for sharing initialized TestBed
   },
   resolve: {
     alias: {
