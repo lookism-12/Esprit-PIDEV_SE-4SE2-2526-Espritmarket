@@ -25,7 +25,9 @@ describe('UserService - Advanced Tests', () => {
   });
 
   afterEach(() => {
-    httpMock.verify();
+    if (httpMock) {
+      httpMock.verify();
+    }
   });
 
   describe('uploadAvatar', () => {
