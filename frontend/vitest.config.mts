@@ -7,9 +7,10 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
-    setupFiles: ['src/vitest.setup.ts'],
+    setupFiles: [resolve(__dirname, 'src/vitest.setup.ts')], // Using absolute path for CI reliability
     include: ['src/**/*.spec.ts'],
-    pool: 'threads', // Faster and better for sharing initialized TestBed
+    exclude: ['node_modules'],
+    // Using default pool for stability
   },
   resolve: {
     alias: {

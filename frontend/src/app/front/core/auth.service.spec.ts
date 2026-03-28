@@ -37,7 +37,9 @@ describe('AuthService', () => {
   });
 
   afterEach(() => {
-    httpMock.verify();
+    if (httpMock) {
+      httpMock.verify();
+    }
     vi.clearAllMocks();
     vi.useRealTimers();
   });
