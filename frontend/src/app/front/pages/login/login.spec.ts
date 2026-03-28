@@ -1,5 +1,11 @@
+import '@angular/compiler';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, getTestBed } from '@angular/core/testing';
+import { BrowserDynamicTestingModule, platformBrowserDynamicTesting } from '@angular/platform-browser-dynamic/testing';
+
+if (!getTestBed().platform) {
+  getTestBed().initTestEnvironment(BrowserDynamicTestingModule, platformBrowserDynamicTesting());
+}
 import { ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { signal } from '@angular/core';

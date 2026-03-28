@@ -1,5 +1,11 @@
+import '@angular/compiler';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { TestBed } from '@angular/core/testing';
+import { TestBed, getTestBed } from '@angular/core/testing';
+import { BrowserDynamicTestingModule, platformBrowserDynamicTesting } from '@angular/platform-browser-dynamic/testing';
+
+if (!getTestBed().platform) {
+  getTestBed().initTestEnvironment(BrowserDynamicTestingModule, platformBrowserDynamicTesting());
+}
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController, TestRequest } from '@angular/common/http/testing';
 import { UserService } from './user.service';
