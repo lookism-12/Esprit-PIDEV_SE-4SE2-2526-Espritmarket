@@ -1,5 +1,5 @@
 import { defineConfig } from 'vitest/config';
-import angular from '@analogjs/vitest-angular';
+import angular from '@analogjs/vite-plugin-angular';
 import { resolve } from 'path';
 
 export default defineConfig({
@@ -10,7 +10,7 @@ export default defineConfig({
     setupFiles: ['src/vitest.setup.ts'],
     include: ['src/**/*.spec.ts'],
     exclude: ['node_modules'],
-    pool: 'forks', // Use forks instead of threads for better stability with AnalogJS
+    pool: 'forks',
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
