@@ -10,6 +10,7 @@ export default defineConfig({
     setupFiles: ['src/vitest.setup.ts'],
     include: ['src/**/*.spec.ts'],
     exclude: ['node_modules'],
+    pool: 'forks', // Use forks instead of threads for better stability with AnalogJS
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
@@ -28,5 +29,3 @@ export default defineConfig({
     },
   },
 });
-
-
