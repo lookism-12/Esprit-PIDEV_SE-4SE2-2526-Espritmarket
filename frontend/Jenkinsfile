@@ -1,0 +1,65 @@
+pipeline {
+    agent any
+
+    environment {
+        // Replace with your actual repository URL if different
+        GIT_URL = 'https://github.com/lookism-12/Espritmarket.git'
+        CHROME_BIN = '/usr/bin/google-chrome'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                // This replaces 'checkout scm' to work even if not using "Pipeline script from SCM"
+                git url: "${env.GIT_URL}", branch: 'main'
+            }
+        }
+
+        stage('Check Environment') {
+            steps {
+                script {
+                    def nodeExists = sh(script: 'node -v', returnStatus: true) == 0
+                    if (!nodeExists) {
+                        error "ERREUR : Node.js n'est pas installé sur le serveur Jenkins. Veuillez l'installer avant de relancer le pipeline."
+                    }
+                    sh 'node -v'
+                    sh 'npm -v'
+                }
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                dir('frontend') {
+                    sh 'npm install'
+                }
+            }
+        }
+
+        stage('Test') {
+            steps {
+                dir('frontend') {
+                    // Using Vitest (npm test) with AnalogJS plugin to fix template loading
+                    sh 'npm test'
+                }
+            }
+        }
+
+        stage('Build') {
+            steps {
+                dir('frontend') {
+                    sh 'npm run build'
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "Frontend Pipeline completed successfully!"
+        }
+        failure {
+            echo "Frontend Pipeline failed. Vérifiez les logs ci-dessus pour plus de détails."
+        }
+    }
+}

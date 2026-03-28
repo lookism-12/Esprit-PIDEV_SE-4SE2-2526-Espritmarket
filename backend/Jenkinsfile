@@ -1,0 +1,66 @@
+pipeline {
+    agent any
+
+    environment {
+        GIT_URL = 'https://github.com/lookism-12/Espritmarket.git'
+        SCAN_PROJECT_KEY = 'esprit-market-backend'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git url: "${env.GIT_URL}", branch: 'main'
+            }
+        }
+
+        stage('Check Environment') {
+            steps {
+                script {
+                    def javaExists = sh(script: 'java -version', returnStatus: true) == 0
+                    def mvnExists = sh(script: 'mvn -version', returnStatus: true) == 0
+                    if (!javaExists || !mvnExists) {
+                        error "ERREUR : Java ou Maven n'est pas installé sur le serveur Jenkins. Veuillez les installer."
+                    }
+                }
+            }
+        }
+
+        stage('Build') {
+            steps {
+                dir('backend') {
+                    sh 'mvn clean install -DskipTests'
+                }
+            }
+        }
+
+        stage('Test') {
+            steps {
+                dir('backend') {
+                    sh 'mvn test'
+                }
+            }
+            post {
+                always {
+                    junit 'backend/target/surefire-reports/*.xml'
+                }
+            }
+        }
+
+        stage('Package') {
+            steps {
+                dir('backend') {
+                    sh 'mvn package -DskipTests'
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "Backend Pipeline completed successfully!"
+        }
+        failure {
+            echo "Backend Pipeline failed."
+        }
+    }
+}
