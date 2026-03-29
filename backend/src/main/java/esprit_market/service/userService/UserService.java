@@ -203,8 +203,13 @@ public class UserService implements IUserService {
 
             // Generate unique filename
             String originalFilename = file.getOriginalFilename();
-            String extension = originalFilename != null ? 
-                    originalFilename.substring(originalFilename.lastIndexOf(".")) : ".jpg";
+            String extension = ".jpg";
+            if (originalFilename != null) {
+                int dotIndex = originalFilename.lastIndexOf('.');
+                if (dotIndex > -1 && dotIndex < originalFilename.length() - 1) {
+                    extension = originalFilename.substring(dotIndex);
+                }
+            }
             String filename = UUID.randomUUID().toString() + extension;
             Path filePath = uploadPath.resolve(filename);
 
