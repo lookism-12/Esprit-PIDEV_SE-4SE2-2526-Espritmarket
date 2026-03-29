@@ -18,6 +18,7 @@ describe('UserService - Advanced Tests', () => {
   const apiUrl = `${environment.apiUrl}/users`;
 
   beforeEach(() => {
+    TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [
         UserService,

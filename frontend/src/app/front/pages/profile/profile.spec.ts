@@ -24,6 +24,7 @@ describe('Profile Component', () => {
   let activatedRoute: any;
 
   beforeEach(async () => {
+    TestBed.resetTestingModule();
     const authServiceMock = {
       userId: signal('user-1'),
       userFirstName: signal('John'),

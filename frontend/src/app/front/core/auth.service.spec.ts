@@ -22,6 +22,7 @@ describe('AuthService', () => {
   const apiUrl = `${environment.apiUrl}/users`;
 
   beforeEach(() => {
+    TestBed.resetTestingModule();
     const routerMock = {
       navigate: vi.fn().mockResolvedValue(true)
     };

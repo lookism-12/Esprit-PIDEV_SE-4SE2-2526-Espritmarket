@@ -23,6 +23,7 @@ describe('Register Component', () => {
   let router: any;
 
   beforeEach(async () => {
+    TestBed.resetTestingModule();
     const authServiceMock = {
       register: vi.fn(),
       isAuthenticated: signal(false)

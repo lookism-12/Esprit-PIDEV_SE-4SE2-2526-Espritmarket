@@ -42,6 +42,7 @@ describe('Login Component', () => {
   };
 
   beforeEach(async () => {
+    TestBed.resetTestingModule();
     const authServiceMock = {
       login: vi.fn(),
       isAuthenticated: signal(false)
