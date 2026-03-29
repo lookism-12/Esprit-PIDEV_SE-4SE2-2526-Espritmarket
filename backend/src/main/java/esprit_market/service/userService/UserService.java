@@ -201,10 +201,11 @@ public class UserService implements IUserService {
                 Files.createDirectories(uploadPath);
             }
 
-            // Generate unique filename
             String originalFilename = file.getOriginalFilename();
-            String extension = originalFilename != null ? 
-                    originalFilename.substring(originalFilename.lastIndexOf(".")) : ".jpg";
+            String extension = ".jpg";
+            if (originalFilename != null && originalFilename.contains(".")) {
+                extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+            }
             String filename = UUID.randomUUID().toString() + extension;
             Path filePath = uploadPath.resolve(filename);
 
