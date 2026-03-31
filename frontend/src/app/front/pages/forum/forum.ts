@@ -2,16 +2,20 @@ import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { ForumCategory, Post, PostStatus, ModerationBadge, ReactionType, ReactionSummary, Comment } from '../../models/forum.model';
+import { forkJoin, of, switchMap } from 'rxjs';
+import { ForumCategory, ModerationBadge, ReactionType, CreatePostRequest, CreateCommentRequest } from '../../models/forum.model';
+import { ForumService } from '../../core/forum.service';
 
 interface SimplePost {
   id: string;
+  authorId: string;
   author: {
     name: string;
     avatar?: string;
     badge?: string;
   };
   category: string;
+  categoryId: string;
   categoryColor: string;
   title: string;
   content: string;
@@ -21,9 +25,28 @@ interface SimplePost {
   comments: number;
   tags: string[];
   isPinned?: boolean;
+  approved: boolean;
   isLocked?: boolean;
   moderationBadge?: ModerationBadge;
   userReaction?: ReactionType;
+}
+
+interface ForumReplyUI {
+  id: string;
+  commentId: string;
+  authorId: string;
+  content: string;
+  createdAt: Date;
+}
+
+interface ForumCommentUI {
+  id: string;
+  postId: string;
+  authorId: string;
+  parentCommentId?: string;
+  content: string;
+  createdAt: Date;
+  replies: ForumReplyUI[];
 }
 
 @Component({
@@ -35,176 +58,49 @@ interface SimplePost {
 })
 export class Forum implements OnInit {
   private fb = inject(FormBuilder);
+  private forumService = inject(ForumService);
 
   readonly ReactionType = ReactionType;
+
+  // Display names loaded from backend (userId -> "firstName lastName")
+  readonly userNames = signal<Record<string, string>>({});
+
+  private usersPrefetched = new Set<string>();
+  private usersPrefetchInFlight = new Set<string>();
 
   // State
   activeCategory = signal<string>('all');
   searchQuery = signal<string>('');
   sortBy = signal<'recent' | 'popular' | 'comments'>('recent');
   showCreatePostModal = signal(false);
+  showUpdatePostModal = signal(false);
   isCreatingPost = signal(false);
   expandedPostId = signal<string | null>(null);
+  expandedComments = signal<ForumCommentUI[]>([]);
+  expandedPostCommentsLoading = signal<boolean>(false);
+  updatePostTarget = signal<SimplePost | null>(null);
+
+  // Admin category management modal
+  showManageCategoriesModal = signal(false);
+  editingCategoryId = signal<string | null>(null);
+  isSavingCategory = signal(false);
 
   // Forms
   createPostForm!: FormGroup;
+  updatePostForm!: FormGroup;
   commentForm!: FormGroup;
+  editCommentForm!: FormGroup;
+  replyForm!: FormGroup;
+  activeReplyingCommentId = signal<string | null>(null);
+
+  editingCommentId = signal<string | null>(null);
+  categoryForm!: FormGroup;
 
   // Categories
-  categories = signal<ForumCategory[]>([
-    {
-      id: '1',
-      name: 'General Discussion',
-      slug: 'general',
-      description: 'Talk about anything ESPRIT related',
-      icon: '💬',
-      color: 'bg-blue-500',
-      postCount: 156,
-      isLocked: false,
-      sortOrder: 1,
-      createdAt: new Date()
-    },
-    {
-      id: '2',
-      name: 'Study & Exams',
-      slug: 'study',
-      description: 'Share notes, ask questions, discuss courses',
-      icon: '📚',
-      color: 'bg-green-500',
-      postCount: 89,
-      isLocked: false,
-      sortOrder: 2,
-      createdAt: new Date()
-    },
-    {
-      id: '3',
-      name: 'Jobs & Internships',
-      slug: 'jobs',
-      description: 'Career opportunities and advice',
-      icon: '💼',
-      color: 'bg-purple-500',
-      postCount: 45,
-      isLocked: false,
-      sortOrder: 3,
-      createdAt: new Date()
-    },
-    {
-      id: '4',
-      name: 'Events & Clubs',
-      slug: 'events',
-      description: 'Campus events and club activities',
-      icon: '🎉',
-      color: 'bg-pink-500',
-      postCount: 67,
-      isLocked: false,
-      sortOrder: 4,
-      createdAt: new Date()
-    },
-    {
-      id: '5',
-      name: 'Tech & Projects',
-      slug: 'tech',
-      description: 'Share your projects and tech discussions',
-      icon: '💻',
-      color: 'bg-orange-500',
-      postCount: 112,
-      isLocked: false,
-      sortOrder: 5,
-      createdAt: new Date()
-    },
-    {
-      id: '6',
-      name: 'Marketplace Tips',
-      slug: 'marketplace',
-      description: 'Tips for buying and selling',
-      icon: '🛒',
-      color: 'bg-primary',
-      postCount: 34,
-      isLocked: false,
-      sortOrder: 6,
-      createdAt: new Date()
-    }
-  ]);
+  categories = signal<ForumCategory[]>([]);
 
   // Posts
-  posts = signal<SimplePost[]>([
-    {
-      id: '1',
-      author: { name: 'Ahmed B.', badge: 'Expert' },
-      category: 'Study & Exams',
-      categoryColor: 'bg-green-500',
-      title: 'Previous Exam Papers for Probability and Statistics',
-      content: 'Does anyone have the previous exam papers for Probability and Statistics? I really need them for revision. Any help would be appreciated!',
-      time: new Date(Date.now() - 2 * 60 * 60 * 1000),
-      likes: 12,
-      loves: 3,
-      comments: 5,
-      tags: ['Exams', 'Help', '2nd Year'],
-      isPinned: false,
-      userReaction: undefined
-    },
-    {
-      id: '2',
-      author: { name: 'Selima K.', avatar: 'https://ui-avatars.com/api/?name=SK&background=8B0000&color=fff' },
-      category: 'Events & Clubs',
-      categoryColor: 'bg-pink-500',
-      title: 'AI Club Event Tomorrow - Don\'t Miss It!',
-      content: 'The AI Club is hosting an amazing event tomorrow at the main hall! We\'ll have guest speakers from leading tech companies. Free pizza for all attendees! 🍕',
-      time: new Date(Date.now() - 5 * 60 * 60 * 1000),
-      likes: 24,
-      loves: 8,
-      comments: 12,
-      tags: ['Event', 'AI Club', 'Free Food'],
-      isPinned: true,
-      moderationBadge: ModerationBadge.PINNED
-    },
-    {
-      id: '3',
-      author: { name: 'ESPRIT Official', badge: 'Official' },
-      category: 'General Discussion',
-      categoryColor: 'bg-blue-500',
-      title: 'Important: New Library Hours Starting Next Week',
-      content: 'Starting next Monday, the library will have extended hours from 7 AM to 11 PM on weekdays. Weekend hours remain unchanged.',
-      time: new Date(Date.now() - 24 * 60 * 60 * 1000),
-      likes: 45,
-      loves: 12,
-      comments: 8,
-      tags: ['Announcement', 'Library'],
-      isPinned: true,
-      moderationBadge: ModerationBadge.OFFICIAL
-    },
-    {
-      id: '4',
-      author: { name: 'Yassine R.' },
-      category: 'Tech & Projects',
-      categoryColor: 'bg-orange-500',
-      title: 'Looking for teammates for PFE project - Mobile App',
-      content: 'I\'m working on a mobile app for campus navigation and looking for 2 teammates. Tech stack: React Native, Firebase. DM if interested!',
-      time: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-      likes: 18,
-      loves: 5,
-      comments: 15,
-      tags: ['PFE', 'Mobile', 'Team'],
-      userReaction: ReactionType.LIKE
-    },
-    {
-      id: '5',
-      author: { name: 'Meriam L.' },
-      category: 'Jobs & Internships',
-      categoryColor: 'bg-purple-500',
-      title: 'Internship Experience at Vermeg - AMA',
-      content: 'Just finished my 6-month internship at Vermeg. Happy to answer any questions about the application process, daily work, and what they look for in candidates.',
-      time: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-      likes: 56,
-      loves: 15,
-      comments: 32,
-      tags: ['Internship', 'Experience', 'AMA'],
-      moderationBadge: ModerationBadge.TRENDING
-    }
-  ]);
-
-  // Comments for expanded post
-  comments = signal<Comment[]>([]);
+  posts = signal<SimplePost[]>([]);
 
   // Filtered posts
   filteredPosts = computed(() => {
@@ -224,7 +120,9 @@ export class Forum implements OnInit {
       filtered = filtered.filter(p =>
         p.title.toLowerCase().includes(query) ||
         p.content.toLowerCase().includes(query) ||
-        p.tags.some(t => t.toLowerCase().includes(query))
+        p.tags.some(t => t.toLowerCase().includes(query)) ||
+        p.category.toLowerCase().includes(query) ||
+        this.getUserDisplayName(p.authorId).toLowerCase().includes(query)
       );
     }
 
@@ -248,6 +146,7 @@ export class Forum implements OnInit {
 
   ngOnInit(): void {
     this.initForms();
+    this.loadForumData();
   }
 
   private initForms(): void {
@@ -258,8 +157,29 @@ export class Forum implements OnInit {
       tags: ['']
     });
 
+    this.updatePostForm = this.fb.group({
+      categoryId: ['', Validators.required],
+      title: ['', [Validators.required, Validators.minLength(5), Validators.maxLength(200)]],
+      content: ['', [Validators.required, Validators.minLength(20)]],
+      pinned: [false],
+      approved: [false]
+    });
+
     this.commentForm = this.fb.group({
       content: ['', [Validators.required, Validators.minLength(2)]]
+    });
+
+    this.editCommentForm = this.fb.group({
+      content: ['', [Validators.required, Validators.minLength(2)]]
+    });
+
+    this.categoryForm = this.fb.group({
+      name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
+      description: ['', [Validators.required, Validators.minLength(5), Validators.maxLength(500)]]
+    });
+
+    this.replyForm = this.fb.group({
+      content: ['', [Validators.required, Validators.minLength(1)]]
     });
   }
 
@@ -280,6 +200,165 @@ export class Forum implements OnInit {
     this.createPostForm.reset();
   }
 
+  closeUpdatePostModal(): void {
+    this.showUpdatePostModal.set(false);
+    this.updatePostTarget.set(null);
+    this.updatePostForm.reset({
+      categoryId: '',
+      title: '',
+      content: '',
+      pinned: false,
+      approved: false
+    });
+  }
+
+  getUserDisplayName(userId: string): string {
+    return this.userNames()[userId] ?? userId;
+  }
+
+  private prefetchUserNames(userIds: string[]): void {
+    const unique = Array.from(new Set(userIds)).filter(Boolean);
+    const toFetch = unique.filter((id) => !this.usersPrefetched.has(id) && !this.usersPrefetchInFlight.has(id));
+    if (toFetch.length === 0) return;
+
+    toFetch.forEach((id) => {
+      this.usersPrefetchInFlight.add(id);
+      this.forumService.getUserById(id).subscribe({
+        next: (u) => {
+          const fullName = `${u.firstName ?? ''} ${u.lastName ?? ''}`.trim();
+          this.userNames.set({ ...this.userNames(), [id]: fullName || id });
+          this.usersPrefetched.add(id);
+          this.usersPrefetchInFlight.delete(id);
+        },
+        error: () => {
+          // Keep fallback as userId if the user service is protected or fails.
+          this.usersPrefetched.add(id);
+          this.usersPrefetchInFlight.delete(id);
+        }
+      });
+    });
+  }
+
+  openManageCategories(): void {
+    if (!this.isAdmin()) return;
+    this.editingCategoryId.set(null);
+    this.categoryForm.reset({ name: '', description: '' });
+    this.showManageCategoriesModal.set(true);
+  }
+
+  openEditCategory(cat: ForumCategory): void {
+    if (!this.isAdmin()) return;
+    this.editingCategoryId.set(cat.id);
+    this.categoryForm.patchValue({
+      name: cat.name,
+      description: cat.description
+    });
+    this.showManageCategoriesModal.set(true);
+  }
+
+  closeManageCategories(): void {
+    this.showManageCategoriesModal.set(false);
+    this.editingCategoryId.set(null);
+    this.categoryForm.reset({ name: '', description: '' });
+  }
+
+  submitCategory(): void {
+    if (!this.isAdmin()) return;
+    if (this.categoryForm.invalid) {
+      this.categoryForm.markAllAsTouched();
+      return;
+    }
+
+    const { name, description } = this.categoryForm.value as { name: string; description: string };
+    const payload = { name: String(name).trim(), description: String(description).trim() };
+
+    const editingId = this.editingCategoryId();
+    this.isSavingCategory.set(true);
+
+    if (!editingId) {
+      this.forumService.createCategory(payload).subscribe({
+        next: () => {
+          this.isSavingCategory.set(false);
+          this.closeManageCategories();
+          this.loadForumData();
+        },
+        error: (err) => {
+          console.error('Failed to create category:', err);
+          this.isSavingCategory.set(false);
+        }
+      });
+      return;
+    }
+
+    this.forumService.updateCategory(editingId, payload).subscribe({
+      next: () => {
+        this.isSavingCategory.set(false);
+        this.closeManageCategories();
+        this.loadForumData();
+      },
+      error: (err) => {
+        console.error('Failed to update category:', err);
+        this.isSavingCategory.set(false);
+      }
+    });
+  }
+
+  deleteCategory(cat: ForumCategory): void {
+    if (!this.isAdmin()) return;
+    if (!confirm(`Delete category "${cat.name}"?`)) return;
+
+    this.isSavingCategory.set(true);
+    this.forumService.deleteCategory(cat.id).subscribe({
+      next: () => {
+        this.isSavingCategory.set(false);
+        this.closeManageCategories();
+        this.loadForumData();
+      },
+      error: (err) => {
+        console.error('Failed to delete category:', err);
+        this.isSavingCategory.set(false);
+      }
+    });
+  }
+
+  openUpdatePostModal(post: SimplePost): void {
+    if (!this.canManagePost(post)) return;
+
+    this.updatePostTarget.set(post);
+    this.updatePostForm.patchValue({
+      categoryId: post.categoryId,
+      title: post.title,
+      content: post.content,
+      pinned: !!post.isPinned,
+      approved: !!post.approved
+    });
+    this.showUpdatePostModal.set(true);
+  }
+
+  isAdmin(): boolean {
+    const role = localStorage.getItem('userRole') ?? '';
+    return role.toUpperCase().includes('ADMIN');
+  }
+
+  private getCurrentUserId(): string | null {
+    return localStorage.getItem('userId');
+  }
+
+  canManagePost(post: SimplePost): boolean {
+    const currentUserId = this.getCurrentUserId();
+    return this.isAdmin() || (currentUserId !== null && post.authorId === currentUserId);
+  }
+
+  canManageComment(comment: ForumCommentUI): boolean {
+    const currentUserId = this.getCurrentUserId();
+    return this.isAdmin() || (currentUserId !== null && comment.authorId === currentUserId);
+  }
+
+  canManageReply(reply: ForumReplyUI): boolean {
+    const currentUserId = this.getCurrentUserId();
+    return this.isAdmin() || (currentUserId !== null && reply.authorId === currentUserId);
+  }
+
   createPost(): void {
     if (this.createPostForm.invalid) {
       this.createPostForm.markAllAsTouched();
@@ -288,61 +367,256 @@ export class Forum implements OnInit {
 
     this.isCreatingPost.set(true);
     const formValue = this.createPostForm.value;
-    const category = this.categories().find(c => c.id === formValue.categoryId);
 
-    setTimeout(() => {
-      const newPost: SimplePost = {
-        id: 'new-' + Date.now(),
-        author: { name: 'You' },
-        category: category?.name || 'General',
-        categoryColor: category?.color || 'bg-blue-500',
-        title: formValue.title,
-        content: formValue.content,
-        time: new Date(),
-        likes: 0,
-        loves: 0,
-        comments: 0,
-        tags: formValue.tags ? formValue.tags.split(',').map((t: string) => t.trim()) : []
-      };
+    const tags = formValue.tags ? (String(formValue.tags).split(',').map((t: string) => t.trim()).filter(Boolean)) : [];
 
-      this.posts.update(posts => [newPost, ...posts]);
-      this.isCreatingPost.set(false);
-      this.closeCreatePostModal();
-    }, 1000);
+    const request: CreatePostRequest = {
+      categoryId: formValue.categoryId,
+      title: formValue.title,
+      content: formValue.content,
+      tags
+    };
+
+    this.forumService.createPost(request).subscribe({
+      next: () => {
+        this.isCreatingPost.set(false);
+        this.closeCreatePostModal();
+        this.loadForumData();
+      },
+      error: (err) => {
+        console.error('Failed to create post:', err);
+        this.isCreatingPost.set(false);
+      }
+    });
   }
 
   togglePostExpansion(postId: string): void {
-    this.expandedPostId.set(this.expandedPostId() === postId ? null : postId);
+    const isOpening = this.expandedPostId() !== postId;
+    this.expandedPostId.set(isOpening ? postId : null);
+
+    if (!isOpening) {
+      this.expandedComments.set([]);
+      this.activeReplyingCommentId.set(null);
+      return;
+    }
+
+    this.loadCommentsAndReplies(postId);
   }
 
   reactToPost(postId: string, reaction: ReactionType): void {
-    this.posts.update(posts =>
-      posts.map(p => {
-        if (p.id === postId) {
-          const wasReacted = p.userReaction === reaction;
-          return {
-            ...p,
-            userReaction: wasReacted ? undefined : reaction,
-            likes: reaction === ReactionType.LIKE ? (wasReacted ? p.likes - 1 : p.likes + 1) : p.likes,
-            loves: reaction === ReactionType.LOVE ? (wasReacted ? p.loves - 1 : p.loves + 1) : p.loves
-          };
-        }
-        return p;
-      })
-    );
+    const post = this.posts().find((p) => p.id === postId);
+    if (!post) return;
+
+    const previous = post.userReaction;
+    const wasSameReaction = previous === reaction;
+
+    if (wasSameReaction) {
+      this.forumService.removeReaction(postId, 'post', reaction).subscribe({
+        next: () => {
+          this.posts.update((posts) =>
+            posts.map((p) => {
+              if (p.id !== postId) return p;
+              return {
+                ...p,
+                userReaction: undefined,
+                likes: reaction === ReactionType.LIKE ? Math.max(0, p.likes - 1) : p.likes,
+                loves: reaction === ReactionType.LOVE ? Math.max(0, p.loves - 1) : p.loves
+              };
+            })
+          );
+        },
+        error: (err) => console.error('Failed to remove reaction:', err)
+      });
+
+      return;
+    }
+
+    const remove$ = previous ? this.forumService.removeReaction(postId, 'post', previous) : of(void 0);
+    remove$
+      .pipe(switchMap(() => this.forumService.addReaction(postId, 'post', reaction)))
+      .subscribe({
+        next: () => {
+          this.posts.update((posts) =>
+            posts.map((p) => {
+              if (p.id !== postId) return p;
+
+              // Remove previous local reaction counts (if any), then add the new one.
+              let likes = p.likes;
+              let loves = p.loves;
+
+              if (previous === ReactionType.LIKE) likes = Math.max(0, likes - 1);
+              if (previous === ReactionType.LOVE) loves = Math.max(0, loves - 1);
+
+              if (reaction === ReactionType.LIKE) likes += 1;
+              if (reaction === ReactionType.LOVE) loves += 1;
+
+              return {
+                ...p,
+                userReaction: reaction,
+                likes,
+                loves
+              };
+            })
+          );
+        },
+        error: (err) => console.error('Failed to add reaction:', err)
+      });
   }
 
   submitComment(postId: string): void {
     if (this.commentForm.invalid) return;
-    
-    // Mock comment submission
-    console.log('Submitting comment for post:', postId, this.commentForm.value);
-    
-    this.posts.update(posts =>
-      posts.map(p => p.id === postId ? { ...p, comments: p.comments + 1 } : p)
-    );
-    
-    this.commentForm.reset();
+
+    const content = this.commentForm.value.content;
+    const request: CreateCommentRequest = { postId, content };
+
+    this.forumService.createComment(request).subscribe({
+      next: () => {
+        this.commentForm.reset();
+        this.loadCommentsAndReplies(postId);
+      },
+      error: (err) => {
+        console.error('Failed to create comment:', err);
+      }
+    });
+  }
+
+  startReply(commentId: string): void {
+    this.activeReplyingCommentId.set(commentId);
+    this.replyForm.reset();
+  }
+
+  submitReply(): void {
+    const commentId = this.activeReplyingCommentId();
+    if (!commentId) return;
+    if (this.replyForm.invalid) return;
+
+    const content = this.replyForm.value.content;
+
+    this.forumService.createReply({ commentId, content }).subscribe({
+      next: () => {
+        this.replyForm.reset();
+        this.activeReplyingCommentId.set(null);
+
+        const postId = this.expandedPostId();
+        if (postId) this.loadCommentsAndReplies(postId);
+      },
+      error: (err) => {
+        console.error('Failed to create reply:', err);
+      }
+    });
+  }
+
+  submitUpdatePost(): void {
+    const target = this.updatePostTarget();
+    if (!target) return;
+
+    if (this.updatePostForm.invalid) {
+      this.updatePostForm.markAllAsTouched();
+      return;
+    }
+
+    const formValue = this.updatePostForm.value;
+
+    this.forumService
+      .updatePost(target.id, {
+        categoryId: formValue.categoryId,
+        title: String(formValue.title).trim(),
+        content: String(formValue.content).trim(),
+        pinned: !!formValue.pinned,
+        approved: !!formValue.approved
+      })
+      .subscribe({
+        next: () => {
+          this.closeUpdatePostModal();
+          this.loadForumData();
+        },
+        error: (err) => console.error('Failed to update post:', err)
+      });
+  }
+
+  deletePost(post: SimplePost): void {
+    if (!this.canManagePost(post)) return;
+    if (!confirm('Delete this post?')) return;
+
+    this.forumService.deletePost(post.id).subscribe({
+      next: () => {
+        this.expandedComments.set([]);
+        this.activeReplyingCommentId.set(null);
+        if (this.expandedPostId() === post.id) this.expandedPostId.set(null);
+        this.loadForumData();
+      },
+      error: (err) => console.error('Failed to delete post:', err)
+    });
+  }
+
+  updateComment(comment: ForumCommentUI): void {
+    // Start inline editing (no top popup).
+    if (!this.canManageComment(comment)) return;
+    this.editingCommentId.set(comment.id);
+    this.editCommentForm.patchValue({ content: comment.content });
+  }
+
+  cancelEditComment(): void {
+    this.editingCommentId.set(null);
+    this.editCommentForm.reset();
+  }
+
+  submitEditComment(comment: ForumCommentUI): void {
+    if (!this.canManageComment(comment)) return;
+    if (this.editCommentForm.invalid) {
+      this.editCommentForm.markAllAsTouched();
+      return;
+    }
+
+    const content = String(this.editCommentForm.value.content).trim();
+
+    this.forumService
+      .updateComment(comment.id, {
+        postId: comment.postId,
+        parentId: comment.parentCommentId,
+        content
+      })
+      .subscribe({
+        next: () => {
+          this.cancelEditComment();
+          this.loadCommentsAndReplies(comment.postId);
+        },
+        error: (err) => console.error('Failed to update comment:', err)
+      });
+  }
+
+  deleteComment(comment: ForumCommentUI): void {
+    if (!this.canManageComment(comment)) return;
+    if (!confirm('Delete this comment?')) return;
+
+    this.forumService.deleteComment(comment.id).subscribe({
+      next: () => this.loadCommentsAndReplies(comment.postId),
+      error: (err) => console.error('Failed to delete comment:', err)
+    });
+  }
+
+  updateReply(reply: ForumReplyUI, postId: string): void {
+    if (!this.canManageReply(reply)) return;
+
+    const newContent = prompt('Edit reply:', reply.content);
+    if (newContent === null) return;
+
+    this.forumService
+      .updateReply(reply.id, { commentId: reply.commentId, content: String(newContent).trim() })
+      .subscribe({
+        next: () => this.loadCommentsAndReplies(postId),
+        error: (err) => console.error('Failed to update reply:', err)
+      });
+  }
+
+  deleteReply(reply: ForumReplyUI, postId: string): void {
+    if (!this.canManageReply(reply)) return;
+    if (!confirm('Delete this reply?')) return;
+
+    this.forumService.deleteReply(reply.id).subscribe({
+      next: () => this.loadCommentsAndReplies(postId),
+      error: (err) => console.error('Failed to delete reply:', err)
+    });
   }
 
   getTimeAgo(date: Date): string {
@@ -373,5 +647,165 @@ export class Forum implements OnInit {
   isFieldInvalid(fieldName: string): boolean {
     const field = this.createPostForm.get(fieldName);
     return !!(field && field.invalid && (field.dirty || field.touched));
+  }
+
+  private slugify(value: string): string {
+    return value
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+  }
+
+  private extractTitleAndContent(rawContent: string): { title: string; content: string } {
+    const normalized = String(rawContent ?? '');
+    const [firstLine, ...restLines] = normalized.split(/\r?\n/);
+    const title = (firstLine ?? '').trim();
+    const content = restLines.join('\n').trim();
+
+    if (title) return { title: title.slice(0, 120), content: content || normalized };
+    return { title: normalized.slice(0, 60) + (normalized.length > 60 ? '...' : ''), content: normalized };
+  }
+
+  private loadForumData(): void {
+    const colorPalette = ['bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-pink-500', 'bg-orange-500', 'bg-primary'];
+    const iconPalette = ['💬', '📚', '💼', '🎉', '💻', '🛒'];
+
+    this.forumService.isLoading.set(true);
+
+    forkJoin({
+      categoriesDto: this.forumService.getCategories(),
+      postsDto: this.forumService.getPosts(),
+      commentsDto: this.forumService.getComments(),
+      reactionsDto: this.forumService.getReactions()
+    }).subscribe({
+      next: ({ categoriesDto, postsDto, commentsDto, reactionsDto }) => {
+        const postCountByCategoryId = postsDto.reduce((acc, p) => {
+          acc[p.categoryId] = (acc[p.categoryId] ?? 0) + 1;
+          return acc;
+        }, {} as Record<string, number>);
+
+        const categoriesMapped: ForumCategory[] = categoriesDto.map((c, idx) => ({
+          id: c.id,
+          name: c.name,
+          slug: this.slugify(c.name),
+          description: c.description,
+          icon: iconPalette[idx % iconPalette.length],
+          color: colorPalette[idx % colorPalette.length],
+          postCount: postCountByCategoryId[c.id] ?? 0,
+          isLocked: false,
+          sortOrder: idx + 1,
+          createdAt: new Date()
+        }));
+
+        const categoryById = new Map(categoriesMapped.map((c) => [c.id, c]));
+
+        const commentCountByPostId = commentsDto.reduce((acc, c) => {
+          acc[c.postId] = (acc[c.postId] ?? 0) + 1;
+          return acc;
+        }, {} as Record<string, number>);
+
+        const currentUserId = localStorage.getItem('userId');
+
+        const postsMapped: SimplePost[] = postsDto.map((p) => {
+          const cat = categoryById.get(p.categoryId);
+          const { title, content } = this.extractTitleAndContent(p.content);
+
+          const postReactions = reactionsDto.filter((r) => r.postId === p.id);
+          const likes = postReactions.filter((r) => r.type === ReactionType.LIKE).length;
+          const loves = postReactions.filter((r) => r.type === ReactionType.LOVE).length;
+
+          let userReaction: ReactionType | undefined = undefined;
+          if (currentUserId) {
+            const myLike = postReactions.find((r) => r.userId === currentUserId && r.type === ReactionType.LIKE);
+            const myLove = postReactions.find((r) => r.userId === currentUserId && r.type === ReactionType.LOVE);
+            if (myLike) userReaction = ReactionType.LIKE;
+            else if (myLove) userReaction = ReactionType.LOVE;
+          }
+
+          const moderationBadge = p.pinned
+            ? ModerationBadge.PINNED
+            : p.approved
+              ? ModerationBadge.OFFICIAL
+              : undefined;
+
+          return {
+            id: p.id,
+            authorId: p.userId,
+            author: { name: p.userId },
+            category: cat?.name ?? 'General',
+            categoryId: p.categoryId,
+            categoryColor: cat?.color ?? 'bg-blue-500',
+            title,
+            content,
+            time: p.createdAt ? new Date(p.createdAt) : new Date(),
+            likes,
+            loves,
+            comments: commentCountByPostId[p.id] ?? 0,
+            tags: [],
+            isPinned: p.pinned,
+            approved: p.approved,
+            moderationBadge,
+            userReaction
+          };
+        });
+
+        this.categories.set(categoriesMapped);
+        this.posts.set(postsMapped);
+        this.prefetchUserNames(postsDto.map((p) => p.userId));
+        this.forumService.isLoading.set(false);
+      },
+      error: (err) => {
+        console.error('Failed to load forum data:', err);
+        this.forumService.isLoading.set(false);
+      }
+    });
+  }
+
+  private loadCommentsAndReplies(postId: string): void {
+    this.expandedPostCommentsLoading.set(true);
+    this.activeReplyingCommentId.set(null);
+    this.replyForm.reset();
+
+    forkJoin({
+      commentsDto: this.forumService.getComments(postId),
+      repliesDto: this.forumService.getReplies()
+    }).subscribe({
+      next: ({ commentsDto, repliesDto }) => {
+        const mapped: ForumCommentUI[] = commentsDto.map((c) => ({
+          id: c.id,
+          postId: c.postId,
+          authorId: c.userId,
+          parentCommentId: c.parentCommentId,
+          content: c.content,
+          createdAt: c.createdAt ? new Date(c.createdAt) : new Date(),
+          replies: repliesDto
+            .filter((r) => r.commentId === c.id)
+            .map((r) => ({
+              id: r.id,
+              commentId: r.commentId,
+              authorId: r.userId,
+              content: r.content,
+              createdAt: r.createdAt ? new Date(r.createdAt) : new Date()
+            }))
+        }));
+
+        this.expandedComments.set(mapped);
+        this.prefetchUserNames([
+          ...commentsDto.map((c) => c.userId),
+          ...repliesDto.map((r) => r.userId)
+        ]);
+
+        // Ensure the comments counter is accurate after refresh
+        this.posts.update((posts) =>
+          posts.map((p) => (p.id === postId ? { ...p, comments: mapped.length } : p))
+        );
+        this.expandedPostCommentsLoading.set(false);
+      },
+      error: (err) => {
+        console.error('Failed to load comments/replies:', err);
+        this.expandedPostCommentsLoading.set(false);
+      }
+    });
   }
 }

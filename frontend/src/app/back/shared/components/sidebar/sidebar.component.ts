@@ -89,6 +89,7 @@ export class SidebarComponent {
         { label: 'Content Moderation', icon: '🛡️', route: '/admin/moderation' },
         { label: 'Marketplace', icon: '🛒', route: '/admin/marketplace' },
         { label: 'Smart Mobility', icon: '🚗', route: '/admin/mobility' },
+        { label: 'Forum', icon: '📝', route: '/admin/forum' },
         { label: 'Orders & Transactions', icon: '💳', route: '/admin/orders' },
         { label: 'Support Center', icon: '🎧', route: '/admin/support' },
         { label: 'Community Oversight', icon: '👁️', route: '/admin/community' },

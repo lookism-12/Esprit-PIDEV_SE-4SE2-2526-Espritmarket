@@ -1,11 +1,14 @@
 import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
+import { Observable, forkJoin, map, of } from 'rxjs';
+import { ForumService } from '../../../front/core/forum.service';
 
 @Injectable({ providedIn: 'root' })
 export class DashboardService {
     // Mock data for now
+    constructor(private forum: ForumService) {}
+
     getMetrics(): Observable<any> {
-        return of([
+        const baseMetrics = [
             {
                 label: 'Total Users',
                 value: '8,542',
@@ -46,7 +49,39 @@ export class DashboardService {
                 subtitle: 'Requires attention',
                 progress: 88
             }
-        ]);
+        ];
+
+        // Forum metrics from backend. Your backend exposes:
+        // GET /api/forum/posts, /api/forum/comments, /api/forum/replies, /api/forum/categories
+        return forkJoin({
+            posts: this.forum.getPosts(),
+            comments: this.forum.getComments(),
+            replies: this.forum.getReplies(),
+            categories: this.forum.getCategories()
+        }).pipe(
+            map(({ posts, comments, replies, categories }) => {
+                const postsCount = posts.length;
+                const commentsCount = comments.length;
+                const repliesCount = replies.length;
+
+                const postsByCategory: Record<string, number> = {};
+                for (const p of posts as any[]) {
+                    postsByCategory[p.categoryId] = (postsByCategory[p.categoryId] ?? 0) + 1;
+                }
+                const topCategoryId = Object.entries(postsByCategory).sort((a, b) => b[1] - a[1])[0]?.[0];
+                const topCategoryName =
+                    (categories as any[]).find((c) => c.id === topCategoryId)?.name ?? topCategoryId ?? '-';
+
+                const forumMetrics = [
+                    { label: 'Forum Posts', value: String(postsCount), icon: '📝', color: 'blue' },
+                    { label: 'Forum Comments', value: String(commentsCount), icon: '💬', color: 'green' },
+                    { label: 'Forum Replies', value: String(repliesCount), icon: '↩️', color: 'purple' },
+                    { label: 'Top Category', value: topCategoryName, icon: '🏷️', color: 'orange' }
+                ];
+
+                return [...baseMetrics, ...forumMetrics];
+            })
+        );
     }
 
     getKycApplications(): Observable<any> {

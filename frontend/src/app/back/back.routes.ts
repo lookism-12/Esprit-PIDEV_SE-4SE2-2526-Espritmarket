@@ -17,6 +17,10 @@ export const BACK_ROUTES: Routes = [
                 loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent)
             },
             {
+                path: 'forum',
+                loadComponent: () => import('./features/forum/forum.component').then(m => m.ForumAdminComponent)
+            },
+            {
                 path: 'profile',
                 loadComponent: () => import('./features/placeholders').then(m => m.AdminProfileComponent)
             },

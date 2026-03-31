@@ -11,6 +11,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -58,6 +59,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/users/register", "/api/users/login", "/api/users/forgot-password",
                                 "/api/users/reset-password")
                         .permitAll()
+                        // Allow public forum browsing (GET only). Creation/reactions still require auth.
+                        .requestMatchers(HttpMethod.GET, "/api/forum/**").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/error").permitAll()
                         .requestMatchers("/uploads/**").permitAll()
