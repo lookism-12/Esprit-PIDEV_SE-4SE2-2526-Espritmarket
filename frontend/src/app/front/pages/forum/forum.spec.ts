@@ -7,7 +7,6 @@ import { of, throwError } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
 import { signal } from '@angular/core';
 
-// Using vitest's vi
 declare const vi: any;
 
 describe('Forum Component', () => {
@@ -16,7 +15,6 @@ describe('Forum Component', () => {
   let forumServiceMock: any;
 
   beforeEach(async () => {
-    // Mocking HTTP services & observables
     forumServiceMock = {
       isLoading: signal(false),
       getCategories: vi.fn().mockReturnValue(of([])),
@@ -43,7 +41,6 @@ describe('Forum Component', () => {
 
     fixture = TestBed.createComponent(Forum);
     component = fixture.componentInstance;
-    // Mock local storage for auth checks
     vi.spyOn(Storage.prototype, 'getItem').mockImplementation((key: string) => {
       if (key === 'userRole') return 'ADMIN';
       if (key === 'userId') return 'user-123';
@@ -57,12 +54,10 @@ describe('Forum Component', () => {
     vi.restoreAllMocks();
   });
 
-  // Component creation
   it('should create the component', () => {
     expect(component).toBeTruthy();
   });
 
-  // Loading posts list
   it('should load forum data on init', () => {
     expect(forumServiceMock.getCategories).toHaveBeenCalled();
     expect(forumServiceMock.getPosts).toHaveBeenCalled();
@@ -70,7 +65,6 @@ describe('Forum Component', () => {
     expect(forumServiceMock.getReactions).toHaveBeenCalled();
   });
 
-  // Creating post
   it('should create a post when form is valid', () => {
     component.createPostForm.setValue({
       categoryId: 'cat-1',
@@ -88,7 +82,6 @@ describe('Forum Component', () => {
       tags: ['tag1']
     });
     
-    // UI update after action
     expect(component.isCreatingPost()).toBe(false);
   });
 
@@ -105,7 +98,6 @@ describe('Forum Component', () => {
     expect(forumServiceMock.createPost).not.toHaveBeenCalled();
   });
 
-  // Updating post
   it('should update a post', () => {
     const postMock: any = { id: 'post-1', categoryId: 'cat-1', title: 'Title', content: 'Content' };
     component.openUpdatePostModal(postMock);
@@ -129,7 +121,6 @@ describe('Forum Component', () => {
     });
   });
 
-  // Deleting post
   it('should delete a post if confirmed', () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     const postMock: any = { id: 'post-1', authorId: 'user-123' };
@@ -148,7 +139,6 @@ describe('Forum Component', () => {
     expect(forumServiceMock.deletePost).not.toHaveBeenCalled();
   });
 
-  // Adding comments
   it('should submit a comment when form is valid', () => {
     component.commentForm.setValue({
       content: 'New comment'
@@ -175,7 +165,6 @@ describe('Forum Component', () => {
     expect(consoleSpy).toHaveBeenCalled();
   });
 
-  // UI Updates after action
   it('should toggle post expansion and load comments', () => {
     expect(component.expandedPostId()).toBeNull();
     

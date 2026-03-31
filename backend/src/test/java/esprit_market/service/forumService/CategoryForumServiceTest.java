@@ -98,7 +98,6 @@ class CategoryForumServiceTest {
     void update_WhenCategoryExists_ShouldUpdateFieldsAndSave() {
         ObjectId id = new ObjectId();
         CategoryForumRequest dto = new CategoryForumRequest();
-        // Assuming dto has getters returning some values
         CategoryForum existing = new CategoryForum();
         
         when(repository.findById(id)).thenReturn(Optional.of(existing));

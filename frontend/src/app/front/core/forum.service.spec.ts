@@ -6,7 +6,6 @@ import { of, throwError } from 'rxjs';
 
 declare const vi: any;
 
-// Mock Axios methods
 vi.mock('axios', () => {
   return {
     default: {
@@ -35,10 +34,8 @@ describe('ForumService', () => {
     });
 
     service = TestBed.inject(ForumService);
-    // Grab the mocked axios instance
     mockAxiosInstance = (service as any).http;
     
-    // Mock local storage for auth checks
     vi.spyOn(Storage.prototype, 'getItem').mockImplementation((key: string) => {
       if (key === 'userId') return 'user-123';
       if (key === 'authToken') return 'test-token';
@@ -50,7 +47,6 @@ describe('ForumService', () => {
     expect(service).toBeTruthy();
   });
 
-  // Loading posts
   it('should fetch posts list', (done) => {
     const mockPosts = [{ id: 'post-1', title: 'Hello', content: 'World' }];
     mockAxiosInstance.get.mockResolvedValue({ data: mockPosts });
@@ -62,7 +58,6 @@ describe('ForumService', () => {
     });
   });
 
-  // Creating post
   it('should create a post', (done) => {
     const requestPayload = { categoryId: 'cat-1', title: 'Title', content: 'Content', tags: [] };
     const mockResponse = { id: 'post-new', ...requestPayload };
@@ -81,7 +76,6 @@ describe('ForumService', () => {
     });
   });
 
-  // Updating post
   it('should update a post', (done) => {
     const mockResponse = { id: 'post-1' };
     mockAxiosInstance.put.mockResolvedValue({ data: mockResponse });
@@ -105,7 +99,6 @@ describe('ForumService', () => {
     });
   });
 
-  // Deleting post
   it('should delete a post', (done) => {
     mockAxiosInstance.delete.mockResolvedValue({});
 
@@ -115,7 +108,6 @@ describe('ForumService', () => {
     });
   });
 
-  // Handling errors (Observables)
   it('should handle RxJS error when creating a comment fails', (done) => {
     mockAxiosInstance.post.mockRejectedValue(new Error('API Error'));
 
