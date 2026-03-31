@@ -1,13 +1,15 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
+import { Observable, tap } from 'rxjs';
 import { Favorite, FavoriteListResponse, AddFavoriteRequest } from '../models/favorite.model';
+import { environment } from '../../../environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class FavoriteService {
-  private readonly apiUrl = '/api/favorites';
+  private readonly apiUrl = `${environment.apiUrl}/favoris`;
+  private http = inject(HttpClient);
 
   readonly favorites = signal<Favorite[]>([]);
   readonly isLoading = signal<boolean>(false);
@@ -16,39 +18,22 @@ export class FavoriteService {
   readonly favoriteCount = computed(() => this.favorites().length);
   readonly favoriteIds = computed(() => this.favorites().map(f => f.productId));
 
-  constructor(private http: HttpClient) {}
-
-  getAll(page = 1, limit = 20): Observable<FavoriteListResponse> {
-    // TODO: Implement HTTP call
-    console.log('FavoriteService.getAll() called');
-    return of({ favorites: [], total: 0, page: 1, totalPages: 0 });
+  getAll(): Observable<any[]> {
+    this.isLoading.set(true);
+    return this.http.get<any[]>(this.apiUrl).pipe(
+      tap({ next: () => this.isLoading.set(false), error: () => this.isLoading.set(false) })
+    );
   }
 
-  add(request: AddFavoriteRequest): Observable<Favorite> {
-    // TODO: Implement HTTP call
-    console.log('FavoriteService.add() called with:', request);
-    return of({} as Favorite);
+  add(request: AddFavoriteRequest): Observable<any> {
+    return this.http.post<any>(this.apiUrl, { productId: request.productId });
   }
 
-  remove(productId: string): Observable<void> {
-    // TODO: Implement HTTP call
-    console.log('FavoriteService.remove() called with:', productId);
-    return of(void 0);
-  }
-
-  toggle(productId: string): Observable<{ isFavorite: boolean }> {
-    // TODO: Implement HTTP call
-    console.log('FavoriteService.toggle() called with:', productId);
-    return of({ isFavorite: false });
+  remove(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
 
   isFavorite(productId: string): boolean {
     return this.favoriteIds().includes(productId);
-  }
-
-  checkPriceChanges(): Observable<Favorite[]> {
-    // TODO: Implement HTTP call
-    console.log('FavoriteService.checkPriceChanges() called');
-    return of([]);
   }
 }

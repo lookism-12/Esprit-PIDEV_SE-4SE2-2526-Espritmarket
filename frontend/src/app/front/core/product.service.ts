@@ -53,6 +53,13 @@ export class ProductService {
   constructor(private http: HttpClient) {}
 
   /**
+   * Get all products from the backend API
+   */
+  getAllProducts(): Observable<Product[]> {
+    return this.http.get<Product[]>(`${environment.apiUrl}/products`);
+  }
+
+  /**
    * Get all products with optional filtering
    * @param filter - Optional filter parameters
    * @returns Observable with paginated product list
@@ -108,10 +115,17 @@ export class ProductService {
    * @param id - Product ID to delete
    * @returns Observable with void on success
    */
-  delete(id: string): Observable<void> {
+  deleteProduct(id: string): Observable<void> {
     this.isLoading.set(true);
     console.log('🗑️ Deleting product:', id);
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  }
+
+  /**
+   * Delete a product (compatibility alias)
+   */
+  delete(id: string): Observable<void> {
+    return this.deleteProduct(id);
   }
 
   /**

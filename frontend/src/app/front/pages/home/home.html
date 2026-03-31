@@ -1,280 +1,353 @@
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <!-- Hero Section with Sidebar -->
-    <div class="flex flex-col lg:flex-row gap-0 lg:gap-12 py-10">
-        <!-- Sidebar -->
-        <aside class="w-full lg:w-64 flex-shrink-0 border-r border-gray-100 pr-8 hidden lg:block">
-            <nav class="space-y-4">
-                <a routerLink="/products"
-                    class="flex justify-between items-center text-dark font-medium hover:text-primary transition-colors py-1 group">
-                    <span>Products</span>
-                    <svg class="w-4 h-4 text-gray-400 group-hover:text-primary transition-colors" fill="none"
-                        stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                    </svg>
-                </a>
-                @for (cat of categories(); track cat.slug) {
-                    <a [routerLink]="['/products']" [queryParams]="{category: cat.name}"
-                        class="block text-dark font-medium hover:text-primary transition-colors py-1">
-                        {{ cat.icon }} {{ cat.name }}
-                    </a>
-                }
-                <a routerLink="/products" [queryParams]="{category: 'Services'}"
-                    class="flex justify-between items-center text-dark font-medium hover:text-primary transition-colors py-1 group">
-                    <span>Services</span>
-                    <svg class="w-4 h-4 text-gray-400 group-hover:text-primary transition-colors" fill="none"
-                        stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                    </svg>
-                </a>
-            </nav>
-        </aside>
-
-        <!-- Hero Banner -->
-        <div class="flex-1">
-            <div
-                class="bg-soft-gradient rounded-sm overflow-hidden relative min-h-[400px] flex items-center px-12 lg:px-20 py-16 text-white group">
-                <div class="max-w-lg relative z-10 transition-transform duration-500 group-hover:translate-x-2">
-                    <div class="flex items-center gap-4 mb-8">
-                        <img src="https://ui-avatars.com/api/?name=E&background=ffffff&color=8B0000&bold=true"
-                            alt="ESPRIT" class="h-10 w-10 rounded-full">
-                        <span class="text-sm font-medium tracking-widest uppercase">Special Offer</span>
+<div class="min-h-screen bg-gray-50/50 pt-28 pb-20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Main Layout: Sidebar + Content -->
+        <div class="flex flex-col lg:flex-row gap-8">
+            <!-- Left Sidebar - Filters (Sticky) -->
+            <aside class="lg:w-80 flex-shrink-0">
+                <div class="bg-white rounded-3xl shadow-xl shadow-secondary/5 border border-secondary/10 p-6 sticky top-24 space-y-6">
+                    <!-- Filters Header -->
+                    <div class="flex items-center justify-between pb-4 border-b border-gray-100">
+                        <h2 class="text-lg font-black text-dark uppercase tracking-widest">Filters</h2>
+                        <button (click)="resetFilters()" class="text-xs font-black text-primary hover:text-dark transition-colors uppercase tracking-widest">
+                            Clear All
+                        </button>
                     </div>
-                    <h1 class="text-5xl lg:text-7xl font-black mb-8 leading-tight tracking-tighter">
-                        HOLIDAY SALE
-                    </h1>
-                    <div class="flex items-end gap-4 mb-12">
-                        <span class="text-6xl lg:text-8xl font-black text-white leading-none">30%</span>
-                        <span class="text-2xl lg:text-4xl font-bold uppercase mb-2">Off</span>
-                    </div>
-                    <a routerLink="/products"
-                        class="inline-flex items-center gap-3 font-bold border-b-2 border-white/50 hover:border-white transition-all pb-1 group/btn">
-                        Shop Now
-                        <svg class="w-5 h-5 transition-transform group-hover/btn:translate-x-1" fill="none"
-                            stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7-7 7" />
-                        </svg>
-                    </a>
-                </div>
 
-                <!-- Decoration background -->
-                <div class="absolute inset-0 bg-no-repeat bg-right bg-cover opacity-20 pointer-events-none group-hover:opacity-30 transition-opacity duration-500 mix-blend-overlay"
-                    style="background-image: url('https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?q=80&w=1000&auto=format&fit=crop');">
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Promotions Section -->
-    <section class="py-12">
-        <div class="flex items-center gap-3 mb-8">
-            <div class="w-5 h-10 bg-accent rounded-sm"></div>
-            <h2 class="text-2xl font-black text-dark">Active Promotions</h2>
-            <span class="px-3 py-1 bg-accent/20 text-accent-dark text-xs font-bold rounded-full">HOT</span>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            @for (promo of promotions(); track promo.id) {
-                <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br {{ promo.backgroundColor }} p-6 text-white group hover:shadow-2xl transition-all">
-                    <div class="relative z-10">
-                        <div class="flex items-center gap-2 mb-3">
-                            <span class="text-4xl font-black">{{ promo.discount }}{{ promo.type === 'percentage' ? '%' : ' TND' }}</span>
-                            <span class="text-lg font-bold uppercase">OFF</span>
+                    <!-- Search -->
+                    <div>
+                        <label class="block text-[10px] font-black text-secondary uppercase tracking-widest mb-2">Search</label>
+                        <div class="relative">
+                            <input type="text" [(ngModel)]="searchQuery"
+                                (input)="currentPage.set(1)"
+                                placeholder="Search products..."
+                                class="w-full pl-10 pr-4 py-3 bg-gray-50 border-2 border-transparent focus:border-primary focus:bg-white rounded-xl transition-all outline-none font-bold text-sm">
+                            <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
                         </div>
-                        <h3 class="text-xl font-bold mb-2">{{ promo.title }}</h3>
-                        <p class="text-white/80 text-sm mb-4">{{ promo.description }}</p>
-                        <div class="flex items-center gap-3">
-                            <code class="px-3 py-1.5 bg-white/20 rounded-lg text-sm font-bold tracking-wider">{{ promo.code }}</code>
-                            <button (click)="copyPromoCode(promo.code)" class="text-xs font-semibold hover:underline">
-                                Copy Code
+                    </div>
+
+                    <!-- Categories -->
+                    <div>
+                        <label class="block text-[10px] font-black text-secondary uppercase tracking-widest mb-3">Categories</label>
+                        <div class="space-y-2">
+                            @for (cat of categories(); track cat) {
+                                <label class="flex items-center gap-3 cursor-pointer group py-2 px-3 rounded-xl hover:bg-gray-50 transition-colors">
+                                    <input type="radio" 
+                                        name="category" 
+                                        [value]="cat" 
+                                        [(ngModel)]="selectedCategory"
+                                        (change)="selectCategory(cat)"
+                                        class="w-4 h-4 text-primary focus:ring-primary">
+                                    <span class="text-sm font-bold text-dark group-hover:text-primary transition-colors">{{ cat }}</span>
+                                </label>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Condition -->
+                    <div>
+                        <label class="block text-[10px] font-black text-secondary uppercase tracking-widest mb-3">Condition</label>
+                        <div class="space-y-2">
+                            @for (cond of conditions; track cond) {
+                                <label class="flex items-center gap-3 cursor-pointer group py-2 px-3 rounded-xl hover:bg-gray-50 transition-colors">
+                                    <input type="radio" 
+                                        name="condition" 
+                                        [value]="cond" 
+                                        [(ngModel)]="selectedCondition"
+                                        (change)="selectCondition(cond)"
+                                        class="w-4 h-4 text-primary focus:ring-primary">
+                                    <span class="text-sm font-bold text-dark group-hover:text-primary transition-colors">{{ cond === 'All' ? 'All' : cond.replace('_', ' ') }}</span>
+                                </label>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Sort -->
+                    <div>
+                        <label class="block text-[10px] font-black text-secondary uppercase tracking-widest mb-3">Sort by</label>
+                        <select [(ngModel)]="sortBy"
+                            (change)="updateSort(sortBy())"
+                            class="w-full px-4 py-3 bg-gray-50 border-2 border-transparent focus:border-primary focus:bg-white rounded-xl transition-all outline-none font-bold text-sm">
+                            <option value="newest">Newest</option>
+                            <option value="price-low">Price: Low to High</option>
+                            <option value="price-high">Price: High to Low</option>
+                            <option value="rating">Top Rated</option>
+                        </select>
+                    </div>
+
+                    <!-- Stock Filter -->
+                    <div>
+                        <label class="flex items-center gap-3 cursor-pointer group py-3 px-3 rounded-xl hover:bg-gray-50 transition-colors">
+                            <input type="checkbox" 
+                                [(ngModel)]="showOnlyInStock"
+                                (change)="toggleStockFilter()"
+                                class="w-5 h-5 text-primary rounded focus:ring-primary">
+                            <span class="text-sm font-bold text-dark group-hover:text-primary transition-colors">In Stock Only</span>
+                        </label>
+                    </div>
+
+                    <!-- Results Count -->
+                    <div class="pt-4 border-t border-gray-100">
+                        <p class="text-xs font-bold text-secondary text-center">
+                            <span class="text-dark font-black text-lg">{{ filteredProducts().length }}</span><br>
+                            products found
+                        </p>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Right Content Area -->
+            <main class="flex-1 min-w-0">
+                <!-- Hero Banner (Holiday Sale) - EN TÊTE -->
+                <section class="mb-12">
+                    <div class="bg-soft-gradient rounded-3xl overflow-hidden relative min-h-[350px] flex items-center px-12 lg:px-16 py-12 text-white group">
+                        <div class="max-w-lg relative z-10 transition-transform duration-500 group-hover:translate-x-2">
+                            <div class="flex items-center gap-4 mb-6">
+                                <img src="https://ui-avatars.com/api/?name=E&background=ffffff&color=8B0000&bold=true"
+                                    alt="ESPRIT" class="h-10 w-10 rounded-full">
+                                <span class="text-sm font-medium tracking-widest uppercase">Special Offer</span>
+                            </div>
+                            <h2 class="text-4xl lg:text-6xl font-black mb-6 leading-tight tracking-tighter">
+                                HOLIDAY SALE
+                            </h2>
+                            <div class="flex items-end gap-4 mb-8">
+                                <span class="text-5xl lg:text-7xl font-black text-white leading-none">30%</span>
+                                <span class="text-2xl lg:text-3xl font-bold uppercase mb-2">Off</span>
+                            </div>
+                            <a routerLink="/products"
+                                class="inline-flex items-center gap-3 font-bold border-b-2 border-white/50 hover:border-white transition-all pb-1 group/btn">
+                                Shop Now
+                                <svg class="w-5 h-5 transition-transform group-hover/btn:translate-x-1" fill="none"
+                                    stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7-7 7" />
+                                </svg>
+                            </a>
+                        </div>
+
+                        <!-- Decoration background -->
+                        <div class="absolute inset-0 bg-no-repeat bg-right bg-cover opacity-20 pointer-events-none group-hover:opacity-30 transition-opacity duration-500 mix-blend-overlay"
+                            style="background-image: url('https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?q=80&w=1000&auto=format&fit=crop');">
+                        </div>
+                    </div>
+                </section>
+
+                <!-- All Products Section -->
+                <section id="all-products" class="mb-16">
+                    <div class="flex items-center justify-between mb-8">
+                        <div>
+                            <h1 class="text-5xl md:text-6xl font-black text-dark tracking-tighter leading-none mb-2">
+                                Marketplace<span class="text-primary">.</span>
+                            </h1>
+                            <p class="text-secondary font-bold">
+                                Discover the best deals from our student community.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Products Grid -->
+                    @if (isLoadingProducts()) {
+                        <div class="flex flex-col items-center justify-center py-32">
+                            <div class="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin mb-6"></div>
+                            <p class="text-secondary font-black uppercase tracking-widest text-sm">Loading products...</p>
+                        </div>
+                    } @else if (paginatedProducts().length > 0) {
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+                            @for (product of paginatedProducts(); track product.id) {
+                                <app-product-card [product]="product"></app-product-card>
+                            }
+                        </div>
+
+                        <!-- Pagination -->
+                        @if (totalPages() > 1) {
+                            <div class="flex flex-col md:flex-row items-center justify-between gap-6 pt-6 border-t border-secondary/10">
+                                <span class="text-xs font-bold text-secondary">
+                                    Showing {{ (currentPage() - 1) * itemsPerPage() + 1 }} to
+                                    {{ Math.min(currentPage() * itemsPerPage(), filteredProducts().length) }} of
+                                    {{ filteredProducts().length }} products
+                                </span>
+                                <div class="flex items-center gap-2">
+                                    <button (click)="goToPage(currentPage() - 1)"
+                                        [disabled]="currentPage() === 1"
+                                        class="w-10 h-10 rounded-xl border-2 border-gray-100 flex items-center justify-center hover:border-primary disabled:opacity-30 transition-all font-bold">
+                                        &laquo;
+                                    </button>
+                                    @for (page of [].constructor(totalPages()); track $index) {
+                                        <button (click)="goToPage($index + 1)"
+                                            [class.bg-dark]="$index + 1 === currentPage()"
+                                            [class.text-white]="$index + 1 === currentPage()"
+                                            class="w-10 h-10 rounded-xl border-2 border-gray-100 flex items-center justify-center font-black text-xs transition-all hover:border-primary">
+                                            {{ $index + 1 }}
+                                        </button>
+                                    }
+                                    <button (click)="goToPage(currentPage() + 1)"
+                                        [disabled]="currentPage() === totalPages()"
+                                        class="w-10 h-10 rounded-xl border-2 border-gray-100 flex items-center justify-center hover:border-primary disabled:opacity-30 transition-all font-bold">
+                                        &raquo;
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                    } @else {
+                        <div class="py-32 bg-white rounded-3xl border-2 border-dashed border-gray-100 flex flex-col items-center justify-center text-center">
+                            <div class="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mb-8">
+                                <svg class="h-12 w-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                </svg>
+                            </div>
+                            <h3 class="text-3xl font-black text-dark mb-4 tracking-tighter">No products found</h3>
+                            <p class="text-secondary font-bold max-w-sm mb-10">Try adjusting your filters or search query.</p>
+                            <button (click)="resetFilters()"
+                                class="px-10 py-5 bg-dark text-white rounded-2xl font-black hover:bg-black transition-all uppercase tracking-widest text-xs">
+                                Clear all filters
                             </button>
                         </div>
-                    </div>
-                    <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
-                    <div class="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2"></div>
-                </div>
-            }
-        </div>
-    </section>
-
-    <!-- Flash Sales Section -->
-    <section class="py-20">
-        <div class="flex flex-col md:flex-row md:items-end gap-8 mb-12">
-            <div class="flex-shrink-0">
-                <div class="flex items-center gap-3 text-primary font-bold mb-6">
-                    <div
-                        class="w-5 h-10 bg-primary rounded-sm shadow-sm transition-transform hover:scale-x-125 origin-center">
-                    </div>
-                    <span class="text-lg">Today's</span>
-                </div>
-                <h2 class="text-4xl font-black text-dark tracking-tighter">Flash Sales</h2>
-            </div>
-
-            <!-- Countdown -->
-            <div class="flex items-center gap-6 text-dark ml-0 md:ml-20">
-                <div class="text-center">
-                    <p class="text-[10px] font-black uppercase tracking-widest mb-1">Days</p>
-                    <span class="text-4xl font-black tabular-nums">{{ countdown().days.toString().padStart(2, '0') }}</span>
-                </div>
-                <div class="text-primary text-4xl font-black pt-4">:</div>
-                <div class="text-center">
-                    <p class="text-[10px] font-black uppercase tracking-widest mb-1">Hours</p>
-                    <span class="text-4xl font-black tabular-nums">{{ countdown().hours.toString().padStart(2, '0') }}</span>
-                </div>
-                <div class="text-primary text-4xl font-black pt-4">:</div>
-                <div class="text-center">
-                    <p class="text-[10px] font-black uppercase tracking-widest mb-1">Minutes</p>
-                    <span class="text-4xl font-black tabular-nums">{{ countdown().minutes.toString().padStart(2, '0') }}</span>
-                </div>
-                <div class="text-primary text-4xl font-black pt-4">:</div>
-                <div class="text-center">
-                    <p class="text-[10px] font-black uppercase tracking-widest mb-1">Seconds</p>
-                    <span class="text-4xl font-black tabular-nums">{{ countdown().seconds.toString().padStart(2, '0') }}</span>
-                </div>
-            </div>
-
-            <!-- Nav buttons -->
-            <div class="flex gap-2 ml-auto">
-                <button
-                    class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center hover:bg-white hover:shadow-lg transition-all text-dark">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                    </svg>
-                </button>
-                <button
-                    class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center hover:bg-white hover:shadow-lg transition-all text-dark">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                    </svg>
-                </button>
-            </div>
-        </div>
-
-        <!-- Products for Flash Sales -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            @for (product of featuredProducts(); track product.id) {
-            <app-product-card [product]="product"></app-product-card>
-            }
-        </div>
-
-        <div class="text-center mt-10">
-            <a routerLink="/products" class="btn-primary inline-flex px-10">View All Products</a>
-        </div>
-    </section>
-
-    <!-- Categories Browse Section -->
-    <section class="py-16 border-t border-gray-100">
-        <div class="flex items-center gap-3 mb-8">
-            <div class="w-5 h-10 bg-primary rounded-sm"></div>
-            <h2 class="text-2xl font-black text-dark">Browse by Category</h2>
-        </div>
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-            @for (cat of categories(); track cat.slug) {
-                <a [routerLink]="['/products']" [queryParams]="{category: cat.name}"
-                    class="premium-card p-6 text-center hover:shadow-xl hover:-translate-y-1 transition-all group">
-                    <div class="text-4xl mb-3 group-hover:scale-110 transition-transform">{{ cat.icon }}</div>
-                    <h3 class="font-bold text-dark">{{ cat.name }}</h3>
-                    <p class="text-xs text-gray-500 mt-1">{{ cat.count }} items</p>
-                </a>
-            }
-        </div>
-    </section>
-
-    <!-- AI Recommendations Section -->
-    <section class="py-16 bg-gradient-to-br from-gray-50 to-white -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8">
-        <div class="max-w-7xl mx-auto">
-            <div class="flex items-center gap-3 mb-8">
-                <div class="w-5 h-10 bg-primary rounded-sm"></div>
-                <h2 class="text-2xl font-black text-dark">Recommended For You</h2>
-                <span class="px-3 py-1 bg-accent/20 text-accent-dark text-xs font-bold rounded-full flex items-center gap-1">
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                    </svg>
-                    AI
-                </span>
-            </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <!-- AI Info Card -->
-                <div class="premium-card p-8 bg-gradient-to-br from-primary/5 to-accent/5 border border-primary/10">
-                    <div class="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-6">
-                        <svg class="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                        </svg>
-                    </div>
-                    <h3 class="text-xl font-bold text-dark mb-3">Smart Recommendations</h3>
-                    <p class="text-gray-600 text-sm mb-6">Our AI analyzes your preferences, browsing history, and academic interests to suggest products you'll love.</p>
-                    <ul class="space-y-3 text-sm">
-                        <li class="flex items-center gap-2 text-gray-600">
-                            <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                            </svg>
-                            Personalized suggestions
-                        </li>
-                        <li class="flex items-center gap-2 text-gray-600">
-                            <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                            </svg>
-                            Based on your department
-                        </li>
-                        <li class="flex items-center gap-2 text-gray-600">
-                            <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                            </svg>
-                            Price-matched to budget
-                        </li>
-                    </ul>
-                    <a routerLink="/profile" [queryParams]="{tab: 'preferences'}" class="mt-6 text-primary font-bold text-sm hover:underline block">
-                        Set Your Preferences →
-                    </a>
-                </div>
-
-                <!-- Recommended Products -->
-                <div class="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    @for (product of recommendedProducts(); track product.id) {
-                        <app-product-card [product]="product"></app-product-card>
                     }
-                </div>
-            </div>
-        </div>
-    </section>
+                </section>
 
-    <!-- Community Section -->
-    <section class="py-16">
-        <div class="flex items-center gap-3 mb-8">
-            <div class="w-5 h-10 bg-primary rounded-sm"></div>
-            <h2 class="text-2xl font-black text-dark">ESPRIT Community</h2>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <!-- Carpooling Card -->
-            <a routerLink="/carpooling" class="premium-card p-8 group hover:shadow-xl transition-all">
-                <div class="flex items-start gap-6">
-                    <div class="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                        <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                        </svg>
+                <!-- Services Section -->
+                <section class="mb-16">
+                    <div class="flex items-center justify-between mb-8">
+                        <div>
+                            <div class="flex items-center gap-3 mb-4">
+                                <div class="w-5 h-10 bg-blue-500 rounded-sm"></div>
+                                <h2 class="text-4xl font-black text-dark tracking-tighter">Services</h2>
+                            </div>
+                            <p class="text-secondary font-bold">
+                                Professional services from our community
+                            </p>
+                        </div>
+                        <a routerLink="/services" class="text-primary font-black hover:text-dark transition-colors uppercase tracking-widest text-sm">
+                            View All →
+                        </a>
                     </div>
-                    <div>
-                        <h3 class="text-xl font-bold text-dark mb-2 group-hover:text-primary transition-colors">Carpooling</h3>
-                        <p class="text-gray-600 text-sm mb-4">Share rides with fellow ESPRIT students. Save money and reduce your carbon footprint.</p>
-                        <span class="text-primary font-bold text-sm">Find a Ride →</span>
-                    </div>
-                </div>
-            </a>
 
-            <!-- Forum Card -->
-            <a routerLink="/forum" class="premium-card p-8 group hover:shadow-xl transition-all">
-                <div class="flex items-start gap-6">
-                    <div class="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                        <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
-                        </svg>
+                    @if (isLoadingServices()) {
+                        <div class="flex flex-col items-center justify-center py-16">
+                            <div class="w-12 h-12 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mb-4"></div>
+                            <p class="text-secondary font-bold text-sm">Loading services...</p>
+                        </div>
+                    } @else if (featuredServices().length > 0) {
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                            @for (service of featuredServices(); track service.id) {
+                                <app-service-card [service]="service"></app-service-card>
+                            }
+                        </div>
+                    } @else {
+                        <div class="py-16 bg-white rounded-3xl border-2 border-dashed border-gray-100 flex flex-col items-center justify-center text-center">
+                            <div class="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mb-6">
+                                <svg class="h-10 w-10 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                </svg>
+                            </div>
+                            <h3 class="text-2xl font-black text-dark mb-2">No services available</h3>
+                            <p class="text-secondary font-bold max-w-sm">Check back later for new services.</p>
+                        </div>
+                    }
+                </section>
+
+                <!-- Flash Sales Section -->
+                <section class="mb-16">
+                    <div class="flex flex-col md:flex-row md:items-end gap-8 mb-8">
+                        <div class="flex-shrink-0">
+                            <div class="flex items-center gap-3 text-primary font-bold mb-4">
+                                <div class="w-5 h-10 bg-primary rounded-sm shadow-sm transition-transform hover:scale-x-125 origin-center"></div>
+                                <span class="text-lg">Today's</span>
+                            </div>
+                            <h2 class="text-4xl font-black text-dark tracking-tighter">Flash Sales</h2>
+                        </div>
+
+                        <!-- Countdown -->
+                        <div class="flex items-center gap-4 text-dark ml-0 md:ml-12">
+                            <div class="text-center">
+                                <p class="text-[10px] font-black uppercase tracking-widest mb-1">Days</p>
+                                <span class="text-3xl font-black tabular-nums">{{ countdown().days.toString().padStart(2, '0') }}</span>
+                            </div>
+                            <div class="text-primary text-3xl font-black pt-4">:</div>
+                            <div class="text-center">
+                                <p class="text-[10px] font-black uppercase tracking-widest mb-1">Hours</p>
+                                <span class="text-3xl font-black tabular-nums">{{ countdown().hours.toString().padStart(2, '0') }}</span>
+                            </div>
+                            <div class="text-primary text-3xl font-black pt-4">:</div>
+                            <div class="text-center">
+                                <p class="text-[10px] font-black uppercase tracking-widest mb-1">Minutes</p>
+                                <span class="text-3xl font-black tabular-nums">{{ countdown().minutes.toString().padStart(2, '0') }}</span>
+                            </div>
+                            <div class="text-primary text-3xl font-black pt-4">:</div>
+                            <div class="text-center">
+                                <p class="text-[10px] font-black uppercase tracking-widest mb-1">Seconds</p>
+                                <span class="text-3xl font-black tabular-nums">{{ countdown().seconds.toString().padStart(2, '0') }}</span>
+                            </div>
+                        </div>
                     </div>
-                    <div>
-                        <h3 class="text-xl font-bold text-dark mb-2 group-hover:text-primary transition-colors">Student Forum</h3>
-                        <p class="text-gray-600 text-sm mb-4">Join discussions, ask questions, share knowledge with the ESPRIT community.</p>
-                        <span class="text-primary font-bold text-sm">Join Discussion →</span>
+
+                    <!-- Flash Sales Products -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        @for (product of featuredProducts(); track product.id) {
+                            <app-product-card [product]="product"></app-product-card>
+                        }
                     </div>
-                </div>
-            </a>
+                </section>
+
+                <!-- Categories Browse Section -->
+                <section class="mb-16">
+                    <div class="flex items-center gap-3 mb-8">
+                        <div class="w-5 h-10 bg-primary rounded-sm"></div>
+                        <h2 class="text-2xl font-black text-dark">Browse by Category</h2>
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                        @for (cat of categoriesWithIcons(); track cat.slug) {
+                            <button (click)="selectCategory(cat.name)"
+                                class="premium-card p-6 text-center hover:shadow-xl hover:-translate-y-1 transition-all group cursor-pointer">
+                                <div class="text-4xl mb-3 group-hover:scale-110 transition-transform">{{ cat.icon }}</div>
+                                <h3 class="font-bold text-dark">{{ cat.name }}</h3>
+                                <p class="text-xs text-gray-500 mt-1">{{ cat.count }} items</p>
+                            </button>
+                        }
+                    </div>
+                </section>
+
+                <!-- Community Section -->
+                <section class="mb-16">
+                    <div class="flex items-center gap-3 mb-8">
+                        <div class="w-5 h-10 bg-primary rounded-sm"></div>
+                        <h2 class="text-2xl font-black text-dark">ESPRIT Community</h2>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Carpooling Card -->
+                        <a routerLink="/carpooling" class="premium-card p-8 group hover:shadow-xl transition-all">
+                            <div class="flex items-start gap-6">
+                                <div class="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                                    <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 class="text-xl font-bold text-dark mb-2 group-hover:text-primary transition-colors">Carpooling</h3>
+                                    <p class="text-gray-600 text-sm mb-4">Share rides with fellow ESPRIT students. Save money and reduce your carbon footprint.</p>
+                                    <span class="text-primary font-bold text-sm">Find a Ride →</span>
+                                </div>
+                            </div>
+                        </a>
+
+                        <!-- Forum Card -->
+                        <a routerLink="/forum" class="premium-card p-8 group hover:shadow-xl transition-all">
+                            <div class="flex items-start gap-6">
+                                <div class="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                                    <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 class="text-xl font-bold text-dark mb-2 group-hover:text-primary transition-colors">Student Forum</h3>
+                                    <p class="text-gray-600 text-sm mb-4">Join discussions, ask questions, share knowledge with the ESPRIT community.</p>
+                                    <span class="text-primary font-bold text-sm">Join Discussion →</span>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                </section>
+            </main>
         </div>
-    </section>
+    </div>
 </div>

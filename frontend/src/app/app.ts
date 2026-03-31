@@ -2,13 +2,14 @@ import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { Navbar } from './front/layout/navbar/navbar';
 import { Footer } from './front/layout/footer/footer';
+import { ToastContainer } from './shared/components/toast-container/toast-container';
 import { filter } from 'rxjs/operators';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { AuthService } from './front/core/auth.service';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, Navbar, Footer],
+  imports: [RouterOutlet, Navbar, Footer, ToastContainer],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })

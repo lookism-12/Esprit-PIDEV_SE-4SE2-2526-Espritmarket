@@ -1,5 +1,6 @@
 package esprit_market.entity.marketplace;
 
+import esprit_market.entity.marketplace.ProductStatus;
 import lombok.*;
 import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
@@ -29,4 +30,7 @@ public class Product {
 
     private double price;
     private int stock;
+
+    @Builder.Default
+    private ProductStatus status = ProductStatus.PENDING;
 }

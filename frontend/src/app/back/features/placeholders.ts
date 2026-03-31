@@ -4,6 +4,9 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environment';
 import { AdminAuthService } from '../core';
+import { ProductService } from '../../core/services/product.service';
+import { Product, ProductStatus } from '../../front/models/product';
+import { ProductModal } from '../../front/pages/profile/product-modal';
 
 interface ProfileData {
   id: string;
@@ -702,37 +705,223 @@ export class AdminProfileComponent implements OnInit {
 export class ModerationComponent { }
 
 @Component({
-    selector: 'app-marketplace',
-    standalone: true,
-    imports: [CommonModule],
-    template: `
-    <div class="p-6">
-      <h1 class="text-2xl font-bold mb-4 text-gray-800">Marketplace</h1>
-      <div class="bg-white rounded-lg shadow p-6">
-        <p class="text-gray-600 mb-4">Manage products and listings</p>
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <p class="text-sm text-blue-600 font-medium">Total Products</p>
-            <p class="text-2xl font-bold text-blue-800 mt-2">156</p>
+  selector: 'app-marketplace',
+  standalone: true,
+  imports: [CommonModule, ProductModal],
+  template: `
+    <div class="p-6 max-w-7xl mx-auto">
+      <!-- Header Section -->
+      <div class="relative bg-white rounded-2xl p-8 mb-8 overflow-hidden shadow-soft group">
+        <div class="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -mr-16 -mt-16 transition-all duration-700 group-hover:bg-primary/10"></div>
+        <div class="relative z-10 flex justify-between items-center">
+          <div>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2 tracking-tight">Marketplace Management</h1>
+            <p class="text-gray-500">Review and moderate product listings</p>
           </div>
-          <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-            <p class="text-sm text-green-600 font-medium">Active Listings</p>
-            <p class="text-2xl font-bold text-green-800 mt-2">142</p>
-          </div>
-          <div class="bg-orange-50 border border-orange-200 rounded-lg p-4">
-            <p class="text-sm text-orange-600 font-medium">Low Stock</p>
-            <p class="text-2xl font-bold text-orange-800 mt-2">8</p>
-          </div>
-          <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
-            <p class="text-sm text-purple-600 font-medium">Revenue (MTD)</p>
-            <p class="text-2xl font-bold text-purple-800 mt-2">$12.5K</p>
+          <div class="flex gap-4">
+            <button (click)="loadProducts()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition-all flex items-center gap-2">
+              <span>🔄</span> Refresh
+            </button>
+            <button (click)="openAddModal()" class="px-6 py-2 bg-primary hover:bg-primary-dark text-white font-bold rounded-xl transition-all shadow-lg shadow-primary/20 flex items-center gap-2">
+              <span>➕</span> Add Product
+            </button>
           </div>
         </div>
       </div>
+
+      <!-- Stats Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white p-6 rounded-2xl shadow-soft border border-gray-100">
+          <p class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-2">Total Products</p>
+          <p class="text-3xl font-black text-gray-900">{{ products().length }}</p>
+        </div>
+        <div class="bg-yellow-50 p-6 rounded-2xl shadow-soft border border-yellow-100">
+          <p class="text-sm font-bold text-yellow-600 uppercase tracking-wider mb-2">Pending</p>
+          <p class="text-3xl font-black text-yellow-700">{{ getPendingCount() }}</p>
+        </div>
+        <div class="bg-green-50 p-6 rounded-2xl shadow-soft border border-green-100">
+          <p class="text-sm font-bold text-green-600 uppercase tracking-wider mb-2">Approved</p>
+          <p class="text-3xl font-black text-green-700">{{ getApprovedCount() }}</p>
+        </div>
+        <div class="bg-red-50 p-6 rounded-2xl shadow-soft border border-red-100">
+          <p class="text-sm font-bold text-red-600 uppercase tracking-wider mb-2">Rejected</p>
+          <p class="text-3xl font-black text-red-700">{{ getRejectedCount() }}</p>
+        </div>
+      </div>
+
+      <!-- Products Table -->
+      <div class="bg-white rounded-2xl shadow-soft border border-gray-100 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-gray-50/50">
+                <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-100">Product</th>
+                <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-100">Category</th>
+                <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-100">Price</th>
+                <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-100">Status</th>
+                <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-100 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+              @for (product of products(); track product.id) {
+                <tr class="hover:bg-gray-50/50 transition-colors group">
+                  <td class="px-6 py-4">
+                    <div class="flex items-center gap-4">
+                      <div class="w-12 h-12 rounded-xl bg-gray-100 overflow-hidden flex-shrink-0 border border-gray-100">
+                        <img [src]="product.imageUrl || 'assets/placeholder.png'" class="w-full h-full object-cover">
+                      </div>
+                      <div>
+                        <p class="font-bold text-gray-900 group-hover:text-primary transition-colors">{{ product.name }}</p>
+                        <p class="text-xs text-gray-500 truncate max-w-[200px]">{{ product.description }}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="px-6 py-4">
+                    <span class="px-3 py-1 bg-gray-100 text-gray-600 text-[10px] font-bold rounded-full uppercase tracking-widest">
+                      {{ product.category }}
+                    </span>
+                  </td>
+                  <td class="px-6 py-4 font-black text-gray-900">{{ product.price }} TND</td>
+                  <td class="px-6 py-4">
+                    <span [class]="getStatusClass(product.status)">
+                      {{ product.status }}
+                    </span>
+                  </td>
+                  <td class="px-6 py-4 text-right">
+                    <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      @if (product.status === 'PENDING') {
+                        <button (click)="approve(product.id)" class="w-8 h-8 flex items-center justify-center rounded-lg bg-green-500 text-white hover:bg-green-600 transition-all shadow-sm" title="Approve">
+                          ✔️
+                        </button>
+                        <button (click)="reject(product.id)" class="w-8 h-8 flex items-center justify-center rounded-lg bg-orange-500 text-white hover:bg-orange-600 transition-all shadow-sm" title="Reject">
+                          ✖️
+                        </button>
+                      }
+                      <button (click)="openEditModal(product)" class="w-8 h-8 flex items-center justify-center rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-all shadow-sm" title="Edit">
+                        ✏️
+                      </button>
+                      <button (click)="deleteProduct(product.id)" class="w-8 h-8 flex items-center justify-center rounded-lg bg-red-500 text-white hover:bg-red-600 transition-all shadow-sm" title="Delete">
+                        🗑️
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="5" class="px-6 py-20 text-center">
+                    <div class="flex flex-col items-center gap-3">
+                      <span class="text-4xl opacity-20">📦</span>
+                      <p class="text-gray-400 font-medium">No products found in the marketplace</p>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Product Modal -->
+      @if (showModal()) {
+        <app-product-modal 
+          [mode]="modalMode"
+          [product]="selectedProduct"
+          [onClose]="closeModal"
+          [onSave]="onModalSave">
+        </app-product-modal>
+      }
     </div>
-  `
+  `,
+  styles: [`
+    .shadow-soft {
+      box-shadow: 0 10px 30px -10px rgba(0,0,0,0.04);
+    }
+  `]
 })
-export class MarketplaceComponent { }
+export class MarketplaceComponent implements OnInit {
+  private productService = inject(ProductService);
+  
+  products = signal<Product[]>([]);
+  showModal = signal(false);
+  modalMode = signal<'add' | 'edit'>('add');
+  selectedProduct = signal<Product | null>(null);
+
+  ngOnInit(): void {
+    this.loadProducts();
+  }
+
+  loadProducts(): void {
+    this.productService.getAllAdmin().subscribe({
+      next: (data) => {
+        this.products.set(data.map(p => this.mapProduct(p)));
+      },
+      error: (err) => console.error('Failed to load products', err)
+    });
+  }
+
+  private mapProduct(product: any): Product {
+    return {
+      id: product.id || product._id,
+      name: product.name,
+      description: product.description,
+      price: product.price,
+      category: product.category || (product.categoryIds && product.categoryIds[0]) || 'Others',
+      imageUrl: (product.images && product.images.length > 0) ? product.images[0].url || product.images[0] : 'assets/placeholder.png',
+      sellerId: product.shopId || 'Unknown',
+      sellerName: 'Marketplace Seller',
+      rating: 4.5,
+      reviewsCount: 12,
+      stock: product.stock || 0,
+      stockStatus: (product.stock || 0) > 0 ? 'IN_STOCK' as any : 'OUT_OF_STOCK' as any,
+      condition: product.condition || 'NEW' as any,
+      isNegotiable: product.isNegotiable || false,
+      status: product.status || 'PENDING' as any
+    };
+  }
+
+  getStatusClass(status: ProductStatus): string {
+    const base = 'px-3 py-1 text-[10px] font-black rounded-full uppercase tracking-widest ';
+    switch (status) {
+      case 'APPROVED': return base + 'bg-green-100 text-green-600';
+      case 'PENDING': return base + 'bg-yellow-100 text-yellow-600';
+      case 'REJECTED': return base + 'bg-red-100 text-red-600';
+      default: return base + 'bg-gray-100 text-gray-600';
+    }
+  }
+
+  getPendingCount() { return this.products().filter(p => p.status === 'PENDING').length; }
+  getApprovedCount() { return this.products().filter(p => p.status === 'APPROVED').length; }
+  getRejectedCount() { return this.products().filter(p => p.status === 'REJECTED').length; }
+
+  approve(id: string): void {
+    this.productService.approveProduct(id).subscribe(() => this.loadProducts());
+  }
+
+  reject(id: string): void {
+    this.productService.rejectProduct(id).subscribe(() => this.loadProducts());
+  }
+
+  deleteProduct(id: string): void {
+    if (confirm('Are you sure you want to delete this product?')) {
+      this.productService.deleteProduct(id).subscribe(() => this.loadProducts());
+    }
+  }
+
+  openAddModal(): void {
+    this.modalMode.set('add');
+    this.selectedProduct.set(null);
+    this.showModal.set(true);
+  }
+
+  openEditModal(product: Product): void {
+    this.modalMode.set('edit');
+    this.selectedProduct.set(product);
+    this.showModal.set(true);
+  }
+
+  closeModal = () => { this.showModal.set(false); };
+  onModalSave = () => { this.loadProducts(); };
+}
 
 @Component({
     selector: 'app-mobility',

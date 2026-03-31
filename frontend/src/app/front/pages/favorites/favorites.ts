@@ -1,7 +1,7 @@
 import { Component, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { Product, StockStatus, ProductCondition } from '../../models/product';
+import { Product, StockStatus, ProductCondition, ProductStatus } from '../../models/product';
 import { FavoriteService } from '../../core/favorite.service';
 
 interface FavoriteItem {
@@ -43,7 +43,8 @@ export class Favorites {
         stockStatus: StockStatus.IN_STOCK,
         condition: ProductCondition.LIKE_NEW,
         isNegotiable: true,
-        isFavorite: true
+        isFavorite: true,
+        status: ProductStatus.APPROVED
       },
       originalPrice: 350,
       priceChange: { type: 'decreased', amount: 30, percentage: 8.57 },
@@ -65,7 +66,8 @@ export class Favorites {
         stockStatus: StockStatus.LOW_STOCK,
         condition: ProductCondition.NEW,
         isNegotiable: false,
-        isFavorite: true
+        isFavorite: true,
+        status: ProductStatus.APPROVED
       },
       originalPrice: 120,
       priceChange: { type: 'increased', amount: 15, percentage: 12.5 },
@@ -87,7 +89,8 @@ export class Favorites {
         stockStatus: StockStatus.IN_STOCK,
         condition: ProductCondition.GOOD,
         isNegotiable: true,
-        isFavorite: true
+        isFavorite: true,
+        status: ProductStatus.APPROVED
       },
       originalPrice: 45,
       priceChange: { type: 'unchanged', amount: 0, percentage: 0 },
@@ -109,7 +112,8 @@ export class Favorites {
         stockStatus: StockStatus.OUT_OF_STOCK,
         condition: ProductCondition.NEW,
         isNegotiable: false,
-        isFavorite: true
+        isFavorite: true,
+        status: ProductStatus.APPROVED
       },
       originalPrice: 200,
       priceChange: { type: 'decreased', amount: 20, percentage: 10 },

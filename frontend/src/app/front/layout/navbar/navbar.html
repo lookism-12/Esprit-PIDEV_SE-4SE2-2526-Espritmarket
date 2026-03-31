@@ -28,12 +28,42 @@
 
         <!-- CENTER: Navigation Links (Desktop) -->
         <nav class="navbar-nav hidden lg:flex items-center gap-8">
-          <a routerLink="/products" 
-             routerLinkActive="nav-active" 
-             [routerLinkActiveOptions]="{exact: false}"
-             class="nav-link">
-            Marketplace
-          </a>
+          <div class="relative group" tabindex="0">
+            <span class="nav-link cursor-default inline-flex items-center gap-1 select-none">
+              Marketplace
+              <svg class="w-4 h-4 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </span>
+            <ul
+              class="absolute left-0 top-full mt-2 min-w-[220px] rounded-xl bg-white shadow-xl border border-gray-100 py-2 hidden group-hover:block group-focus-within:block z-[60]">
+              <li>
+                <a routerLink="/products" routerLinkActive="bg-gray-50 font-semibold text-primary"
+                  [routerLinkActiveOptions]="{ exact: false }"
+                  class="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary transition-colors">
+                  Products
+                </a>
+              </li>
+              <li>
+                <a routerLink="/services" routerLinkActive="bg-gray-50 font-semibold text-primary"
+                  class="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary transition-colors">
+                  Services
+                </a>
+              </li>
+              <li>
+                <a routerLink="/favorites" routerLinkActive="bg-gray-50 font-semibold text-primary"
+                  class="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary transition-colors">
+                  Favorites
+                </a>
+              </li>
+              <li>
+                <a routerLink="/shop" routerLinkActive="bg-gray-50 font-semibold text-primary"
+                  class="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary transition-colors">
+                  Shop
+                </a>
+              </li>
+            </ul>
+          </div>
           <a routerLink="/carpooling" 
              routerLinkActive="nav-active"
              class="nav-link">

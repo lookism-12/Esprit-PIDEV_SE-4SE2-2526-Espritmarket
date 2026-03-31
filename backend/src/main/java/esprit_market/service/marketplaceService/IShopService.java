@@ -11,6 +11,11 @@ public interface IShopService {
 
     ShopResponseDTO findById(ObjectId id);
 
+    /**
+     * Shop owned by the currently authenticated user (seller).
+     */
+    ShopResponseDTO findMyShop();
+
     ShopResponseDTO create(ShopRequestDTO dto);
 
     ShopResponseDTO update(ObjectId id, ShopRequestDTO dto);

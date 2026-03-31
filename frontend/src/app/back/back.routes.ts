@@ -30,7 +30,32 @@ export const BACK_ROUTES: Routes = [
             },
             {
                 path: 'marketplace',
-                loadComponent: () => import('./features/placeholders').then(m => m.MarketplaceComponent)
+                children: [
+                    {
+                        path: '',
+                        loadComponent: () => import('./features/marketplace/marketplace-hub.component').then(m => m.MarketplaceHubComponent)
+                    },
+                    {
+                        path: 'products',
+                        loadComponent: () => import('./features/marketplace/products-admin.component').then(m => m.ProductsAdminComponent)
+                    },
+                    {
+                        path: 'categories',
+                        loadComponent: () => import('./features/marketplace/categories-admin.component').then(m => m.CategoriesAdminComponent)
+                    },
+                    {
+                        path: 'services',
+                        loadComponent: () => import('./features/marketplace/services-admin.component').then(m => m.ServicesAdminComponent)
+                    },
+                    {
+                        path: 'favorites',
+                        loadComponent: () => import('./features/marketplace/favorites-admin.component').then(m => m.FavoritesAdminComponent)
+                    },
+                    {
+                        path: 'shop',
+                        loadComponent: () => import('./features/marketplace/shop-admin.component').then(m => m.ShopAdminComponent)
+                    }
+                ]
             },
             {
                 path: 'mobility',

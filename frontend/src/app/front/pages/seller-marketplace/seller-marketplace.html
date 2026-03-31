@@ -1,0 +1,281 @@
+<div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <!-- Header -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-4xl font-black text-dark mb-2">My Marketplace</h1>
+                    <p class="text-gray-600">Manage your products and services</p>
+                </div>
+                <a routerLink="/profile" class="px-6 py-3 bg-white border-2 border-gray-200 text-dark font-bold rounded-xl hover:border-primary hover:text-primary transition-all">
+                    ← Back to Profile
+                </a>
+            </div>
+        </div>
+
+        <!-- Stats Dashboard -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <!-- Total Products -->
+            <div class="bg-white rounded-2xl p-6 border-2 border-gray-100 hover:border-primary transition-all">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
+                        <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                        </svg>
+                    </div>
+                    <span class="text-xs font-bold text-gray-400 uppercase">Products</span>
+                </div>
+                <div class="text-3xl font-black text-dark mb-1">{{ stats().totalProducts }}</div>
+                <div class="text-sm text-gray-500">
+                    <span class="text-green-600 font-bold">{{ stats().activeProducts }}</span> active,
+                    <span class="text-yellow-600 font-bold">{{ stats().pendingProducts }}</span> pending
+                </div>
+            </div>
+
+            <!-- Total Services -->
+            <div class="bg-white rounded-2xl p-6 border-2 border-gray-100 hover:border-accent transition-all">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="w-12 h-12 bg-accent/10 rounded-xl flex items-center justify-center">
+                        <svg class="w-6 h-6 text-accent-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                    </div>
+                    <span class="text-xs font-bold text-gray-400 uppercase">Services</span>
+                </div>
+                <div class="text-3xl font-black text-dark mb-1">{{ stats().totalServices }}</div>
+                <div class="text-sm text-gray-500">
+                    <span class="text-green-600 font-bold">{{ stats().activeServices }}</span> active,
+                    <span class="text-yellow-600 font-bold">{{ stats().pendingServices }}</span> pending
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="bg-gradient-to-br from-primary to-primary-dark rounded-2xl p-6 text-white col-span-1 md:col-span-2">
+                <h3 class="text-lg font-black mb-4">Quick Actions</h3>
+                <div class="grid grid-cols-2 gap-3">
+                    <button 
+                        (click)="openProductModal()"
+                        class="bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-xl p-4 text-left transition-all group">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                </svg>
+                            </div>
+                            <span class="font-bold text-sm">Add Product</span>
+                        </div>
+                    </button>
+                    <button 
+                        (click)="openServiceModal()"
+                        class="bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-xl p-4 text-left transition-all group">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                </svg>
+                            </div>
+                            <span class="font-bold text-sm">Add Service</span>
+                        </div>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="bg-white rounded-2xl border-2 border-gray-100 overflow-hidden">
+            <div class="border-b border-gray-100 flex">
+                <button 
+                    (click)="setActiveTab('products')"
+                    class="flex-1 px-6 py-4 font-bold transition-all"
+                    [class.bg-primary]="activeTab() === 'products'"
+                    [class.text-white]="activeTab() === 'products'"
+                    [class.text-gray-600]="activeTab() !== 'products'"
+                    [class.hover:bg-gray-50]="activeTab() !== 'products'">
+                    <div class="flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                        </svg>
+                        <span>My Products ({{ stats().totalProducts }})</span>
+                    </div>
+                </button>
+                <button 
+                    (click)="setActiveTab('services')"
+                    class="flex-1 px-6 py-4 font-bold transition-all"
+                    [class.bg-accent]="activeTab() === 'services'"
+                    [class.text-dark]="activeTab() === 'services'"
+                    [class.text-gray-600]="activeTab() !== 'services'"
+                    [class.hover:bg-gray-50]="activeTab() !== 'services'">
+                    <div class="flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                        <span>My Services ({{ stats().totalServices }})</span>
+                    </div>
+                </button>
+            </div>
+
+            <!-- Products Tab -->
+            @if (activeTab() === 'products') {
+                <div class="p-6">
+                    @if (isLoadingProducts()) {
+                        <div class="flex justify-center py-12">
+                            <app-loading-spinner size="lg" />
+                        </div>
+                    } @else if (products().length === 0) {
+                        <app-empty-state
+                            icon="products"
+                            title="No products yet"
+                            [description]="'Start selling by adding your first product'"
+                            actionLabel="Add Product"
+                            (action)="openProductModal()" />
+                    } @else {
+                        <div class="space-y-4">
+                            @for (product of products(); track product.id) {
+                                <div class="bg-gray-50 rounded-xl p-6 border border-gray-200 hover:border-primary transition-all group">
+                                    <div class="flex items-start gap-6">
+                                        <!-- Image -->
+                                        <div class="w-24 h-24 bg-white rounded-xl overflow-hidden border border-gray-200 flex-shrink-0">
+                                            <img [src]="product.imageUrl || 'assets/placeholder.png'" [alt]="product.name" class="w-full h-full object-cover">
+                                        </div>
+
+                                        <!-- Info -->
+                                        <div class="flex-1 min-w-0">
+                                            <div class="flex items-start justify-between mb-2">
+                                                <div class="flex-1">
+                                                    <h3 class="text-lg font-bold text-dark mb-1 group-hover:text-primary transition-colors">{{ product.name }}</h3>
+                                                    <p class="text-sm text-gray-600 line-clamp-2">{{ product.description }}</p>
+                                                </div>
+                                                <span class="px-3 py-1 rounded-full text-xs font-bold border ml-4" [ngClass]="getStatusBadgeClass(product.status)">
+                                                    {{ getStatusLabel(product.status) }}
+                                                </span>
+                                            </div>
+
+                                            <div class="flex items-center gap-6 mt-4">
+                                                <div>
+                                                    <span class="text-xs text-gray-500 block mb-1">Price</span>
+                                                    <span class="text-xl font-black text-primary">{{ product.price }} TND</span>
+                                                </div>
+                                                <div>
+                                                    <span class="text-xs text-gray-500 block mb-1">Stock</span>
+                                                    <span class="text-sm font-bold" [ngClass]="getStockStatusClass(product.stock)">
+                                                        {{ getStockStatusLabel(product.stock) }}
+                                                    </span>
+                                                </div>
+                                                <div>
+                                                    <span class="text-xs text-gray-500 block mb-1">Category</span>
+                                                    <span class="text-sm font-bold text-dark">{{ product.category }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Actions -->
+                                        <div class="flex flex-col gap-2">
+                                            <button 
+                                                (click)="openProductModal(product)"
+                                                class="px-4 py-2 bg-primary text-white rounded-lg font-bold hover:bg-primary-dark transition-all">
+                                                Edit
+                                            </button>
+                                            <button 
+                                                (click)="deleteProduct(product)"
+                                                class="px-4 py-2 bg-red-500 text-white rounded-lg font-bold hover:bg-red-600 transition-all">
+                                                Delete
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+
+            <!-- Services Tab -->
+            @if (activeTab() === 'services') {
+                <div class="p-6">
+                    @if (isLoadingServices()) {
+                        <div class="flex justify-center py-12">
+                            <app-loading-spinner size="lg" />
+                        </div>
+                    } @else if (services().length === 0) {
+                        <app-empty-state
+                            icon="shop"
+                            title="No services yet"
+                            [description]="'Start offering services to ESPRIT students'"
+                            actionLabel="Add Service"
+                            (action)="openServiceModal()" />
+                    } @else {
+                        <div class="space-y-4">
+                            @for (service of services(); track service.id) {
+                                <div class="bg-gray-50 rounded-xl p-6 border border-gray-200 hover:border-accent transition-all group">
+                                    <div class="flex items-start gap-6">
+                                        <!-- Image -->
+                                        <div class="w-24 h-24 bg-white rounded-xl overflow-hidden border border-gray-200 flex-shrink-0">
+                                            <img [src]="service.imageUrl || 'assets/placeholder.png'" [alt]="service.name" class="w-full h-full object-cover">
+                                        </div>
+
+                                        <!-- Info -->
+                                        <div class="flex-1 min-w-0">
+                                            <div class="flex items-start justify-between mb-2">
+                                                <div class="flex-1">
+                                                    <h3 class="text-lg font-bold text-dark mb-1 group-hover:text-accent-dark transition-colors">{{ service.name }}</h3>
+                                                    <p class="text-sm text-gray-600 line-clamp-2">{{ service.description }}</p>
+                                                </div>
+                                                <span class="px-3 py-1 rounded-full text-xs font-bold border ml-4" [ngClass]="getStatusBadgeClass(service.status)">
+                                                    {{ getStatusLabel(service.status) }}
+                                                </span>
+                                            </div>
+
+                                            <div class="flex items-center gap-6 mt-4">
+                                                <div>
+                                                    <span class="text-xs text-gray-500 block mb-1">Price</span>
+                                                    <span class="text-xl font-black text-accent-dark">{{ service.price }} TND</span>
+                                                </div>
+                                                <div>
+                                                    <span class="text-xs text-gray-500 block mb-1">Category</span>
+                                                    <span class="text-sm font-bold text-dark">{{ service.category }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Actions -->
+                                        <div class="flex flex-col gap-2">
+                                            <button 
+                                                (click)="openServiceModal(service)"
+                                                class="px-4 py-2 bg-accent text-dark rounded-lg font-bold hover:bg-accent-dark transition-all">
+                                                Edit
+                                            </button>
+                                            <button 
+                                                (click)="deleteService(service)"
+                                                class="px-4 py-2 bg-red-500 text-white rounded-lg font-bold hover:bg-red-600 transition-all">
+                                                Delete
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Product Modal -->
+@if (showProductModal()) {
+    <app-product-modal
+        [mode]="selectedProduct() ? 'edit' : 'add'"
+        [product]="selectedProduct()"
+        (close)="closeProductModal()"
+        (save)="onProductSaved()" />
+}
+
+<!-- Service Modal -->
+@if (showServiceModal()) {
+    <app-service-modal
+        [mode]="selectedService() ? 'edit' : 'add'"
+        [service]="selectedService()"
+        (close)="closeServiceModal()"
+        (save)="onServiceSaved()" />
+}

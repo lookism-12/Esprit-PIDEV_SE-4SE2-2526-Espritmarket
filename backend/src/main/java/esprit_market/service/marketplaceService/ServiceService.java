@@ -22,10 +22,26 @@ public class ServiceService implements IServiceService {
     private final ShopRepository shopRepository;
     private final CategoryRepository categoryRepository;
     private final ServiceMapper mapper;
+    private final esprit_market.repository.userRepository.UserRepository userRepository;
 
     @Override
     public List<ServiceResponseDTO> findAll() {
         return repository.findAll().stream()
+                .map(mapper::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ServiceResponseDTO> findForCurrentSeller() {
+        org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || auth.getName() == null) {
+            throw new IllegalStateException("Not authenticated");
+        }
+        esprit_market.entity.user.User user = userRepository.findByEmail(auth.getName())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        esprit_market.entity.marketplace.Shop shop = shopRepository.findByOwnerId(user.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("No shop found for this seller"));
+        return repository.findByShopId(shop.getId()).stream()
                 .map(mapper::toDTO)
                 .collect(Collectors.toList());
     }

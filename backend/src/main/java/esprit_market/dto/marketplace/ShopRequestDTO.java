@@ -11,4 +11,6 @@ import lombok.Builder;
 @Builder
 public class ShopRequestDTO {
     private String ownerId;
+    private String name;
+    private String description;
 }

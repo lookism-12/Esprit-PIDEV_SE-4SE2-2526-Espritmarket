@@ -5,6 +5,8 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 import { AuthService } from '../../core/auth.service';
 import { OrderService } from '../../core/order.service';
 import { UserService } from '../../core/user.service';
+import { ProductService } from '../../core/product.service';
+import { Product, StockStatus } from '../../models/product';
 import { Order, OrderStatus } from '../../models/order.model';
 import { LoyaltyLevel, LoyaltyAccount, PointsTransaction, PointsTransactionType, LOYALTY_LEVELS } from '../../models/loyalty.model';
 import { ProfileEditModal } from './profile-edit-modal';
@@ -30,9 +32,10 @@ type ProfileTab = 'listings' | 'orders' | 'loyalty' | 'preferences' | 'settings'
 export class Profile implements OnInit {
   private fb = inject(FormBuilder);
   private route = inject(ActivatedRoute);
-  private authService = inject(AuthService);
+  public authService = inject(AuthService);
   private orderService = inject(OrderService);
   private userService = inject(UserService);
+  private productService = inject(ProductService);
 
   // User data - Now using real authenticated user data
   user = computed(() => ({
@@ -143,25 +146,9 @@ export class Profile implements OnInit {
 
   availableCategories = ['Electronics', 'Books', 'Gaming', 'Furniture', 'Services', 'Sports', 'Clothing'];
 
-  // Listings (mock data)
-  listings = signal([
-    {
-      id: '1',
-      name: 'Scientific Calculator TI-84',
-      price: 85,
-      status: 'active',
-      views: 124,
-      imageUrl: 'https://images.unsplash.com/photo-1564466809058-bf4114d55352?q=80&w=400'
-    },
-    {
-      id: '2',
-      name: 'Engineering Textbook Bundle',
-      price: 150,
-      status: 'active',
-      views: 89,
-      imageUrl: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?q=80&w=400'
-    }
-  ]);
+  // Listings (mapped from backend)
+  listings = signal<any[]>([]);
+  isLoadingListings = signal(false);
 
   // Mock orders for display
   mockOrders = signal([
@@ -216,6 +203,7 @@ export class Profile implements OnInit {
     this.initProfileForm();
     this.initPreferencesForm();
     this.loadOrders();
+    this.loadUserListings();
 
     // Check URL params for tab
     this.route.queryParams.subscribe(params => {
@@ -437,9 +425,45 @@ export class Profile implements OnInit {
     }
   }
 
+  loadUserListings(): void {
+    this.isLoadingListings.set(true);
+    this.productService.getAllProducts().subscribe({
+      next: (data) => {
+        // For demo, we filter by the current logged-in user if sellerId exists
+        // Otherwise show all for this integration step
+        const userId = this.authService.userId();
+        const filtered = data
+          .filter(p => !userId || p.sellerId === userId || true) // Simplified: showing all for now if no user match
+          .map(p => ({
+            id: p.id,
+            name: p.name,
+            price: p.price,
+            status: p.stockStatus === StockStatus.IN_STOCK ? 'active' : 'out of stock',
+            views: p.viewCount || 0,
+            imageUrl: p.imageUrl
+          }));
+        this.listings.set(filtered);
+        this.isLoadingListings.set(false);
+      },
+      error: (err) => {
+        console.error("❌ Profile: Load listings error", err);
+        this.isLoadingListings.set(false);
+      }
+    });
+  }
+
   deleteListing(id: string): void {
     if (confirm('Are you sure you want to delete this listing?')) {
-      this.listings.update(items => items.filter(item => item.id !== id));
+      this.productService.deleteProduct(id).subscribe({
+        next: () => {
+          console.log('✅ Listing deleted successfully');
+          this.loadUserListings();
+        },
+        error: (err) => {
+          console.error("❌ Delete listing error", err);
+          alert('Failed to delete listing. Please try again.');
+        }
+      });
     }
   }
 

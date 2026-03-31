@@ -15,6 +15,10 @@ public class ShopMapper {
         return ShopResponseDTO.builder()
                 .id(shop.getId() != null ? shop.getId().toHexString() : null)
                 .ownerId(shop.getOwnerId() != null ? shop.getOwnerId().toHexString() : null)
+                .name(shop.getName())
+                .description(shop.getDescription())
+                .productCount(0)  // Will be set by service
+                .ownerName(null)  // Will be set by service
                 .build();
     }
 
@@ -23,6 +27,8 @@ public class ShopMapper {
             return null;
         return Shop.builder()
                 .ownerId(dto.getOwnerId() != null ? new ObjectId(dto.getOwnerId()) : null)
+                .name(dto.getName())
+                .description(dto.getDescription())
                 .build();
     }
 }

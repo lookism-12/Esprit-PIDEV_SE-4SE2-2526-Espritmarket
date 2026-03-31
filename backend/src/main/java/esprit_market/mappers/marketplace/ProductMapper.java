@@ -5,6 +5,7 @@ import esprit_market.dto.marketplace.ProductRequestDTO;
 import esprit_market.dto.marketplace.ProductResponseDTO;
 import esprit_market.entity.marketplace.Product;
 import esprit_market.entity.marketplace.ProductImage;
+import esprit_market.entity.marketplace.ProductStatus;
 import org.bson.types.ObjectId;
 import org.springframework.stereotype.Component;
 
@@ -38,6 +39,7 @@ public class ProductMapper {
                 .price(product.getPrice())
                 .stock(product.getStock())
                 .images(images)
+                .status(product.getStatus())
                 .build();
     }
 
@@ -63,6 +65,7 @@ public class ProductMapper {
                 .price(dto.getPrice())
                 .stock(dto.getStock())
                 .images(images)
+                .status(dto.getStatus() != null ? dto.getStatus() : ProductStatus.PENDING)
                 .build();
     }
 }

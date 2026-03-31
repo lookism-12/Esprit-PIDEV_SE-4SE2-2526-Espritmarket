@@ -17,4 +17,6 @@ public class Shop {
     @Id
     private ObjectId id;
     private ObjectId ownerId;
+    private String name;
+    private String description;
 }

@@ -8,6 +8,8 @@ import lombok.Builder;
 import java.util.ArrayList;
 import java.util.List;
 
+import esprit_market.entity.marketplace.ProductStatus;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -22,4 +24,5 @@ public class ProductRequestDTO {
     private int stock;
     @Builder.Default
     private List<ProductImageDTO> images = new ArrayList<>();
+    private ProductStatus status;
 }

@@ -115,10 +115,7 @@ export const sellerGuard: CanActivateFn = (
     });
   }
 
-  const currentUser = authService.currentUser();
-  const allowedRoles: UserRole[] = [UserRole.PROVIDER, UserRole.ADMIN];
-  
-  if (currentUser && allowedRoles.includes(currentUser.role)) {
+  if (authService.isSeller() || authService.isAdmin()) {
     return true;
   }
 

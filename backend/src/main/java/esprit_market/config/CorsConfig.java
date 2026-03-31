@@ -22,12 +22,11 @@ public class CorsConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Allow requests from Angular frontend
-        configuration.setAllowedOrigins(Arrays.asList(
-                "http://localhost:4200",    // Development environment
-                "http://localhost:3000",    // Alternative dev port
-                "http://127.0.0.1:4200",
-                "https://espritmarket.com", // Production domain
+        // Allow requests from any localhost port (for dynamic IDE ports) and production domains
+        configuration.setAllowedOriginPatterns(Arrays.asList(
+                "http://localhost:*",
+                "http://127.0.0.1:*",
+                "https://espritmarket.com",
                 "https://www.espritmarket.com"
         ));
 
@@ -41,14 +40,8 @@ public class CorsConfig {
                 "OPTIONS"
         ));
 
-        // Allow headers
-        configuration.setAllowedHeaders(Arrays.asList(
-                "Authorization",
-                "Content-Type",
-                "X-Requested-With",
-                "Accept",
-                "X-Auth-Token"
-        ));
+        // Allow all headers
+        configuration.setAllowedHeaders(Arrays.asList("*"));
 
         // Allow credentials (cookies, authorization headers)
         configuration.setAllowCredentials(true);

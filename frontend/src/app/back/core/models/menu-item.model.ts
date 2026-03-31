@@ -3,4 +3,5 @@ export interface MenuItem {
     icon: string;
     route: string;
     badge?: number;
+    children?: MenuItem[];
 }

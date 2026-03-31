@@ -144,4 +144,118 @@ public class FavorisService implements IFavorisService {
                 .orElseThrow(() -> new ResourceNotFoundException("Favoris not found with id: " + id));
         return mapper.toDTO(favoris);
     }
+
+    @Override
+    public FavorisResponseDTO toggleProductFavorite(ObjectId productId) {
+        // Get current user from security context
+        org.springframework.security.core.Authentication auth = 
+            org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        
+        if (auth == null || auth.getName() == null) {
+            throw new IllegalStateException("Not authenticated");
+        }
+        
+        User user = userRepository.findByEmail(auth.getName())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        
+        // Check if favorite already exists
+        List<Favoris> existing = repository.findByUserIdAndProductId(user.getId(), productId);
+        
+        if (!existing.isEmpty()) {
+            // Remove favorite
+            Favoris fav = existing.get(0);
+            delete(fav.getId());
+            return null; // Indicate removal
+        } else {
+            // Add favorite
+            FavorisRequestDTO dto = new FavorisRequestDTO();
+            dto.setUserId(user.getId().toHexString());
+            dto.setProductId(productId.toHexString());
+            return create(dto);
+        }
+    }
+
+    @Override
+    public FavorisResponseDTO toggleServiceFavorite(ObjectId serviceId) {
+        // Get current user from security context
+        org.springframework.security.core.Authentication auth = 
+            org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        
+        if (auth == null || auth.getName() == null) {
+            throw new IllegalStateException("Not authenticated");
+        }
+        
+        User user = userRepository.findByEmail(auth.getName())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        
+        // Check if favorite already exists
+        List<Favoris> existing = repository.findByUserIdAndServiceId(user.getId(), serviceId);
+        
+        if (!existing.isEmpty()) {
+            // Remove favorite
+            Favoris fav = existing.get(0);
+            delete(fav.getId());
+            return null; // Indicate removal
+        } else {
+            // Add favorite
+            FavorisRequestDTO dto = new FavorisRequestDTO();
+            dto.setUserId(user.getId().toHexString());
+            dto.setServiceId(serviceId.toHexString());
+            return create(dto);
+        }
+    }
+
+    @Override
+    public List<FavorisResponseDTO> getMyFavorites() {
+        // Get current user from security context
+        org.springframework.security.core.Authentication auth = 
+            org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        
+        if (auth == null || auth.getName() == null) {
+            throw new IllegalStateException("Not authenticated");
+        }
+        
+        User user = userRepository.findByEmail(auth.getName())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        
+        return getByUserId(user.getId());
+    }
+
+    @Override
+    public boolean isProductFavorited(ObjectId productId) {
+        // Get current user from security context
+        org.springframework.security.core.Authentication auth = 
+            org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        
+        if (auth == null || auth.getName() == null) {
+            return false;
+        }
+        
+        User user = userRepository.findByEmail(auth.getName()).orElse(null);
+        if (user == null) {
+            return false;
+        }
+        
+        List<Favoris> existing = repository.findByUserIdAndProductId(user.getId(), productId);
+        return !existing.isEmpty();
+    }
+
+    @Override
+    public boolean isServiceFavorited(ObjectId serviceId) {
+        // Get current user from security context
+        org.springframework.security.core.Authentication auth = 
+            org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        
+        if (auth == null || auth.getName() == null) {
+            return false;
+        }
+        
+        User user = userRepository.findByEmail(auth.getName()).orElse(null);
+        if (user == null) {
+            return false;
+        }
+        
+        List<Favoris> existing = repository.findByUserIdAndServiceId(user.getId(), serviceId);
+        return !existing.isEmpty();
+    }
 }

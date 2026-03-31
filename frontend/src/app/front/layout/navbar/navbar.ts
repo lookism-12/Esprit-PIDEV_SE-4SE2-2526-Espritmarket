@@ -69,10 +69,10 @@ export class Navbar implements OnDestroy {
       title: 'Marketplace',
       icon: '🛒',
       items: [
-        { label: 'Browse Products', route: '/products', icon: '📦' },
+        { label: 'Products', route: '/products', icon: '📦' },
         { label: 'Services', route: '/services', icon: '🔧' },
-        { label: 'Promotions', route: '/promotions', icon: '🏷️' },
-        { label: 'Favorites', route: '/favorites', icon: '❤️' }
+        { label: 'Favorites', route: '/favorites', icon: '❤️' },
+        { label: 'Shop', route: '/shop', icon: '🏪' }
       ]
     },
     {

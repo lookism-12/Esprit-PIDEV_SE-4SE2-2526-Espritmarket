@@ -1,0 +1,75 @@
+<div class="bg-white rounded-2xl border border-secondary/20 overflow-hidden group hover:shadow-2xl transition-all duration-500">
+    <!-- Image/Icon -->
+    <div class="relative aspect-[4/3] bg-gray-50 overflow-hidden flex items-center justify-center">
+        @if (service().imageUrl) {
+            <img [src]="service().imageUrl" [alt]="service().name"
+                class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+        } @else {
+            <!-- Tech Service Icon -->
+            <div class="relative flex items-center justify-center">
+                <!-- Static background circle -->
+                <div class="w-32 h-32 bg-primary/10 rounded-full flex items-center justify-center">
+                    <!-- Main icon -->
+                    <svg class="w-20 h-20 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" 
+                            d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                </div>
+            </div>
+        }
+        
+        <div class="absolute top-4 right-4 flex flex-col gap-2 translate-x-16 group-hover:translate-x-0 transition-transform duration-500">
+            <button
+                (click)="toggleFavorite($event)"
+                [disabled]="isTogglingFavorite()"
+                [class.opacity-50]="isTogglingFavorite()"
+                aria-label="Add to favorites"
+                class="w-12 h-12 bg-white rounded-full flex items-center justify-center hover:bg-primary hover:text-white shadow-xl transition-all"
+                [class.text-primary]="isFavorite()"
+                [class.bg-primary/10]="isFavorite()">
+                <svg class="h-6 w-6" [class.fill-current]="isFavorite()" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                </svg>
+            </button>
+        </div>
+        
+        <div class="absolute inset-x-0 bottom-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-500">
+            <button class="w-full bg-dark text-white py-3 rounded-xl font-black hover:bg-black transition-all text-sm uppercase tracking-widest">
+                View Details
+            </button>
+        </div>
+        
+        <div class="absolute top-4 left-4">
+            <span class="bg-primary text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-tighter shadow-lg">Service</span>
+        </div>
+    </div>
+
+    <!-- Info -->
+    <div class="p-6">
+        <div class="flex justify-between items-start mb-3">
+            <div class="flex-1">
+                <p class="text-[10px] font-black text-secondary uppercase tracking-widest mb-1">Service</p>
+                <h3 class="font-black text-dark text-xl group-hover:text-primary transition-colors leading-tight line-clamp-2">
+                    {{ service().name }}
+                </h3>
+            </div>
+        </div>
+
+        <p class="text-sm text-gray-600 mb-4 line-clamp-2">{{ service().description }}</p>
+
+        <div class="flex items-center justify-between pt-4 border-t border-secondary/10">
+            <div class="flex flex-col">
+                <span class="text-[10px] font-bold text-secondary uppercase">Price</span>
+                <span class="text-2xl font-black text-primary">{{ service().price }} <span class="text-sm">TND</span></span>
+            </div>
+            <button
+                aria-label="Contact provider"
+                class="w-12 h-12 bg-primary text-white rounded-2xl flex items-center justify-center hover:bg-dark transition-all transform active:scale-90 shadow-lg">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+            </button>
+        </div>
+    </div>
+</div>

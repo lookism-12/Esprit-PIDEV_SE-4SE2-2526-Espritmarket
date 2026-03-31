@@ -161,27 +161,22 @@ export class AuthService {
         this.isAuthenticated.set(true);
         console.log('✅ Login: Token stored, isAuthenticated set to true');
         
-        // Step 3: Attempt immediate redirect based on role from JWT
-        // This provides faster UX before profile loads
+        // Step 3: Extract role from JWT for immediate UI state update
         const role = this.extractRoleFromToken(response.token);
         console.log('🎭 Extracted role from JWT:', role);
         
         if (role) {
-          console.log(`📌 Immediate redirect based on JWT role: ${role}`);
-          this.redirectByRole(role as UserRole);
-        } else {
-          console.warn('⚠️ Could not extract role from JWT token');
+          this.userRole.set(role as UserRole);
+          localStorage.setItem('userRole', role);
         }
       }),
       switchMap(() => {
-        // Step 4: Load user profile (this updates all signals)
-        console.log('📥 Loading user profile...');
+        // Step 4: Load user profile
         return this.loadCurrentUser();
       }),
       tap((user) => {
-        // Step 5: Confirm redirect (in case JWT role differs)
+        // Step 5: Final redirect based on confirmed role
         console.log('✅ Login complete, user profile loaded:', user);
-        console.log('🔀 Final redirect with role:', user.role);
         this.redirectByRole(user.role);
       }),
       catchError((error) => {
@@ -426,6 +421,29 @@ export class AuthService {
    */
   isAuthenticated$(): boolean {
     return this.isAuthenticated();  // ✅ Calling signal as function
+  }
+
+  /**
+   * Helper: Check if current user is an admin
+   */
+  isAdmin(): boolean {
+    return this.userRole() === UserRole.ADMIN;
+  }
+
+  /**
+   * Helper: Check if current user is a seller/provider
+   * PROVIDER and SELLER are the same - both can manage marketplace
+   */
+  isSeller(): boolean {
+    const role = this.userRole();
+    return role === UserRole.SELLER || role === UserRole.PROVIDER;
+  }
+
+  /**
+   * Helper: Check if current user is a client (basic user)
+   */
+  isClient(): boolean {
+    return this.userRole() === UserRole.CLIENT;
   }
 
   /**

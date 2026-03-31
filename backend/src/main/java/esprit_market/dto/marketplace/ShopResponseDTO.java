@@ -12,4 +12,8 @@ import lombok.Builder;
 public class ShopResponseDTO {
     private String id;
     private String ownerId;
+    private String name;
+    private String description;
+    private String ownerName;  // For display
+    private int productCount;  // Number of products in this shop
 }

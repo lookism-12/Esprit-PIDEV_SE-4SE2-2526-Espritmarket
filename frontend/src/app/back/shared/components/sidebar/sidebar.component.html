@@ -4,45 +4,71 @@
     <img src="assets/logo.png" alt="Esprit Market" class="h-12 object-contain filter brightness-0 invert drop-shadow-xl mb-2">
     <div class="h-px w-10 bg-white/20 rounded-full"></div>
   </div>
-  
+
   <!-- Navigation -->
   <nav class="flex-1 overflow-y-auto py-6 flex flex-col hide-scrollbar relative">
     <div class="space-y-1 px-3 flex-1 relative z-10">
       <ng-container *ngFor="let item of menuItems">
-        <a [routerLink]="item.route"
-          routerLinkActive="bg-white/10 font-bold border-l-4 border-white text-white shadow-inner"
-          [routerLinkActiveOptions]="{exact: item.route === '/admin/dashboard'}"
-          class="flex items-center px-4 py-3 rounded-r-xl rounded-l-sm text-white/70 hover:bg-white/10 hover:text-white transition-all cursor-pointer group mb-1 border-l-4 border-transparent">
-          
-          <span class="mr-3 text-lg opacity-80 group-hover:opacity-100 transition-opacity drop-shadow-sm text-white">{{ item.icon }}</span>
-          <span class="flex-1 text-[15px] font-medium group-hover:font-semibold drop-shadow-sm">{{ item.label }}</span>
-          
-          @if (item.badge) {
-            <span class="bg-red-500 border border-white/20 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md">
-              {{ item.badge }}
-            </span>
+
+        <!-- Item with children (expandable) -->
+        <ng-container *ngIf="item.children; else simpleItem">
+          <!-- Parent toggle button -->
+          <button
+            (click)="toggleMenu(item.label)"
+            class="w-full flex items-center px-4 py-3 rounded-r-xl rounded-l-sm text-white/70 hover:bg-white/10 hover:text-white transition-all cursor-pointer group mb-1 border-l-4"
+            [class.border-yellow-400]="isChildActive(item)"
+            [class.bg-white/10]="isChildActive(item)"
+            [class.text-white]="isChildActive(item)"
+            [class.border-transparent]="!isChildActive(item)">
+            <span class="mr-3 text-lg opacity-80 group-hover:opacity-100 transition-opacity drop-shadow-sm text-white">{{ item.icon }}</span>
+            <span class="flex-1 text-left text-[15px] font-medium group-hover:font-semibold drop-shadow-sm">{{ item.label }}</span>
+            <span class="text-white/50 text-xs transition-transform duration-200"
+                  [class.rotate-90]="isExpanded(item.label)">▶</span>
+          </button>
+
+          <!-- Sub-items -->
+          @if (isExpanded(item.label)) {
+            <div class="ml-4 space-y-0.5 mb-1">
+              @for (child of item.children; track child.route) {
+                <a [routerLink]="child.route"
+                  routerLinkActive="bg-white/15 font-bold text-white border-l-2 border-yellow-400"
+                  [routerLinkActiveOptions]="{exact: child.route === item.route}"
+                  class="flex items-center px-3 py-2 rounded-r-xl rounded-l-sm text-white/60 hover:bg-white/10 hover:text-white transition-all cursor-pointer group border-l-2 border-transparent">
+                  <span class="mr-2 text-sm opacity-70 group-hover:opacity-100 transition-opacity">{{ child.icon }}</span>
+                  <span class="text-[13px] font-medium group-hover:font-semibold">{{ child.label }}</span>
+                </a>
+              }
+            </div>
           }
-        </a>
+        </ng-container>
+
+        <!-- Simple item (no children) -->
+        <ng-template #simpleItem>
+          <a [routerLink]="item.route"
+            routerLinkActive="bg-white/10 font-bold border-l-4 border-white text-white shadow-inner"
+            [routerLinkActiveOptions]="{exact: item.route === '/admin/dashboard'}"
+            class="flex items-center px-4 py-3 rounded-r-xl rounded-l-sm text-white/70 hover:bg-white/10 hover:text-white transition-all cursor-pointer group mb-1 border-l-4 border-transparent">
+            <span class="mr-3 text-lg opacity-80 group-hover:opacity-100 transition-opacity drop-shadow-sm text-white">{{ item.icon }}</span>
+            <span class="flex-1 text-[15px] font-medium group-hover:font-semibold drop-shadow-sm">{{ item.label }}</span>
+            @if (item.badge) {
+              <span class="bg-red-500 border border-white/20 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md">
+                {{ item.badge }}
+              </span>
+            }
+          </a>
+        </ng-template>
+
       </ng-container>
     </div>
   </nav>
-  
-  <!-- Subtle decorative pattern or watermark at bottom -->
+
+  <!-- Bottom gradient -->
   <div class="absolute bottom-0 w-full h-32 bg-gradient-to-t from-black/40 to-transparent pointer-events-none z-0"></div>
-  
+
   <style>
-    .hide-scrollbar::-webkit-scrollbar {
-      width: 4px;
-    }
-    .hide-scrollbar::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    .hide-scrollbar::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.15);
-      border-radius: 4px;
-    }
-    .hide-scrollbar:hover::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.3);
-    }
+    .hide-scrollbar::-webkit-scrollbar { width: 4px; }
+    .hide-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .hide-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
+    .hide-scrollbar:hover::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); }
   </style>
 </aside>

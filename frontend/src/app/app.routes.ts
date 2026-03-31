@@ -14,6 +14,14 @@ export const routes: Routes = [
         loadComponent: () => import('./front/pages/products/products').then(m => m.Products)
     },
     {
+        path: 'services',
+        loadComponent: () => import('./front/pages/marketplace-services/marketplace-services').then(m => m.MarketplaceServices)
+    },
+    {
+        path: 'shop',
+        loadComponent: () => import('./front/pages/marketplace-shop/marketplace-shop').then(m => m.MarketplaceShop)
+    },
+    {
         path: 'product/:id',
         loadComponent: () => import('./front/pages/product-details/product-details').then(m => m.ProductDetails)
     },
@@ -103,8 +111,13 @@ export const routes: Routes = [
 
     // ==================== PROVIDER ROUTES (Sellers) ====================
     {
+        path: 'seller/marketplace',
+        loadComponent: () => import('./front/pages/seller-marketplace/seller-marketplace').then(m => m.SellerMarketplace),
+        canActivate: [authGuard, sellerGuard]
+    },
+    {
         path: 'provider',
-        canActivate: [authGuard],
+        canActivate: [authGuard, sellerGuard],
         children: [
             {
                 path: '',

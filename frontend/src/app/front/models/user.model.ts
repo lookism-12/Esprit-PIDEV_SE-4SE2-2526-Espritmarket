@@ -51,14 +51,14 @@ export interface NotificationPreferences {
   external: boolean;
 }
 
-// Backend Role enum - matches Spring Boot
 export enum UserRole {
   CLIENT = 'CLIENT',
   PROVIDER = 'PROVIDER',
   DRIVER = 'DRIVER',
   PASSENGER = 'PASSENGER',
   DELIVERY = 'DELIVERY',
-  ADMIN = 'ADMIN'
+  ADMIN = 'ADMIN',
+  SELLER = 'SELLER'
 }
 
 // Frontend role groups for registration UI

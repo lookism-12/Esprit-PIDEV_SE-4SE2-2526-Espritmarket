@@ -27,6 +27,10 @@ export const FRONT_ROUTES: Routes = [
         loadComponent: () => import('./pages/profile/profile').then(m => m.Profile)
     },
     {
+        path: 'seller/marketplace',
+        loadComponent: () => import('./pages/seller-marketplace/seller-marketplace').then(m => m.SellerMarketplace)
+    },
+    {
         path: 'login',
         loadComponent: () => import('./pages/login/login').then(m => m.Login)
     },

@@ -5,6 +5,8 @@ export interface Product {
     price: number;
     originalPrice?: number;
     category: string;
+    /** Mongo category ids from API (when available) */
+    categoryIds?: string[];
     subcategory?: string;
     imageUrl: string;
     images?: string[];
@@ -22,6 +24,13 @@ export interface Product {
     viewCount?: number;
     createdAt?: Date;
     updatedAt?: Date;
+    status: ProductStatus;
+}
+
+export enum ProductStatus {
+    PENDING = 'PENDING',
+    APPROVED = 'APPROVED',
+    REJECTED = 'REJECTED'
 }
 
 export enum StockStatus {
@@ -67,4 +76,20 @@ export interface Shop {
     responseRate?: number;
     categories?: string[];
 }
+export interface ProductImagePayload {
+    url: string;
+    altText?: string;
+}
 
+export interface MarketplaceProductRequest {
+    name: string;
+    description: string;
+    price: number;
+    shopId: string;
+    categoryIds: string[];
+    stock: number;
+    images?: ProductImagePayload[];
+    isNegotiable: boolean;
+    condition: ProductCondition;
+    status?: ProductStatus;
+}

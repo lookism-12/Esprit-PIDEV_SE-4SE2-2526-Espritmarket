@@ -8,6 +8,17 @@ import java.util.List;
 
 public interface IProductService {
     List<ProductResponseDTO> findAll();
+    List<ProductResponseDTO> findAllApproved();
+
+    /**
+     * All products for the current seller's shop (any status).
+     */
+    List<ProductResponseDTO> findForCurrentSeller();
+
+    /**
+     * All products for a specific shop by shop ID.
+     */
+    List<ProductResponseDTO> findByShopId(String shopId);
 
     ProductResponseDTO findById(ObjectId id);
 
@@ -16,4 +27,8 @@ public interface IProductService {
     ProductResponseDTO update(ObjectId id, ProductRequestDTO dto);
 
     void deleteById(ObjectId id);
+
+    ProductResponseDTO approve(ObjectId id);
+
+    ProductResponseDTO reject(ObjectId id);
 }

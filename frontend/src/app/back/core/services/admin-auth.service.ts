@@ -121,6 +121,19 @@ export class AdminAuthService {
     return user?.email || 'admin@esprit.tn';
   }
 
+  hasRole(role: string): boolean {
+    const user = this.currentUser();
+    return user?.roles?.includes(role) || false;
+  }
+
+  isAdmin(): boolean {
+    return this.hasRole('ADMIN');
+  }
+
+  isSeller(): boolean {
+    return this.hasRole('SELLER');
+  }
+
   logout(): void {
     localStorage.removeItem('authToken');
     localStorage.removeItem('userId');
