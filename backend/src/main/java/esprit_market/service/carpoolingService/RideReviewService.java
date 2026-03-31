@@ -1,9 +1,8 @@
 package esprit_market.service.carpoolingService;
 
-import esprit_market.dto.carpooling.RideReviewRequestDTO;
-import esprit_market.dto.carpooling.RideReviewResponseDTO;
-import esprit_market.entity.carpooling.DriverProfile;
-import esprit_market.entity.carpooling.PassengerProfile;
+import esprit_market.dto.carpoolingDto.RideReviewRequestDTO;
+import esprit_market.dto.carpoolingDto.RideReviewResponseDTO;
+
 import esprit_market.entity.carpooling.RideReview;
 import esprit_market.repository.carpoolingRepository.BookingRepository;
 import esprit_market.repository.carpoolingRepository.DriverProfileRepository;

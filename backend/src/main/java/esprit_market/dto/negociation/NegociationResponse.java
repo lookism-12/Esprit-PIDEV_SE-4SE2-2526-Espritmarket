@@ -21,6 +21,10 @@ public class NegociationResponse {
     private String serviceId;
     private String serviceName;
     private Double serviceOriginalPrice;
+
+    private String productId;
+    private String productName;
+    private Double productOriginalPrice;
     private NegociationStatuts status;
     private List<ProposalResponse> proposals;
     private LocalDateTime createdAt;

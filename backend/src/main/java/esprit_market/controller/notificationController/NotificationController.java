@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/notifications")
+@RequestMapping("/api/legacy/notifications")
 @RequiredArgsConstructor
 @Tag(name = "Notification", description = "Gestion des notifications internes et externes")
 public class NotificationController {

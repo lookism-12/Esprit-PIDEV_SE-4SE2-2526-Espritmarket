@@ -17,9 +17,17 @@ public interface NegociationRepository extends MongoRepository<Negociation, Obje
 
     List<Negociation> findByService(ServiceEntity service);
 
+    List<Negociation> findByProduct(esprit_market.entity.marketplace.Product product);
+
     List<Negociation> findByStatuts(NegociationStatuts statuts);
 
     List<Negociation> findByClientAndStatuts(User client, NegociationStatuts statuts);
 
     boolean existsByClientAndServiceAndStatuts(User client, ServiceEntity service, NegociationStatuts statuts);
+
+    boolean existsByClientAndProductAndStatuts(User client, esprit_market.entity.marketplace.Product product, NegociationStatuts statuts);
+
+    List<Negociation> findByProductIn(List<esprit_market.entity.marketplace.Product> products);
+
+    List<Negociation> findByServiceIn(List<ServiceEntity> services);
 }

@@ -1,4 +1,4 @@
-<header class="bg-gradient-to-r from-primary to-primary-dark h-16 flex items-center justify-between px-6 z-20 shadow-md relative border-b border-black/20 w-full">
+<header class="bg-gradient-to-r from-primary to-primary-dark h-14 flex items-center justify-between px-6 z-20 shadow-md relative border-b border-black/20 w-full">
     <!-- Left Section -->
     <div class="flex items-center gap-6">
         <div class="md:hidden">
@@ -8,7 +8,7 @@
         </div>
         
         <div class="flex items-center gap-4">
-            <img src="assets/logo.png" alt="Esprit Market" class="h-9 object-contain filter brightness-0 invert drop-shadow-md">
+            <img src="assets/logo.png" alt="Esprit Market" class="h-7 object-contain drop-shadow-lg hover:scale-105 transition-transform duration-200" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
             
             <div class="h-6 w-px bg-white/20 hidden md:block"></div>
             
@@ -33,11 +33,78 @@
         <div class="h-6 w-px bg-white/20 hidden md:block"></div>
 
         <!-- Icons -->
-        <div class="flex items-center space-x-1 text-white">
-            <button class="p-2 hover:bg-white/10 rounded-full transition-colors relative text-lg">
-                🔔
-                <span class="absolute top-1 right-1 w-2 h-2 bg-yellow-400 rounded-full border border-[#7D0408] text-xs shadow-sm shadow-black/20"></span>
-            </button>
+        <div class="flex items-center space-x-1 text-white relative">
+            <!-- Notification Bell -->
+            <div class="relative">
+                <button (click)="toggleNotifPanel()" class="p-2 hover:bg-white/10 rounded-full transition-colors relative text-lg">
+                    🔔
+                    @if (unreadCount() > 0) {
+                        <span class="absolute top-1 right-1 min-w-[16px] h-4 bg-yellow-400 rounded-full border border-[#7D0408] text-[9px] font-black text-dark flex items-center justify-center px-0.5 shadow-sm">
+                            {{ unreadCount() > 9 ? '9+' : unreadCount() }}
+                        </span>
+                    }
+                </button>
+
+                <!-- Notification Dropdown Panel -->
+                @if (showNotifPanel()) {
+                    <div class="absolute right-0 mt-3 w-96 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50 ring-1 ring-black/5">
+                        <!-- Header -->
+                        <div class="flex items-center justify-between px-5 py-4 bg-gradient-to-r from-primary to-primary-dark">
+                            <div class="flex items-center gap-2">
+                                <span class="text-white font-black text-sm">Notifications</span>
+                                @if (unreadCount() > 0) {
+                                    <span class="px-2 py-0.5 bg-yellow-400 text-dark rounded-full text-[10px] font-black">{{ unreadCount() }} new</span>
+                                }
+                            </div>
+                            @if (unreadCount() > 0) {
+                                <button (click)="markAllAsRead()" class="text-[11px] text-white/80 hover:text-white font-bold underline">
+                                    Mark all read
+                                </button>
+                            }
+                        </div>
+
+                        <!-- List -->
+                        <div class="max-h-80 overflow-y-auto divide-y divide-gray-50">
+                            @if (isLoadingNotifs()) {
+                                <div class="p-6 text-center text-gray-400 text-sm">Loading...</div>
+                            } @else if (notifications().length === 0) {
+                                <div class="p-8 text-center">
+                                    <span class="text-3xl">🔔</span>
+                                    <p class="text-gray-400 text-sm mt-2 font-medium">No notifications</p>
+                                </div>
+                            } @else {
+                                @for (notif of notifications(); track notif.id) {
+                                    <div
+                                        (click)="markAsRead(notif, $event)"
+                                        class="flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors"
+                                        [ngClass]="notif.read ? 'bg-white hover:bg-gray-50' : 'bg-blue-50/60 hover:bg-blue-50'">
+                                        <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-base mt-0.5"
+                                            [ngClass]="notif.read ? 'bg-gray-100' : 'bg-primary/10'">
+                                            {{ notif.type === 'INTERNAL_NOTIFICATION' ? 'ℹ️' : notif.type === 'EXTERNAL_NOTIFICATION' ? '📢' : '🔔' }}
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-sm font-bold text-gray-900 truncate" [ngClass]="{'text-primary': !notif.read}">{{ notif.title }}</p>
+                                            <p class="text-xs text-gray-500 mt-0.5 line-clamp-2">{{ notif.message || notif.description }}</p>
+                                            <p class="text-[10px] text-gray-400 mt-1">{{ notif.createdAt | date:'short' }}</p>
+                                        </div>
+                                        @if (!notif.read) {
+                                            <span class="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-2"></span>
+                                        }
+                                    </div>
+                                }
+                            }
+                        </div>
+
+                        <!-- Footer -->
+                        <div class="px-4 py-3 bg-gray-50 border-t border-gray-100 text-center">
+                            <a routerLink="/admin/notifications" (click)="showNotifPanel.set(false)" class="text-xs font-bold text-primary hover:underline">
+                                View all notifications →
+                            </a>
+                        </div>
+                    </div>
+                }
+            </div>
+
             <button class="p-2 hover:bg-white/10 rounded-full transition-colors text-lg">
                 ✉️
             </button>
@@ -112,7 +179,7 @@
                             (click)="logout()"
                             class="w-full flex items-center justify-center gap-2 px-4 py-2.5 hover:bg-red-50 bg-white rounded-lg transition-colors text-center text-red-600 shadow-sm border border-red-100 font-bold text-sm">
                             <span class="text-lg">🚪</span>
-                            Logout Securely
+                            Logout
                         </button>
                     </div>
                 </div>

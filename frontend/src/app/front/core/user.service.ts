@@ -132,6 +132,18 @@ export class UserService {
     });
   }
 
+  toggleNotifications(): Observable<{ notificationsEnabled: boolean }> {
+    return this.http.patch<{ notificationsEnabled: boolean }>(`${this.apiUrl}/me/notifications/toggle`, null);
+  }
+
+  toggleInternalNotifications(): Observable<{ internalNotificationsEnabled: boolean }> {
+    return this.http.patch<{ internalNotificationsEnabled: boolean }>(`${this.apiUrl}/me/notifications/internal/toggle`, null);
+  }
+
+  toggleExternalNotifications(): Observable<{ externalNotificationsEnabled: boolean }> {
+    return this.http.patch<{ externalNotificationsEnabled: boolean }>(`${this.apiUrl}/me/notifications/external/toggle`, null);
+  }
+
   /**
    * Delete user account (self or admin)
    * @param userId - User ID to delete (optional, defaults to current user)

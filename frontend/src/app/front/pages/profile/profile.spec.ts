@@ -31,6 +31,13 @@ describe('Profile Component', () => {
       userLastName: signal('Doe'),
       userEmail: signal('john@example.com'),
       userAvatar: signal(''),
+      userPhone: signal('12345678'),
+      userAddress: signal('Tunis'),
+      userEnabled: signal(true),
+      userRole: signal('CLIENT'),
+      notificationsEnabled: signal(true),
+      internalNotificationsEnabled: signal(true),
+      externalNotificationsEnabled: signal(true),
       isAuthenticated: signal(true)
     };
 

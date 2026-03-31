@@ -29,6 +29,9 @@ public class Negociation {
     @DBRef
     private ServiceEntity service;
 
+    @DBRef
+    private esprit_market.entity.marketplace.Product product;
+
     private NegociationStatuts statuts;
 
     @Builder.Default

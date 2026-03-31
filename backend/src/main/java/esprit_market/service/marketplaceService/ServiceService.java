@@ -12,8 +12,10 @@ import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import esprit_market.entity.marketplace.Shop;
 
 @Service
 @RequiredArgsConstructor
@@ -97,5 +99,22 @@ public class ServiceService implements IServiceService {
             throw new ResourceNotFoundException("Service not found with id: " + id);
         }
         repository.deleteById(id);
+    }
+
+    @Override
+    public List<ServiceResponseDTO> findByOwnerId(String ownerId) {
+        ObjectId ownerObjectId = new ObjectId(ownerId);
+        List<Shop> userShops = shopRepository.findByOwnerId(ownerObjectId);
+        List<ObjectId> shopIds = userShops.stream()
+                .map(Shop::getId)
+                .collect(Collectors.toList());
+
+        if (shopIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        return repository.findByShopIdIn(shopIds).stream()
+                .map(mapper::toDTO)
+                .collect(Collectors.toList());
     }
 }

@@ -39,6 +39,15 @@ public class User {
     @Builder.Default
     private boolean enabled = true;
 
+    @Builder.Default
+    private boolean notificationsEnabled = true;
+
+    @Builder.Default
+    private boolean internalNotificationsEnabled = true;
+
+    @Builder.Default
+    private boolean externalNotificationsEnabled = true;
+
     @JsonIgnore
     private String resetToken;
     

@@ -18,6 +18,10 @@ export interface UserDTO {
   avatarUrl?: string;
   roles: string[];
   enabled: boolean;
+  notificationsEnabled: boolean;
+  internalNotificationsEnabled: boolean;
+  externalNotificationsEnabled: boolean;
+  address?: string;
 }
 
 export interface LoginRequest {
@@ -103,6 +107,12 @@ export class AuthService {
   readonly userEmail = signal<string | null>(null);
   readonly userAvatar = signal<string | null>(null);
   readonly userRole = signal<UserRole | null>(null);
+  readonly userPhone = signal<string | null>(null);
+  readonly userAddress = signal<string | null>(null);
+  readonly userEnabled = signal<boolean>(false);
+  readonly notificationsEnabled = signal<boolean>(true);
+  readonly internalNotificationsEnabled = signal<boolean>(true);
+  readonly externalNotificationsEnabled = signal<boolean>(true);
 
   private http = inject(HttpClient);
 
@@ -118,15 +128,19 @@ export class AuthService {
   private initializeAuthState(): void {
     const token = localStorage.getItem('authToken');
     const userId = localStorage.getItem('userId');
-    
+    const storedRole = localStorage.getItem('userRole');
+
     if (token && userId) {
       this.isAuthenticated.set(true);
+      // Restore role immediately from localStorage to avoid race conditions
+      if (storedRole) {
+        this.userRole.set(storedRole as UserRole);
+      }
       // Restore user profile from backend
       this.loadCurrentUser().subscribe({
         next: () => console.log('✅ User restored from token on app init'),
         error: (err) => {
           console.warn('⚠️ Failed to restore user from token:', err);
-          // Token might be invalid, clear it
           this.logout();
         }
       });
@@ -244,6 +258,12 @@ export class AuthService {
         this.userEmail.set(user.email);
         this.userRole.set(user.role);
         this.userAvatar.set(avatarUrl);
+        this.userPhone.set(userDto.phone || null);
+        this.userAddress.set(userDto.address || null);
+        this.userEnabled.set(userDto.enabled);
+        this.notificationsEnabled.set(userDto.notificationsEnabled ?? true);
+        this.internalNotificationsEnabled.set(userDto.internalNotificationsEnabled ?? true);
+        this.externalNotificationsEnabled.set(userDto.externalNotificationsEnabled ?? true);
 
         // PERSISTENCE: Store role in localStorage for app initialization
         localStorage.setItem('userRole', user.role);
@@ -385,6 +405,20 @@ export class AuthService {
         // Pass error to component for display
         return throwError(() => error);
       })
+    );
+  }
+
+  forgotPassword(email: string): Observable<{ message: string; token: string; userId: string }> {
+    return this.http.post<{ message: string; token: string; userId: string }>(
+      `${this.apiUrl}/forgot-password`,
+      { email }
+    );
+  }
+
+  resetPassword(token: string, newPassword: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(
+      `${this.apiUrl}/reset-password`,
+      { token, newPassword }
     );
   }
 

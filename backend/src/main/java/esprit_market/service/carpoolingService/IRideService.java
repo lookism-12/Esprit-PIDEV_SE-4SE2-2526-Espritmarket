@@ -1,8 +1,9 @@
 package esprit_market.service.carpoolingService;
 
 import esprit_market.Enum.carpoolingEnum.RideStatus;
-import esprit_market.dto.carpooling.RideRequestDTO;
-import esprit_market.dto.carpooling.RideResponseDTO;
+import esprit_market.dto.carpoolingDto.RideRequestDTO;
+import esprit_market.dto.carpoolingDto.RideResponseDTO;
+import esprit_market.dto.carpoolingDto.RideSearchRequestDTO;
 import esprit_market.entity.carpooling.Ride;
 import org.bson.types.ObjectId;
 import org.springframework.data.domain.Pageable;

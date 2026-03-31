@@ -47,7 +47,9 @@ public class CorsConfig {
                 "Content-Type",
                 "X-Requested-With",
                 "Accept",
-                "X-Auth-Token"
+                "X-Auth-Token",
+                "X-User-Id",
+                "X-User-Role"
         ));
 
         // Allow credentials (cookies, authorization headers)
@@ -59,7 +61,9 @@ public class CorsConfig {
         // Expose headers to frontend
         configuration.setExposedHeaders(Arrays.asList(
                 "Authorization",
-                "Content-Type"
+                "Content-Type",
+                "X-User-Id",
+                "X-User-Role"
         ));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

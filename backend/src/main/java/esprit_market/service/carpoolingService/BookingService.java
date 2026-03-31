@@ -1,8 +1,8 @@
 package esprit_market.service.carpoolingService;
 
 import esprit_market.Enum.carpoolingEnum.BookingStatus;
-import esprit_market.dto.carpooling.BookingRequestDTO;
-import esprit_market.dto.carpooling.BookingResponseDTO;
+import esprit_market.dto.carpoolingDto.BookingRequestDTO;
+import esprit_market.dto.carpoolingDto.BookingResponseDTO;
 import esprit_market.entity.carpooling.Booking;
 import esprit_market.entity.carpooling.Ride;
 import esprit_market.entity.carpooling.RidePayment;

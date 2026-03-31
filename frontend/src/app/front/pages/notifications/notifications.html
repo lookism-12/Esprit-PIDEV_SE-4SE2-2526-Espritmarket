@@ -1,0 +1,49 @@
+<div class="notifications-container">
+  <div class="header">
+    <div class="header-left">
+      <h1>Notifications</h1>
+      <p>Negotiation, order, promotion and system updates.</p>
+    </div>
+    <div class="header-actions">
+      <input #userIdInput placeholder="User UUID">
+      <button class="btn btn-outline" (click)="load(userIdInput.value)">Load</button>
+    </div>
+  </div>
+
+  <div *ngIf="isLoading()" class="loading-state">
+    <div class="spinner"></div>
+    <p>Loading your notifications...</p>
+  </div>
+
+  <div *ngIf="!isLoading() && notifications().length === 0" class="empty-state">
+    <div class="empty-icon">📭</div>
+    <h3>All caught up!</h3>
+    <p>You have no notifications right now.</p>
+  </div>
+
+  <div class="notifications-list" *ngIf="!isLoading() && notifications().length > 0">
+    <div 
+      class="notification-item" 
+      *ngFor="let note of notifications()"
+      [ngClass]="{'unread': !note.read, 'read': note.read}"
+    >
+      <div class="icon-section">
+        <span class="type-icon">{{ getIconForType(note.type) }}</span>
+        <div class="unread-dot" *ngIf="!note.read"></div>
+      </div>
+      
+      <div class="content-section">
+        <div class="note-header">
+          <h4>{{ note.title }}</h4>
+          <span class="time">{{ note.createdAt | date:'short' }}</span>
+        </div>
+        <p class="message">{{ note.message }}</p>
+      </div>
+      
+      <div class="actions-section">
+        <button class="icon-btn" *ngIf="!note.read" (click)="markAsRead(note.id)" title="Mark as read">✓</button>
+        <button class="icon-btn danger" (click)="deleteNotification(note.id)" title="Delete Notification">×</button>
+      </div>
+    </div>
+  </div>
+</div>

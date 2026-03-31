@@ -420,10 +420,36 @@ public class UserController {
         }
     }
 
+    @PatchMapping("/me/notifications/toggle")
+    @Operation(summary = "Toggle all notifications on/off for current user")
+    public ResponseEntity<Map<String, Object>> toggleNotifications(Authentication authentication) {
+        User user = userService.findByEmail(authentication.getName());
+        user.setNotificationsEnabled(!user.isNotificationsEnabled());
+        userService.save(user);
+        return ResponseEntity.ok(Map.of("notificationsEnabled", user.isNotificationsEnabled()));
+    }
+
+    @PatchMapping("/me/notifications/internal/toggle")
+    @Operation(summary = "Toggle internal notifications on/off")
+    public ResponseEntity<Map<String, Object>> toggleInternalNotifications(Authentication authentication) {
+        User user = userService.findByEmail(authentication.getName());
+        user.setInternalNotificationsEnabled(!user.isInternalNotificationsEnabled());
+        userService.save(user);
+        return ResponseEntity.ok(Map.of("internalNotificationsEnabled", user.isInternalNotificationsEnabled()));
+    }
+
+    @PatchMapping("/me/notifications/external/toggle")
+    @Operation(summary = "Toggle external notifications on/off")
+    public ResponseEntity<Map<String, Object>> toggleExternalNotifications(Authentication authentication) {
+        User user = userService.findByEmail(authentication.getName());
+        user.setExternalNotificationsEnabled(!user.isExternalNotificationsEnabled());
+        userService.save(user);
+        return ResponseEntity.ok(Map.of("externalNotificationsEnabled", user.isExternalNotificationsEnabled()));
+    }
+
     @GetMapping("/debug/uploads")
     @Operation(summary = "Debug endpoint - check upload directory")
-    public ResponseEntity<Map<String, Object>> debugUploadDir() {
-        try {
+    public ResponseEntity<Map<String, Object>> debugUploadDir() {        try {
             java.nio.file.Path uploadPath = java.nio.file.Paths.get("uploads/avatars").toAbsolutePath();
             boolean exists = java.nio.file.Files.exists(uploadPath);
             

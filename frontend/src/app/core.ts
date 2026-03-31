@@ -63,7 +63,7 @@ export type { Product } from './front/models/product';
 export type { Cart, CartItem } from './front/models/cart.model';
 export type { Order, OrderStatus, OrderItem } from './front/models/order.model';
 export type { Invoice } from './front/models/invoice.model';
-export type { AppNotification, NotificationType, NotificationPriority } from './front/models/notification.model';
+export type { AppNotification, NotificationType } from './front/models/notification.model';
 export type { Promotion } from './front/models/promotion.model';
 export type { Favorite } from './front/models/favorite.model';
 export type { Negotiation } from './front/models/negotiation.model';

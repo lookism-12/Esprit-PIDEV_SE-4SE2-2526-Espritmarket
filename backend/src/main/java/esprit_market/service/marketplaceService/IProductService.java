@@ -16,4 +16,6 @@ public interface IProductService {
     ProductResponseDTO update(ObjectId id, ProductRequestDTO dto);
 
     void deleteById(ObjectId id);
+
+    List<ProductResponseDTO> findByOwnerId(String ownerId);
 }

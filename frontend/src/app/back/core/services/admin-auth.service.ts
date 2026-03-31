@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, tap, catchError, throwError, BehaviorSubject } from 'rxjs';
 import { environment } from '../../../../environment';
+import { AuthService } from '../../../front/core/auth.service';
 
 export interface AdminUser {
   id: string;
@@ -20,6 +21,7 @@ export interface AdminUser {
 export class AdminAuthService {
   private readonly apiUrl = `${environment.apiUrl}/users`;
   private router = inject(Router);
+  private authService = inject(AuthService);
 
   // Reactive state - Signal for immediate UI updates
   readonly currentUser = signal<AdminUser | null>(null);
@@ -126,8 +128,9 @@ export class AdminAuthService {
     localStorage.removeItem('userId');
     localStorage.removeItem('userRole');
     this.currentUser.set(null);
-    this.userSubject.next(null);  // ← Clear subject as well
+    this.userSubject.next(null);
     this.isAuthenticated.set(false);
-    this.router.navigate(['/login']); // Redirect to Sign In page
+    // Also clear the front-end AuthService so guestGuard lets /login through
+    this.authService.logout();
   }
 }

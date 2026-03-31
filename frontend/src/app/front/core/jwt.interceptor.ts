@@ -26,9 +26,17 @@ export class JwtInterceptor implements HttpInterceptor {
 
     // If token exists, clone request and add Authorization header
     if (token) {
+      const userId = localStorage.getItem('userId');
+      const userRole = localStorage.getItem('userRole') ?? 'USER';
+      const requiresActorHeaders =
+        request.url.includes('/api/negotiations') ||
+        request.url.includes('/api/negociations') ||
+        request.url.includes('/api/notifications');
       request = request.clone({
         setHeaders: {
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
+          ...(requiresActorHeaders && userId ? { 'X-User-Id': userId } : {}),
+          ...(requiresActorHeaders ? { 'X-User-Role': userRole } : {})
         }
       });
     }

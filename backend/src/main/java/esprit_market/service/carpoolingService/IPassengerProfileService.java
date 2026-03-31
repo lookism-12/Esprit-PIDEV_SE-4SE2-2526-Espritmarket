@@ -1,7 +1,7 @@
 package esprit_market.service.carpoolingService;
 
-import esprit_market.dto.carpooling.PassengerProfileRequestDTO;
-import esprit_market.dto.carpooling.PassengerProfileResponseDTO;
+import esprit_market.dto.carpoolingDto.PassengerProfileRequestDTO;
+import esprit_market.dto.carpoolingDto.PassengerProfileResponseDTO;
 import esprit_market.entity.carpooling.PassengerProfile;
 import org.bson.types.ObjectId;
 

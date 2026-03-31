@@ -5,13 +5,22 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 import { AuthService } from '../../core/auth.service';
 import { OrderService } from '../../core/order.service';
 import { UserService } from '../../core/user.service';
+import { NotificationService } from '../../core/notification.service';
 import { Order, OrderStatus } from '../../models/order.model';
+import { AppNotification, NotificationType } from '../../models/notification.model';
 import { LoyaltyLevel, LoyaltyAccount, PointsTransaction, PointsTransactionType, LOYALTY_LEVELS } from '../../models/loyalty.model';
 import { ProfileEditModal } from './profile-edit-modal';
 import { AvatarUploadModal } from './avatar-upload-modal';
 import { PasswordChangeModal } from './password-change-modal';
+import { NegotiationService } from '../../core/negotiation.service';
+import { Negotiation } from '../../models/negotiation.model';
+import { ProductService, MarketService } from '../../core';
+import { Product } from '../../models/product';
+import { UserRole } from '../../models/user.model';
+import { forkJoin } from 'rxjs';
 
-type ProfileTab = 'listings' | 'orders' | 'loyalty' | 'preferences' | 'settings';
+type ProfileTab = 'listings' | 'orders' | 'loyalty' | 'preferences' | 'notifications' | 'settings' | 'dashboard' | 'negotiations';
+type MainCategory = 'shop' | 'activity' | 'account';
 
 @Component({
   selector: 'app-profile',
@@ -33,24 +42,37 @@ export class Profile implements OnInit {
   private authService = inject(AuthService);
   private orderService = inject(OrderService);
   private userService = inject(UserService);
+  private notificationService = inject(NotificationService);
+  private negotiationService = inject(NegotiationService);
+  private productService = inject(ProductService);
+  private marketService = inject(MarketService);
 
-  // User data - Now using real authenticated user data
+  // User data - from auth signals (populated by loadCurrentUser)
   user = computed(() => ({
-    id: this.authService.userId() || '1',
+    id: this.authService.userId() || '',
     firstName: this.authService.userFirstName() || 'User',
-    lastName: this.authService.userLastName() || 'Profile',
-    email: this.authService.userEmail() || 'user@example.com',
-    phone: '12345678',
+    lastName: this.authService.userLastName() || '',
+    email: this.authService.userEmail() || '',
+    phone: this.authService.userPhone() || '—',
     reputation: 4.9,
-    ordersCount: this.mockOrders().length,
-    joinedDate: 'September 2023',
+    ordersCount: this.orders().length,
+    joinedDate: 'Member',
     avatarUrl: this.authService.userAvatar() || '',
-    address: 'Tunis, Tunisia',
-    isVerified: true
+    address: this.authService.userAddress() || '—',
+    isVerified: this.authService.userEnabled()
   }));
 
+  isProvider = computed(() => this.authService.userRole() === UserRole.PROVIDER);
+  notificationsEnabled = computed(() => this.authService.notificationsEnabled());
+  internalNotificationsEnabled = computed(() => this.authService.internalNotificationsEnabled());
+  externalNotificationsEnabled = computed(() => this.authService.externalNotificationsEnabled());
+  isTogglingNotifications = signal(false);
+  isTogglingInternal = signal(false);
+  isTogglingExternal = signal(false);
+
   // Tab management
-  activeTab = signal<ProfileTab>('listings');
+  activeTab = signal<ProfileTab>('dashboard');
+  mainCategory = signal<MainCategory>('shop');
   
   // Edit mode
   isEditing = signal(false);
@@ -63,9 +85,28 @@ export class Profile implements OnInit {
   showAvatarModal = signal(false);
   showPasswordModal = signal(false);
 
+  // Notifications
+  externalNotifications = signal<AppNotification[]>([]);
+  isLoadingNotifications = signal(false);
+  selectedNotification = signal<AppNotification | null>(null);
+  unreadCount = computed(() => this.externalNotifications().filter(n => !n.read).length);
+
   // Orders
   orders = signal<Order[]>([]);
-  isLoadingOrders = signal(false);
+  isLoadingOrders = signal<boolean>(false);
+
+  // Negotiations (Incoming Offers - Provider)
+  incomingNegotiations = signal<Negotiation[]>([]);
+  isLoadingNegotiations = signal<boolean>(false);
+  isSubmittingNegotiation = signal<boolean>(false);
+  showCounterModal = signal<boolean>(false);
+  selectedNegotiation = signal<Negotiation | null>(null);
+  counterOfferAmount = signal<number>(0);
+  isClientCounterMode = signal<boolean>(false);
+
+  // Negotiations (My Offers - Client)
+  myNegotiations = signal<Negotiation[]>([]);
+  isLoadingMyNegotiations = signal<boolean>(false);
 
   // Loyalty
   loyaltyAccount = signal<LoyaltyAccount>({
@@ -143,64 +184,8 @@ export class Profile implements OnInit {
 
   availableCategories = ['Electronics', 'Books', 'Gaming', 'Furniture', 'Services', 'Sports', 'Clothing'];
 
-  // Listings (mock data)
-  listings = signal([
-    {
-      id: '1',
-      name: 'Scientific Calculator TI-84',
-      price: 85,
-      status: 'active',
-      views: 124,
-      imageUrl: 'https://images.unsplash.com/photo-1564466809058-bf4114d55352?q=80&w=400'
-    },
-    {
-      id: '2',
-      name: 'Engineering Textbook Bundle',
-      price: 150,
-      status: 'active',
-      views: 89,
-      imageUrl: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?q=80&w=400'
-    }
-  ]);
-
-  // Mock orders for display
-  mockOrders = signal([
-    {
-      id: 'ORD-001',
-      orderNumber: 'ORD-2024-001',
-      date: new Date('2024-02-15'),
-      status: OrderStatus.DELIVERED,
-      total: 165,
-      itemCount: 2,
-      items: [
-        { name: 'Modern Laptop Stand', quantity: 1 },
-        { name: 'Calculus Made Easy', quantity: 1 }
-      ]
-    },
-    {
-      id: 'ORD-002',
-      orderNumber: 'ORD-2024-002',
-      date: new Date('2024-02-20'),
-      status: OrderStatus.PROCESSING,
-      total: 85,
-      itemCount: 1,
-      items: [
-        { name: 'Wireless Mouse', quantity: 1 }
-      ]
-    },
-    {
-      id: 'ORD-003',
-      orderNumber: 'ORD-2024-003',
-      date: new Date('2024-02-25'),
-      status: OrderStatus.PENDING,
-      total: 220,
-      itemCount: 3,
-      items: [
-        { name: 'USB Hub', quantity: 1 },
-        { name: 'Notebook Set', quantity: 2 }
-      ]
-    }
-  ]);
+  // Listings (real data loaded from API)
+  listings = signal<Product[]>([]);
 
   // Computed
   loyaltyProgress = computed(() => {
@@ -217,10 +202,48 @@ export class Profile implements OnInit {
     this.initPreferencesForm();
     this.loadOrders();
 
+    // Default tab: providers start on dashboard, clients on orders
+    if (!this.isProvider()) {
+      this.mainCategory.set('activity');
+      this.activeTab.set('orders');
+    }
+
     // Check URL params for tab
     this.route.queryParams.subscribe(params => {
       if (params['tab']) {
         this.setActiveTab(params['tab'] as ProfileTab);
+      }
+    });
+
+    if (this.isProvider()) {
+      this.loadIncomingNegotiations();
+      this.loadMyShopItems();
+    } else {
+      this.loadMyNegotiations();
+    }
+  }
+
+  setMainCategory(category: MainCategory): void {
+    this.mainCategory.set(category);
+    if (category === 'shop') this.setActiveTab('dashboard');
+    else if (category === 'activity') this.setActiveTab('orders');
+    else if (category === 'account') this.setActiveTab('loyalty');
+  }
+
+  loadMyShopItems(): void {
+    this.isLoadingOrders.set(true);
+    forkJoin({
+      products: this.productService.getMyProducts(),
+      services: this.marketService.getMyServices()
+    }).subscribe({
+      next: (result) => {
+        const allItems = [...result.products, ...result.services];
+        this.listings.set(allItems);
+        this.isLoadingOrders.set(false);
+      },
+      error: (err) => {
+        console.error('Failed to load shop items:', err);
+        this.isLoadingOrders.set(false);
       }
     });
   }
@@ -248,23 +271,246 @@ export class Profile implements OnInit {
 
   private loadOrders(): void {
     this.isLoadingOrders.set(true);
-    setTimeout(() => {
-      this.isLoadingOrders.set(false);
-    }, 500);
+    this.orderService.getOrders().subscribe({
+      next: (response) => {
+        this.orders.set(response.orders || []);
+        this.isLoadingOrders.set(false);
+      },
+      error: () => {
+        this.isLoadingOrders.set(false);
+      }
+    });
+  }
+
+  private loadNotifications(): void {
+    this.isLoadingNotifications.set(true);
+    this.notificationService.getNotifications().subscribe({
+      next: (response) => {
+        // Show all notifications (both INTERNAL and EXTERNAL)
+        this.externalNotifications.set(response.notifications);
+        this.isLoadingNotifications.set(false);
+      },
+      error: (error) => {
+        console.error('Failed to load notifications:', error);
+        this.isLoadingNotifications.set(false);
+      }
+    });
   }
 
   setActiveTab(tab: ProfileTab): void {
     this.activeTab.set(tab);
     if (tab === 'orders' && this.orders().length === 0) {
       this.loadOrders();
+    } else if (tab === 'notifications') {
+      this.loadNotifications();
+    } else if (tab === 'dashboard') {
+      this.loadIncomingNegotiations();
+    } else if (tab === 'negotiations') {
+      this.loadMyNegotiations();
     }
   }
 
-  // ============ PROFILE EDIT ============
-  startEditing(): void {
-    this.showEditModal.set(true);
+  goToDashboard(): void {
+    this.setActiveTab('dashboard');
+    // Scroll to tabs section
+    const tabsElement = document.getElementById('profile-tabs');
+    if (tabsElement) {
+      tabsElement.scrollIntoView({ behavior: 'smooth' });
+    }
   }
 
+  // ============ NEGOTIATIONS ============
+  loadIncomingNegotiations(): void {
+    this.isLoadingNegotiations.set(true);
+    this.negotiationService.getIncomingNegociations().subscribe({
+      next: (response) => {
+        const mapped = response.negotiations.map(neg => ({
+          ...neg,
+          currentOffer: neg.proposals?.length ? neg.proposals[neg.proposals.length - 1].amount : 0
+        }) as Negotiation);
+        this.incomingNegotiations.set(mapped);
+        this.isLoadingNegotiations.set(false);
+      },
+      error: (error) => {
+        console.error('Failed to load incoming negotiations:', error);
+        this.isLoadingNegotiations.set(false);
+      }
+    });
+  }
+
+  loadMyNegotiations(): void {
+    this.isLoadingMyNegotiations.set(true);
+    this.negotiationService.getAll().subscribe({
+      next: (response) => {
+        const mapped = response.negotiations.map(neg => ({
+          ...neg,
+          currentOffer: neg.proposals?.length ? neg.proposals[neg.proposals.length - 1].amount : 0
+        }) as Negotiation);
+        this.myNegotiations.set(mapped);
+        this.isLoadingMyNegotiations.set(false);
+      },
+      error: (error) => {
+        console.error('Failed to load my negotiations:', error);
+        this.isLoadingMyNegotiations.set(false);
+      }
+    });
+  }
+
+  // ============ CLIENT NEGOTIATION ACTIONS ============
+  clientAccept(id: string): void {
+    if (!confirm('Accept this offer?')) return;
+    this.isSubmittingNegotiation.set(true);
+    this.negotiationService.accept(id).subscribe({
+      next: (updated) => {
+        this.myNegotiations.update(list =>
+          list.map(n => n.id === id ? { ...n, status: updated.status } : n)
+        );
+        this.isSubmittingNegotiation.set(false);
+      },
+      error: () => this.isSubmittingNegotiation.set(false)
+    });
+  }
+
+  clientReject(id: string): void {
+    if (!confirm('Reject this offer?')) return;
+    this.isSubmittingNegotiation.set(true);
+    this.negotiationService.reject(id).subscribe({
+      next: (updated) => {
+        this.myNegotiations.update(list =>
+          list.map(n => n.id === id ? { ...n, status: updated.status } : n)
+        );
+        this.isSubmittingNegotiation.set(false);
+      },
+      error: () => this.isSubmittingNegotiation.set(false)
+    });
+  }
+
+  clientCancel(id: string): void {
+    if (!confirm('Cancel this negotiation?')) return;
+    this.isSubmittingNegotiation.set(true);
+    this.negotiationService.cancel(id).subscribe({
+      next: () => {
+        this.myNegotiations.update(list =>
+          list.map(n => n.id === id ? { ...n, status: 'CANCELLED' as any } : n)
+        );
+        this.isSubmittingNegotiation.set(false);
+      },
+      error: () => this.isSubmittingNegotiation.set(false)
+    });
+  }
+
+  openClientCounterOffer(neg: Negotiation): void {
+    this.selectedNegotiation.set(neg);
+    const last = neg.proposals[neg.proposals.length - 1];
+    this.counterOfferAmount.set(last ? last.amount : 0);
+    this.isClientCounterMode.set(true);
+    this.showCounterModal.set(true);
+  }
+
+  submitClientCounterOffer(): void {
+    const neg = this.selectedNegotiation();
+    const amount = this.counterOfferAmount();
+    if (!neg || amount <= 0) return;
+    this.isSubmittingNegotiation.set(true);
+    this.negotiationService.submitCounterProposal({ negotiationId: neg.id, amount }).subscribe({
+      next: (updated) => {
+        this.myNegotiations.update(list =>
+          list.map(n => n.id === neg.id ? {
+            ...n,
+            status: updated.status,
+            proposals: updated.proposals,
+            currentOffer: updated.proposals?.length ? updated.proposals[updated.proposals.length - 1].amount : n.currentOffer
+          } : n)
+        );
+        this.isSubmittingNegotiation.set(false);
+        this.closeCounterOffer();
+      },
+      error: () => this.isSubmittingNegotiation.set(false)
+    });
+  }
+
+  acceptNegotiation(id: string): void {
+    if (!confirm('Are you sure you want to accept this offer?')) return;
+    this.isSubmittingNegotiation.set(true);
+    this.negotiationService.accept(id).subscribe({
+      next: (updated) => {
+        this.incomingNegotiations.update(list =>
+          list.map(n => n.id === id ? { ...n, status: updated.status } : n)
+        );
+        this.isSubmittingNegotiation.set(false);
+      },
+      error: (error) => {
+        console.error('Failed to accept offer:', error);
+        this.isSubmittingNegotiation.set(false);
+      }
+    });
+  }
+
+  rejectNegotiation(id: string): void {
+    if (!confirm('Are you sure you want to reject this offer?')) return;
+    this.isSubmittingNegotiation.set(true);
+    this.negotiationService.reject(id).subscribe({
+      next: (updated) => {
+        this.incomingNegotiations.update(list =>
+          list.map(n => n.id === id ? { ...n, status: updated.status } : n)
+        );
+        this.isSubmittingNegotiation.set(false);
+      },
+      error: (error) => {
+        console.error('Failed to reject offer:', error);
+        this.isSubmittingNegotiation.set(false);
+      }
+    });
+  }
+
+  openCounterOffer(neg: Negotiation): void {
+    this.selectedNegotiation.set(neg);
+    const lastProposal = neg.proposals[neg.proposals.length - 1];
+    this.counterOfferAmount.set(lastProposal ? lastProposal.amount : 0);
+    this.showCounterModal.set(true);
+  }
+
+  closeCounterOffer(): void {
+    this.showCounterModal.set(false);
+    this.selectedNegotiation.set(null);
+    this.isClientCounterMode.set(false);
+  }
+
+  updateCounterAmount(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.counterOfferAmount.set(Number(input.value));
+  }
+
+  submitCounterOffer(): void {
+    const neg = this.selectedNegotiation();
+    const amount = this.counterOfferAmount();
+    if (!neg || amount <= 0) return;
+
+    this.isSubmittingNegotiation.set(true);
+    this.negotiationService.submitCounterProposal({
+      negotiationId: neg.id,
+      amount: amount,
+    }).subscribe({
+      next: (updated) => {
+        this.incomingNegotiations.update(list =>
+          list.map(n => n.id === neg.id ? {
+            ...n,
+            status: updated.status,
+            proposals: updated.proposals,
+            currentOffer: updated.proposals?.length ? updated.proposals[updated.proposals.length - 1].amount : n.currentOffer
+          } : n)
+        );
+        this.isSubmittingNegotiation.set(false);
+        this.closeCounterOffer();
+      },
+      error: (err: any) => {
+        this.isSubmittingNegotiation.set(false);
+        console.error('Failed to submit counter offer:', err);
+      }
+    });
+  }
+
+  // ============ PROFILE EDITING & MISC ============
   onEditProfileClose(): void {
     this.showEditModal.set(false);
   }
@@ -293,6 +539,10 @@ export class Profile implements OnInit {
     
     console.log('✅ Avatar updated in AuthService');
     console.log('  Current avatar URL signal:', this.authService.userAvatar());
+  }
+
+  startEditing(): void {
+    this.showEditModal.set(true);
   }
 
   // ============ PASSWORD CHANGE ============
@@ -466,5 +716,104 @@ export class Profile implements OnInit {
     console.error('  URL attempted:', url);
     console.error('  URL format valid:', this.isValidImageUrl(url));
     console.error('  URL starts with http:', url?.startsWith('http'));
+  }
+
+  // ============ NOTIFICATIONS ============
+  toggleNotifications(): void {
+    this.isTogglingNotifications.set(true);
+    this.userService.toggleNotifications().subscribe({
+      next: (res) => {
+        this.authService.notificationsEnabled.set(res.notificationsEnabled);
+        this.isTogglingNotifications.set(false);
+      },
+      error: () => this.isTogglingNotifications.set(false)
+    });
+  }
+
+  toggleInternalNotifications(): void {
+    this.isTogglingInternal.set(true);
+    this.userService.toggleInternalNotifications().subscribe({
+      next: (res) => {
+        this.authService.internalNotificationsEnabled.set(res.internalNotificationsEnabled);
+        this.isTogglingInternal.set(false);
+      },
+      error: () => this.isTogglingInternal.set(false)
+    });
+  }
+
+  toggleExternalNotifications(): void {
+    this.isTogglingExternal.set(true);
+    this.userService.toggleExternalNotifications().subscribe({
+      next: (res) => {
+        this.authService.externalNotificationsEnabled.set(res.externalNotificationsEnabled);
+        this.isTogglingExternal.set(false);
+      },
+      error: () => this.isTogglingExternal.set(false)
+    });
+  }
+
+  markAllNotificationsAsRead(): void {
+    const unread = this.externalNotifications().filter(n => !n.read);
+    unread.forEach(n => this.notificationService.markAsRead(n.id).subscribe({
+      next: () => {
+        this.externalNotifications.update(list =>
+          list.map(item => item.id === n.id ? { ...item, read: true } : item)
+        );
+        if (this.selectedNotification()?.id === n.id) {
+          this.selectedNotification.update(s => s ? { ...s, read: true } : s);
+        }
+      }
+    }));
+  }
+
+  markNotificationAsRead(notificationId: string): void {    this.notificationService.markAsRead(notificationId).subscribe({
+      next: () => {
+        this.externalNotifications.update(notifs =>
+          notifs.map(n => n.id === notificationId ? { ...n, read: true } : n)
+        );
+        // Update selected panel if it's the same notification
+        if (this.selectedNotification()?.id === notificationId) {
+          this.selectedNotification.update(n => n ? { ...n, read: true } : n);
+        }
+      },
+      error: (error) => console.error('Failed to mark notification as read:', error)
+    });
+  }
+
+  deleteNotification(notificationId: string): void {
+    if (confirm('Are you sure you want to delete this notification?')) {
+      this.notificationService.deactivate(notificationId).subscribe({
+        next: () => {
+          this.externalNotifications.update(notifs =>
+            notifs.filter(n => n.id !== notificationId)
+          );
+          // Clear detail panel if deleted notification was selected
+          if (this.selectedNotification()?.id === notificationId) {
+            this.selectedNotification.set(null);
+          }
+        },
+        error: (error) => console.error('Failed to delete notification:', error)
+      });
+    }
+  }
+
+  selectNotification(notification: AppNotification): void {
+    this.selectedNotification.set(notification);
+    if (!notification.read) {
+      this.markNotificationAsRead(notification.id);
+    }
+  }
+
+  getNotificationIcon(type: NotificationType): string {
+    const icons: Record<NotificationType, string> = {
+      [NotificationType.NEGOTIATION_UPDATE]: '💬',
+      [NotificationType.ORDER_CONFIRMATION]: '📦',
+      [NotificationType.PROMOTION]: '🎉',
+      [NotificationType.SYSTEM]: '⚙️',
+      [NotificationType.RIDE_UPDATE]: '🚗',
+      [NotificationType.INTERNAL_NOTIFICATION]: 'ℹ️',
+      [NotificationType.EXTERNAL_NOTIFICATION]: '🔔'
+    };
+    return icons[type] || '📢';
   }
 }

@@ -7,6 +7,7 @@ export type { LoginRequest, RegisterRequest, AuthResponse, BaseRegisterRequest, 
 
 export { ProductService } from './product.service';
 export type { ProductFilter, ProductListResponse, CreateProductRequest, UpdateProductRequest } from './product.service';
+export { MarketService } from './market-service.service';
 
 export { CartService } from './cart.service';
 

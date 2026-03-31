@@ -1,7 +1,7 @@
 package esprit_market.service.carpoolingService;
 
-import esprit_market.dto.carpooling.VehicleRequestDTO;
-import esprit_market.dto.carpooling.VehicleResponseDTO;
+import esprit_market.dto.carpoolingDto.VehicleRequestDTO;
+import esprit_market.dto.carpoolingDto.VehicleResponseDTO;
 import esprit_market.entity.carpooling.Vehicle;
 import lombok.extern.slf4j.Slf4j;
 import esprit_market.repository.carpoolingRepository.DriverProfileRepository;
@@ -30,13 +30,13 @@ public class VehicleService implements IVehicleService {
     private final VehicleMapper vehicleMapper;
 
     @Override
-    public List<esprit_market.dto.carpooling.VehicleResponseDTO> findAll() {
+    public List<esprit_market.dto.carpoolingDto.VehicleResponseDTO> findAll() {
         return vehicleRepository.findAll().stream()
                 .map(vehicleMapper::toResponseDTO)
                 .collect(Collectors.toList());
     }
 
-    public esprit_market.dto.carpooling.VehicleResponseDTO save(Vehicle vehicle) {
+    public esprit_market.dto.carpoolingDto.VehicleResponseDTO save(Vehicle vehicle) {
         return vehicleMapper.toResponseDTO(vehicleRepository.save(vehicle));
     }
 
@@ -51,14 +51,14 @@ public class VehicleService implements IVehicleService {
     }
 
     @Override
-    public List<esprit_market.dto.carpooling.VehicleResponseDTO> findByDriverProfileId(ObjectId driverProfileId) {
+    public List<esprit_market.dto.carpoolingDto.VehicleResponseDTO> findByDriverProfileId(ObjectId driverProfileId) {
         return vehicleRepository.findByDriverProfileId(driverProfileId).stream()
                 .map(vehicleMapper::toResponseDTO)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public esprit_market.dto.carpooling.VehicleResponseDTO update(ObjectId id, Vehicle vehicle) {
+    public esprit_market.dto.carpoolingDto.VehicleResponseDTO update(ObjectId id, Vehicle vehicle) {
         Vehicle existing = vehicleRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Vehicle not found"));
         if (vehicle.getMake() != null) {

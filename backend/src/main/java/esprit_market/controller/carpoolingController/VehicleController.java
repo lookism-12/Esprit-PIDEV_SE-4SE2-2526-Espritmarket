@@ -1,7 +1,7 @@
 package esprit_market.controller.carpoolingController;
 
-import esprit_market.dto.carpooling.VehicleRequestDTO;
-import esprit_market.dto.carpooling.VehicleResponseDTO;
+import esprit_market.dto.carpoolingDto.VehicleRequestDTO;
+import esprit_market.dto.carpoolingDto.VehicleResponseDTO;
 import esprit_market.entity.carpooling.Vehicle;
 import esprit_market.service.carpoolingService.IVehicleService;
 import io.swagger.v3.oas.annotations.Operation;

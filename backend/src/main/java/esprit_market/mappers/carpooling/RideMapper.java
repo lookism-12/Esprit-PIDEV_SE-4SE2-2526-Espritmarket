@@ -1,6 +1,7 @@
 package esprit_market.mappers.carpooling;
 
-import esprit_market.dto.carpooling.RideResponseDTO;
+
+import esprit_market.dto.carpoolingDto.RideResponseDTO;
 import esprit_market.entity.carpooling.Ride;
 import esprit_market.repository.carpoolingRepository.DriverProfileRepository;
 import esprit_market.repository.carpoolingRepository.VehicleRepository;

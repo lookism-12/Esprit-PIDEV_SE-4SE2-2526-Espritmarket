@@ -15,7 +15,7 @@ export class ProductCard {
 
   // Generate star array based on rating
   readonly stars = computed(() => {
-    const rating = this.product().rating;
+    const rating = this.product().rating ?? 0;
     return Array.from({ length: 5 }, (_, i) => {
       if (i < Math.floor(rating)) return 'full';
       if (i < rating) return 'half';

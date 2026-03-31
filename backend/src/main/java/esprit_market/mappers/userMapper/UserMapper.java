@@ -25,6 +25,9 @@ public class UserMapper {
                         ? user.getRoles().stream().map(Enum::name).collect(Collectors.toList())
                         : null)
                 .enabled(user.isEnabled())
+                .notificationsEnabled(user.isNotificationsEnabled())
+                .internalNotificationsEnabled(user.isInternalNotificationsEnabled())
+                .externalNotificationsEnabled(user.isExternalNotificationsEnabled())
                 // Client/Passenger fields
                 .address(user.getAddress())
                 // Provider fields

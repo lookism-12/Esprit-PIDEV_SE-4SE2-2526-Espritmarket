@@ -1,8 +1,8 @@
 package esprit_market.controller.carpoolingController;
 
 import esprit_market.Enum.carpoolingEnum.BookingStatus;
-import esprit_market.dto.carpooling.BookingRequestDTO;
-import esprit_market.dto.carpooling.BookingResponseDTO;
+import esprit_market.dto.carpoolingDto.BookingRequestDTO;
+import esprit_market.dto.carpoolingDto.BookingResponseDTO;
 import esprit_market.service.carpoolingService.IBookingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

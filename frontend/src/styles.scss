@@ -76,7 +76,18 @@ body {
 
 /* Base Styles */
 .premium-card {
-  @apply bg-white rounded-xl shadow-md border border-gray-100 transition-all duration-300 hover:shadow-xl hover:-translate-y-1;
+  @apply bg-white rounded-[2rem] shadow-xl border border-gray-100 transition-all duration-300 hover:shadow-2xl hover:-translate-y-1;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.hide-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
 }
 
 .btn-primary {
@@ -262,7 +273,7 @@ body {
 /* Custom scrollbar for drawer */
 .drawer-content {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
 }
 
 .drawer-content::-webkit-scrollbar {
@@ -274,12 +285,12 @@ body {
 }
 
 .drawer-content::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(255, 255, 255, 0.3);
   border-radius: 3px;
 }
 
 .drawer-content::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(255, 255, 255, 0.3);
+  background-color: rgba(255, 255, 255, 0.5);
 }
 
 /* Menu Section Styles */
@@ -288,7 +299,7 @@ body {
 }
 
 .menu-section:not(:last-child) {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
   padding-bottom: 0.5rem;
 }
 
@@ -316,14 +327,14 @@ body {
 }
 
 .menu-item.menu-item-active {
-  background: rgba(139, 0, 0, 0.15);
+  background: rgba(255, 255, 255, 0.15);
   color: white;
 }
 
 /* Focus styles for accessibility */
 .hamburger-btn:focus-visible,
 .menu-item:focus-visible {
-  outline: 2px solid #8B0000;
+  outline: 2px solid rgba(255, 255, 255, 0.5);
   outline-offset: 2px;
 }
 
@@ -359,20 +370,20 @@ body.overflow-hidden {
 }
 
 .navbar-logo .logo-image {
-  height: 80px;
+  height: 35px;
   filter: brightness(1.1);
   transition: filter 0.3s ease;
 }
 
 @media (min-width: 640px) {
   .navbar-logo .logo-image {
-    height: 100px;
+    height: 48px;
   }
 }
 
 @media (min-width: 1024px) {
   .navbar-logo .logo-image {
-    height: 120px;
+    height: 60px;
   }
 }
 

@@ -5,16 +5,8 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 import { Product, StockStatus, ProductCondition } from '../../models/product';
 import { ProductService } from '../../core/product.service';
 import { CartService } from '../../core/cart.service';
-import { NegotiationStatus, ProposalStatus } from '../../models/negotiation.model';
-
-interface NegotiationProposal {
-  id: string;
-  proposedBy: 'buyer' | 'seller';
-  amount: number;
-  message?: string;
-  status: ProposalStatus;
-  createdAt: Date;
-}
+import { NegotiationService } from '../../core/negotiation.service';
+import { Negotiation, NegotiationStatus, ProposalStatus, NegotiationProposal } from '../../models/negotiation.model';
 
 @Component({
   selector: 'app-product-details',
@@ -28,7 +20,9 @@ export class ProductDetails implements OnInit {
   private router = inject(Router);
   private productService = inject(ProductService);
   private cartService = inject(CartService);
+  private negotiationService = inject(NegotiationService);
   private fb = inject(FormBuilder);
+  protected readonly ProposalStatus = ProposalStatus;
 
   // State
   product = signal<Product>({
@@ -67,28 +61,13 @@ export class ProductDetails implements OnInit {
   showNegotiationModal = signal(false);
   negotiationForm!: FormGroup;
   isSubmittingOffer = signal(false);
+  submitError = signal<string | null>(null);
+  activeNegotiationId = signal<string | null>(null);
+  currentProductId = signal<string | null>(null);
   hasActiveNegotiation = signal(false);
   negotiationStatus = signal<NegotiationStatus>(NegotiationStatus.PENDING);
   aiSuggestedPrice = signal<number>(105);
-  
-  negotiationHistory = signal<NegotiationProposal[]>([
-    {
-      id: '1',
-      proposedBy: 'buyer',
-      amount: 100,
-      message: 'Would you accept 100 TND?',
-      status: ProposalStatus.COUNTER_OFFERED,
-      createdAt: new Date('2024-02-25T10:30:00')
-    },
-    {
-      id: '2',
-      proposedBy: 'seller',
-      amount: 110,
-      message: 'I can do 110 TND, best I can offer.',
-      status: ProposalStatus.PENDING,
-      createdAt: new Date('2024-02-25T14:15:00')
-    }
-  ]);
+  negotiationHistory = signal<NegotiationProposal[]>([]);
 
   // Mock reviews
   reviews = signal([
@@ -157,7 +136,9 @@ export class ProductDetails implements OnInit {
   ngOnInit(): void {
     const productId = this.route.snapshot.paramMap.get('id');
     if (productId) {
+      this.currentProductId.set(productId);
       this.loadProduct(productId);
+      this.loadNegotiation(productId);
     }
     this.initNegotiationForm();
   }
@@ -171,6 +152,74 @@ export class ProductDetails implements OnInit {
 
   private loadProduct(id: string): void {
     console.log('Loading product:', id);
+    if (this.isObjectId(id)) {
+      this.productService.getById(id).subscribe({
+        next: (loaded) => {
+          this.product.set(loaded);
+          if (loaded.images && loaded.images.length > 0) {
+            this.images.set(loaded.images);
+            this.selectedImage.set(loaded.images[0]);
+          } else {
+            this.images.set([loaded.imageUrl]);
+            this.selectedImage.set(loaded.imageUrl);
+          }
+        },
+        error: (err) => console.warn('Failed to load product details:', err)
+      });
+      return;
+    }
+
+    // Demo route fallback: load first real product so negotiation can be tested.
+    this.productService.getAll().subscribe({
+      next: (products) => {
+        this.productService.products.set(products);
+        const firstReal = products.find((p) => this.isObjectId(p.id));
+        if (firstReal) {
+          this.currentProductId.set(firstReal.id);
+          this.product.set(firstReal);
+          if (firstReal.images && firstReal.images.length > 0) {
+            this.images.set(firstReal.images);
+            this.selectedImage.set(firstReal.images[0]);
+          } else {
+            this.images.set([firstReal.imageUrl]);
+            this.selectedImage.set(firstReal.imageUrl);
+          }
+          this.loadNegotiation(firstReal.id);
+        }
+      },
+      error: (err) => console.warn('Failed to load products:', err)
+    });
+  }
+
+  private loadNegotiation(productId: string): void {
+    this.negotiationService.getByProduct(productId).subscribe({
+      next: (negotiations) => {
+        if (negotiations && negotiations.length > 0) {
+          const neg = negotiations[0];
+          this.activeNegotiationId.set(neg.id);
+          this.hasActiveNegotiation.set(true);
+          this.negotiationStatus.set(neg.status as NegotiationStatus);
+          this.mapNegotiationToHistory(neg);
+        }
+      },
+      error: (err) => console.error('Failed to load negotiation:', err)
+    });
+  }
+
+  private mapNegotiationToHistory(neg: Negotiation): void {
+    if (!neg.proposals) return;
+    
+    const history: NegotiationProposal[] = neg.proposals.map((p: any) => ({
+      senderId: p.senderId ?? 'buyer',
+      senderFullName: p.senderFullName,
+      amount: p.amount ?? p.proposedPrice,
+      message: p.message,
+      status: (p.status ?? (p.accepted ? ProposalStatus.ACCEPTED : ProposalStatus.PENDING)) as ProposalStatus,
+      type: p.type,
+      createdAt: p.createdAt // Keep as string to match NegotiationProposal interface
+    }));
+    
+    this.negotiationHistory.set(history);
   }
 
   selectImage(img: string): void {
@@ -214,8 +263,9 @@ export class ProductDetails implements OnInit {
     this.activeTab.set(tab);
   }
 
-  getStarArray(rating: number): boolean[] {
-    return Array(5).fill(false).map((_, i) => i < Math.floor(rating));
+  getStarArray(rating: number | undefined): boolean[] {
+    const r = rating ?? 0;
+    return Array(5).fill(false).map((_, i) => i < Math.floor(r));
   }
 
   hasDiscount(): boolean {
@@ -253,37 +303,80 @@ export class ProductDetails implements OnInit {
     }
 
     this.isSubmittingOffer.set(true);
+    this.submitError.set(null);
     const { proposedPrice, message } = this.negotiationForm.value;
-
-    setTimeout(() => {
-      this.negotiationHistory.update(history => [
-        ...history,
-        {
-          id: `${history.length + 1}`,
-          proposedBy: 'buyer',
-          amount: proposedPrice,
-          message: message,
-          status: ProposalStatus.PENDING,
-          createdAt: new Date()
-        }
-      ]);
-      this.hasActiveNegotiation.set(true);
+    const requestedId = this.currentProductId() ?? this.product().id;
+    const productId = this.isObjectId(requestedId) ? requestedId : this.getFallbackNegotiationItemId();
+    if (!productId) {
+      this.submitError.set('No valid product was found. Please create products first, then retry.');
       this.isSubmittingOffer.set(false);
-      this.closeNegotiationModal();
-    }, 1000);
+      return;
+    }
+    this.currentProductId.set(productId);
+
+    if (!this.hasActiveNegotiation()) {
+      this.negotiationService.create({
+        serviceId: productId,
+        amount: proposedPrice,
+        message: message
+      }).subscribe({
+        next: (neg) => {
+          this.activeNegotiationId.set(neg.id);
+          this.hasActiveNegotiation.set(true);
+          this.mapNegotiationToHistory(neg);
+          this.isSubmittingOffer.set(false);
+          this.closeNegotiationModal();
+        },
+        error: (err) => {
+          console.error('Failed to create negotiation:', err);
+          this.submitError.set(this.getApiErrorMessage(err, 'Offer submission failed.'));
+          this.isSubmittingOffer.set(false);
+        }
+      });
+    } else {
+      this.negotiationService.submitCounterProposal({
+        negotiationId: this.activeNegotiationId()!,
+        amount: proposedPrice,
+        message: message
+      }).subscribe({
+        next: (neg) => {
+          this.mapNegotiationToHistory(neg);
+          this.isSubmittingOffer.set(false);
+          this.closeNegotiationModal();
+        },
+        error: (err) => {
+          console.error('Failed to submit proposal:', err);
+          this.submitError.set(this.getApiErrorMessage(err, 'Counter offer submission failed.'));
+          this.isSubmittingOffer.set(false);
+        }
+      });
+    }
   }
 
-  acceptOffer(proposalId: string): void {
-    this.negotiationHistory.update(history =>
-      history.map(p => p.id === proposalId ? { ...p, status: ProposalStatus.ACCEPTED } : p)
-    );
-    this.negotiationStatus.set(NegotiationStatus.ACCEPTED);
+  acceptOffer(): void {
+    const negId = this.activeNegotiationId();
+    if (!negId) return;
+
+    this.negotiationService.accept(negId).subscribe({
+      next: (neg) => {
+        this.negotiationStatus.set(NegotiationStatus.ACCEPTED);
+        this.mapNegotiationToHistory(neg);
+      },
+      error: (err) => console.error('Failed to accept offer:', err)
+    });
   }
 
-  rejectOffer(proposalId: string): void {
-    this.negotiationHistory.update(history =>
-      history.map(p => p.id === proposalId ? { ...p, status: ProposalStatus.REJECTED } : p)
-    );
+  rejectOffer(): void {
+    const negId = this.activeNegotiationId();
+    if (!negId) return;
+
+    this.negotiationService.reject(negId).subscribe({
+      next: (neg) => {
+        this.negotiationStatus.set(NegotiationStatus.REJECTED);
+        this.mapNegotiationToHistory(neg);
+      },
+      error: (err) => console.error('Failed to reject offer:', err)
+    });
   }
 
   useAiSuggestedPrice(): void {
@@ -293,7 +386,8 @@ export class ProductDetails implements OnInit {
   }
 
   // Stock status helpers
-  getStockStatusClass(status: StockStatus): string {
+  getStockStatusClass(status: StockStatus | undefined): string {
+    if (!status) return 'text-green-600 bg-green-50 border-green-200';
     switch (status) {
       case StockStatus.IN_STOCK: return 'text-green-600 bg-green-50 border-green-200';
       case StockStatus.LOW_STOCK: return 'text-orange-600 bg-orange-50 border-orange-200';
@@ -302,7 +396,8 @@ export class ProductDetails implements OnInit {
     }
   }
 
-  getStockStatusText(status: StockStatus): string {
+  getStockStatusText(status: StockStatus | undefined): string {
+    if (!status) return 'In Stock';
     switch (status) {
       case StockStatus.IN_STOCK: return 'In Stock';
       case StockStatus.LOW_STOCK: return 'Low Stock';
@@ -311,7 +406,8 @@ export class ProductDetails implements OnInit {
     }
   }
 
-  getConditionText(condition: ProductCondition): string {
+  getConditionText(condition: ProductCondition | undefined): string {
+    if (!condition) return 'New';
     return condition.replace('_', ' ');
   }
 
@@ -320,7 +416,7 @@ export class ProductDetails implements OnInit {
       case NegotiationStatus.PENDING: return 'bg-yellow-100 text-yellow-800';
       case NegotiationStatus.ACCEPTED: return 'bg-green-100 text-green-800';
       case NegotiationStatus.REJECTED: return 'bg-red-100 text-red-800';
-      case NegotiationStatus.CLOSED: return 'bg-gray-100 text-gray-800';
+      case NegotiationStatus.CANCELLED: return 'bg-gray-100 text-gray-800';
       default: return 'bg-blue-100 text-blue-800';
     }
   }
@@ -330,8 +426,28 @@ export class ProductDetails implements OnInit {
       case ProposalStatus.PENDING: return 'bg-yellow-100 text-yellow-700';
       case ProposalStatus.ACCEPTED: return 'bg-green-100 text-green-700';
       case ProposalStatus.REJECTED: return 'bg-red-100 text-red-700';
-      case ProposalStatus.COUNTER_OFFERED: return 'bg-blue-100 text-blue-700';
+      case ProposalStatus.COUNTERED: return 'bg-blue-100 text-blue-700';
       default: return 'bg-gray-100 text-gray-700';
     }
+  }
+
+  private isObjectId(value: string): boolean {
+    return /^[0-9a-fA-F]{24}$/.test(value);
+  }
+
+  private getFallbackNegotiationItemId(): string | null {
+    // Use the first loaded product id when this screen is opened from mock/demo routes.
+    const loadedProducts = this.productService.products();
+    const candidate = loadedProducts.find((p) => this.isObjectId(p.id));
+    return candidate?.id ?? null;
+  }
+
+  private getApiErrorMessage(err: any, fallback: string): string {
+    return (
+      err?.error?.message ||
+      err?.error?.error ||
+      err?.message ||
+      `${fallback} (HTTP ${err?.status ?? 'unknown'})`
+    );
   }
 }

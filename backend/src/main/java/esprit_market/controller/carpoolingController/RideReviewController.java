@@ -1,8 +1,8 @@
 package esprit_market.controller.carpoolingController;
 
-import esprit_market.dto.carpooling.RideReviewRequestDTO;
-import esprit_market.dto.carpooling.RideReviewResponseDTO;
-import esprit_market.entity.carpooling.RideReview;
+import esprit_market.dto.carpoolingDto.RideReviewRequestDTO;
+import esprit_market.dto.carpoolingDto.RideReviewResponseDTO;
+
 import esprit_market.service.carpoolingService.IRideReviewService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

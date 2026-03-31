@@ -20,6 +20,9 @@ public class UserDTO {
     private String avatarUrl;
     private List<String> roles;
     private boolean enabled;
+    private boolean notificationsEnabled;
+    private boolean internalNotificationsEnabled;
+    private boolean externalNotificationsEnabled;
 
     // Client/Passenger fields
     private String address;

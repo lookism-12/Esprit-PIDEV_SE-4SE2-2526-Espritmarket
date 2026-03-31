@@ -1,6 +1,7 @@
 package esprit_market.mappers.carpooling;
 
-import esprit_market.dto.carpooling.VehicleResponseDTO;
+
+import esprit_market.dto.carpoolingDto.VehicleResponseDTO;
 import esprit_market.entity.carpooling.Vehicle;
 import org.springframework.stereotype.Component;
 

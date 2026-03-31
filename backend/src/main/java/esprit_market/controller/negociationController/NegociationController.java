@@ -71,11 +71,24 @@ public class NegociationController {
         return ResponseEntity.noContent().build();
     }
 
+    @GetMapping("/all")
+    @Operation(summary = "Get all negociations as a flat list (no pagination)")
+    public ResponseEntity<List<NegociationResponse>> getAllList() {
+        return ResponseEntity.ok(negociationService.getAllNegociationsList());
+    }
+
     @GetMapping("/my")
     @Operation(summary = "Get my negociations (based on JWT)")
     public ResponseEntity<List<NegociationResponse>> getMy(Authentication authentication) {
         String clientId = resolveUserId(authentication);
         return ResponseEntity.ok(negociationService.getMyNegociations(clientId));
+    }
+
+    @GetMapping("/incoming")
+    @Operation(summary = "Get incoming negociations (received offers) (based on JWT)")
+    public ResponseEntity<List<NegociationResponse>> getIncoming(Authentication authentication) {
+        String providerId = resolveUserId(authentication);
+        return ResponseEntity.ok(negociationService.getIncomingNegociations(providerId));
     }
 
     @GetMapping("/service/{serviceId}")
@@ -100,6 +113,14 @@ public class NegociationController {
         return ResponseEntity.ok(negociationService.updateStatus(id, status, userId));
     }
 
+    @PatchMapping("/{id}/status/direct")
+    @Operation(summary = "Update negociation status directly (no ownership check)")
+    public ResponseEntity<NegociationResponse> updateStatusDirect(
+            @PathVariable String id,
+            @RequestParam NegociationStatuts status) {
+        return ResponseEntity.ok(negociationService.updateStatusDirect(id, status));
+    }
+
     @PostMapping("/{id}/proposals")
     @Operation(summary = "Add a proposal or counter-proposal")
     public ResponseEntity<NegociationResponse> addProposal(
@@ -108,6 +129,17 @@ public class NegociationController {
             Authentication authentication) {
         String senderId = resolveUserId(authentication);
         NegociationResponse response = negociationService.addProposal(id, request, senderId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @PostMapping("/{id}/proposals/direct")
+    @Operation(summary = "Add a counter-proposal directly (no ownership check)")
+    public ResponseEntity<NegociationResponse> addProposalDirect(
+            @PathVariable String id,
+            @Valid @RequestBody ProposalRequest request,
+            Authentication authentication) {
+        String senderId = resolveUserId(authentication);
+        NegociationResponse response = negociationService.addProposalDirect(id, request, senderId);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }

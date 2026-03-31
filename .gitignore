@@ -5,3 +5,17 @@ dist/
 .env
 .DS_Store
 *.log
+
+# Sensitive / generated files
+*.txt
+token.txt
+testuser_token.txt
+userId.txt
+compile_output.txt
+build_output.txt
+build_error*.log
+test_*.log
+test-out.txt
+output.txt
+nego_*.txt
+nego_*.log

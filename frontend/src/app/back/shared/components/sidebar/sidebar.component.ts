@@ -1,8 +1,9 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { MenuItem } from '../../../core/models/menu-item.model';
 import { AdminAuthService } from '../../../core/services/admin-auth.service';
+import { NotificationService } from '../../../../front/core/notification.service';
 
 @Component({
     selector: 'app-sidebar',
@@ -78,22 +79,35 @@ import { AdminAuthService } from '../../../core/services/admin-auth.service';
     `]
 })
 
-export class SidebarComponent {
+export class SidebarComponent implements OnInit {
     private adminAuthService = inject(AdminAuthService);
-    
+    private notificationService = inject(NotificationService);
+
     readonly currentUser = this.adminAuthService.currentUser;
-    
+    unreadCount = signal(0);
+
     menuItems: MenuItem[] = [
         { label: 'Dashboard', icon: '🏠', route: '/admin/dashboard' },
         { label: 'User Management', icon: '👥', route: '/admin/users' },
         { label: 'Content Moderation', icon: '🛡️', route: '/admin/moderation' },
         { label: 'Marketplace', icon: '🛒', route: '/admin/marketplace' },
+        { label: 'Negotiations', icon: '🤝', route: '/admin/negotiations' },
         { label: 'Smart Mobility', icon: '🚗', route: '/admin/mobility' },
         { label: 'Orders & Transactions', icon: '💳', route: '/admin/orders' },
         { label: 'Support Center', icon: '🎧', route: '/admin/support' },
         { label: 'Community Oversight', icon: '👁️', route: '/admin/community' },
-        { label: 'Notification Center', icon: '🔔', route: '/admin/notifications', badge: 5 },
+        { label: 'Notification Center', icon: '🔔', route: '/admin/notifications' },
         { label: 'Analytics & Reports', icon: '📊', route: '/admin/analytics' },
         { label: 'System Settings', icon: '⚙️', route: '/admin/settings' }
     ];
+
+    ngOnInit(): void {
+        this.notificationService.getMy().subscribe({
+            next: (items) => {
+                const unread = items.filter((n: any) => !n.read).length;
+                this.unreadCount.set(unread);
+            },
+            error: () => {}
+        });
+    }
 }

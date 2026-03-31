@@ -187,4 +187,21 @@ public class ProductService implements IProductService {
         productCategoryRepository.deleteByProductId(id);
         repository.deleteById(id);
     }
+
+    @Override
+    public List<ProductResponseDTO> findByOwnerId(String ownerId) {
+        ObjectId ownerObjectId = new ObjectId(ownerId);
+        List<Shop> userShops = shopRepository.findByOwnerId(ownerObjectId);
+        List<ObjectId> shopIds = userShops.stream()
+                .map(Shop::getId)
+                .collect(Collectors.toList());
+
+        if (shopIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        return repository.findByShopIdIn(shopIds).stream()
+                .map(mapper::toDTO)
+                .collect(Collectors.toList());
+    }
 }

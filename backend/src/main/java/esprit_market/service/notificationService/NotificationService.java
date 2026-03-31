@@ -107,12 +107,14 @@ public class NotificationService implements INotificationService {
     @Override
     @Transactional
     public NotificationDTO broadcast(NotificationDTO dto) {
-        log.info("Broadcasting notification: {}", dto.getTitle());
-        Notification notification = notificationMapper.toEntity(dto);
-        notification.setUser(null);
-        notification.setCreatedAt(LocalDateTime.now());
-        notification.setRead(false);
-        return notificationMapper.toDTO(notificationRepository.save(notification));
+        log.info("Broadcasting notification to all users: {}", dto.getTitle());
+        List<User> allUsers = userRepository.findAll();
+        for (User user : allUsers) {
+            // Reuse sendNotification so all preference checks are applied
+            sendNotification(user, dto.getTitle(), dto.getDescription(),
+                    NotificationType.EXTERNAL_NOTIFICATION, null);
+        }
+        return dto;
     }
 
     @Override
@@ -136,6 +138,18 @@ public class NotificationService implements INotificationService {
     @Transactional
     public void sendNotification(User user, String title, String description, NotificationType type,
             String linkedObjectId) {
+        if (!user.isNotificationsEnabled()) {
+            log.debug("Notifications disabled for user: {}, skipping.", user.getEmail());
+            return;
+        }
+        if (type == NotificationType.INTERNAL_NOTIFICATION && !user.isInternalNotificationsEnabled()) {
+            log.debug("Internal notifications disabled for user: {}, skipping.", user.getEmail());
+            return;
+        }
+        if (type == NotificationType.EXTERNAL_NOTIFICATION && !user.isExternalNotificationsEnabled()) {
+            log.debug("External notifications disabled for user: {}, skipping.", user.getEmail());
+            return;
+        }
         log.debug("Sending notification to user: {}", user.getEmail());
         Notification notification = Notification.builder()
                 .user(user)
@@ -144,6 +158,7 @@ public class NotificationService implements INotificationService {
                 .type(type)
                 .linkedObjectId(linkedObjectId)
                 .read(false)
+                .notificationStatus(true)
                 .createdAt(LocalDateTime.now())
                 .build();
         notificationRepository.save(notification);

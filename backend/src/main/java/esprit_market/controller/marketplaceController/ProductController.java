@@ -7,11 +7,13 @@ import esprit_market.entity.marketplace.Product;
 import esprit_market.entity.marketplace.ProductImage;
 import esprit_market.service.marketplaceService.IProductService;
 import esprit_market.service.marketplaceService.ProductService;
+import esprit_market.service.userService.IUserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -23,6 +25,11 @@ import java.util.List;
 @Tag(name = "Product", description = "Product management APIs")
 public class ProductController {
     private final IProductService service;
+    private final IUserService userService;
+
+    private String resolveUserId(Authentication authentication) {
+        return userService.resolveUserId(authentication.getName()).toHexString();
+    }
 
     @GetMapping
     @Operation(summary = "Get all products")
@@ -55,6 +62,14 @@ public class ProductController {
     @Operation(summary = "Delete a product (PROVIDER only)")
     public void delete(@PathVariable ObjectId id) {
         service.deleteById(id);
+    }
+
+    @GetMapping("/my")
+    @PreAuthorize("hasRole('PROVIDER')")
+    @Operation(summary = "Get my products (for provider profile)")
+    public List<ProductResponseDTO> getMyProducts(Authentication authentication) {
+        String ownerId = resolveUserId(authentication);
+        return service.findByOwnerId(ownerId);
     }
 
     // --- Product Image CRUD (Nested) ---

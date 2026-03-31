@@ -1,9 +1,9 @@
 package esprit_market.controller.carpoolingController;
 
 import esprit_market.Enum.carpoolingEnum.RideStatus;
-import esprit_market.dto.carpooling.RideRequestDTO;
-import esprit_market.dto.carpooling.RideResponseDTO;
-import esprit_market.dto.carpooling.RideSearchRequestDTO;
+import esprit_market.dto.carpoolingDto.RideRequestDTO;
+import esprit_market.dto.carpoolingDto.RideResponseDTO;
+import esprit_market.dto.carpoolingDto.RideSearchRequestDTO;
 import esprit_market.entity.carpooling.Ride;
 import esprit_market.service.carpoolingService.IRideService;
 import io.swagger.v3.oas.annotations.Operation;

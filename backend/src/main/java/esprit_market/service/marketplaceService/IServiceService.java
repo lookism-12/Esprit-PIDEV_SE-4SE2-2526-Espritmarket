@@ -16,4 +16,6 @@ public interface IServiceService {
     ServiceResponseDTO update(ObjectId id, ServiceRequestDTO dto);
 
     void deleteById(ObjectId id);
+
+    List<ServiceResponseDTO> findByOwnerId(String ownerId);
 }

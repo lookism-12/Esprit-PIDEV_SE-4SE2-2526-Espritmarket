@@ -1,10 +1,10 @@
 package esprit_market.controller.carpoolingController;
 
-import esprit_market.dto.carpooling.DriverProfileRequestDTO;
-import esprit_market.dto.carpooling.DriverProfileResponseDTO;
-import esprit_market.dto.carpooling.DriverStatsDTO;
-import esprit_market.dto.carpooling.RideResponseDTO;
-import esprit_market.dto.carpooling.VehicleResponseDTO;
+import esprit_market.dto.carpoolingDto.DriverProfileRequestDTO;
+import esprit_market.dto.carpoolingDto.DriverProfileResponseDTO;
+import esprit_market.dto.carpoolingDto.DriverStatsDTO;
+import esprit_market.dto.carpoolingDto.RideResponseDTO;
+import esprit_market.dto.carpoolingDto.VehicleResponseDTO;
 import esprit_market.service.carpoolingService.IDriverProfileService;
 import esprit_market.service.carpoolingService.IRideService;
 import esprit_market.service.carpoolingService.IVehicleService;

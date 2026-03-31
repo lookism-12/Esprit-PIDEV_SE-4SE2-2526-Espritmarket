@@ -47,6 +47,14 @@ export const routes: Routes = [
         loadComponent: () => import('./front/pages/register/register').then(m => m.Register),
         canActivate: [guestGuard]
     },
+    {
+        path: 'forgot-password',
+        loadComponent: () => import('./front/pages/forgot-password/forgot-password').then(m => m.ForgotPassword)
+    },
+    {
+        path: 'reset-password',
+        loadComponent: () => import('./front/pages/reset-password/reset-password').then(m => m.ResetPassword)
+    },
 
     // ==================== PROTECTED ROUTES (Authenticated) ====================
     // Cart & Shopping

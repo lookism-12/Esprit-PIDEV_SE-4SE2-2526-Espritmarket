@@ -1,4 +1,4 @@
-package esprit_market.dto.carpooling;
+package esprit_market.dto.carpoolingDto;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;

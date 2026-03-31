@@ -50,7 +50,11 @@ export const BACK_ROUTES: Routes = [
             },
             {
                 path: 'notifications',
-                loadComponent: () => import('./features/placeholders').then(m => m.NotificationsComponent)
+                loadComponent: () => import('./features/notifications/notifications.component').then(m => m.NotificationsComponent)
+            },
+            {
+                path: 'negotiations',
+                loadComponent: () => import('./features/negotiations/negotiations.component').then(m => m.NegotiationsComponent)
             },
             {
                 path: 'analytics',

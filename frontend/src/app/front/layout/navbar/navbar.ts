@@ -5,16 +5,16 @@ import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/auth.service';
 import { UserRole } from '../../models/user.model';
 import { CartService } from '../../core/cart.service';
-import { NotificationType, NotificationPriority } from '../../models/notification.model';
+import { NotificationService } from '../../core/notification.service';
+import { NotificationType } from '../../models/notification.model';
 import { filter, Subscription } from 'rxjs';
 
 interface NavNotification {
   id: string;
   type: NotificationType;
   title: string;
-  message: string;
-  priority: NotificationPriority;
-  isRead: boolean;
+  description: string;
+  read: boolean;
   createdAt: Date;
 }
 
@@ -40,6 +40,7 @@ interface MenuItem {
 export class Navbar implements OnDestroy {
   private authService = inject(AuthService);
   private cartService = inject(CartService);
+  private notificationService = inject(NotificationService);
   private router = inject(Router);
   private document = inject(DOCUMENT);
   private routerSubscription: Subscription;
@@ -129,6 +130,10 @@ export class Navbar implements OnDestroy {
       .subscribe(() => {
         this.closeDrawer();
       });
+
+    if (this.authService.isAuthenticated()) {
+      this.loadNotifications();
+    }
   }
 
   ngOnDestroy(): void {
@@ -142,38 +147,9 @@ export class Navbar implements OnDestroy {
   // When user logs in/out, this signal changes and template automatically updates
   isUserAuthenticated = computed(() => this.authService.isAuthenticated());
 
-  // Mock notifications
-  notifications = signal<NavNotification[]>([
-    {
-      id: '1',
-      type: NotificationType.ORDER_SHIPPED,
-      title: 'Order Shipped',
-      message: 'Your order #EM-2024-001 is on its way!',
-      priority: NotificationPriority.HIGH,
-      isRead: false,
-      createdAt: new Date()
-    },
-    {
-      id: '2',
-      type: NotificationType.NEW_MESSAGE,
-      title: 'New Message',
-      message: 'Sarra M. sent you a message',
-      priority: NotificationPriority.MEDIUM,
-      isRead: false,
-      createdAt: new Date(Date.now() - 3600000)
-    },
-    {
-      id: '3',
-      type: NotificationType.NEW_COUPON,
-      title: 'New Coupon!',
-      message: 'Use SPRING20 for 20% off',
-      priority: NotificationPriority.LOW,
-      isRead: true,
-      createdAt: new Date(Date.now() - 86400000)
-    }
-  ]);
+  notifications = signal<NavNotification[]>([]);
 
-  unreadCount = computed(() => this.notifications().filter(n => !n.isRead).length);
+  unreadCount = computed(() => this.notifications().filter(n => !n.read).length);
 
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: Event) {
@@ -191,6 +167,9 @@ export class Navbar implements OnDestroy {
   }
 
   toggleNotifications(): void {
+    if (this.authService.isAuthenticated() && this.notifications().length === 0) {
+      this.loadNotifications();
+    }
     this.showNotifications.update(v => !v);
     this.showUserMenu.set(false);
   }
@@ -205,35 +184,33 @@ export class Navbar implements OnDestroy {
   }
 
   markAsRead(id: string): void {
-    this.notifications.update(notifications =>
-      notifications.map(n => n.id === id ? { ...n, isRead: true } : n)
-    );
+    this.notificationService.markAsRead(id).subscribe({
+      next: () => {
+        this.notifications.update(notifications =>
+          notifications.map(n => n.id === id ? { ...n, read: true } : n)
+        );
+      },
+      error: (err) => console.error('Failed to mark notification as read', err)
+    });
   }
 
   markAllAsRead(): void {
-    this.notifications.update(notifications =>
-      notifications.map(n => ({ ...n, isRead: true }))
-    );
+    this.notificationService.markAllAsRead().subscribe({
+      next: () => {
+        this.notifications.update(notifications =>
+          notifications.map(n => ({ ...n, read: true }))
+        );
+      },
+      error: (err) => console.error('Failed to mark all notifications as read', err)
+    });
   }
 
   getNotificationIcon(type: NotificationType): string {
-    const icons: Partial<Record<NotificationType, string>> = {
-      [NotificationType.ORDER_SHIPPED]: '🚚',
-      [NotificationType.ORDER_DELIVERED]: '📦',
-      [NotificationType.NEW_MESSAGE]: '💬',
-      [NotificationType.NEW_COUPON]: '🎁',
-      [NotificationType.PAYMENT_RECEIVED]: '💰',
-      [NotificationType.NEW_REVIEW]: '⭐'
-    };
-    return icons[type] || '🔔';
-  }
-
-  getPriorityClass(priority: NotificationPriority): string {
-    switch (priority) {
-      case NotificationPriority.HIGH: return 'border-l-red-500';
-      case NotificationPriority.MEDIUM: return 'border-l-yellow-500';
-      case NotificationPriority.LOW: return 'border-l-gray-300';
-      default: return 'border-l-gray-300';
+    switch (type) {
+      case NotificationType.INTERNAL_NOTIFICATION: return '🔔';
+      case NotificationType.EXTERNAL_NOTIFICATION: return '📢';
+      case NotificationType.RIDE_UPDATE: return '🚗';
+      default: return '🔔';
     }
   }
 
@@ -340,6 +317,7 @@ export class Navbar implements OnDestroy {
    */
   logoutUser(): void {
     this.authService.logout();
+    this.notifications.set([]);
     this.closeProfileDropdown();
   }
 
@@ -359,6 +337,7 @@ export class Navbar implements OnDestroy {
     // - Resetting signals
     // - Navigation to /login
     this.authService.logout();
+    this.notifications.set([]);
     
     // Close any open menus/drawers
     this.showUserMenu.set(false);
@@ -374,5 +353,22 @@ export class Navbar implements OnDestroy {
   navigateToSignIn(): void {
     console.log('📍 User clicked Sign In button');
     this.router.navigate(['/login']);
+  }
+
+  private loadNotifications(): void {
+    this.notificationService.getNotifications().subscribe({
+      next: (res) => {
+        const normalized: NavNotification[] = (res.notifications ?? []).map((n) => ({
+          id: n.id,
+          type: n.type,
+          title: n.title,
+          description: n.description ?? n.message,
+          read: n.read,
+          createdAt: new Date(n.createdAt)
+        }));
+        this.notifications.set(normalized);
+      },
+      error: (err) => console.error('Failed to load navbar notifications', err)
+    });
   }
 }

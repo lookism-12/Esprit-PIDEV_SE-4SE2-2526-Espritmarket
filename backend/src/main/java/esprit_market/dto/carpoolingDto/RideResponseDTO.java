@@ -1,4 +1,4 @@
-package esprit_market.dto.carpooling;
+package esprit_market.dto.carpoolingDto;
 
 import esprit_market.Enum.carpoolingEnum.RideStatus;
 import lombok.AllArgsConstructor;

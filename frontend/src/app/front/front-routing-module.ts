@@ -49,5 +49,13 @@ export const FRONT_ROUTES: Routes = [
     {
         path: 'about',
         loadComponent: () => import('./pages/about/about').then(m => m.About)
+    },
+    {
+        path: 'negotiations',
+        loadComponent: () => import('./pages/negotiations/negotiations').then(m => m.Negotiations)
+    },
+    {
+        path: 'notifications',
+        loadComponent: () => import('./pages/notifications/notifications').then(m => m.Notifications)
     }
 ];

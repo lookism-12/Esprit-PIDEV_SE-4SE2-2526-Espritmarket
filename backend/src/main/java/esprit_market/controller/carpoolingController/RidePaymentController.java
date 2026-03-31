@@ -1,7 +1,7 @@
 package esprit_market.controller.carpoolingController;
 
 import esprit_market.Enum.carpoolingEnum.PaymentStatus;
-import esprit_market.dto.carpooling.RidePaymentResponseDTO;
+import esprit_market.dto.carpoolingDto.RidePaymentResponseDTO;
 import esprit_market.service.carpoolingService.IRidePaymentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

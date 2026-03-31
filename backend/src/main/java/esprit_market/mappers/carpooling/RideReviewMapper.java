@@ -1,6 +1,7 @@
 package esprit_market.mappers.carpooling;
 
-import esprit_market.dto.carpooling.RideReviewResponseDTO;
+import esprit_market.dto.carpoolingDto.RideReviewRequestDTO;
+import esprit_market.dto.carpoolingDto.RideReviewResponseDTO;
 import esprit_market.entity.carpooling.RideReview;
 import esprit_market.repository.userRepository.UserRepository;
 import esprit_market.entity.user.User;

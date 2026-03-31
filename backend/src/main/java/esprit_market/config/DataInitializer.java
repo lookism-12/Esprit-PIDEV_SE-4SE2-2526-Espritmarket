@@ -4,11 +4,13 @@ import esprit_market.Enum.cartEnum.DiscountType;
 import esprit_market.Enum.userEnum.Role;
 import esprit_market.entity.cart.Discount;
 import esprit_market.entity.marketplace.Category;
+import esprit_market.entity.marketplace.Product;
 import esprit_market.entity.marketplace.ServiceEntity;
 import esprit_market.entity.marketplace.Shop;
 import esprit_market.entity.user.User;
 import esprit_market.repository.cartRepository.DiscountRepository;
 import esprit_market.repository.marketplaceRepository.CategoryRepository;
+import esprit_market.repository.marketplaceRepository.ProductRepository;
 import esprit_market.repository.marketplaceRepository.ServiceRepository;
 import esprit_market.repository.marketplaceRepository.ShopRepository;
 import esprit_market.repository.userRepository.UserRepository;
@@ -37,6 +39,7 @@ public class DataInitializer implements CommandLineRunner {
     private final CategoryRepository categoryRepository;
     private final ShopRepository shopRepository;
     private final ServiceRepository serviceRepository;
+    private final ProductRepository productRepository;
     private final MongoTemplate mongoTemplate;
 
     @Override
@@ -83,6 +86,9 @@ public class DataInitializer implements CommandLineRunner {
 
         // Initialize Default Services for Negotiation (Marketplace module)
         initializeServices();
+
+        // Initialize Default Products for Negotiation testing
+        initializeProducts();
     }
 
     private void initializeDiscounts() {
@@ -173,6 +179,86 @@ public class DataInitializer implements CommandLineRunner {
         log.info("Services available for negotiation testing:");
         serviceRepository.findAll()
                 .forEach(s -> log.info("Service ID '{}' ({}): {}", s.getName(), s.getPrice(), s.getId()));
+    }
+
+    private void initializeProducts() {
+        Category category = categoryRepository.findAll().stream().findFirst().orElseGet(() -> {
+            Category newCat = Category.builder().name("General Products").build();
+            return categoryRepository.save(newCat);
+        });
+
+        User admin = userRepository.findByEmail("admin@espritmarket.tn").orElse(null);
+        Shop shop = shopRepository.findAll().stream().findFirst().orElseGet(() -> {
+            Shop newShop = Shop.builder()
+                    .ownerId(admin != null ? admin.getId() : null)
+                    .build();
+            return shopRepository.save(newShop);
+        });
+
+        // Define the target products with their specific images
+        syncProduct("Wireless Keyboard", 
+            "Compact bluetooth keyboard with rechargeable battery", 
+            85.0, 20, shop.getId(), category.getId(),
+            "https://images.unsplash.com/photo-1587829741301-dc798b83add3?q=80&w=800");
+
+        syncProduct("Gaming Mouse", 
+            "Ergonomic RGB gaming mouse with adjustable DPI", 
+            60.0, 30, shop.getId(), category.getId(),
+            "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?q=80&w=800");
+
+        syncProduct("USB-C Docking Station", 
+            "Docking station with HDMI, USB and ethernet ports", 
+            190.0, 12, shop.getId(), category.getId(),
+            "https://images.unsplash.com/photo-1591405351990-4726e331f141?q=80&w=800");
+
+        syncProduct("iPhone 15 Pro", 
+            "2024 Flagship smartphone with 120Hz display and advanced camera", 
+            1750.0, 5, shop.getId(), category.getId(),
+            "https://images.unsplash.com/photo-1696446701796-da61225697cc?q=80&w=800");
+
+        log.info("Default products synchronized.");
+    }
+
+    private void syncProduct(String name, String desc, double price, int stock, org.bson.types.ObjectId shopId, org.bson.types.ObjectId categoryId, String imageUrl) {
+        Product existing = productRepository.findAll().stream()
+                .filter(p -> p.getName().equalsIgnoreCase(name) || p.getName().replaceAll("\\s+", "").equalsIgnoreCase(name.replaceAll("\\s+", "")))
+                .findFirst()
+                .orElse(null);
+
+        if (existing == null) {
+            Product product = Product.builder()
+                    .name(name)
+                    .description(desc)
+                    .price(price)
+                    .stock(stock)
+                    .shopId(shopId)
+                    .categoryIds(List.of(categoryId))
+                    .images(List.of(new esprit_market.entity.marketplace.ProductImage(imageUrl, name)))
+                    .status("APPROVED")
+                    .build();
+            productRepository.save(product);
+            log.info("Created product: {}", name);
+        } else {
+            // Normalize name and ensure photos are set
+            boolean modified = false;
+            if (!existing.getName().equals(name)) {
+                existing.setName(name);
+                modified = true;
+            }
+            if (existing.getImages() == null || existing.getImages().isEmpty()) {
+                existing.setImages(List.of(new esprit_market.entity.marketplace.ProductImage(imageUrl, name)));
+                modified = true;
+            }
+            if (!"APPROVED".equals(existing.getStatus())) {
+                existing.setStatus("APPROVED");
+                modified = true;
+            }
+            
+            if (modified) {
+                productRepository.save(existing);
+                log.info("Synchronized existing product: {}", name);
+            }
+        }
     }
 
     private void migrateLegacyRoles() {

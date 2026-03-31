@@ -1,4 +1,4 @@
-<div class="relative min-h-[calc(100vh-144px)] flex items-center justify-center bg-gray-100 overflow-hidden animate-fadeIn">
+<div class="relative min-h-[calc(100vh-200px)] flex items-center justify-center bg-gray-100 overflow-hidden animate-fadeIn">
     <!-- Background Video Container (Full Screen) -->
     <div class="absolute inset-0 z-0 overflow-hidden">
         <video 
@@ -15,21 +15,21 @@
     
     <div class="relative z-10 max-w-7xl w-full flex flex-col lg:flex-row items-center justify-end px-6 sm:px-16 lg:px-24">
         <!-- Right Side: Form Card -->
-        <div class="w-full max-w-[460px]">
+        <div class="w-full max-w-[380px]">
             <div
-                class="glass-card rounded-[32px] sm:rounded-[40px] p-8 sm:p-10 border border-white/40 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.15)] overflow-hidden relative group backdrop-blur-xl bg-white/90 animate-slideUp">
+                class="glass-card rounded-[24px] sm:rounded-[32px] p-6 sm:p-8 border border-white/40 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.15)] overflow-hidden relative group backdrop-blur-xl bg-white/90 animate-slideUp">
                 <!-- Inner Gradient Glow -->
                 <div
                     class="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 pointer-events-none">
                 </div>
                 
                 <div class="relative z-10">
-                    <div class="mb-10 text-center lg:text-left">
+                    <div class="mb-8 text-center lg:text-left">
                         <h1
-                            class="text-3xl sm:text-4xl font-extrabold text-dark mb-3 tracking-tight transition-colors group-hover:text-primary">
+                            class="text-2xl sm:text-3xl font-extrabold text-dark mb-2 tracking-tight transition-colors group-hover:text-primary">
                             Welcome Back</h1>
-                        <p class="text-black font-semibold text-base leading-relaxed mb-4">Sign in to continue your journey with <span class="text-primary font-bold">ESPRIT Market</span></p>
-                        <p class="text-gray-500 font-medium text-sm">
+                        <p class="text-black font-semibold text-sm leading-relaxed mb-3">Sign in to continue your journey with <span class="text-primary font-bold">ESPRIT Market</span></p>
+                        <p class="text-black font-medium text-xs">
                             New here? 
                             <a routerLink="/register" class="text-primary font-bold hover:underline ml-1">Create an account</a>
                         </p>
@@ -50,7 +50,7 @@
                     <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="space-y-5 sm:space-y-6">
                         <div>
                             <label for="email"
-                                class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Email Address</label>
+                                class="block text-xs font-bold text-black uppercase tracking-wider mb-2">Email Address</label>
                             <input 
                                 id="email" 
                                 formControlName="email"
@@ -68,7 +68,7 @@
 
                         <div class="relative">
                             <label for="password"
-                                class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Password</label>
+                                class="block text-xs font-bold text-black uppercase tracking-wider mb-2">Password</label>
                             <input 
                                 id="password" 
                                 formControlName="password"
@@ -111,10 +111,10 @@
                                     type="checkbox"
                                     class="h-5 w-5 text-primary focus:ring-primary border-2 border-gray-300 rounded-lg bg-white shadow-sm cursor-pointer transition-all hover:border-primary">
                                 <label for="remember-me"
-                                    class="ml-3 block text-sm text-gray-600 font-semibold cursor-pointer">Remember
+                                    class="ml-3 block text-xs text-black font-semibold cursor-pointer">Remember
                                     me</label>
                             </div>
-                            <a routerLink="/forgot-password" class="text-sm font-bold text-primary hover:underline transition-all">Forgot password?</a>
+                            <a routerLink="/forgot-password" class="text-xs font-bold text-primary hover:underline transition-all">Forgot password?</a>
                         </div>
 
                         <button 
@@ -137,7 +137,7 @@
                         <div class="relative flex items-center justify-center mb-5 sm:mb-6">
                             <div class="flex-grow border-t border-gray-200"></div>
                             <span
-                                class="mx-4 text-xs font-bold text-gray-500 uppercase tracking-wider bg-transparent">Or
+                                class="mx-4 text-xs font-bold text-black uppercase tracking-wider bg-transparent">Or
                                 Continue With</span>
                             <div class="flex-grow border-t border-gray-200"></div>
                         </div>
@@ -172,7 +172,7 @@
                             </button>
                         </div>
 
-                        <p class="mt-6 sm:mt-8 text-center text-sm font-semibold text-gray-600">
+                        <p class="mt-6 sm:mt-8 text-center text-xs font-semibold text-black">
                             Don't have an account yet?
                             <a routerLink="/register" class="text-primary font-black hover:underline ml-1">Sign Up</a>
                         </p>
