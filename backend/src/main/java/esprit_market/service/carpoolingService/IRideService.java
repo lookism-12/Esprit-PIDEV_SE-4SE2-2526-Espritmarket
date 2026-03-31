@@ -21,6 +21,8 @@ public interface IRideService {
 
         void deleteById(ObjectId id);
 
+        long countActiveRides();
+
         List<RideResponseDTO> findByDriverProfileId(ObjectId driverProfileId);
 
         RideResponseDTO updateStatus(ObjectId id, RideStatus status);
@@ -46,4 +48,6 @@ public interface IRideService {
         List<RideResponseDTO> findByDriverUserId(String email);
 
         void processStatusTransitions();
+
+        void rateRide(String rideId, Integer rating, String comment, boolean isDriverRating);
 }

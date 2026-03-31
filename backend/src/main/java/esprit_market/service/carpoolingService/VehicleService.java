@@ -10,6 +10,7 @@ import esprit_market.repository.carpoolingRepository.VehicleRepository;
 import esprit_market.repository.userRepository.UserRepository;
 import esprit_market.Enum.carpoolingEnum.RideStatus;
 import esprit_market.mappers.carpooling.VehicleMapper;
+import esprit_market.service.notificationService.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
 import org.springframework.security.access.AccessDeniedException;
@@ -28,6 +29,7 @@ public class VehicleService implements IVehicleService {
     private final UserRepository userRepository;
     private final RideRepository rideRepository;
     private final VehicleMapper vehicleMapper;
+    private final NotificationService notificationService;
 
     @Override
     public List<esprit_market.dto.carpooling.VehicleResponseDTO> findAll() {
@@ -101,6 +103,16 @@ public class VehicleService implements IVehicleService {
         }
         driverProfile.getVehicleIds().add(vehicle.getId());
         driverProfileRepository.save(driverProfile);
+
+        // Notify admins about the new vehicle added
+        notificationService.notifyAllAdmins(
+                "New Vehicle Added 🚙",
+                "Driver " + user.getFirstName() + " " + user.getLastName() 
+                        + " has added a new vehicle: " + dto.getMake() + " " + dto.getModel() 
+                        + " with license plate " + dto.getLicensePlate() + ".",
+                esprit_market.Enum.notificationEnum.NotificationType.RIDE_UPDATE,
+                vehicle.getId().toHexString()
+        );
 
         return vehicleMapper.toResponseDTO(vehicle);
     }

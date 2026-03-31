@@ -34,7 +34,7 @@ export const BACK_ROUTES: Routes = [
             },
             {
                 path: 'mobility',
-                loadComponent: () => import('./features/placeholders').then(m => m.MobilityComponent)
+                loadComponent: () => import('./features/carpooling/carpooling-management.component').then(m => m.CarpoolingManagementComponent)
             },
             {
                 path: 'orders',

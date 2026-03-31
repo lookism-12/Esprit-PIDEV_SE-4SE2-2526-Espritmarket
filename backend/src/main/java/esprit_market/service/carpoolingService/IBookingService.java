@@ -34,4 +34,8 @@ public interface IBookingService {
     void cancelBooking(String bookingId, String passengerEmail);
 
     BookingResponseDTO createBooking(BookingRequestDTO dto, String passengerEmail, ObjectId rideId);
+
+    BookingResponseDTO acceptBookingByDriver(ObjectId bookingId, String driverEmail);
+
+    BookingResponseDTO rejectBookingByDriver(ObjectId bookingId, String driverEmail);
 }

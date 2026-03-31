@@ -44,19 +44,21 @@ public class RideService implements IRideService {
     private final NotificationService notificationService;
     private final IPassengerProfileService passengerProfileService;
     private final IDriverProfileService driverProfileService;
+    private final RatingService ratingService;
     private final RideMapper rideMapper;
 
     public RideService(RideRepository rideRepository,
-                      VehicleRepository vehicleRepository,
-                      DriverProfileRepository driverProfileRepository,
-                      BookingRepository bookingRepository,
-                      RidePaymentRepository ridePaymentRepository,
-                      PassengerProfileRepository passengerProfileRepository,
-                      UserRepository userRepository,
-                      NotificationService notificationService,
-                      @Lazy IPassengerProfileService passengerProfileService,
-                      @Lazy IDriverProfileService driverProfileService,
-                      RideMapper rideMapper) {
+            VehicleRepository vehicleRepository,
+            DriverProfileRepository driverProfileRepository,
+            BookingRepository bookingRepository,
+            RidePaymentRepository ridePaymentRepository,
+            PassengerProfileRepository passengerProfileRepository,
+            UserRepository userRepository,
+            NotificationService notificationService,
+            @Lazy IPassengerProfileService passengerProfileService,
+            @Lazy IDriverProfileService driverProfileService,
+            RatingService ratingService,
+            RideMapper rideMapper) {
         this.rideRepository = rideRepository;
         this.vehicleRepository = vehicleRepository;
         this.driverProfileRepository = driverProfileRepository;
@@ -67,6 +69,7 @@ public class RideService implements IRideService {
         this.notificationService = notificationService;
         this.passengerProfileService = passengerProfileService;
         this.driverProfileService = driverProfileService;
+        this.ratingService = ratingService;
         this.rideMapper = rideMapper;
     }
 
@@ -115,6 +118,11 @@ public class RideService implements IRideService {
     }
 
     @Override
+    public long countActiveRides() {
+        return rideRepository.countByStatusIn(java.util.List.of(RideStatus.ACCEPTED, RideStatus.ON_ROUTE));
+    }
+
+    @Override
     public List<RideResponseDTO> findByDriverProfileId(ObjectId driverProfileId) {
         return rideRepository.findByDriverProfileId(driverProfileId).stream()
                 .map(rideMapper::toResponseDTO)
@@ -139,7 +147,7 @@ public class RideService implements IRideService {
 
         if (status == RideStatus.COMPLETED) {
             ride.setCompletedAt(LocalDateTime.now());
-            // Trigger booking completion handled in scheduler usually, but if manual:
+            // Trigger booking completion handled in scheduler usually
             List<Booking> bookings = bookingRepository.findByRideIdAndStatus(ride.getId(),
                     esprit_market.Enum.carpoolingEnum.BookingStatus.CONFIRMED);
             for (Booking b : bookings) {
@@ -188,7 +196,7 @@ public class RideService implements IRideService {
             java.time.LocalDateTime departureTime, Integer requestedSeats) {
         // Logic improvement: Case-insensitive partial matching for locations
         List<Ride> rides = rideRepository.findAll().stream()
-                .filter(r -> r.getStatus() == RideStatus.CONFIRMED)
+                .filter(r -> r.getStatus() == RideStatus.ACCEPTED)
                 .filter(r -> departureTime == null || r.getDepartureTime().isAfter(departureTime))
                 .filter(r -> requestedSeats == null || r.getAvailableSeats() >= requestedSeats)
                 .filter(r -> departureLocation == null || r.getDepartureLocation().toLowerCase()
@@ -242,7 +250,7 @@ public class RideService implements IRideService {
                 .departureTime(dto.getDepartureTime())
                 .availableSeats(dto.getAvailableSeats())
                 .pricePerSeat(dto.getPricePerSeat())
-                .status(RideStatus.CONFIRMED)
+                .status(RideStatus.ACCEPTED)
                 .build();
         ride = rideRepository.save(ride);
 
@@ -252,6 +260,17 @@ public class RideService implements IRideService {
         }
         driverProfile.getRideIds().add(ride.getId());
         driverProfileRepository.save(driverProfile);
+
+        // Notify admins about the new published ride
+        notificationService.notifyAllAdmins(
+                "New Ride Posted 🚗",
+                "A driver (" + user.getFirstName() + " " + user.getLastName() 
+                        + ") has posted a new ride from " + dto.getDepartureLocation()
+                        + " to " + dto.getDestinationLocation() + " with " + dto.getAvailableSeats() 
+                        + " available seats.",
+                esprit_market.Enum.notificationEnum.NotificationType.RIDE_UPDATE,
+                ride.getId().toHexString()
+        );
 
         return rideMapper.toResponseDTO(ride);
     }
@@ -359,10 +378,10 @@ public class RideService implements IRideService {
     public void processStatusTransitions() {
         LocalDateTime now = LocalDateTime.now();
 
-        // 1. CONFIRMED -> IN_PROGRESS
-        List<Ride> confirmedRides = rideRepository.findByStatusAndDepartureTimeBefore(RideStatus.CONFIRMED, now);
+        // 1. ACCEPTED -> ON_ROUTE
+        List<Ride> confirmedRides = rideRepository.findByStatusAndDepartureTimeBefore(RideStatus.ACCEPTED, now);
         for (Ride ride : confirmedRides) {
-            ride.setStatus(RideStatus.IN_PROGRESS);
+            ride.setStatus(RideStatus.ON_ROUTE);
             rideRepository.save(ride);
 
             // Cancel any remaining PENDING bookings when ride starts
@@ -373,11 +392,11 @@ public class RideService implements IRideService {
                 bookingRepository.save(b);
                 log.debug("Pending booking {} cancelled because ride {} started", b.getId(), ride.getId());
             }
-            log.debug("Ride {} transitioned to IN_PROGRESS", ride.getId());
+            log.debug("Ride {} transitioned to ON_ROUTE", ride.getId());
         }
 
-        // 2. IN_PROGRESS -> COMPLETED
-        List<Ride> inProgressRides = rideRepository.findByStatus(RideStatus.IN_PROGRESS);
+        // 2. ON_ROUTE -> COMPLETED
+        List<Ride> inProgressRides = rideRepository.findByStatus(RideStatus.ON_ROUTE);
         for (Ride ride : inProgressRides) {
             int duration = ride.getEstimatedDurationMinutes() != null ? ride.getEstimatedDurationMinutes() : 120;
             if (ride.getDepartureTime().plusMinutes(duration).isBefore(now)) {
@@ -404,5 +423,62 @@ public class RideService implements IRideService {
                 log.debug("Ride {} transitioned to COMPLETED", ride.getId());
             }
         }
+    }
+
+    @Transactional
+    public void rateRide(String rideId, Integer rating, String comment, boolean isDriverRating) {
+        log.info("⭐ Processing ride rating: rideId={}, rating={}, isDriver={}", rideId, rating, isDriverRating);
+        
+        if (rating < 1 || rating > 5) {
+            log.warn("❌ Invalid rating value: {}. Must be between 1-5", rating);
+            throw new IllegalArgumentException("Rating must be between 1 and 5");
+        }
+
+        Ride ride = rideRepository.findById(new ObjectId(rideId))
+                .orElseThrow(() -> new IllegalArgumentException("Ride not found"));
+        
+        if (isDriverRating) {
+            ride.setDriverRating(rating);
+            ride.setDriverComment(comment);
+            Ride savedRide = rideRepository.save(ride);
+            ratingService.updateDriverAverageRating(ride.getDriverProfileId());
+            log.info("✓ Driver rating saved: {} stars | Profile avg updated", rating);
+            
+            // Notify driver about the new rating
+            driverProfileRepository.findById(ride.getDriverProfileId())
+                    .flatMap(dp -> userRepository.findById(dp.getUserId()))
+                    .ifPresent(driverUser -> {
+                        String ratingMsg = "You received a " + rating + "-star rating from a passenger! " 
+                                + (comment != null && !comment.isEmpty() ? "Comment: " + comment : "");
+                        notificationService.sendNotification(driverUser, 
+                                "New Driver Rating ⭐", ratingMsg, 
+                                esprit_market.Enum.notificationEnum.NotificationType.RIDE_UPDATE,
+                                rideId);
+                    });
+        } else {
+            ride.setPassengerRating(rating);
+            ride.setPassengerComment(comment);
+            Ride savedRide = rideRepository.save(ride);
+            bookingRepository.findByRideId(ride.getId()).stream()
+                .findFirst()
+                .ifPresent(b -> {
+                    ratingService.updatePassengerAverageRating(b.getPassengerProfileId());
+                    log.info("✓ Passenger rating saved: {} stars | Profile avg updated", rating);
+                    
+                    // Notify passenger about the new rating received
+                    passengerProfileRepository.findById(b.getPassengerProfileId())
+                            .flatMap(pp -> userRepository.findById(pp.getUserId()))
+                            .ifPresent(passengerUser -> {
+                                String ratingMsg = "You received a " + rating + "-star rating from the driver! "
+                                        + (comment != null && !comment.isEmpty() ? "Comment: " + comment : "");
+                                notificationService.sendNotification(passengerUser,
+                                        "New Passenger Rating ⭐", ratingMsg,
+                                        esprit_market.Enum.notificationEnum.NotificationType.RIDE_UPDATE,
+                                        rideId);
+                            });
+                });
+        }
+        
+        log.info("✅ Rating processing complete for ride {}", rideId);
     }
 }

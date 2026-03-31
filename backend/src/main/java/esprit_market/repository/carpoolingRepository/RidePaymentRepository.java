@@ -17,4 +17,12 @@ public interface RidePaymentRepository extends MongoRepository<RidePayment, Obje
     List<RidePayment> findByBookingIdIn(List<ObjectId> bookingIds);
 
     List<RidePayment> findByStatus(PaymentStatus status);
+
+    long countByStatus(PaymentStatus status);
+
+    @org.springframework.data.mongodb.repository.Aggregation(pipeline = {
+            "{ '$match': { 'status': 'COMPLETED' } }",
+            "{ '$group': { '_id': null, 'total': { '$sum': '$amount' } } }"
+    })
+    Double sumCompletedPayments();
 }

@@ -1,0 +1,262 @@
+<div class="driver-dashboard min-h-screen pt-20 pb-12 px-4 md:px-8">
+  <div class="max-w-[1400px] mx-auto">
+
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+      <div>
+        <h1 class="text-3xl font-black text-white tracking-tight">My Driver Dashboard</h1>
+        <p class="text-gray-500 font-medium mt-1">Manage your rides, track earnings, and grow your reputation.</p>
+      </div>
+      <div class="flex gap-3">
+        <button class="btn-refresh px-5 py-2.5 flex items-center gap-2" (click)="refreshDashboard()">
+          <span>↻</span> Refresh
+        </button>
+        <button [routerLink]="['/carpooling']" [queryParams]="{view: 'driver'}" class="btn-create px-5 py-2.5 flex items-center gap-2">
+          <span>+</span> Create Ride
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+
+      <!-- ── LEFT COLUMN ── -->
+      <div class="lg:col-span-3 space-y-5">
+
+        <!-- Performance Summary — crimson gradient -->
+        <div class="card card-crimson p-7">
+          <p class="card-label">Driver Performance</p>
+          <div class="grid grid-cols-2 gap-4 mt-5 mb-6">
+            <div>
+              <p class="stat-label">Completed Rides</p>
+              <p class="stat-value">{{ dashboardData()?.completedRides || 0 }}</p>
+            </div>
+            <div>
+              <p class="stat-label">Rating</p>
+              <p class="stat-value">{{ (dashboardData()?.averageRating || 0) | number:'1.1-1' }}<span class="stat-unit">/5</span></p>
+              <div class="flex gap-0.5 mt-1">
+                @for (star of [1,2,3,4,5]; track star) {
+                  <span class="text-xs" [style.color]="star <= (dashboardData()?.averageRating || 0) ? '#c8a030' : 'rgba(255,255,255,0.2)'">★</span>
+                }
+              </div>
+            </div>
+          </div>
+          <div class="border-t border-white/10 pt-5">
+            <p class="stat-label">Earnings This Month</p>
+            <p class="stat-value gold-text">{{ formatCurrency(dashboardData()?.earningsThisMonth || 0) }}</p>
+          </div>
+        </div>
+
+        <!-- Create Ride — gold gradient -->
+        <div class="card card-gold p-6 cursor-pointer group" [routerLink]="['/carpooling']" [queryParams]="{view: 'driver'}">
+          <div class="flex flex-col items-center py-3 text-center">
+            <div class="w-14 h-14 bg-black/20 rounded-2xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform text-2xl">🚗</div>
+            <h3 class="text-white font-black text-lg mb-1">Create Ride</h3>
+            <p class="text-white/60 text-sm mb-5">Offer seats to passengers on your next journey</p>
+            <span class="w-full py-2.5 bg-black/25 hover:bg-black/35 text-white font-bold rounded-xl text-sm transition-colors flex items-center justify-center gap-2">
+              Go to Carpooling →
+            </span>
+          </div>
+        </div>
+
+        <!-- Active & Upcoming — dark charcoal with crimson accents -->
+        <div class="card card-charcoal p-6">
+          <div class="flex items-center justify-between mb-5">
+            <h3 class="text-white font-black text-base">Active & Upcoming</h3>
+            <span class="pill-gold">Rides</span>
+          </div>
+          <div class="space-y-3">
+            @for (ride of (dashboardData()?.scheduledRides || []) | slice:0:2; track ride.rideId) {
+              <div class="p-3 bg-white/5 rounded-xl border border-white/8">
+                <div class="flex justify-between items-start mb-2">
+                  <span class="text-[10px] font-black text-[#c8a030] uppercase">{{ formatDate(ride.departureTime) }}</span>
+                  <span class="pill-status" [ngClass]="ride.status === 'ACTIVE' ? 'pill-crimson' : 'pill-gray'">{{ ride.status }}</span>
+                </div>
+                <p class="text-white font-bold text-xs mb-1">{{ ride.departureLocation }} → {{ ride.destinationLocation }}</p>
+                <p class="text-gray-500 text-[10px] mb-3">{{ ride.passengerName || 'Waiting for passengers' }}</p>
+                <button class="w-full py-1.5 bg-[#800000]/40 hover:bg-[#800000]/60 text-white rounded-lg text-[10px] font-bold transition-colors border border-[#800000]/30" (click)="toggleBookingDetails(ride.rideId)">View Details</button>
+              </div>
+            } @empty {
+              <div class="text-center py-6">
+                <p class="text-gray-600 text-xs italic">No active rides</p>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- ── MIDDLE COLUMN ── -->
+      <div class="lg:col-span-5 space-y-5">
+
+        <!-- Quick Stats — 4 tiles -->
+        <div class="grid grid-cols-4 gap-3">
+          @for (action of quickActions(); track action.title) {
+            <div class="stat-tile" [ngClass]="{
+              'tile-crimson': action.color === 'crimson',
+              'tile-gold':    action.color === 'yellow',
+              'tile-dark':    action.color === 'green',
+              'tile-gray':    action.color === 'blue'
+            }">
+              <span class="text-xl mb-2">{{ action.icon }}</span>
+              <span class="tile-val">{{ action.value }}</span>
+              <span class="tile-label">{{ action.title }}</span>
+            </div>
+          }
+        </div>
+
+        <!-- Scheduled Rides — graphite dark -->
+        <div class="card card-graphite p-7">
+          <div class="flex items-center justify-between mb-6">
+            <h3 class="text-white font-black text-xl">Scheduled Rides</h3>
+            <span class="pill-white">Upcoming</span>
+          </div>
+          <div class="space-y-3">
+            @for (ride of (dashboardData()?.scheduledRides || []); track ride.rideId) {
+              <div class="flex items-center gap-4 p-4 bg-white/4 rounded-2xl border border-white/6 hover:bg-white/8 transition-colors group">
+                <div class="flex flex-col items-center justify-center p-3 bg-[#800000]/20 rounded-xl min-w-[58px] text-center border border-[#800000]/20">
+                  <span class="text-[10px] font-bold text-[#c8a030] uppercase">{{ ride.departureTime | date:'MMM' }}</span>
+                  <span class="text-2xl font-black text-white">{{ ride.departureTime | date:'dd' }}</span>
+                  <span class="text-[9px] text-gray-600">{{ ride.departureTime | date:'yyyy' }}</span>
+                </div>
+                <div class="flex-1">
+                  <div class="flex items-center gap-2 mb-1">
+                    <span class="text-sm font-bold text-white">{{ ride.passengerName || 'Pending' }}</span>
+                    <span class="pill-status" [ngClass]="ride.status === 'ACTIVE' ? 'pill-crimson' : 'pill-gray'">{{ ride.status }}</span>
+                  </div>
+                  <p class="text-xs text-gray-500">{{ ride.departureLocation }} → {{ ride.destinationLocation }}</p>
+                </div>
+                <button class="px-3 py-2 bg-[#800000]/30 hover:bg-[#800000]/50 text-white rounded-xl text-xs font-bold transition-all border border-[#800000]/25" (click)="toggleBookingDetails(ride.rideId)">Details</button>
+              </div>
+            } @empty {
+              <div class="text-center py-10">
+                <div class="text-4xl mb-3">📅</div>
+                <p class="text-gray-600 font-medium">No scheduled rides for this week.</p>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Passenger Reviews — dark crimson -->
+        <div class="card card-dark-crimson p-7">
+          <div class="flex items-center justify-between mb-6">
+            <h3 class="text-white font-black text-xl">Passenger Reviews</h3>
+            <div class="text-right">
+              <p class="text-2xl font-black text-white">{{ (dashboardData()?.averageRating || 0) | number:'1.1-1' }}</p>
+              <div class="flex gap-0.5 justify-end">
+                @for (star of [1,2,3,4,5]; track star) {
+                  <span class="text-xs" [style.color]="star <= (dashboardData()?.averageRating || 0) ? '#c8a030' : 'rgba(255,255,255,0.15)'">★</span>
+                }
+              </div>
+              <p class="text-[10px] text-gray-600 uppercase mt-0.5">{{ dashboardData()?.completedRides || 0 }} reviews</p>
+            </div>
+          </div>
+          @if (dashboardData()?.recentReviews?.length) {
+            @for (review of dashboardData()?.recentReviews | slice:0:1; track review.id) {
+              <div class="p-5 bg-white/5 rounded-2xl border border-white/8">
+                <div class="flex items-center justify-between mb-3">
+                  <div class="flex gap-0.5">
+                    @for (star of [1,2,3,4,5]; track star) {
+                      <span class="text-xs" [style.color]="star <= review.rating ? '#c8a030' : 'rgba(255,255,255,0.15)'">★</span>
+                    }
+                  </div>
+                  <span class="text-xs text-gray-600">{{ review.createdAt | date:'MMM dd, yyyy' }}</span>
+                </div>
+                <p class="text-gray-300 text-sm italic leading-relaxed mb-4">"{{ review.comment }}"</p>
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-full bg-[#800000]/40 border border-[#800000]/30 flex items-center justify-center font-black text-white text-sm">
+                    {{ review.passengerName.charAt(0) }}
+                  </div>
+                  <div>
+                    <p class="text-sm font-black text-white">{{ review.passengerName }}</p>
+                    <p class="text-[10px] text-gray-600 uppercase">Passenger</p>
+                  </div>
+                </div>
+              </div>
+            }
+          } @else {
+            <div class="text-center py-6">
+              <p class="text-gray-600 text-sm">No reviews yet. Complete rides to earn ratings!</p>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- ── RIGHT COLUMN ── -->
+      <div class="lg:col-span-4 space-y-5">
+
+        <!-- Recent Activity — iron dark -->
+        <div class="card card-iron p-7">
+          <h3 class="text-white font-black text-xl mb-6">Recent Activity</h3>
+          <div class="space-y-5">
+            @for (activity of (dashboardData()?.recentActivities || []) | slice:0:4; track activity.activityId) {
+              <div class="flex gap-4 group">
+                <div class="relative flex-shrink-0">
+                  <div class="w-10 h-10 rounded-full bg-white/8 flex items-center justify-center text-lg border border-white/8 group-hover:scale-110 transition-transform">
+                    {{ activity.type === 'BOOKING_REQUEST' ? '📋' : activity.type === 'RIDE_COMPLETED' ? '✅' : activity.type === 'REVIEW_RECEIVED' ? '⭐' : '💰' }}
+                  </div>
+                  @if (!$last) {
+                    <div class="absolute top-10 left-1/2 -ml-px w-px h-8 bg-white/8"></div>
+                  }
+                </div>
+                <div class="flex-1 pt-1">
+                  <p class="text-sm font-bold text-white mb-0.5 leading-tight">{{ activity.message }}</p>
+                  <p class="text-xs text-gray-600">{{ activity.timestamp | date:'shortTime' }}</p>
+                  @if (activity.type === 'BOOKING_REQUEST' && activity.status === 'PENDING') {
+                    <div class="flex gap-2 mt-3">
+                      <button class="flex-1 py-1.5 bg-[#800000]/40 hover:bg-[#800000]/60 text-white rounded-lg text-[10px] font-bold transition-colors border border-[#800000]/30" (click)="acceptBooking(activity.activityId || '')">Accept</button>
+                      <button class="px-3 py-1.5 bg-white/8 hover:bg-white/12 text-gray-400 rounded-lg text-[10px] font-bold transition-colors">Decline</button>
+                    </div>
+                  }
+                </div>
+              </div>
+            } @empty {
+              <div class="text-center py-8">
+                <p class="text-gray-600 text-sm">No recent activity</p>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Vehicle Management — gold-bordered dark -->
+        <div class="card card-gold-border p-6">
+          <p class="card-label mb-5" style="color: #c8a030;">Vehicle Management</p>
+          <div class="flex items-center gap-4 p-4 bg-white/4 rounded-2xl border border-white/8">
+            <span class="text-3xl">🚗</span>
+            <div>
+              <p class="text-white font-black text-sm">{{ dashboardData()?.currentVehicle?.make || 'No vehicle' }} {{ dashboardData()?.currentVehicle?.model || '' }}</p>
+              <p class="text-gray-600 text-[10px] uppercase font-bold mt-0.5">{{ dashboardData()?.currentVehicle?.registrationNumber || 'Register a vehicle in carpooling' }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Earnings Balance — deep black with gold chart -->
+        <div class="card card-charcoal p-7" style="border-color: rgba(192,160,48,0.2);">
+          <h3 class="text-white font-black text-xl mb-1">Total Earnings Balance</h3>
+          <p class="text-4xl font-black gold-text mb-6">{{ formatCurrency(dashboardData()?.totalBalance || 0) }}</p>
+          <div class="chart-container">
+            <svg viewBox="0 0 400 120" class="w-full h-full">
+              <defs>
+                <linearGradient id="earningsGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="rgba(200,160,48,0.5)" />
+                  <stop offset="100%" stop-color="rgba(200,160,48,0)" />
+                </linearGradient>
+              </defs>
+              <path fill="url(#earningsGrad)" d="M0,100 C50,90 100,105 150,85 C200,65 250,80 300,50 C350,20 400,30 400,10 L400,120 L0,120 Z" />
+              <path fill="none" stroke="#c8a030" stroke-width="2.5" stroke-linecap="round" d="M0,100 C50,90 100,105 150,85 C200,65 250,80 300,50 C350,20 400,30 400,10" />
+              <circle fill="#c8a030" stroke="#1a1a1a" stroke-width="2" cx="0"   cy="100" r="4" />
+              <circle fill="#c8a030" stroke="#1a1a1a" stroke-width="2" cx="150" cy="85"  r="4" />
+              <circle fill="#c8a030" stroke="#1a1a1a" stroke-width="2" cx="300" cy="50"  r="4" />
+              <circle fill="#c8a030" stroke="#1a1a1a" stroke-width="2" cx="400" cy="10"  r="4" />
+            </svg>
+            <div class="flex justify-between mt-3">
+              @for (label of (dashboardData()?.earningsLabels || []); track label) {
+                <span class="text-[10px] font-bold text-gray-700 uppercase">{{ label.substring(0,3) }}</span>
+              }
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>

@@ -11,6 +11,8 @@ import java.util.List;
 public interface IDriverProfileService {
     List<DriverProfileResponseDTO> findAll();
 
+    long countUnverifiedDrivers();
+
     DriverProfileResponseDTO findById(ObjectId id);
 
     DriverProfileResponseDTO findByUserId(ObjectId userId);

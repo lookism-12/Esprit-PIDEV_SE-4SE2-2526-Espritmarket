@@ -62,4 +62,11 @@ public class PassengerProfileController {
     public void delete(@PathVariable String id) {
         passengerProfileService.delete(new ObjectId(id));
     }
+
+    @GetMapping
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
+    @io.swagger.v3.oas.annotations.Operation(summary = "Admin: List all passenger profiles")
+    public List<PassengerProfileResponseDTO> getAll() {
+        return passengerProfileService.findAll();
+    }
 }

@@ -65,4 +65,15 @@ public class RidePaymentService implements IRidePaymentService {
 
         return ridePaymentMapper.toResponseDTO(payment);
     }
+
+    @Override
+    public double getTotalCompletedRevenue() {
+        Double total = repository.sumCompletedPayments();
+        return total != null ? total : 0.0;
+    }
+
+    @Override
+    public long countCompletedPayments() {
+        return repository.countByStatus(PaymentStatus.COMPLETED);
+    }
 }

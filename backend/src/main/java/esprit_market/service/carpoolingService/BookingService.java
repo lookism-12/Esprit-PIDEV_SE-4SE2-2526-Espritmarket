@@ -8,12 +8,16 @@ import esprit_market.entity.carpooling.Ride;
 import esprit_market.entity.carpooling.RidePayment;
 import esprit_market.entity.user.User;
 import esprit_market.repository.carpoolingRepository.BookingRepository;
+import esprit_market.repository.carpoolingRepository.DriverProfileRepository;
 import esprit_market.repository.carpoolingRepository.PassengerProfileRepository;
 import esprit_market.repository.carpoolingRepository.RidePaymentRepository;
 import esprit_market.repository.carpoolingRepository.RideRepository;
 import esprit_market.repository.userRepository.UserRepository;
 import esprit_market.mappers.carpooling.BookingMapper;
+import esprit_market.service.notificationService.NotificationService;
+import esprit_market.Enum.notificationEnum.NotificationType;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -23,6 +27,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class BookingService implements IBookingService {
 
     private final BookingRepository bookingRepository;
@@ -31,6 +36,27 @@ public class BookingService implements IBookingService {
     private final PassengerProfileRepository passengerProfileRepository;
     private final UserRepository userRepository;
     private final BookingMapper bookingMapper;
+    private final DriverProfileRepository driverProfileRepository;
+    private final NotificationService notificationService;
+
+    /**
+     * Calculate actual available seats for a ride based on confirmed bookings
+     * Instead of relying on ride.availableSeats (which can get out of sync),
+     * this calculates seats dynamically from confirmed bookings
+     * 
+     * Formula: totalCapacity (4) - sum of confirmed booking seats
+     */
+    public int getActualAvailableSeats(ObjectId rideId) {
+        int totalCapacity = 4;  // Standard car capacity
+        int bookedSeats = bookingRepository.findByRideId(rideId).stream()
+                .filter(b -> b.getStatus() != BookingStatus.CANCELLED)
+                .mapToInt(Booking::getNumberOfSeats)
+                .sum();
+        int actualAvailable = totalCapacity - bookedSeats;
+        log.debug("💺 Ride {}: Total capacity={}, Booked seats={}, Actual available={}", 
+                rideId, totalCapacity, bookedSeats, actualAvailable);
+        return Math.max(0, actualAvailable);  // Prevent negative seats
+    }
 
     @Override
     public List<BookingResponseDTO> findAll() {
@@ -154,7 +180,8 @@ public class BookingService implements IBookingService {
 
         Ride ride = rideRepository.findById(rideId).orElseThrow(() -> new IllegalArgumentException("Ride not found"));
 
-        if (ride.getStatus() != esprit_market.Enum.carpoolingEnum.RideStatus.CONFIRMED) {
+        if (ride.getStatus() != esprit_market.Enum.carpoolingEnum.RideStatus.CONFIRMED
+                && ride.getStatus() != esprit_market.Enum.carpoolingEnum.RideStatus.ACCEPTED) {
             throw new IllegalStateException("Ride is not available for booking");
         }
 
@@ -162,11 +189,19 @@ public class BookingService implements IBookingService {
         if (ride.getDriverProfileId().equals(passengerProfileId)) {
             throw new IllegalStateException("Drivers cannot book their own rides");
         }
-        if (dto.getNumberOfSeats() > ride.getAvailableSeats()) {
+
+        // IMPROVEMENT #1: Real-time seat management - check actual available seats
+        int actualAvailableSeats = getActualAvailableSeats(rideId);
+        if (dto.getNumberOfSeats() > actualAvailableSeats) {
+            log.warn("❌ Booking denied: Not enough seats. Requested: {}, Actual available: {}", 
+                    dto.getNumberOfSeats(), actualAvailableSeats);
             throw new IllegalStateException("Not enough available seats. Requested: " + dto.getNumberOfSeats()
-                    + ", Available: " + ride.getAvailableSeats());
+                    + ", Available: " + actualAvailableSeats);
         }
 
+        log.info("✓ Booking approved: {} seat(s) available for ride {}", 
+                actualAvailableSeats - dto.getNumberOfSeats(), rideId);
+        
         Float totalPrice = dto.getNumberOfSeats() * ride.getPricePerSeat();
         Booking booking = Booking.builder()
                 .rideId(rideId)
@@ -197,6 +232,31 @@ public class BookingService implements IBookingService {
                 .status(esprit_market.Enum.carpoolingEnum.PaymentStatus.PENDING)
                 .build();
         ridePaymentRepository.save(payment);
+
+        // Notify the passenger that their booking is pending driver approval
+        notificationService.sendNotification(
+                user,
+                "Booking Submitted 🎫",
+                "Your booking for the ride from " + ride.getDepartureLocation()
+                        + " to " + ride.getDestinationLocation() + " is pending driver approval.",
+                NotificationType.RIDE_UPDATE,
+                savedBooking.getId().toHexString()
+        );
+
+        // Notify the driver that a new booking request arrived
+        driverProfileRepository.findById(ride.getDriverProfileId()).ifPresent(driverProfile ->
+                userRepository.findById(driverProfile.getUserId()).ifPresent(driverUser ->
+                        notificationService.sendNotification(
+                                driverUser,
+                                "New Booking Request 🚗",
+                                user.getFirstName() + " " + user.getLastName()
+                                        + " wants to book " + dto.getNumberOfSeats() + " seat(s) on your ride from "
+                                        + ride.getDepartureLocation() + " to " + ride.getDestinationLocation() + ".",
+                                NotificationType.RIDE_UPDATE,
+                                savedBooking.getId().toHexString()
+                        )
+                )
+        );
 
         return bookingMapper.toResponseDTO(savedBooking);
     }
@@ -233,6 +293,99 @@ public class BookingService implements IBookingService {
             payment.setStatus(esprit_market.Enum.carpoolingEnum.PaymentStatus.REFUNDED);
             ridePaymentRepository.save(payment);
         });
+    }
+
+    @Override
+    @Transactional
+    public BookingResponseDTO acceptBookingByDriver(ObjectId bookingId, String driverEmail) {
+        var user = userRepository.findByEmail(driverEmail)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        var driverProfile = driverProfileRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new IllegalArgumentException("Driver profile not found"));
+
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new IllegalArgumentException("Booking not found"));
+
+        Ride ride = rideRepository.findById(booking.getRideId())
+                .orElseThrow(() -> new IllegalArgumentException("Ride not found"));
+
+        if (!ride.getDriverProfileId().equals(driverProfile.getId())) {
+            throw new org.springframework.security.access.AccessDeniedException("Only the ride driver can accept bookings");
+        }
+        if (booking.getStatus() != BookingStatus.PENDING) {
+            throw new IllegalStateException("Only PENDING bookings can be accepted");
+        }
+
+        booking.setStatus(BookingStatus.CONFIRMED);
+        BookingResponseDTO result = bookingMapper.toResponseDTO(bookingRepository.save(booking));
+
+        // Notify the passenger their booking was confirmed
+        passengerProfileRepository.findById(booking.getPassengerProfileId()).ifPresent(pp ->
+                userRepository.findById(pp.getUserId()).ifPresent(passengerUser ->
+                        notificationService.sendNotification(
+                                passengerUser,
+                                "Booking Confirmed ✅",
+                                "Your booking for the ride from " + ride.getDepartureLocation()
+                                        + " to " + ride.getDestinationLocation() + " has been confirmed by the driver.",
+                                NotificationType.RIDE_UPDATE,
+                                booking.getId().toHexString()
+                        )
+                )
+        );
+
+        return result;
+    }
+
+    @Override
+    @Transactional
+    public BookingResponseDTO rejectBookingByDriver(ObjectId bookingId, String driverEmail) {
+        var user = userRepository.findByEmail(driverEmail)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        var driverProfile = driverProfileRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new IllegalArgumentException("Driver profile not found"));
+
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new IllegalArgumentException("Booking not found"));
+
+        Ride ride = rideRepository.findById(booking.getRideId())
+                .orElseThrow(() -> new IllegalArgumentException("Ride not found"));
+
+        if (!ride.getDriverProfileId().equals(driverProfile.getId())) {
+            throw new org.springframework.security.access.AccessDeniedException("Only the ride driver can reject bookings");
+        }
+        if (booking.getStatus() != BookingStatus.PENDING) {
+            throw new IllegalStateException("Only PENDING bookings can be rejected");
+        }
+
+        booking.setStatus(BookingStatus.CANCELLED);
+        booking.setCancelledAt(java.time.LocalDateTime.now());
+        bookingRepository.save(booking);
+
+        // Restore seats
+        ride.setAvailableSeats(ride.getAvailableSeats() + booking.getNumberOfSeats());
+        rideRepository.save(ride);
+
+        ridePaymentRepository.findByBookingId(booking.getId()).ifPresent(payment -> {
+            payment.setStatus(esprit_market.Enum.carpoolingEnum.PaymentStatus.REFUNDED);
+            ridePaymentRepository.save(payment);
+        });
+
+        // Notify the passenger their booking was rejected
+        passengerProfileRepository.findById(booking.getPassengerProfileId()).ifPresent(pp ->
+                userRepository.findById(pp.getUserId()).ifPresent(passengerUser ->
+                        notificationService.sendNotification(
+                                passengerUser,
+                                "Booking Declined ❌",
+                                "Unfortunately, the driver has declined your booking for the ride from "
+                                        + ride.getDepartureLocation() + " to " + ride.getDestinationLocation()
+                                        + ". You can search for another ride.",
+                                NotificationType.RIDE_UPDATE,
+                                booking.getId().toHexString()
+                        )
+                )
+        );
+
+        return bookingMapper.toResponseDTO(booking);
     }
 
 }

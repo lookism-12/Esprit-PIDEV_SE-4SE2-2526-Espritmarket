@@ -139,4 +139,20 @@ public class RideController {
                                 search.getDepartureTime(),
                                 search.getRequestedSeats());
         }
+
+        @GetMapping("/admin")
+        @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
+        @Operation(summary = "Admin: List all rides globally", description = "Retrieves all rides regardless of status or driver")
+        public List<RideResponseDTO> getAllAdmin() {
+                return rideService.findAll();
+        }
+
+        @PostMapping("/{id}/rate")
+        @Operation(summary = "Rate a ride", description = "Submit a rating and comment for a completed ride")
+        public void rate(@PathVariable String id,
+                        @RequestParam Integer rating,
+                        @RequestParam(required = false) String comment,
+                        @RequestParam boolean isDriverRating) {
+                rideService.rateRide(id, rating, comment, isDriverRating);
+        }
 }

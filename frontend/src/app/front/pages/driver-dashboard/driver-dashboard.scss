@@ -1,0 +1,230 @@
+.driver-dashboard {
+  background: #ffffff;
+  font-family: 'Inter', sans-serif;
+  min-height: 100vh;
+
+  .card {
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.06);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    position: relative;
+    overflow: hidden;
+
+    &:hover {
+      transform: translateY(-2px);
+    }
+  }
+
+  // ── Card Variants ──────────────────────────────────────────────────────
+
+  // Crimson — primary accent
+  .card-crimson {
+    background: linear-gradient(135deg, #5a0000 0%, #800000 50%, #a00000 100%);
+    box-shadow: 0 8px 32px rgba(128, 0, 0, 0.45);
+  }
+
+  // Dark crimson — deeper red
+  .card-dark-crimson {
+    background: linear-gradient(135deg, #2d0000 0%, #4a0000 100%);
+    box-shadow: 0 8px 24px rgba(80, 0, 0, 0.5);
+    border-color: rgba(128, 0, 0, 0.3);
+  }
+
+  // Gold — premium accent
+  .card-gold {
+    background: linear-gradient(135deg, #78580a 0%, #a07820 50%, #c8a030 100%);
+    box-shadow: 0 8px 32px rgba(160, 120, 32, 0.4);
+  }
+
+  // Charcoal — neutral dark
+  .card-charcoal {
+    background: linear-gradient(135deg, #1a1a1a 0%, #242424 100%);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    border-color: rgba(255,255,255,0.05);
+  }
+
+  // Graphite — medium dark
+  .card-graphite {
+    background: linear-gradient(135deg, #222222 0%, #2e2e2e 100%);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    border-color: rgba(255,255,255,0.06);
+  }
+
+  // Iron — lighter dark
+  .card-iron {
+    background: linear-gradient(135deg, #2a2a2a 0%, #383838 100%);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    border-color: rgba(255,255,255,0.07);
+  }
+
+  // Gold-bordered dark — elegant combo
+  .card-gold-border {
+    background: linear-gradient(135deg, #1a1a1a 0%, #222222 100%);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
+    border-color: rgba(192, 160, 48, 0.35);
+  }
+
+  // ── Stat Tiles ─────────────────────────────────────────────────────────
+  .stat-tile {
+    border-radius: 16px;
+    padding: 16px 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    transition: transform 0.2s;
+    border: 1px solid transparent;
+
+    &:hover { transform: translateY(-3px); }
+
+    .tile-val {
+      font-size: 1.1rem;
+      font-weight: 900;
+      color: white;
+      line-height: 1.2;
+    }
+
+    .tile-label {
+      font-size: 0.58rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: rgba(255,255,255,0.5);
+      margin-top: 3px;
+    }
+  }
+
+  .tile-crimson {
+    background: linear-gradient(135deg, #5a0000, #900000);
+    box-shadow: 0 6px 20px rgba(128,0,0,0.4);
+    border-color: rgba(180,0,0,0.3);
+  }
+  .tile-gold {
+    background: linear-gradient(135deg, #6b4c08, #b08820);
+    box-shadow: 0 6px 20px rgba(160,120,32,0.35);
+    border-color: rgba(192,160,48,0.3);
+  }
+  .tile-dark {
+    background: linear-gradient(135deg, #1e1e1e, #2e2e2e);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+    border-color: rgba(255,255,255,0.06);
+  }
+  .tile-gray {
+    background: linear-gradient(135deg, #2a2a2a, #404040);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.35);
+    border-color: rgba(255,255,255,0.07);
+  }
+
+  // ── Typography ─────────────────────────────────────────────────────────
+  .card-label {
+    font-size: 0.65rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: rgba(255,255,255,0.4);
+  }
+
+  .stat-label {
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(255,255,255,0.45);
+    margin-bottom: 2px;
+  }
+
+  .stat-value {
+    font-size: 2.2rem;
+    font-weight: 900;
+    color: white;
+    line-height: 1.1;
+
+    .stat-unit {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: rgba(255,255,255,0.4);
+      margin-left: 2px;
+    }
+  }
+
+  .gold-text { color: #c8a030; }
+
+  // ── Pills ──────────────────────────────────────────────────────────────
+  .pill-white {
+    padding: 3px 10px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 100px;
+    font-size: 0.6rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: rgba(255,255,255,0.7);
+  }
+
+  .pill-gold {
+    padding: 3px 10px;
+    background: rgba(192,160,48,0.15);
+    border: 1px solid rgba(192,160,48,0.3);
+    border-radius: 100px;
+    font-size: 0.6rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: #c8a030;
+  }
+
+  .pill-status {
+    padding: 2px 8px;
+    border-radius: 100px;
+    font-size: 0.58rem;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
+  .pill-crimson { background: rgba(128,0,0,0.3); color: #ff6b6b; border: 1px solid rgba(128,0,0,0.4); }
+  .pill-gray    { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.1); }
+
+  // ── Header Buttons ─────────────────────────────────────────────────────
+  .btn-refresh {
+    background: #1e1e1e;
+    color: rgba(255,255,255,0.7);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 0.875rem;
+    transition: all 0.2s;
+    cursor: pointer;
+
+    &:hover {
+      background: #2a2a2a;
+      color: white;
+      border-color: rgba(255,255,255,0.2);
+    }
+  }
+
+  .btn-create {
+    background: linear-gradient(135deg, #700000, #a00000);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 0.875rem;
+    transition: all 0.2s;
+    cursor: pointer;
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(128,0,0,0.45);
+    }
+  }
+
+  // ── Chart ──────────────────────────────────────────────────────────────
+  .chart-container {
+    height: 150px;
+    width: 100%;
+    svg { overflow: visible; }
+  }
+
+  // ── Divider ────────────────────────────────────────────────────────────
+  .divider { border-color: rgba(255,255,255,0.07); }
+}

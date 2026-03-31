@@ -138,4 +138,18 @@ public class BookingController {
         public void delete(@PathVariable String id, @AuthenticationPrincipal UserDetails user) {
                 bookingService.cancelBooking(id, user.getUsername());
         }
+
+        @PatchMapping("/{id}/accept")
+        @Operation(summary = "Driver: Accept a booking", description = "Driver confirms a pending booking")
+        public BookingResponseDTO acceptBooking(@PathVariable String id,
+                        @AuthenticationPrincipal UserDetails user) {
+                return bookingService.acceptBookingByDriver(new ObjectId(id), user.getUsername());
+        }
+
+        @PatchMapping("/{id}/reject")
+        @Operation(summary = "Driver: Reject a booking", description = "Driver rejects a pending booking and restores seats")
+        public BookingResponseDTO rejectBooking(@PathVariable String id,
+                        @AuthenticationPrincipal UserDetails user) {
+                return bookingService.rejectBookingByDriver(new ObjectId(id), user.getUsername());
+        }
 }

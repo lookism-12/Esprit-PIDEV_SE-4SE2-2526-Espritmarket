@@ -30,4 +30,9 @@ public interface INotificationService {
     NotificationDTO deactivateNotification(ObjectId id, ObjectId userId);
 
     void sendNotification(User user, String title, String description, NotificationType type, String linkedObjectId);
+
+    /**
+     * Notify all admin users about an event
+     */
+    void notifyAllAdmins(String title, String description, NotificationType type, String linkedObjectId);
 }

@@ -149,15 +149,32 @@ export const routes: Routes = [
             },
             {
                 path: 'dashboard',
-                loadComponent: () => import('./front/pages/carpooling/carpooling').then(m => m.Carpooling)
+                loadComponent: () => import('./front/pages/driver-dashboard/driver-dashboard').then(m => m.DriverDashboardComponent)
             },
             {
                 path: 'rides',
-                loadComponent: () => import('./front/pages/carpooling/carpooling').then(m => m.Carpooling)
+                loadComponent: () => import('./front/pages/driver-dashboard/driver-dashboard').then(m => m.DriverDashboardComponent)
             },
             {
                 path: 'schedule',
-                loadComponent: () => import('./front/pages/carpooling/carpooling').then(m => m.Carpooling)
+                loadComponent: () => import('./front/pages/driver-dashboard/driver-dashboard').then(m => m.DriverDashboardComponent)
+            }
+        ]
+    },
+
+    // ==================== PASSENGER ROUTES ====================
+    {
+        path: 'passenger',
+        canActivate: [authGuard],
+        children: [
+            {
+                path: '',
+                redirectTo: 'dashboard',
+                pathMatch: 'full'
+            },
+            {
+                path: 'dashboard',
+                loadComponent: () => import('./front/pages/passenger-dashboard/passenger-dashboard').then(m => m.PassengerDashboardComponent)
             }
         ]
     },

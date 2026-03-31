@@ -15,6 +15,8 @@ public class RideMapper {
     private final DriverProfileRepository driverProfileRepository;
     private final UserRepository userRepository;
     private final VehicleRepository vehicleRepository;
+    private final esprit_market.repository.carpoolingRepository.BookingRepository bookingRepository;
+    private final esprit_market.repository.carpoolingRepository.RidePaymentRepository ridePaymentRepository;
 
     public RideResponseDTO toResponseDTO(Ride ride) {
         if (ride == null)
@@ -32,10 +34,26 @@ public class RideMapper {
         }
 
         var vehicle = vehicleRepository.findById(ride.getVehicleId()).orElse(null);
+        int totalSeats = 4;
         if (vehicle != null) {
             vehicleMake = vehicle.getMake();
             vehicleModel = vehicle.getModel();
         }
+
+        var bookings = bookingRepository.findByRideId(ride.getId());
+        int bookedSeats = bookings.stream().mapToInt(b -> b.getNumberOfSeats()).sum();
+        long paidBookingsCount = bookings.stream()
+                .filter(b -> {
+                    var payment = ridePaymentRepository.findByBookingId(b.getId());
+                    return payment.isPresent()
+                            && payment.get().getStatus() == esprit_market.Enum.carpoolingEnum.PaymentStatus.COMPLETED;
+                })
+                .count();
+
+        // IMPROVEMENT #2: Calculate estimated earnings based on available seats
+        // Potential earnings = remaining available seats * price per seat
+        int actualAvailableSeats = Math.max(0, totalSeats - bookedSeats);
+        Float estimatedEarnings = actualAvailableSeats * ride.getPricePerSeat();
 
         return RideResponseDTO.builder()
                 .rideId(ride.getId() != null ? ride.getId().toHexString() : null)
@@ -50,6 +68,10 @@ public class RideMapper {
                 .availableSeats(ride.getAvailableSeats())
                 .pricePerSeat(ride.getPricePerSeat())
                 .status(ride.getStatus())
+                .totalSeats(totalSeats)
+                .bookedSeats(bookedSeats)
+                .paidBookingsCount((int) paidBookingsCount)
+                .estimatedEarnings(estimatedEarnings)
                 .completedAt(ride.getCompletedAt())
                 .build();
     }

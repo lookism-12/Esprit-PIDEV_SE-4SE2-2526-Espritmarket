@@ -1,0 +1,72 @@
+.passenger-dashboard {
+  background: #ffffff;
+  min-height: 100vh;
+  font-family: 'Inter', sans-serif;
+
+  .stat-card {
+    border-radius: 20px;
+    border: 1.5px solid #f0f0f0;
+    background: #fff;
+    transition: box-shadow 0.2s, transform 0.2s;
+    &:hover { box-shadow: 0 8px 24px rgba(128,0,0,0.08); transform: translateY(-2px); }
+  }
+
+  .stat-accent { border-left: 4px solid #800000; }
+  .stat-gold   { border-left: 4px solid #c8a030; }
+  .stat-gray   { border-left: 4px solid #6b7280; }
+  .stat-dark   { border-left: 4px solid #111; }
+
+  .tab-btn {
+    padding: 10px 24px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 0.875rem;
+    transition: all 0.15s;
+    cursor: pointer;
+    border: 1.5px solid transparent;
+    &.active {
+      background: #800000;
+      color: white;
+      border-color: #800000;
+    }
+    &:not(.active) {
+      background: #f5f5f5;
+      color: #374151;
+      &:hover { background: #ebebeb; }
+    }
+  }
+
+  .row-card {
+    border-radius: 16px;
+    border: 1.5px solid #f0f0f0;
+    background: #fff;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    &:hover { border-color: #e0c0c0; box-shadow: 0 4px 16px rgba(128,0,0,0.06); }
+  }
+
+  .btn-cancel {
+    padding: 6px 14px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    border: 1.5px solid #fca5a5;
+    color: #dc2626;
+    background: #fff5f5;
+    cursor: pointer;
+    transition: all 0.15s;
+    &:hover { background: #fee2e2; }
+  }
+
+  .btn-primary {
+    padding: 10px 20px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 0.875rem;
+    background: #800000;
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    &:hover { background: #6b0000; }
+  }
+}

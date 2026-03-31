@@ -144,9 +144,12 @@ public class NotificationService implements INotificationService {
                 .type(type)
                 .linkedObjectId(linkedObjectId)
                 .read(false)
+                .notificationStatus(true)
                 .createdAt(LocalDateTime.now())
                 .build();
-        notificationRepository.save(notification);
+        Notification savedNotification = notificationRepository.save(notification);
+        log.info("✓ Notification saved to DB: ID={}, User={}, Title={}", 
+                savedNotification.getId(), user.getEmail(), title);
     }
 
     @Transactional
@@ -158,5 +161,31 @@ public class NotificationService implements INotificationService {
                 sendNotification(user, title, description, NotificationType.RIDE_UPDATE, null);
             }
         }
+    }
+
+    /**
+     * Notify all admin users about an event
+     */
+    @Transactional
+    public void notifyAllAdmins(String title, String description, NotificationType type, String linkedObjectId) {
+        log.info("🔔 Fetching all admin users to notify...");
+        List<User> admins = userRepository.findAllAdmins();
+        log.info("Found {} admin(s) to notify", admins.size());
+        
+        if (admins.isEmpty()) {
+            log.warn("⚠️ No admin users found in system. Skipping admin notification.");
+            return;
+        }
+        
+        for (User admin : admins) {
+            try {
+                sendNotification(admin, title, description, type, linkedObjectId);
+                log.info("✓ Admin notification sent to: {}", admin.getEmail());
+            } catch (Exception e) {
+                log.error("❌ Failed to send notification to admin {}: {}", admin.getEmail(), e.getMessage(), e);
+            }
+        }
+        
+        log.info("✅ Admin notification batch completed: {} notification(s) sent", admins.size());
     }
 }

@@ -43,6 +43,16 @@ public class DriverProfileController {
         return service.getMyProfile(user.getUsername());
     }
 
+    @GetMapping("/me/stats")
+    @Operation(summary = "Get my driver stats", description = "Returns recent rides, earnings and current live requests count")
+    public DriverStatsDTO getMyStats(@AuthenticationPrincipal UserDetails user) {
+        DriverProfileResponseDTO profile = service.getMyProfile(user.getUsername());
+        if (profile == null || profile.getId() == null) {
+            throw new IllegalArgumentException("Driver profile not found");
+        }
+        return service.getDriverStats(new ObjectId(profile.getId()));
+    }
+
     @GetMapping("/{id}")
     public DriverProfileResponseDTO getById(@PathVariable String id) {
         return service.findById(new ObjectId(id));

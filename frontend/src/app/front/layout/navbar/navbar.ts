@@ -62,6 +62,8 @@ export class Navbar implements OnDestroy {
   userInitials = computed(() => this.authService.getInitials() || 'U');
   userAvatar = computed(() => this.authService.userAvatar() || null);
   isAdmin = computed(() => this.authService.userRole() === UserRole.ADMIN);
+  isDriver = computed(() => this.authService.userRole() === UserRole.DRIVER);
+  isPassenger = computed(() => this.authService.userRole() === UserRole.PASSENGER || this.authService.userRole() === UserRole.CLIENT);
 
   // Menu sections for the drawer
   menuSections: MenuSection[] = [

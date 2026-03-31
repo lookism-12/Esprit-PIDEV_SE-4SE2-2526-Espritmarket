@@ -1,183 +1,250 @@
-import { Injectable, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
-import {
-  Ride,
-  RideListResponse,
-  RideFilter,
-  CreateRideRequest,
-  SearchRideRequest,
-  Booking,
-  BookingListResponse,
-  BookingFilter,
-  CreateBookingRequest,
-  BookingStatus,
-  Vehicle,
-  CreateVehicleRequest,
-  Driver,
-  RideReview,
-  CreateRideReviewRequest,
-  SmartMatchRecommendation
-} from '../models/carpooling.model';
+import { Injectable, signal, inject } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable, tap } from 'rxjs';
+import { RideRequest, RideRequestStatus } from '../models/carpooling.model';
 
-@Injectable({
-  providedIn: 'root'
-})
+export interface VehicleDTO {
+  id: string;
+  make: string;
+  model: string;
+  licensePlate: string;
+  numberOfSeats: number;
+  driverProfileId: string;
+}
+
+export interface RideResponseDTO {
+  rideId: string;
+  driverProfileId: string;
+  driverName: string;
+  driverRating?: number;
+  vehicleId: string;
+  departureLocation: string;
+  destinationLocation: string;
+  departureTime: string;
+  availableSeats: number;
+  pricePerSeat: number;
+  status: string;
+  estimatedDurationMinutes?: number;
+}
+
+export interface DriverProfileDTO {
+  id: string;
+  driverName: string;
+  licenseNumber: string;
+  isVerified: boolean;
+  averageRating: number;
+  totalRidesCompleted: number;
+  totalEarnings: number;
+}
+
+export interface DriverStatsDTO {
+  totalRidesCompleted: number;
+  recentRidesCompleted?: number;
+  averageRating: number;
+  totalEarnings: number;
+  directRequestsCount?: number;
+}
+
+export interface PassengerProfileDTO {
+  id: string;
+  passengerName: string;
+  averageRating: number;
+  totalRidesCompleted: number;
+}
+
+export interface BookingResponseDTO {
+  bookingId: string;
+  rideId: string;
+  passengerProfileId: string;
+  passengerName: string;
+  numberOfSeats: number;
+  pickupLocation: string;
+  dropoffLocation: string;
+  status: string;
+  totalPrice: number;
+}
+
+export interface RideRequestResponseDTO {
+  id: string;
+  passengerProfileId: string;
+  passengerName: string;
+  departureLocation: string;
+  destinationLocation: string;
+  departureTime: string;
+  requestedSeats: number;
+  proposedPrice: number;
+  status: string;
+  rideId?: string;
+  counterPrice?: number;
+  counterPriceNote?: string;
+}
+
+export interface PassengerDashboardDTO {
+  passengerName: string;
+  averageRating: number;
+  totalRidesCompleted: number;
+  totalSpent: number;
+  pendingRequests: number;
+  activeBookings: number;
+  recentBookings: BookingResponseDTO[];
+  myRideRequests: RideRequestResponseDTO[];
+}
+
+@Injectable({ providedIn: 'root' })
 export class CarpoolingService {
-  private readonly apiUrl = '/api/carpooling';
+  private readonly http = inject(HttpClient);
+  private readonly base = '/api';
 
-  readonly rides = signal<Ride[]>([]);
-  readonly myRides = signal<Ride[]>([]);
-  readonly myBookings = signal<Booking[]>([]);
-  readonly vehicles = signal<Vehicle[]>([]);
-  readonly currentRide = signal<Ride | null>(null);
-  readonly isLoading = signal<boolean>(false);
+  // ── Shared reactive state ──────────────────────────────────────────────
+  readonly isLoading = signal(false);
   readonly error = signal<string | null>(null);
+  readonly availableRideRequests = signal<RideRequestResponseDTO[]>([]);
 
-  constructor(private http: HttpClient) {}
-
-  // Rides
-  searchRides(request: SearchRideRequest): Observable<RideListResponse> {
-    // TODO: Implement HTTP call
-    console.log('CarpoolingService.searchRides() called with:', request);
-    return of({ rides: [], total: 0, page: 1, totalPages: 0 });
+  // ── Public Rides ──────────────────────────────────────────────────────
+  getAllRides(): Observable<RideResponseDTO[]> {
+    return this.http.get<RideResponseDTO[]>(`${this.base}/rides`);
   }
 
-  getRides(filter?: RideFilter): Observable<RideListResponse> {
-    // TODO: Implement HTTP call
-    console.log('CarpoolingService.getRides() called with:', filter);
-    return of({ rides: [], total: 0, page: 1, totalPages: 0 });
+  searchRides(from?: string, to?: string, date?: string, seats?: number): Observable<any> {
+    let params = new HttpParams();
+    if (from) params = params.set('departureLocation', from);
+    if (to) params = params.set('destinationLocation', to);
+    if (seats) params = params.set('availableSeats', seats.toString());
+    return this.http.get<any>(`${this.base}/rides/search`, { params });
   }
 
-  getRideById(id: string): Observable<Ride> {
-    // TODO: Implement HTTP call
-    console.log('CarpoolingService.getRideById() called with:', id);
-    return of({} as Ride);
+  getMyRides(): Observable<RideResponseDTO[]> {
+    return this.http.get<RideResponseDTO[]>(`${this.base}/rides/my`);
   }
 
-  getMyRides(): Observable<Ride[]> {
-    // TODO: Implement HTTP call
-    console.log('CarpoolingService.getMyRides() called');
-    return of([]);
+  createRide(payload: any): Observable<RideResponseDTO> {
+    this.isLoading.set(true);
+    return this.http.post<RideResponseDTO>(`${this.base}/rides`, payload).pipe(
+      tap({ next: () => this.isLoading.set(false), error: () => this.isLoading.set(false) })
+    );
   }
 
-  createRide(request: CreateRideRequest): Observable<Ride> {
-    // TODO: Implement HTTP call
-    console.log('CarpoolingService.createRide() called with:', request);
-    return of({} as Ride);
+  cancelRide(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.base}/rides/${id}`);
   }
 
-  updateRide(id: string, request: Partial<CreateRideRequest>): Observable<Ride> {
-    // TODO: Implement HTTP call
-    console.log('CarpoolingService.updateRide() called with:', id, request);
-    return of({} as Ride);
+  // ── Vehicles ──────────────────────────────────────────────────────────
+  getMyVehicles(): Observable<VehicleDTO[]> {
+    return this.http.get<VehicleDTO[]>(`${this.base}/vehicles/my`);
   }
 
-  cancelRide(id: string, reason?: string): Observable<void> {
-    // TODO: Implement HTTP call
-    console.log('CarpoolingService.cancelRide() called with:', id, reason);
-    return of(void 0);
+  addVehicle(payload: any): Observable<VehicleDTO> {
+    this.isLoading.set(true);
+    return this.http.post<VehicleDTO>(`${this.base}/vehicles`, payload).pipe(
+      tap({ next: () => this.isLoading.set(false), error: () => this.isLoading.set(false) })
+    );
   }
 
-  // Bookings
-  getMyBookings(filter?: BookingFilter): Observable<BookingListResponse> {
-    // TODO: Implement HTTP call
-    console.log('CarpoolingService.getMyBookings() called with:', filter);
-    return of({ bookings: [], total: 0, page: 1, totalPages: 0 });
+  // ── Driver Profile ────────────────────────────────────────────────────
+  getDriverProfile(): Observable<DriverProfileDTO> {
+    return this.http.get<DriverProfileDTO>(`${this.base}/driver-profiles/me`);
   }
 
-  getBookingById(id: string): Observable<Booking> {
-    // TODO: Implement HTTP call
-    console.log('CarpoolingService.getBookingById() called with:', id);
-    return of({} as Booking);
+  getDriverProfileByUserId(userId: string): Observable<DriverProfileDTO> {
+    return this.http.get<DriverProfileDTO>(`${this.base}/driver-profiles/user/${userId}`);
   }
 
-  createBooking(request: CreateBookingRequest): Observable<Booking> {
-    // TODO: Implement HTTP call
-    console.log('CarpoolingService.createBooking() called with:', request);
-    return of({} as Booking);
+  registerAsDriver(payload: any): Observable<DriverProfileDTO> {
+    this.isLoading.set(true);
+    // Backend expects POST /api/driver-profiles (no "/register" suffix)
+    return this.http.post<DriverProfileDTO>(`${this.base}/driver-profiles`, payload).pipe(
+      tap({ next: () => this.isLoading.set(false), error: () => this.isLoading.set(false) })
+    );
   }
 
-  cancelBooking(id: string, reason?: string): Observable<void> {
-    // TODO: Implement HTTP call
-    console.log('CarpoolingService.cancelBooking() called with:', id, reason);
-    return of(void 0);
+  getMyDriverStats(): Observable<DriverStatsDTO> {
+    return this.http.get<DriverStatsDTO>(`${this.base}/driver-profiles/me/stats`);
   }
 
-  // For Drivers - manage booking requests
-  acceptBooking(bookingId: string): Observable<Booking> {
-    // TODO: Implement HTTP call
-    console.log('CarpoolingService.acceptBooking() called with:', bookingId);
-    return of({} as Booking);
+  // ── Passenger Profile ─────────────────────────────────────────────────
+  getPassengerProfile(): Observable<PassengerProfileDTO> {
+    return this.http.get<PassengerProfileDTO>(`${this.base}/passenger-profiles/me`);
   }
 
-  rejectBooking(bookingId: string, reason?: string): Observable<Booking> {
-    // TODO: Implement HTTP call
-    console.log('CarpoolingService.rejectBooking() called with:', bookingId, reason);
-    return of({} as Booking);
+  registerAsPassenger(): Observable<PassengerProfileDTO> {
+    return this.http.post<PassengerProfileDTO>(`${this.base}/passenger-profiles`, {});
   }
 
-  // Vehicles
-  getMyVehicles(): Observable<Vehicle[]> {
-    // TODO: Implement HTTP call
-    console.log('CarpoolingService.getMyVehicles() called');
-    return of([]);
+  // ── Bookings ──────────────────────────────────────────────────────────
+  createBooking(payload: any): Observable<BookingResponseDTO> {
+    this.isLoading.set(true);
+    return this.http.post<BookingResponseDTO>(`${this.base}/bookings`, payload).pipe(
+      tap({ next: () => this.isLoading.set(false), error: () => this.isLoading.set(false) })
+    );
   }
 
-  addVehicle(request: CreateVehicleRequest): Observable<Vehicle> {
-    // TODO: Implement HTTP call
-    console.log('CarpoolingService.addVehicle() called with:', request);
-    return of({} as Vehicle);
+  getMyBookings(): Observable<BookingResponseDTO[]> {
+    return this.http.get<BookingResponseDTO[]>(`${this.base}/bookings/my`);
   }
 
-  updateVehicle(id: string, request: Partial<CreateVehicleRequest>): Observable<Vehicle> {
-    // TODO: Implement HTTP call
-    console.log('CarpoolingService.updateVehicle() called with:', id, request);
-    return of({} as Vehicle);
+  getBookingsForRide(rideId: string): Observable<BookingResponseDTO[]> {
+    return this.http.get<BookingResponseDTO[]>(`${this.base}/bookings/ride/${rideId}`);
   }
 
-  deleteVehicle(id: string): Observable<void> {
-    // TODO: Implement HTTP call
-    console.log('CarpoolingService.deleteVehicle() called with:', id);
-    return of(void 0);
+  acceptBooking(bookingId: string): Observable<BookingResponseDTO> {
+    return this.http.patch<BookingResponseDTO>(`${this.base}/bookings/${bookingId}/accept`, {});
   }
 
-  // Driver Profile
-  getDriverProfile(): Observable<Driver> {
-    // TODO: Implement HTTP call
-    console.log('CarpoolingService.getDriverProfile() called');
-    return of({} as Driver);
+  rejectBooking(bookingId: string): Observable<BookingResponseDTO> {
+    return this.http.patch<BookingResponseDTO>(`${this.base}/bookings/${bookingId}/reject`, {});
   }
 
-  updateDriverProfile(data: Partial<Driver>): Observable<Driver> {
-    // TODO: Implement HTTP call
-    console.log('CarpoolingService.updateDriverProfile() called with:', data);
-    return of({} as Driver);
+  // ── Ride Requests (Uber-Style) ─────────────────────────────────────────
+  getAvailableRideRequests(): Observable<RideRequestResponseDTO[]> {
+    return this.http.get<RideRequestResponseDTO[]>(`${this.base}/ride-requests/available`).pipe(
+      tap(reqs => this.availableRideRequests.set(reqs))
+    );
   }
 
-  uploadLicenseImage(file: File): Observable<string> {
-    // TODO: Implement HTTP call
-    console.log('CarpoolingService.uploadLicenseImage() called');
-    return of('');
+  createRideRequest(payload: any): Observable<RideRequestResponseDTO> {
+    this.isLoading.set(true);
+    return this.http.post<RideRequestResponseDTO>(`${this.base}/ride-requests`, payload).pipe(
+      tap({ next: () => this.isLoading.set(false), error: () => this.isLoading.set(false) })
+    );
   }
 
-  // Reviews
-  getRideReviews(rideId: string): Observable<RideReview[]> {
-    // TODO: Implement HTTP call
-    console.log('CarpoolingService.getRideReviews() called with:', rideId);
-    return of([]);
+  acceptRideRequest(requestId: string, vehicleId: string): Observable<RideRequestResponseDTO> {
+    this.isLoading.set(true);
+    return this.http.post<RideRequestResponseDTO>(
+      `${this.base}/ride-requests/${requestId}/accept`,
+      { vehicleId }
+    ).pipe(
+      tap({ next: () => this.isLoading.set(false), error: () => this.isLoading.set(false) })
+    );
   }
 
-  createReview(request: CreateRideReviewRequest): Observable<RideReview> {
-    // TODO: Implement HTTP call
-    console.log('CarpoolingService.createReview() called with:', request);
-    return of({} as RideReview);
+  counterPrice(requestId: string, price: number, note?: string): Observable<RideRequestResponseDTO> {
+    this.isLoading.set(true);
+    let params = new HttpParams().set('price', price.toString());
+    if (note) params = params.set('note', note);
+    return this.http.patch<RideRequestResponseDTO>(
+      `${this.base}/ride-requests/${requestId}/counter`,
+      {},
+      { params }
+    ).pipe(
+      tap({ next: () => this.isLoading.set(false), error: () => this.isLoading.set(false) })
+    );
   }
 
-  // Smart Matching (AI placeholder)
-  getSmartRecommendations(): Observable<SmartMatchRecommendation[]> {
-    // TODO: Implement HTTP call
-    console.log('CarpoolingService.getSmartRecommendations() called');
-    return of([]);
+  cancelRideRequest(requestId: string): Observable<void> {
+    return this.http.delete<void>(`${this.base}/ride-requests/${requestId}`);
+  }
+
+  getMyRideRequests(): Observable<RideRequestResponseDTO[]> {
+    return this.http.get<RideRequestResponseDTO[]>(`${this.base}/ride-requests/my`);
+  }
+
+  // ── Passenger Dashboard ───────────────────────────────────────────────
+  getPassengerDashboard(): Observable<PassengerDashboardDTO> {
+    return this.http.get<PassengerDashboardDTO>(`${this.base}/passenger/dashboard`);
+  }
+
+  cancelBooking(bookingId: string): Observable<void> {
+    return this.http.delete<void>(`${this.base}/bookings/${bookingId}`);
   }
 }

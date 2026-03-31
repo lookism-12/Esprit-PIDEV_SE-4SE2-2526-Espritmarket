@@ -8,6 +8,11 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['src/setup-vitest.ts'],
     include: ['src/**/*.spec.ts'],
-    reporters: ['default']
+    reporters: ['default'],
+    server: {
+      deps: {
+        inline: ['@angular/core']
+      }
+    }
   }
 });

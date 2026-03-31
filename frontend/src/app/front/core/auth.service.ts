@@ -102,7 +102,9 @@ export class AuthService {
   readonly userLastName = signal<string | null>(null);
   readonly userEmail = signal<string | null>(null);
   readonly userAvatar = signal<string | null>(null);
-  readonly userRole = signal<UserRole | null>(null);
+  readonly userRole = signal<UserRole | null>(
+    (localStorage.getItem('userRole') as UserRole) ?? null
+  );
 
   private http = inject(HttpClient);
 
@@ -207,15 +209,31 @@ export class AuthService {
     return this.http.get<UserDTO>(`${this.apiUrl}/me`).pipe(
       map((userDto: UserDTO) => {
         // Convert UserDTO to User (extract first role from array)
+        const rawRoles = userDto.roles ?? [];
+        const normalizedRoles = rawRoles
+          .filter(Boolean)
+          .map(r => r.toString().trim().toUpperCase().replace(/^ROLE_/, ''));
+
+        // Pick a single frontend role deterministically (roles[0] is not reliable).
+        // This ensures DRIVER accounts don't get misclassified when CLIENT/SELLER/etc. appears first.
+        const pickRole = (): UserRole => {
+          if (normalizedRoles.includes('ADMIN')) return UserRole.ADMIN;
+          if (normalizedRoles.includes('DRIVER')) return UserRole.DRIVER;
+          if (normalizedRoles.includes('PASSENGER')) return UserRole.PASSENGER;
+          if (normalizedRoles.includes('DELIVERY')) return UserRole.DELIVERY;
+          if (normalizedRoles.includes('PROVIDER')) return UserRole.PROVIDER;
+          // Legacy role mapping: SELLER behaves like PROVIDER in routing
+          if (normalizedRoles.includes('SELLER')) return UserRole.PROVIDER;
+          return UserRole.CLIENT;
+        };
+
         const user: User = {
           id: userDto.id,
           firstName: userDto.firstName || 'User',
           lastName: userDto.lastName || '',
           email: userDto.email,
           phone: userDto.phone || '',
-          role: (userDto.roles && userDto.roles.length > 0) 
-            ? (userDto.roles[0] as unknown as UserRole) 
-            : UserRole.CLIENT,
+          role: pickRole(),
           isVerified: userDto.enabled,
           createdAt: new Date(),
           updatedAt: new Date()

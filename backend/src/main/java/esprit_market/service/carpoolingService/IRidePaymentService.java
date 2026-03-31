@@ -10,6 +10,10 @@ import java.util.Optional;
 public interface IRidePaymentService {
     List<RidePaymentResponseDTO> findAll();
 
+    double getTotalCompletedRevenue();
+
+    long countCompletedPayments();
+
     RidePaymentResponseDTO findById(ObjectId id);
 
     Optional<RidePaymentResponseDTO> findByBookingId(ObjectId bookingId);

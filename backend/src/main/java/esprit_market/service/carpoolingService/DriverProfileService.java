@@ -16,13 +16,16 @@ import esprit_market.Enum.userEnum.Role;
 import esprit_market.entity.user.User;
 import esprit_market.repository.carpoolingRepository.RideRepository;
 import esprit_market.repository.carpoolingRepository.RidePaymentRepository;
+import esprit_market.repository.carpoolingRepository.RideRequestRepository;
 import esprit_market.mappers.carpooling.DriverProfileMapper;
+import esprit_market.service.notificationService.NotificationService;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.context.annotation.Lazy;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -34,24 +37,30 @@ public class DriverProfileService implements IDriverProfileService {
     private final RideRepository rideRepository;
     private final BookingRepository bookingRepository;
     private final RidePaymentRepository ridePaymentRepository;
+    private final RideRequestRepository rideRequestRepository;
     private final UserRepository userRepository;
     private final DriverProfileMapper driverProfileMapper;
     private final @Lazy IRideService rideService;
+    private final NotificationService notificationService;
 
     public DriverProfileService(DriverProfileRepository driverProfileRepository,
-                               RideRepository rideRepository,
-                               BookingRepository bookingRepository,
-                               RidePaymentRepository ridePaymentRepository,
-                               UserRepository userRepository,
-                               DriverProfileMapper driverProfileMapper,
-                               @Lazy IRideService rideService) {
+            RideRepository rideRepository,
+            BookingRepository bookingRepository,
+            RidePaymentRepository ridePaymentRepository,
+            RideRequestRepository rideRequestRepository,
+            UserRepository userRepository,
+            DriverProfileMapper driverProfileMapper,
+            @Lazy IRideService rideService,
+            NotificationService notificationService) {
         this.driverProfileRepository = driverProfileRepository;
         this.rideRepository = rideRepository;
         this.bookingRepository = bookingRepository;
         this.ridePaymentRepository = ridePaymentRepository;
+        this.rideRequestRepository = rideRequestRepository;
         this.userRepository = userRepository;
         this.driverProfileMapper = driverProfileMapper;
         this.rideService = rideService;
+        this.notificationService = notificationService;
     }
 
     public DriverProfileResponseDTO registerDriver(DriverProfileRequestDTO dto, String userEmail) {
@@ -77,6 +86,16 @@ public class DriverProfileService implements IDriverProfileService {
             user.setRoles(java.util.List.of(Role.DRIVER));
         }
         userRepository.save(user);
+        
+        // Notify admins about the new driver registration
+        notificationService.notifyAllAdmins(
+                "New Driver Registered 🚗",
+                "A new driver (" + user.getFirstName() + " " + user.getLastName() 
+                        + ") has registered with license number: " + dto.getLicenseNumber() + ".",
+                esprit_market.Enum.notificationEnum.NotificationType.RIDE_UPDATE,
+                profile.getId().toHexString()
+        );
+        
         return driverProfileMapper.toResponseDTO(profile);
     }
 
@@ -149,15 +168,38 @@ public class DriverProfileService implements IDriverProfileService {
                 .orElseThrow(() -> new IllegalArgumentException("Driver profile not found"));
         driver.setIsVerified(true);
         driverProfileRepository.save(driver);
+
+        // Notify the driver that their profile has been verified
+        userRepository.findById(driver.getUserId()).ifPresent(driverUser ->
+                notificationService.sendNotification(
+                        driverUser,
+                        "Profile Verified ✅",
+                        "Congratulations! Your driver profile has been verified. You can now create rides and accept passengers.",
+                        esprit_market.Enum.notificationEnum.NotificationType.RIDE_UPDATE,
+                        id.toHexString()
+                )
+        );
+    }
+
+    @Override
+    public long countUnverifiedDrivers() {
+        return driverProfileRepository.countByIsVerifiedFalse();
     }
 
     public DriverStatsDTO getDriverStats(ObjectId driverProfileId) {
         DriverProfile driver = driverProfileRepository.findById(driverProfileId)
                 .orElseThrow(() -> new IllegalArgumentException("Driver profile not found"));
 
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime since = now.minusDays(30);
+
         List<Ride> completedRides = rideRepository.findByDriverProfileId(driverProfileId).stream()
                 .filter(r -> r.getStatus() == RideStatus.COMPLETED)
                 .toList();
+
+        int recentCompleted = (int) completedRides.stream()
+                .filter(r -> r.getCompletedAt() != null && r.getCompletedAt().isAfter(since))
+                .count();
 
         float totalEarnings = 0;
         for (Ride ride : completedRides) {
@@ -173,8 +215,10 @@ public class DriverProfileService implements IDriverProfileService {
 
         return DriverStatsDTO.builder()
                 .totalRidesCompleted(completedRides.size())
+                .recentRidesCompleted(recentCompleted)
                 .averageRating(driver.getAverageRating() != null ? driver.getAverageRating() : 0f)
                 .totalEarnings(totalEarnings)
+                .directRequestsCount(rideRequestRepository.countByStatus(esprit_market.Enum.carpoolingEnum.RideRequestStatus.PENDING))
                 .build();
     }
 

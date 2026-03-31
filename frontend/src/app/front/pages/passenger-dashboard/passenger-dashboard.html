@@ -1,0 +1,197 @@
+<div class="passenger-dashboard min-h-screen pt-20 pb-12 px-4 md:px-8">
+  <div class="max-w-[1200px] mx-auto">
+
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+      <div>
+        <h1 class="text-3xl font-black text-gray-900 tracking-tight">My Passenger Dashboard</h1>
+        <p class="text-gray-500 font-medium mt-1">Track your rides, bookings, and requests.</p>
+      </div>
+      <div class="flex gap-3">
+        <button class="btn-primary flex items-center gap-2" (click)="load()">↻ Refresh</button>
+        <a [routerLink]="['/carpooling']" class="btn-primary flex items-center gap-2" style="background:#111;">🚗 Find Rides</a>
+      </div>
+    </div>
+
+    @if (error()) {
+      <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-2xl text-red-700 font-semibold flex items-center justify-between">
+        <span>{{ error() }}</span>
+        <button (click)="error.set(null)" class="text-red-400 hover:text-red-600 font-black">✕</button>
+      </div>
+    }
+
+    @if (isLoading()) {
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        @for (i of [1,2,3,4]; track i) {
+          <div class="stat-card p-6 animate-pulse h-28 bg-gray-50"></div>
+        }
+      </div>
+    } @else if (dashboard()) {
+
+      <!-- Stats Row -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div class="stat-card stat-accent p-6">
+          <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Total Rides</p>
+          <p class="text-4xl font-black text-gray-900">{{ dashboard()!.totalRidesCompleted }}</p>
+          <p class="text-xs text-gray-400 mt-1">Completed</p>
+        </div>
+        <div class="stat-card stat-gold p-6">
+          <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Total Spent</p>
+          <p class="text-3xl font-black text-gray-900">{{ formatCurrency(dashboard()!.totalSpent) }}</p>
+          <p class="text-xs text-gray-400 mt-1">All time</p>
+        </div>
+        <div class="stat-card stat-gray p-6">
+          <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Active Bookings</p>
+          <p class="text-4xl font-black text-gray-900">{{ dashboard()!.activeBookings }}</p>
+          <p class="text-xs text-gray-400 mt-1">Confirmed / Pending</p>
+        </div>
+        <div class="stat-card stat-dark p-6">
+          <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">My Requests</p>
+          <p class="text-4xl font-black text-gray-900">{{ dashboard()!.pendingRequests }}</p>
+          <p class="text-xs text-gray-400 mt-1">Awaiting driver</p>
+        </div>
+      </div>
+
+      <!-- Rating strip -->
+      <div class="mb-8 p-5 rounded-2xl border border-gray-100 bg-gray-50 flex items-center gap-6">
+        <div class="w-14 h-14 rounded-full bg-[#800000] flex items-center justify-center text-white font-black text-xl">
+          {{ dashboard()!.passengerName.charAt(0) }}
+        </div>
+        <div>
+          <p class="font-black text-gray-900 text-lg">{{ dashboard()!.passengerName }}</p>
+          <div class="flex items-center gap-2 mt-1">
+            <div class="flex gap-0.5">
+              @for (i of [1,2,3,4,5]; track i) {
+                <span class="text-sm" [style.color]="i <= (dashboard()!.averageRating || 0) ? '#c8a030' : '#d1d5db'">★</span>
+              }
+            </div>
+            <span class="text-sm font-bold text-gray-500">{{ (dashboard()!.averageRating || 0).toFixed(1) }} / 5</span>
+          </div>
+        </div>
+        <div class="ml-auto">
+          <a [routerLink]="['/carpooling']" [queryParams]="{action: 'request'}" class="btn-primary">+ Post a Ride Request</a>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="flex gap-3 mb-6">
+        <button class="tab-btn" [class.active]="activeTab() === 'bookings'" (click)="activeTab.set('bookings')">
+          My Bookings ({{ bookings().length }})
+        </button>
+        <button class="tab-btn" [class.active]="activeTab() === 'requests'" (click)="activeTab.set('requests')">
+          My Ride Requests ({{ requests().length }})
+        </button>
+      </div>
+
+      <!-- Bookings Tab -->
+      @if (activeTab() === 'bookings') {
+        @if (bookings().length === 0) {
+          <div class="text-center py-16 border-2 border-dashed border-gray-200 rounded-3xl">
+            <div class="text-5xl mb-4">🎫</div>
+            <p class="text-gray-400 font-bold text-lg">No bookings yet.</p>
+            <a [routerLink]="['/carpooling']" class="inline-block mt-4 btn-primary">Browse Rides</a>
+          </div>
+        } @else {
+          <div class="space-y-3">
+            @for (booking of bookings(); track booking.bookingId) {
+              <div class="row-card p-5 flex flex-col md:flex-row items-start md:items-center gap-4">
+                <!-- Route -->
+                <div class="flex items-center gap-3 flex-1">
+                  <div class="flex flex-col items-center gap-1">
+                    <div class="w-2.5 h-2.5 rounded-full bg-[#800000]"></div>
+                    <div class="w-px h-6 bg-gray-200"></div>
+                    <div class="w-2.5 h-2.5 rounded-full bg-green-500"></div>
+                  </div>
+                  <div>
+                    <p class="font-black text-gray-900">{{ booking.pickupLocation }}</p>
+                    <p class="text-sm text-gray-500 mt-1">→ {{ booking.dropoffLocation }}</p>
+                  </div>
+                </div>
+                <!-- Details -->
+                <div class="flex items-center gap-6 flex-wrap">
+                  <div class="text-center">
+                    <p class="text-xs text-gray-400 font-bold uppercase">Seats</p>
+                    <p class="font-black text-gray-900">{{ booking.numberOfSeats }}</p>
+                  </div>
+                  <div class="text-center">
+                    <p class="text-xs text-gray-400 font-bold uppercase">Price</p>
+                    <p class="font-black text-gray-900">{{ formatCurrency(booking.totalPrice || 0) }}</p>
+                  </div>
+                  <span class="px-3 py-1 rounded-full text-xs font-black" [ngClass]="statusColor('' + booking.status)">
+                    {{ booking.status }}
+                  </span>
+                  @if (('' + booking.status) === 'PENDING' || ('' + booking.status) === 'CONFIRMED') {
+                    <button class="btn-cancel" (click)="cancelBooking(booking.bookingId)">Cancel</button>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        }
+      }
+
+      <!-- Requests Tab -->
+      @if (activeTab() === 'requests') {
+        @if (requests().length === 0) {
+          <div class="text-center py-16 border-2 border-dashed border-gray-200 rounded-3xl">
+            <div class="text-5xl mb-4">📣</div>
+            <p class="text-gray-400 font-bold text-lg">No ride requests posted yet.</p>
+            <a [routerLink]="['/carpooling']" [queryParams]="{action: 'request'}" class="inline-block mt-4 btn-primary">Post a Request</a>
+          </div>
+        } @else {
+          <div class="space-y-3">
+            @for (req of requests(); track req.id) {
+              <div class="row-card p-5 flex flex-col md:flex-row items-start md:items-center gap-4">
+                <div class="flex items-center gap-3 flex-1">
+                  <div class="flex flex-col items-center gap-1">
+                    <div class="w-2.5 h-2.5 rounded-full bg-[#800000]"></div>
+                    <div class="w-px h-6 bg-gray-200"></div>
+                    <div class="w-2.5 h-2.5 rounded-full bg-green-500"></div>
+                  </div>
+                  <div>
+                    <p class="font-black text-gray-900">{{ req.departureLocation }}</p>
+                    <p class="text-sm text-gray-500 mt-1">→ {{ req.destinationLocation }}</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-6 flex-wrap">
+                  <div class="text-center">
+                    <p class="text-xs text-gray-400 font-bold uppercase">Date</p>
+                    <p class="font-bold text-gray-900 text-sm">{{ req.departureTime | date:'MMM d, HH:mm' }}</p>
+                  </div>
+                  <div class="text-center">
+                    <p class="text-xs text-gray-400 font-bold uppercase">Seats</p>
+                    <p class="font-black text-gray-900">{{ req.requestedSeats }}</p>
+                  </div>
+                  <div class="text-center">
+                    <p class="text-xs text-gray-400 font-bold uppercase">Proposed</p>
+                    <p class="font-black text-gray-900">{{ formatCurrency(req.proposedPrice || 0) }}</p>
+                  </div>
+                  @if (req.counterPrice) {
+                    <div class="text-center">
+                      <p class="text-xs text-amber-600 font-bold uppercase">Counter</p>
+                      <p class="font-black text-amber-700">{{ formatCurrency(req.counterPrice) }}</p>
+                    </div>
+                  }
+                  <span class="px-3 py-1 rounded-full text-xs font-black" [ngClass]="statusColor(req.status)">
+                    {{ req.status }}
+                  </span>
+                  @if (req.status === 'PENDING') {
+                    <button class="btn-cancel" (click)="cancelRequest(req.id)">Cancel</button>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        }
+      }
+
+    } @else {
+      <div class="text-center py-20">
+        <div class="text-5xl mb-4">⏳</div>
+        <p class="text-gray-400 font-bold text-lg mb-4">Loading your profile...</p>
+        <button class="btn-primary inline-block" (click)="load()">Try Again</button>
+      </div>
+    }
+
+  </div>
+</div>

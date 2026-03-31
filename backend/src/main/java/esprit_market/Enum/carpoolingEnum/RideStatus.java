@@ -1,5 +1,5 @@
 package esprit_market.Enum.carpoolingEnum;
 
 public enum RideStatus {
-    PENDING, CONFIRMED, IN_PROGRESS, COMPLETED, CANCELLED
+    PENDING, CONFIRMED, ACCEPTED, IN_PROGRESS, ON_ROUTE, COMPLETED, CANCELLED
 }

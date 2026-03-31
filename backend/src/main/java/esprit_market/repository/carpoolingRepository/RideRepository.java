@@ -19,6 +19,8 @@ public interface RideRepository extends MongoRepository<Ride, ObjectId> {
 
         List<Ride> findByDriverProfileId(ObjectId driverProfileId);
 
+        long countByStatusIn(java.util.Collection<RideStatus> statuses);
+
         List<Ride> findByStatusAndDepartureTimeBefore(RideStatus status, LocalDateTime before);
 
         List<Ride> findByStatus(RideStatus status);
