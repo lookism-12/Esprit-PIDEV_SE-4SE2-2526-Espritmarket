@@ -6,6 +6,7 @@ export * from './models/menu-item.model';
 
 // Services
 export { AdminAuthService } from './services/admin-auth.service';
+export { AdminService } from './services/admin.service';
 export { DashboardService } from './services/dashboard.service';
 export { UserService } from './services/user.service';
 export { KYCService } from './services/kyc.service';

@@ -5,7 +5,8 @@ export interface User {
   lastName: string;
   phone?: string;
   avatar?: string;
-  role: UserRole;
+  roles: UserRole[]; // ✅ Primary roles array (matches backend)
+  role: UserRole; // ✅ Keep for backward compatibility (first role)
   isVerified: boolean;
   academicInfo?: AcademicInfo;
   reputation?: ReputationInfo;
@@ -58,7 +59,8 @@ export enum UserRole {
   DRIVER = 'DRIVER',
   PASSENGER = 'PASSENGER',
   DELIVERY = 'DELIVERY',
-  ADMIN = 'ADMIN'
+  ADMIN = 'ADMIN',
+  SELLER = 'SELLER' // ✅ Added SELLER role
 }
 
 // Frontend role groups for registration UI

@@ -1,0 +1,230 @@
+<div class="p-8 max-w-5xl mx-auto space-y-6 animate-in fade-in duration-500">
+  <!-- Header -->
+  <div class="bg-white p-8 rounded-3xl shadow-soft border border-gray-100">
+    <h1 class="text-3xl font-black text-dark tracking-tight">Create New Coupon</h1>
+    <p class="text-secondary font-medium mt-1">Create discount coupons for your marketplace</p>
+  </div>
+
+  <!-- Success Message -->
+  @if (success()) {
+    <div class="bg-green-50 border border-green-200 text-green-700 px-6 py-4 rounded-2xl flex items-center gap-3">
+      <div class="w-8 h-8 bg-green-100 rounded-xl flex items-center justify-center">
+        <span class="text-lg">✅</span>
+      </div>
+      <span class="font-bold">{{ success() }}</span>
+    </div>
+  }
+
+  <!-- Error Message -->
+  @if (error()) {
+    <div class="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-2xl flex items-center gap-3">
+      <div class="w-8 h-8 bg-red-100 rounded-xl flex items-center justify-center">
+        <span class="text-lg">⚠️</span>
+      </div>
+      <span class="font-bold flex-1">{{ error() }}</span>
+      <button (click)="clearError()" class="w-6 h-6 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-all">
+        <span class="text-sm">✕</span>
+      </button>
+    </div>
+  }
+
+  <form [formGroup]="couponForm" (ngSubmit)="onSubmit()">
+    <!-- Coupon Details Card -->
+    <div class="bg-white rounded-3xl shadow-soft border border-gray-100 p-8 space-y-6">
+      <h2 class="text-xl font-black text-dark flex items-center gap-3">
+        <span class="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-lg">🎫</span>
+        Coupon Details
+      </h2>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Left Column -->
+        <div class="space-y-4">
+          <!-- Coupon Code -->
+          <div>
+            <label for="code" class="block text-xs font-black text-secondary uppercase tracking-widest mb-1">
+              Coupon Code <span class="text-red-500">*</span>
+            </label>
+            <input 
+              id="code"
+              formControlName="code"
+              type="text"
+              placeholder="e.g., SAVE20, WELCOME10"
+              [class]="isFieldInvalid('code')
+                ? 'w-full px-4 py-3 border-2 border-red-300 rounded-xl focus:border-red-400 focus:ring-2 focus:ring-red-100 outline-none transition-all text-sm font-medium uppercase'
+                : 'w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm font-medium uppercase'">
+            @if (isFieldInvalid('code')) {
+              <p class="text-red-500 text-xs font-bold mt-1">{{ getFieldError('code') }}</p>
+            }
+          </div>
+
+          <!-- Discount Type & Value -->
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label for="discountType" class="block text-xs font-black text-secondary uppercase tracking-widest mb-1">
+                Discount Type <span class="text-red-500">*</span>
+              </label>
+              <select 
+                id="discountType"
+                formControlName="discountType"
+                class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm font-medium bg-white">
+                <option value="PERCENTAGE">Percentage (%)</option>
+                <option value="FIXED">Fixed Amount (TND)</option>
+              </select>
+            </div>
+            <div>
+              <label for="discountValue" class="block text-xs font-black text-secondary uppercase tracking-widest mb-1">
+                Discount Value <span class="text-red-500">*</span>
+              </label>
+              <div class="relative">
+                <input 
+                  id="discountValue"
+                  formControlName="discountValue"
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  placeholder="0.00"
+                  [class]="isFieldInvalid('discountValue')
+                    ? 'w-full px-4 py-3 pr-12 border-2 border-red-300 rounded-xl focus:border-red-400 focus:ring-2 focus:ring-red-100 outline-none transition-all text-sm font-medium'
+                    : 'w-full px-4 py-3 pr-12 border-2 border-gray-200 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm font-medium'">
+                <span class="absolute right-4 top-1/2 -translate-y-1/2 text-secondary font-bold text-sm">
+                  {{ discountTypeLabel() }}
+                </span>
+              </div>
+              @if (isFieldInvalid('discountValue')) {
+                <p class="text-red-500 text-xs font-bold mt-1">{{ getFieldError('discountValue') }}</p>
+              }
+            </div>
+          </div>
+
+          <!-- Expiration Date -->
+          <div>
+            <label for="expirationDate" class="block text-xs font-black text-secondary uppercase tracking-widest mb-1">
+              Expiration Date <span class="text-red-500">*</span>
+            </label>
+            <input 
+              id="expirationDate"
+              formControlName="expirationDate"
+              type="date"
+              [min]="minDate"
+              [class]="isFieldInvalid('expirationDate')
+                ? 'w-full px-4 py-3 border-2 border-red-300 rounded-xl focus:border-red-400 focus:ring-2 focus:ring-red-100 outline-none transition-all text-sm font-medium'
+                : 'w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm font-medium'">
+            @if (isFieldInvalid('expirationDate')) {
+              <p class="text-red-500 text-xs font-bold mt-1">{{ getFieldError('expirationDate') }}</p>
+            }
+          </div>
+        </div>
+
+        <!-- Right Column -->
+        <div class="space-y-4">
+          <!-- Optional Settings -->
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label for="minCartAmount" class="block text-xs font-black text-secondary uppercase tracking-widest mb-1">
+                Min Cart Amount (TND)
+              </label>
+              <input 
+                id="minCartAmount"
+                formControlName="minCartAmount"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="Optional"
+                class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm font-medium">
+            </div>
+            <div>
+              <label for="usageLimit" class="block text-xs font-black text-secondary uppercase tracking-widest mb-1">
+                Usage Limit
+              </label>
+              <input 
+                id="usageLimit"
+                formControlName="usageLimit"
+                type="number"
+                min="1"
+                placeholder="Unlimited"
+                class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm font-medium">
+            </div>
+          </div>
+
+          <!-- User Level -->
+          <div>
+            <label for="eligibleUserLevel" class="block text-xs font-black text-secondary uppercase tracking-widest mb-1">
+              Eligible User Level
+            </label>
+            <select 
+              id="eligibleUserLevel"
+              formControlName="eligibleUserLevel"
+              class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm font-medium bg-white">
+              <option value="">All Users</option>
+              <option value="BRONZE">Bronze</option>
+              <option value="SILVER">Silver</option>
+              <option value="GOLD">Gold</option>
+              <option value="PLATINUM">Platinum</option>
+            </select>
+          </div>
+
+          <!-- Combinable with Discounts -->
+          <div class="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100">
+            <input 
+              type="checkbox"
+              id="combinableWithDiscount"
+              formControlName="combinableWithDiscount"
+              class="w-5 h-5 text-primary border-2 border-gray-300 rounded focus:ring-2 focus:ring-primary/20">
+            <label for="combinableWithDiscount" class="text-dark font-bold text-sm cursor-pointer">
+              Combinable with other discounts
+            </label>
+          </div>
+
+          <!-- Description -->
+          <div>
+            <label for="description" class="block text-xs font-black text-secondary uppercase tracking-widest mb-1">
+              Description
+            </label>
+            <textarea 
+              id="description"
+              formControlName="description"
+              rows="4"
+              placeholder="Optional description for internal use"
+              class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm font-medium resize-none"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Preview Section -->
+      @if (estimatedDiscount()) {
+        <div class="p-4 bg-green-50 border border-green-200 rounded-xl">
+          <h3 class="text-green-700 font-bold text-sm mb-1 flex items-center gap-2">
+            <span>👁️</span> Preview
+          </h3>
+          <p class="text-dark text-sm">
+            Customers will get <strong class="text-green-700">{{ estimatedDiscount() }}</strong> with this coupon
+          </p>
+        </div>
+      }
+    </div>
+
+    <!-- Form Actions -->
+    <div class="flex gap-4">
+      <button 
+        type="submit"
+        [disabled]="isSubmitting() || couponForm.invalid"
+        class="flex-1 py-3 bg-primary text-white font-black rounded-xl hover:bg-primary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm uppercase tracking-widest flex items-center justify-center gap-2">
+        @if (isSubmitting()) {
+          <div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+          Creating...
+        } @else {
+          <span>🎫</span>
+          Create Coupon
+        }
+      </button>
+      
+      <button 
+        type="button"
+        (click)="cancel()"
+        [disabled]="isSubmitting()"
+        class="px-8 py-3 bg-gray-100 text-dark font-black rounded-xl hover:bg-gray-200 transition-all disabled:opacity-50 text-sm">
+        Cancel
+      </button>
+    </div>
+  </form>
+</div>

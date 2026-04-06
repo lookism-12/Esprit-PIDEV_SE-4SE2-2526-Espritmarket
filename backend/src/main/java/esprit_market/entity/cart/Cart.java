@@ -26,6 +26,9 @@ public class Cart {
     @JsonIgnore
     private User user;
     
+    // Store userId directly to avoid @DBRef lazy loading issues
+    private ObjectId userId;
+    
     private LocalDateTime creationDate;
     
     private LocalDateTime lastUpdated;
@@ -55,6 +58,10 @@ public class Cart {
     
     @JsonIgnore
     public ObjectId getUserId() {
+        // Prefer direct userId field to avoid @DBRef lazy loading issues
+        if (userId != null) {
+            return userId;
+        }
         return user != null ? user.getId() : null;
     }
 }

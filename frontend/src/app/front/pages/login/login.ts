@@ -1,8 +1,9 @@
-import { Component, signal, inject } from '@angular/core';
+import { Component, signal, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, Router } from '@angular/router';
+import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AuthService } from '../../core/auth.service';
+import { ToastService } from '../../core/toast.service';
 
 @Component({
   selector: 'app-login',
@@ -11,21 +12,33 @@ import { AuthService } from '../../core/auth.service';
   templateUrl: './login.html',
   styleUrl: './login.scss',
 })
-export class Login {
+export class Login implements OnInit {
   private fb = inject(FormBuilder);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
   private authService = inject(AuthService);
+  private toastService = inject(ToastService);
 
   loginForm: FormGroup;
   showPassword = signal(false);
   isLoading = signal(false);
   errorMessage = signal<string | null>(null);
+  loginPromptMessage = signal<string | null>(null);
 
   constructor() {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required]], // No minLength for login
       rememberMe: [false]
+    });
+  }
+
+  ngOnInit(): void {
+    // Check for login prompt messages
+    this.route.queryParams.subscribe(params => {
+      if (params['message'] === 'login-to-purchase') {
+        this.loginPromptMessage.set('Please log in to continue with your purchase');
+      }
     });
   }
 
@@ -78,13 +91,60 @@ export class Login {
           localStorage.setItem('rememberMe', 'true');
         }
         
+        // Handle pending purchase after successful login
+        this.handlePostLoginActions();
+        
+        // Show success message
+        this.toastService.success('Welcome back! Login successful');
+        
         // ✅ AuthService handles role-based redirection
-        // No need to navigate here
+        // No need to navigate here unless we have specific post-login actions
       },
       error: (error) => {
         console.error('❌ Login failed:', error);
         this.isLoading.set(false);
         this.errorMessage.set('Invalid email or password. Please try again.');
+        this.toastService.error('Login failed. Please check your credentials.');
+      }
+    });
+  }
+
+  /**
+   * Handle actions after successful login
+   */
+  private handlePostLoginActions(): void {
+    // Check for pending purchase
+    const pendingPurchase = sessionStorage.getItem('pendingPurchase');
+    if (pendingPurchase) {
+      try {
+        const purchaseData = JSON.parse(pendingPurchase);
+        console.log('📦 Found pending purchase:', purchaseData);
+        
+        // Clear the pending purchase
+        sessionStorage.removeItem('pendingPurchase');
+        
+        // Show message and redirect to product page
+        this.toastService.info(`Redirecting you to ${purchaseData.productName}...`, 3000);
+        
+        // Navigate to the product page
+        setTimeout(() => {
+          this.router.navigate(['/product', purchaseData.productId]);
+        }, 1000);
+        
+        return; // Don't do default redirect
+      } catch (error) {
+        console.error('Error parsing pending purchase:', error);
+      }
+    }
+
+    // Check for return URL
+    this.route.queryParams.subscribe(params => {
+      const returnUrl = params['returnUrl'];
+      if (returnUrl) {
+        console.log('🔄 Redirecting to return URL:', returnUrl);
+        setTimeout(() => {
+          this.router.navigate([returnUrl]);
+        }, 1000);
       }
     });
   }

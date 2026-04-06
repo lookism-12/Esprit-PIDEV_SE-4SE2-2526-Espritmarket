@@ -15,6 +15,16 @@ public class ShopMapper {
         return ShopResponseDTO.builder()
                 .id(shop.getId() != null ? shop.getId().toHexString() : null)
                 .ownerId(shop.getOwnerId() != null ? shop.getOwnerId().toHexString() : null)
+                .name(shop.getName())
+                .description(shop.getDescription())
+                .address(shop.getAddress())
+                .phone(shop.getPhone())
+                .email(shop.getEmail())
+                .logo(shop.getLogo())
+                .createdAt(shop.getCreatedAt())
+                .updatedAt(shop.getUpdatedAt())
+                .socialLinks(shop.getSocialLinks())
+                .isActive(shop.isActive())
                 .build();
     }
 
@@ -23,6 +33,16 @@ public class ShopMapper {
             return null;
         return Shop.builder()
                 .ownerId(dto.getOwnerId() != null ? new ObjectId(dto.getOwnerId()) : null)
+                .name(dto.getName())
+                .description(dto.getDescription())
+                .address(dto.getAddress())
+                .phone(dto.getPhone())
+                .email(dto.getEmail())
+                .logo(dto.getLogo())
+                .socialLinks(dto.getSocialLinks())
+                .isActive(dto.getIsActive() != null ? dto.getIsActive() : true)
+                .createdAt(java.time.LocalDateTime.now())
+                .updatedAt(java.time.LocalDateTime.now())
                 .build();
     }
 }

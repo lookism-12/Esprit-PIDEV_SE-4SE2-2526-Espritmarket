@@ -213,9 +213,10 @@ export class AuthService {
           lastName: userDto.lastName || '',
           email: userDto.email,
           phone: userDto.phone || '',
+          roles: (userDto.roles || ['CLIENT']).map(role => role as UserRole), // ✅ Cast string array to UserRole array
           role: (userDto.roles && userDto.roles.length > 0) 
-            ? (userDto.roles[0] as unknown as UserRole) 
-            : UserRole.CLIENT,
+            ? (userDto.roles[0] as UserRole) 
+            : UserRole.CLIENT, // ✅ Keep for backward compatibility
           isVerified: userDto.enabled,
           createdAt: new Date(),
           updatedAt: new Date()
@@ -281,30 +282,46 @@ export class AuthService {
   /**
    * Redirect user based on their role
    * Maps backend roles to frontend routes
+   * ✅ CRITICAL FIX: Only ADMIN goes to back office, all others use front-end
    */
   private redirectByRole(role: UserRole): void {
     console.log(`🔀 Redirecting user with role: ${role}`);
     
+    // Check if we're already in the correct interface
+    const currentPath = this.router.url;
+    
     switch (role) {
       case UserRole.ADMIN:
-        this.router.navigate(['/admin']);
+        // ✅ ONLY ADMIN users go to admin back office
+        console.log('🏢 ADMIN detected - redirecting to admin dashboard');
+        if (!currentPath.startsWith('/admin')) {
+          this.router.navigate(['/admin/dashboard']);
+        }
         break;
       case UserRole.PROVIDER:
       case 'SELLER' as any: // Legacy SELLER role
-        this.router.navigate(['/provider/dashboard']);
+        // ✅ CRITICAL: Providers MUST use front-end interface, NOT admin
+        console.log('🏪 PROVIDER detected - redirecting to front-end profile (NOT admin)');
+        this.router.navigate(['/profile']);
         break;
       case UserRole.DRIVER:
+        console.log('🚗 DRIVER detected - redirecting to driver dashboard');
         this.router.navigate(['/driver/dashboard']);
         break;
       case UserRole.DELIVERY:
+        console.log('📦 DELIVERY detected - redirecting to front-end profile');
         this.router.navigate(['/profile']);
         break;
       case UserRole.PASSENGER:
+        console.log('🚌 PASSENGER detected - redirecting to carpooling');
         this.router.navigate(['/carpooling']);
         break;
       case UserRole.CLIENT:
       default:
+        // ✅ Clients use front-end interface
+        console.log('👤 CLIENT detected - redirecting to front-end profile');
         this.router.navigate(['/profile']);
+        break;
     }
   }
 
@@ -460,6 +477,22 @@ export class AuthService {
     const firstName = this.userFirstName();
     const lastName = this.userLastName();
     return `${(firstName?.charAt(0) || '').toUpperCase()}${(lastName?.charAt(0) || '').toUpperCase()}` || 'U';
+  }
+
+  /**
+   * Check if current user is admin
+   */
+  isAdmin(): boolean {
+    const user = this.currentUser();
+    return user?.roles?.includes(UserRole.ADMIN) || false;
+  }
+
+  /**
+   * Check if current user is seller/provider
+   */
+  isSeller(): boolean {
+    const user = this.currentUser();
+    return user?.roles?.includes(UserRole.PROVIDER) || false;
   }
 }
 

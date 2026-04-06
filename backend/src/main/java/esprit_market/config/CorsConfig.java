@@ -13,7 +13,10 @@ import java.util.Arrays;
  * 
  * Enables Cross-Origin Resource Sharing (CORS) to allow
  * Angular frontend (running on port 4200) to communicate with
- * Spring Boot backend (running on port 8089).
+ * Spring Boot backend (running on port 8090).
+ * 
+ * CRITICAL: This configuration MUST be injected into SecurityConfig
+ * to work properly with Spring Security.
  */
 @Configuration
 public class CorsConfig {
@@ -22,44 +25,43 @@ public class CorsConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Allow requests from Angular frontend
+        // Allow requests from Angular frontend - CORRECTED PORTS
         configuration.setAllowedOrigins(Arrays.asList(
-                "http://localhost:4200",    // Development environment
-                "http://localhost:3000",    // Alternative dev port
-                "http://127.0.0.1:4200",
+                "http://localhost:4200",    // Angular development server
+                "http://localhost:3000",    // Alternative dev port  
+                "http://127.0.0.1:4200",    // Localhost alias
+                "http://localhost:4201",    // Alternative Angular port
                 "https://espritmarket.com", // Production domain
                 "https://www.espritmarket.com"
         ));
 
-        // Allow HTTP methods
+        // Allow ALL standard HTTP methods
         configuration.setAllowedMethods(Arrays.asList(
                 "GET",
-                "POST",
+                "POST", 
                 "PUT",
                 "DELETE",
                 "PATCH",
-                "OPTIONS"
+                "OPTIONS",
+                "HEAD"
         ));
 
-        // Allow headers
+        // Allow ALL necessary headers for Angular HttpClient + JWT
         configuration.setAllowedHeaders(Arrays.asList(
-                "Authorization",
-                "Content-Type",
-                "X-Requested-With",
-                "Accept",
-                "X-Auth-Token"
+                "*"  // Allow all headers - simplifies Angular integration
         ));
 
-        // Allow credentials (cookies, authorization headers)
+        // CRITICAL: Allow credentials for JWT tokens
         configuration.setAllowCredentials(true);
 
-        // Cache preflight requests for 3600 seconds (1 hour)
+        // Cache preflight requests for 1 hour
         configuration.setMaxAge(3600L);
 
-        // Expose headers to frontend
+        // Expose headers to frontend (for JWT response headers)
         configuration.setExposedHeaders(Arrays.asList(
                 "Authorization",
-                "Content-Type"
+                "Content-Type",
+                "X-Total-Count"
         ));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

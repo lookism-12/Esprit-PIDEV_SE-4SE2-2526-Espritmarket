@@ -3,9 +3,12 @@ package esprit_market.service.userService;
 import esprit_market.config.Exceptions.BadRequestException;
 import esprit_market.config.Exceptions.ResourceNotFoundException;
 import esprit_market.dto.userDto.UserDTO;
+import esprit_market.entity.marketplace.Shop;
 import esprit_market.entity.user.User;
 import esprit_market.mappers.userMapper.UserMapper;
+import esprit_market.repository.marketplaceRepository.ShopRepository;
 import esprit_market.repository.userRepository.UserRepository;
+import esprit_market.Enum.userEnum.Role;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
 import org.slf4j.Logger;
@@ -35,6 +38,7 @@ public class UserService implements IUserService {
     private String uploadDir;
 
     private final UserRepository userRepository;
+    private final ShopRepository shopRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
 
@@ -58,6 +62,21 @@ public class UserService implements IUserService {
     public UserDTO save(User user) {
         log.info("Saving user with email: {}", user.getEmail());
         User savedUser = userRepository.save(user);
+        
+        // ✅ CRITICAL: Create shop automatically for PROVIDER and SELLER roles
+        if (user.getRoles() != null && 
+            (user.getRoles().contains(Role.PROVIDER) || user.getRoles().contains(Role.SELLER))) {
+            // Check if shop already exists for this user
+            if (shopRepository.findByOwnerId(savedUser.getId()).isEmpty()) {
+                Shop shop = Shop.builder()
+                        .ownerId(savedUser.getId())
+                        .build();
+                Shop savedShop = shopRepository.save(shop);
+                log.info("✅ Shop created automatically for provider: {} with shop ID: {}", 
+                        savedUser.getEmail(), savedShop.getId());
+            }
+        }
+        
         return userMapper.toDTO(savedUser);
     }
 

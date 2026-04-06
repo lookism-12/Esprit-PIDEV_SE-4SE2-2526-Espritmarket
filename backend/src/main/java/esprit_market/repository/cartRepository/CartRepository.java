@@ -13,11 +13,11 @@ import java.util.Optional;
 
 @Repository
 public interface CartRepository extends MongoRepository<Cart, ObjectId> {
-    Optional<Cart> findByUserIdAndStatus(ObjectId userId, CartStatus status);
-    
+    // Use consistent User entity-based queries since Cart has @DBRef User user
     Optional<Cart> findByUserAndStatus(User user, CartStatus status);
     
-    List<Cart> findByUserId(ObjectId userId);
+    // Add method to handle multiple draft carts (to fix the "non unique result" issue)
+    List<Cart> findAllByUserAndStatus(User user, CartStatus status);
     
     List<Cart> findByUser(User user);
     
@@ -25,5 +25,8 @@ public interface CartRepository extends MongoRepository<Cart, ObjectId> {
     
     List<Cart> findByStatusAndLastUpdatedBefore(CartStatus status, LocalDateTime date);
     
-    boolean existsByUserIdAndStatus(ObjectId userId, CartStatus status);
+    boolean existsByUserAndStatus(User user, CartStatus status);
+    
+    // Provider Dashboard - Get all non-draft carts (orders)
+    List<Cart> findByStatusIn(List<CartStatus> statuses);
 }

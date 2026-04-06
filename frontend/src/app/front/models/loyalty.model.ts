@@ -65,29 +65,29 @@ export const LOYALTY_LEVELS: LoyaltyLevelThreshold[] = [
   {
     level: LoyaltyLevel.BRONZE,
     minPoints: 0,
-    maxPoints: 499,
-    benefits: ['1% cashback on purchases', 'Birthday bonus'],
+    maxPoints: 999,
+    benefits: ['10 points per TND', 'Basic support'],
     multiplier: 1
   },
   {
     level: LoyaltyLevel.SILVER,
-    minPoints: 500,
-    maxPoints: 1999,
-    benefits: ['2% cashback on purchases', 'Priority support', 'Exclusive deals'],
+    minPoints: 1000,
+    maxPoints: 4999,
+    benefits: ['15 points per TND', 'Priority support', 'Exclusive deals'],
     multiplier: 1.5
   },
   {
     level: LoyaltyLevel.GOLD,
-    minPoints: 2000,
-    maxPoints: 4999,
-    benefits: ['3% cashback on purchases', 'Free delivery', 'Early access to sales'],
+    minPoints: 5000,
+    maxPoints: 9999,
+    benefits: ['20 points per TND', 'Free delivery', 'Early access to sales'],
     multiplier: 2
   },
   {
     level: LoyaltyLevel.PLATINUM,
-    minPoints: 5000,
+    minPoints: 10000,
     maxPoints: Infinity,
-    benefits: ['5% cashback on purchases', 'Free express delivery', 'VIP support', 'Exclusive events'],
+    benefits: ['30 points per TND', 'Free express delivery', 'VIP support', 'Exclusive events'],
     multiplier: 3
   }
 ];

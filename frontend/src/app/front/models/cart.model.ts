@@ -1,5 +1,54 @@
 import { Product } from './product';
 
+// Backend response interfaces (matching Spring Boot DTOs exactly)
+export interface CartResponse {
+  id: string;
+  userId: string;
+  creationDate: string;
+  lastUpdated: string;
+  subtotal: number;
+  discountAmount: number;
+  taxAmount: number;
+  total: number;
+  status: string;
+  items: CartItemResponse[];
+  appliedCouponCode?: string;
+  appliedDiscountId?: string;
+  shippingAddress?: string;
+  billingAddress?: string;
+  notes?: string;
+  totalItems: number;
+  totalQuantity: number;
+  isEmpty: boolean;
+  hasDiscount: boolean;
+  savingsAmount: number;
+}
+
+export interface CartItemResponse {
+  id: string;
+  cartId: string;
+  productId: string;
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+  subTotal: number;
+  discountApplied: number;
+  status: string;
+  cancelledQuantity?: number;
+  refundAmount?: number;
+  cancellationReason?: string;
+  availableQuantity: number;
+  isPartiallyRefunded: boolean;
+  isFullyRefunded: boolean;
+  // ✅ ENRICHED PRODUCT FIELDS for frontend display
+  imageUrl?: string;
+  category?: string;
+  sellerName?: string;
+  stock?: number;
+  stockStatus?: string;
+}
+
+// Legacy interfaces for backward compatibility
 export interface Cart {
   id: string;
   userId: string;
@@ -16,7 +65,7 @@ export interface Cart {
 export interface CartItem {
   id: string;
   productId: string;
-  product: Product;
+  product?: Product;
   quantity: number;
   unitPrice: number;
   totalPrice: number;
@@ -42,7 +91,5 @@ export interface AddToCartRequest {
 }
 
 export interface UpdateCartItemRequest {
-  itemId: string;
   quantity: number;
-  notes?: string;
 }

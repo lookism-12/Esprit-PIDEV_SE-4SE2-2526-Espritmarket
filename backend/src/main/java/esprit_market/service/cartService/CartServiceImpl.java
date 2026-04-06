@@ -16,6 +16,7 @@ import esprit_market.repository.cartRepository.DiscountRepository;
 import esprit_market.repository.marketplaceRepository.ProductRepository;
 import esprit_market.repository.userRepository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,6 +49,7 @@ import java.util.stream.Collectors;
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class CartServiceImpl implements ICartService {
 
     // --- Repositories for database access ---
@@ -64,6 +66,9 @@ public class CartServiceImpl implements ICartService {
 
     // --- External service for loyalty points ---
     private final LoyaltyCardServiceImpl loyaltyCardService;
+    
+    // --- Stock management service ---
+    private final StockManagementService stockManagementService;
 
     // Tax rate applied after discount
     private static final double TAX_RATE = 0.18;
@@ -75,26 +80,57 @@ public class CartServiceImpl implements ICartService {
 
     private Cart getUserCart(ObjectId userId, CartStatus status) {
         User user = getUserById(userId);
+        if (status == CartStatus.DRAFT) {
+            return getSingleDraftCartOrThrow(user);
+        }
         return cartRepository.findByUserAndStatus(user, status)
                 .orElseThrow(() -> new CartNotFoundException("Cart not found"));
     }
 
     private Cart getUserCartOrElse(ObjectId userId, CartStatus status, Cart defaultCart) {
         User user = getUserById(userId);
+        if (status == CartStatus.DRAFT) {
+            return getSingleDraftCart(user);
+        }
         return cartRepository.findByUserAndStatus(user, status).orElse(defaultCart);
     }
 
     /**
      * Get user's active draft cart.
      * If none exists, create a new one.
+     * If multiple exist, consolidate them into one.
      */
     @Override
     public CartResponse getOrCreateCart(ObjectId userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-        Cart cart = cartRepository.findByUserAndStatus(user, CartStatus.DRAFT)
-                .orElseGet(() -> createNewCart(user));
+        
+        Cart cart = getSingleDraftCart(user);
         return cartMapper.toResponse(cart);
+    }
+
+    private Cart getSingleDraftCart(User user) {
+        List<Cart> draftCarts = cartRepository.findAllByUserAndStatus(user, CartStatus.DRAFT);
+        
+        if (draftCarts.isEmpty()) {
+            return createNewCart(user);
+        } else if (draftCarts.size() == 1) {
+            return draftCarts.get(0);
+        } else {
+            return consolidateMultipleCarts(user, draftCarts);
+        }
+    }
+
+    private Cart getSingleDraftCartOrThrow(User user) {
+        List<Cart> draftCarts = cartRepository.findAllByUserAndStatus(user, CartStatus.DRAFT);
+        
+        if (draftCarts.isEmpty()) {
+            throw new CartNotFoundException("Cart not found");
+        } else if (draftCarts.size() == 1) {
+            return draftCarts.get(0);
+        } else {
+            return consolidateMultipleCarts(user, draftCarts);
+        }
     }
 
     /**
@@ -105,6 +141,7 @@ public class CartServiceImpl implements ICartService {
 
         Cart cart = Cart.builder()
                 .user(user)
+                .userId(user.getId())
                 .creationDate(LocalDateTime.now())
                 .lastUpdated(LocalDateTime.now())
                 .subtotal(0.0)
@@ -119,6 +156,46 @@ public class CartServiceImpl implements ICartService {
     }
 
     /**
+     * Consolidate multiple draft carts into one.
+     * Keep the most recent one and merge items from others.
+     */
+    private Cart consolidateMultipleCarts(User user, List<Cart> draftCarts) {
+        // Sort by last updated, keep the most recent one
+        Cart mainCart = draftCarts.stream()
+                .max((c1, c2) -> c1.getLastUpdated().compareTo(c2.getLastUpdated()))
+                .orElse(draftCarts.get(0));
+
+        // Collect all cart items from other carts
+        List<ObjectId> allItemIds = new ArrayList<>(mainCart.getCartItemIds());
+        
+        for (Cart cart : draftCarts) {
+            if (!cart.getId().equals(mainCart.getId())) {
+                // Merge cart items
+                if (cart.getCartItemIds() != null) {
+                    for (ObjectId itemId : cart.getCartItemIds()) {
+                        // Update cart item to point to main cart
+                        cartItemRepository.findById(itemId).ifPresent(item -> {
+                            item.setCartId(mainCart.getId());
+                            cartItemRepository.save(item);
+                            allItemIds.add(itemId);
+                        });
+                    }
+                }
+                // Delete the duplicate cart
+                cartRepository.delete(cart);
+            }
+        }
+
+        // Update main cart with all items
+        mainCart.setCartItemIds(allItemIds);
+        mainCart.setLastUpdated(LocalDateTime.now());
+        Cart savedCart = cartRepository.save(mainCart);
+
+        // Recalculate totals
+        return recalculateCartInternal(savedCart.getId());
+    }
+
+    /**
      * Get the active draft cart for a specific user.
      * Throws exception if not found.
      */
@@ -126,8 +203,8 @@ public class CartServiceImpl implements ICartService {
     public CartResponse getCartByUserId(ObjectId userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-        Cart cart = cartRepository.findByUserAndStatus(user, CartStatus.DRAFT)
-                .orElseThrow(() -> new CartNotFoundException("Cart not found for user"));
+        
+        Cart cart = getSingleDraftCartOrThrow(user);
         return cartMapper.toResponse(cart);
     }
 
@@ -152,20 +229,18 @@ public class CartServiceImpl implements ICartService {
 
         ObjectId productId = new ObjectId(request.getProductId());
 
-        // Get existing cart or create one
+        // Get existing cart or create one using the safe method
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-        Cart cart = cartRepository.findByUserAndStatus(user, CartStatus.DRAFT)
-                .orElseGet(() -> createNewCart(user));
+        
+        Cart cart = getSingleDraftCart(user);
 
         // Fetch product
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
 
-        // Check stock availability
-        if (product.getStock() < request.getQuantity()) {
-            throw new InsufficientStockException("Insufficient stock for product: " + product.getName());
-        }
+        // Check stock availability using the stock management service
+        stockManagementService.validateStockAvailability(productId, request.getQuantity());
 
         // Check if product already exists in cart
         CartItem existingItem = cartItemRepository.findByCartIdAndProductId(cart.getId(), productId)
@@ -176,9 +251,8 @@ public class CartServiceImpl implements ICartService {
 
             int newQuantity = existingItem.getQuantity() + request.getQuantity();
 
-            if (product.getStock() < newQuantity) {
-                throw new InsufficientStockException("Insufficient stock.");
-            }
+            // Validate total quantity with stock management service
+            stockManagementService.validateStockAvailability(productId, newQuantity);
 
             existingItem.setQuantity(newQuantity);
             existingItem.setSubTotal(existingItem.getUnitPrice() * newQuantity);
@@ -226,8 +300,8 @@ public class CartServiceImpl implements ICartService {
             throw new IllegalArgumentException("Quantity must be greater than 0");
         }
 
-        Cart cart = cartRepository.findByUserIdAndStatus(userId, CartStatus.DRAFT)
-                .orElseThrow(() -> new CartNotFoundException("Cart not found"));
+        User user = getUserById(userId);
+        Cart cart = getSingleDraftCartOrThrow(user);
 
         CartItem cartItem = cartItemRepository.findById(cartItemId)
                 .orElseThrow(() -> new ResourceNotFoundException("Cart item not found"));
@@ -240,10 +314,8 @@ public class CartServiceImpl implements ICartService {
         Product product = productRepository.findById(cartItem.getProductId())
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
 
-        // Check stock
-        if (product.getStock() < request.getQuantity()) {
-            throw new InsufficientStockException("Insufficient stock.");
-        }
+        // Check stock with stock management service
+        stockManagementService.validateStockAvailability(cartItem.getProductId(), request.getQuantity());
 
         cartItem.setQuantity(request.getQuantity());
         cartItem.setSubTotal(cartItem.getUnitPrice() * request.getQuantity());
@@ -265,8 +337,8 @@ public class CartServiceImpl implements ICartService {
     @Transactional
     public void removeCartItem(ObjectId userId, ObjectId cartItemId) {
 
-        Cart cart = cartRepository.findByUserIdAndStatus(userId, CartStatus.DRAFT)
-                .orElseThrow(() -> new CartNotFoundException("Cart not found"));
+        User user = getUserById(userId);
+        Cart cart = getSingleDraftCartOrThrow(user);
 
         CartItem cartItem = cartItemRepository.findById(cartItemId)
                 .orElseThrow(() -> new ResourceNotFoundException("Cart item not found"));
@@ -291,8 +363,8 @@ public class CartServiceImpl implements ICartService {
     @Transactional
     public void clearCart(ObjectId userId) {
 
-        Cart cart = cartRepository.findByUserIdAndStatus(userId, CartStatus.DRAFT)
-                .orElseThrow(() -> new CartNotFoundException("Cart not found"));
+        User user = getUserById(userId);
+        Cart cart = getSingleDraftCartOrThrow(user);
 
         cartItemRepository.deleteByCartId(cart.getId());
 
@@ -432,8 +504,8 @@ public class CartServiceImpl implements ICartService {
     @Transactional
     public CartResponse applyCoupon(ObjectId userId, ApplyCouponRequest request) {
 
-        Cart cart = cartRepository.findByUserIdAndStatus(userId, CartStatus.DRAFT)
-                .orElseThrow(() -> new CartNotFoundException("Cart not found"));
+        User user = getUserById(userId);
+        Cart cart = getSingleDraftCartOrThrow(user);
 
         Coupons coupon = couponRepository.findByCode(request.getCouponCode())
                 .orElseThrow(() -> new CouponNotValidException("Coupon not found"));
@@ -523,8 +595,8 @@ public class CartServiceImpl implements ICartService {
     @Transactional
     public CartResponse applyDiscount(ObjectId userId, ObjectId discountId) {
 
-        Cart cart = cartRepository.findByUserIdAndStatus(userId, CartStatus.DRAFT)
-                .orElseThrow(() -> new CartNotFoundException("Cart not found"));
+        User user = getUserById(userId);
+        Cart cart = getSingleDraftCartOrThrow(user);
 
         Discount discount = discountRepository.findById(discountId)
                 .orElseThrow(() -> new DiscountNotValidException("Discount not found"));
@@ -545,8 +617,8 @@ public class CartServiceImpl implements ICartService {
     @Transactional
     public CartResponse removeCoupon(ObjectId userId) {
 
-        Cart cart = cartRepository.findByUserIdAndStatus(userId, CartStatus.DRAFT)
-                .orElseThrow(() -> new CartNotFoundException("Cart not found"));
+        User user = getUserById(userId);
+        Cart cart = getSingleDraftCartOrThrow(user);
 
         cart.setAppliedCouponCode(null);
         cart.setLastUpdated(LocalDateTime.now());
@@ -564,8 +636,8 @@ public class CartServiceImpl implements ICartService {
     @Transactional
     public CartResponse removeDiscount(ObjectId userId) {
 
-        Cart cart = cartRepository.findByUserIdAndStatus(userId, CartStatus.DRAFT)
-                .orElseThrow(() -> new CartNotFoundException("Cart not found"));
+        User user = getUserById(userId);
+        Cart cart = getSingleDraftCartOrThrow(user);
 
         cart.setAppliedDiscountId(null);
         cart.setLastUpdated(LocalDateTime.now());
@@ -629,20 +701,19 @@ public class CartServiceImpl implements ICartService {
             }
         }
 
-        // Deduct stock for each item
+        // ⚠️ CRITICAL: STOCK RESERVATION SYSTEM
+        // Stock MUST be reduced immediately at checkout (DRAFT → PENDING)
+        // This prevents other users from buying unavailable stock
+        java.util.Map<ObjectId, Integer> stockReductions = new java.util.HashMap<>();
         for (CartItem item : items) {
-
-            Product product = productRepository.findById(item.getProductId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
-
-            if (product.getStock() < item.getQuantity())
-                throw new InsufficientStockException("Insufficient stock for product: " + product.getName());
-
-            product.setStock(product.getStock() - item.getQuantity());
-            productRepository.save(product);
+            stockReductions.put(item.getProductId(), item.getQuantity());
         }
+        
+        // This will validate and reduce stock atomically
+        // Stock is RESERVED immediately, even if order is not yet confirmed/paid
+        stockManagementService.batchReduceStock(stockReductions);
 
-        // Increment coupon usageCount ONLY at checkout success (DRAFT → CONFIRMED)
+        // Increment coupon usageCount ONLY at checkout success (DRAFT → PENDING)
         if (couponToIncrement != null) {
             int currentUsage = couponToIncrement.getUsageCount() != null ? couponToIncrement.getUsageCount() : 0;
             couponToIncrement.setUsageCount(currentUsage + 1);
@@ -656,8 +727,9 @@ public class CartServiceImpl implements ICartService {
             couponRepository.save(couponToIncrement);
         }
 
-        // Confirm order (status change: DRAFT → CONFIRMED)
-        cart.setStatus(CartStatus.CONFIRMED);
+        // RESERVATION: Set order to PENDING (checkout done but not paid)
+        // Stock is ALREADY reduced at this point
+        cart.setStatus(CartStatus.PENDING);
         cart.setShippingAddress(request.getShippingAddress());
         cart.setBillingAddress(request.getBillingAddress());
         cart.setNotes(request.getNotes());
@@ -735,9 +807,11 @@ public class CartServiceImpl implements ICartService {
             throw new IllegalArgumentException("Order does not belong to user");
         }
         
-        // Validate order status allows cancellation
-        if (order.getStatus() != CartStatus.CONFIRMED && order.getStatus() != CartStatus.PAID) {
-            throw new IllegalArgumentException("Only CONFIRMED or PAID orders can be cancelled");
+        // ⚠️ STOCK RESERVATION: Allow cancellation of PENDING, CONFIRMED or PAID orders  
+        if (order.getStatus() != CartStatus.PENDING && 
+            order.getStatus() != CartStatus.CONFIRMED && 
+            order.getStatus() != CartStatus.PAID) {
+            throw new IllegalArgumentException("Only PENDING, CONFIRMED or PAID orders can be cancelled");
         }
         
         ObjectId cartItemId = new ObjectId(request.getCartItemId());
@@ -779,12 +853,8 @@ public class CartServiceImpl implements ICartService {
         // Add tax to refund
         refundAmount = refundAmount * (1 + TAX_RATE);
         
-        // Restore stock
-        Product product = productRepository.findById(item.getProductId()).orElse(null);
-        if (product != null) {
-            product.setStock(product.getStock() + quantityToCancel);
-            productRepository.save(product);
-        }
+        // Restore stock for cancelled quantity
+        stockManagementService.restoreStock(item.getProductId(), quantityToCancel);
         
         // Calculate points to deduct proportionally
         int pointsToDeduct = loyaltyCardService.calculatePointsForAmount(userId, refundAmount);
@@ -845,12 +915,9 @@ public class CartServiceImpl implements ICartService {
             int quantityToCancel = currentQuantity - cancelledQty;
             
             if (quantityToCancel > 0) {
-                // Restore stock
-                Product product = productRepository.findById(item.getProductId()).orElse(null);
-                if (product != null) {
-                    product.setStock(product.getStock() + quantityToCancel);
-                    productRepository.save(product);
-                }
+                // ⚠️ CRITICAL: RESTORE STOCK when order is cancelled
+                // This returns stock to available inventory
+                stockManagementService.restoreStock(item.getProductId(), quantityToCancel);
                 
                 // Calculate refund
                 double unitPrice = item.getUnitPrice() != null ? item.getUnitPrice() : 0.0;
@@ -1000,9 +1067,122 @@ public class CartServiceImpl implements ICartService {
                 .build();
     }
 
+    // ==================== ORDER STATUS MANAGEMENT ====================
+    
     /**
-     * Validate MongoDB ObjectId string format.
+     * Update order status (PENDING → CONFIRMED → PROCESSING → SHIPPED → DELIVERED)
      */
+    @Override
+    @Transactional
+    public CartResponse updateOrderStatus(ObjectId userId, ObjectId orderId, CartStatus newStatus) {
+        Cart order = cartRepository.findById(orderId)
+                .orElseThrow(() -> new CartNotFoundException("Order not found"));
+        
+        // Validate order belongs to user (or is admin)
+        if (!order.getUserId().equals(userId)) {
+            throw new IllegalArgumentException("Order does not belong to user");
+        }
+        
+        // Validate status transition
+        validateStatusTransition(order.getStatus(), newStatus);
+        
+        // Update status
+        order.setStatus(newStatus);
+        order.setLastUpdated(LocalDateTime.now());
+        
+        Cart updated = cartRepository.save(order);
+        
+        log.info("Order status updated: OrderId={}, From={}, To={}", 
+                orderId, order.getStatus(), newStatus);
+        
+        return cartMapper.toResponse(updated);
+    }
+    
+    /**
+     * Validate that status transition is allowed
+     */
+    private void validateStatusTransition(CartStatus currentStatus, CartStatus newStatus) {
+        // Define allowed transitions
+        boolean isValidTransition = switch (currentStatus) {
+            case DRAFT -> newStatus == CartStatus.PENDING;
+            case PENDING -> newStatus == CartStatus.CONFIRMED || newStatus == CartStatus.CANCELLED;
+            case CONFIRMED -> newStatus == CartStatus.PROCESSING || newStatus == CartStatus.CANCELLED;
+            case PROCESSING -> newStatus == CartStatus.SHIPPED || newStatus == CartStatus.CANCELLED;
+            case SHIPPED -> newStatus == CartStatus.DELIVERED;
+            case DELIVERED -> false; // Final state
+            case CANCELLED -> false; // Final state
+            default -> false;
+        };
+        
+        if (!isValidTransition) {
+            throw new IllegalArgumentException(
+                String.format("Invalid status transition from %s to %s", currentStatus, newStatus));
+        }
+    }
+
+    /**
+     * Get orders by status for a user
+     */
+    @Override
+    public List<CartResponse> getUserOrdersByStatus(ObjectId userId, CartStatus status) {
+        User user = getUserById(userId);
+        return cartRepository.findByUser(user).stream()
+                .filter(cart -> cart.getStatus() == status)
+                .map(cartMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+    
+    /**
+     * Mark order as paid (external payment confirmation)
+     */
+    @Override
+    @Transactional
+    public CartResponse markOrderAsPaid(ObjectId userId, ObjectId orderId) {
+        return updateOrderStatus(userId, orderId, CartStatus.CONFIRMED);
+    }
+    
+    /**
+     * Process order (start preparation)
+     */
+    @Override
+    @Transactional
+    public CartResponse processOrder(ObjectId userId, ObjectId orderId) {
+        return updateOrderStatus(userId, orderId, CartStatus.PROCESSING);
+    }
+    
+    /**
+     * Ship order
+     */
+    @Override
+    @Transactional
+    public CartResponse shipOrder(ObjectId userId, ObjectId orderId) {
+        return updateOrderStatus(userId, orderId, CartStatus.SHIPPED);
+    }
+    
+    /**
+     * Deliver order
+     */
+    @Override
+    @Transactional
+    public CartResponse deliverOrder(ObjectId userId, ObjectId orderId) {
+        return updateOrderStatus(userId, orderId, CartStatus.DELIVERED);
+    }
+
+    // ==================== STOCK MANAGEMENT HELPERS ====================
+    
+    /**
+     * Get current stock level for a product
+     */
+    public int getProductStock(ObjectId productId) {
+        return stockManagementService.getCurrentStock(productId);
+    }
+    
+    /**
+     * Check if product is available for purchase
+     */
+    public boolean isProductAvailable(ObjectId productId) {
+        return stockManagementService.isProductAvailable(productId);
+    }
     private boolean isValidObjectId(String id) {
         return id != null && !id.isEmpty()
                 && id.length() == 24

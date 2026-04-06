@@ -17,6 +17,16 @@ export const routes: Routes = [
         path: 'product/:id',
         loadComponent: () => import('./front/pages/product-details/product-details').then(m => m.ProductDetails)
     },
+    // Services
+    {
+        path: 'services',
+        loadComponent: () => import('./front/pages/marketplace-services/marketplace-services').then(m => m.MarketplaceServices)
+    },
+    // Shop
+    {
+        path: 'shop',
+        loadComponent: () => import('./front/pages/shops/shops').then(m => m.Shops) // ✅ Changed to shops listing
+    },
     // Info pages
     {
         path: 'contact',
@@ -57,6 +67,12 @@ export const routes: Routes = [
     {
         path: 'checkout',
         loadComponent: () => import('./front/pages/cart/cart').then(m => m.Cart), // Uses cart with checkout mode
+        canActivate: [authGuard]
+    },
+    // Favorites (protected route)
+    {
+        path: 'favorites',
+        loadComponent: () => import('./front/pages/favorites/favorites').then(m => m.Favorites),
         canActivate: [authGuard]
     },
     {
@@ -113,7 +129,8 @@ export const routes: Routes = [
             },
             {
                 path: 'dashboard',
-                loadComponent: () => import('./front/pages/profile/profile').then(m => m.Profile)
+                canActivate: [providerGuard],
+                loadComponent: () => import('./front/pages/provider-dashboard/provider-dashboard').then(m => m.ProviderDashboard)
             },
             {
                 path: 'products',
@@ -121,13 +138,27 @@ export const routes: Routes = [
             },
             {
                 path: 'products/new',
-                loadComponent: () => import('./front/pages/products/products').then(m => m.Products)
+                loadComponent: () => import('./front/pages/add-product/add-product').then(m => m.AddProduct)
             },
             {
                 path: 'orders',
                 loadComponent: () => import('./front/pages/profile/profile').then(m => m.Profile)
             }
         ]
+    },
+
+    // ==================== SHOP MANAGEMENT ROUTE (For PROVIDER) ====================
+    {
+        path: 'shop-management',
+        loadComponent: () => import('./front/pages/shop-management').then(m => m.ShopManagement),
+        canActivate: [authGuard, providerGuard]
+    },
+
+    // ==================== ADD PRODUCT ROUTE (For PROVIDER) ====================
+    {
+        path: 'add-product',
+        loadComponent: () => import('./front/pages/add-product/add-product').then(m => m.AddProduct),
+        canActivate: [authGuard, providerGuard]
     },
 
     // ==================== SELLER ROUTES (Legacy - redirects to provider) ====================

@@ -44,4 +44,15 @@ public class CartItemResponse {
     private Boolean isPartiallyRefunded;
     
     private Boolean isFullyRefunded;
+    
+    // ✅ ENRICHED PRODUCT FIELDS for frontend display
+    private String imageUrl;
+    
+    private String category;
+    
+    private String sellerName;
+    
+    private Integer stock;
+    
+    private String stockStatus;
 }

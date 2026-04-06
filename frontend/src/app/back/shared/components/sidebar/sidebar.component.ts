@@ -1,8 +1,9 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { MenuItem } from '../../../core/models/menu-item.model';
 import { AdminAuthService } from '../../../core/services/admin-auth.service';
+import { UserRole } from '../../../../front/models/user.model';
 
 @Component({
     selector: 'app-sidebar',
@@ -14,66 +15,112 @@ import { AdminAuthService } from '../../../core/services/admin-auth.service';
             display: block;
             height: 100%;
         }
-        /* Hide scrollbar but keep scroll functionality */
-        nav {
-            scrollbar-width: none; /* Firefox */
-            -ms-overflow-style: none; /* IE/Edge */
+        
+        /* Enhanced scrollbar styling for red theme */
+        .hide-scrollbar {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
         }
-        nav::-webkit-scrollbar {
-            display: none; /* Chrome/Safari/Opera */
+        
+        .hide-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        
+        .hide-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        .hide-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+            transition: background 0.3s ease;
+        }
+        
+        .hide-scrollbar:hover::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.5);
         }
 
-        /* ===== PREMIUM SIDEBAR STYLING ===== */
-
-        /* Navigation Item Base */
+        /* Enhanced navigation item styling for red theme */
         .nav-item {
             position: relative;
-            color: rgb(229, 231, 235);
-            border-left: 3px solid transparent;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        /* Navigation Item Hover */
         .nav-item:hover {
-            background: linear-gradient(90deg, rgba(139, 0, 0, 0.3) 0%, rgba(224, 184, 74, 0.1) 100%);
-            border-left-color: rgba(250, 204, 21, 0.6);
-            transform: translateX(4px);
-            box-shadow: inset 0 0 12px rgba(224, 184, 74, 0.08);
+            transform: translateX(3px);
+            text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
         }
 
-        /* Navigation Item Active */
         .nav-item-active {
-            background: linear-gradient(90deg, rgba(139, 0, 0, 0.5) 0%, rgba(224, 184, 74, 0.15) 100%);
-            color: #fef3c7;
-            border-left-color: #fbbf24;
-            border-radius: 0.75rem;
-            box-shadow: inset 0 0 16px rgba(224, 184, 74, 0.12),
-                        0 0 20px rgba(224, 184, 74, 0.15);
+            background: linear-gradient(90deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.05) 100%);
+            color: white;
+            border-left: 3px solid white;
             font-weight: 600;
+            transform: translateX(3px);
+            text-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+            box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.1);
         }
 
-        /* Active Badge Animation */
-        .nav-item-active span[class*="badge"] {
-            animation: pulse-gold 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        .nav-item-active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: linear-gradient(to bottom, white, rgba(255, 255, 255, 0.8));
+            border-radius: 0 2px 2px 0;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
         }
 
-        @keyframes pulse-gold {
+        /* Smooth animations for collapsible sections */
+        .collapsible-section {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Enhanced pulse animation for status indicators */
+        @keyframes pulse-glow {
             0%, 100% {
-                box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.7);
+                opacity: 1;
+                box-shadow: 0 0 5px currentColor;
             }
             50% {
-                box-shadow: 0 0 0 4px rgba(250, 204, 21, 0.3);
+                opacity: 0.7;
+                box-shadow: 0 0 15px currentColor;
             }
         }
 
-        /* Focus styles for accessibility */
-        .nav-item:focus-visible {
-            outline: 2px solid #fbbf24;
-            outline-offset: 2px;
+        .animate-pulse {
+            animation: pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
 
-        a {
-            position: relative;
+        /* Hover effects for interactive elements */
+        .interactive-hover {
+            transition: all 0.2s ease;
+        }
+
+        .interactive-hover:hover {
+            transform: scale(1.02);
+            filter: brightness(1.1);
+        }
+
+        /* Focus styles for accessibility with red theme */
+        .nav-item:focus-visible,
+        button:focus-visible {
+            outline: 2px solid white;
+            outline-offset: 2px;
+            border-radius: 8px;
+            box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.2);
+        }
+
+        /* Text shadow for better readability on red background */
+        .drop-shadow-sm {
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Enhanced glow effects */
+        .shadow-glow {
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
         }
     `]
 })
@@ -83,11 +130,15 @@ export class SidebarComponent {
     
     readonly currentUser = this.adminAuthService.currentUser;
     
+    // State for collapsible menus
+    isMarketplaceOpen = signal(false);
+    isProviderOpen = signal(false);
+    isForumOpen = signal(false);
+    
     menuItems: MenuItem[] = [
         { label: 'Dashboard', icon: '🏠', route: '/admin/dashboard' },
         { label: 'User Management', icon: '👥', route: '/admin/users' },
         { label: 'Content Moderation', icon: '🛡️', route: '/admin/moderation' },
-        { label: 'Marketplace', icon: '🛒', route: '/admin/marketplace' },
         { label: 'Smart Mobility', icon: '🚗', route: '/admin/mobility' },
         { label: 'Orders & Transactions', icon: '💳', route: '/admin/orders' },
         { label: 'Support Center', icon: '🎧', route: '/admin/support' },
@@ -96,4 +147,47 @@ export class SidebarComponent {
         { label: 'Analytics & Reports', icon: '📊', route: '/admin/analytics' },
         { label: 'System Settings', icon: '⚙️', route: '/admin/settings' }
     ];
+
+    marketplaceItems = [
+        { label: 'Overview', icon: '📊', route: '/admin/marketplace' },
+        { label: 'Products', icon: '📦', route: '/admin/marketplace/products' },
+        { label: 'Categories', icon: '🏷️', route: '/admin/marketplace/categories' },
+        { label: 'Services', icon: '🔧', route: '/admin/marketplace/services' },
+        { label: 'Favorites', icon: '❤️', route: '/admin/marketplace/favorites' },
+        { label: 'Shops', icon: '🏪', route: '/admin/marketplace/shop' }
+    ];
+
+    providerItems = [
+        { label: 'Dashboard', icon: '📊', route: '/admin/provider/dashboard' },
+        { label: 'My Shop', icon: '🏪', route: '/admin/provider/shop' },
+        { label: 'My Products', icon: '📦', route: '/admin/marketplace/products' },
+        { label: 'Orders', icon: '📋', route: '/admin/orders' }
+    ];
+
+    forumItems = [
+        { label: 'Overview', icon: '📊', route: '/admin/forum' },
+        { label: 'Categories', icon: '📂', route: '/admin/forum/categories' },
+        { label: 'Posts', icon: '📝', route: '/admin/forum/posts' },
+        { label: 'Comments', icon: '💬', route: '/admin/forum/comments' },
+        { label: 'Moderation', icon: '🛡️', route: '/admin/forum/moderation' },
+        { label: 'Reports', icon: '⚠️', route: '/admin/forum/reports' }
+    ];
+
+    // Check if user is provider/seller
+    isProvider = computed(() => {
+        const user = this.currentUser();
+        return user?.roles?.includes(UserRole.PROVIDER) || user?.role === UserRole.PROVIDER || false;
+    });
+
+    toggleMarketplace(): void {
+        this.isMarketplaceOpen.update(open => !open);
+    }
+
+    toggleProvider(): void {
+        this.isProviderOpen.update(open => !open);
+    }
+
+    toggleForum(): void {
+        this.isForumOpen.update(open => !open);
+    }
 }

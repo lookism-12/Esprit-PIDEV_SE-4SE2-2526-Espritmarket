@@ -1,0 +1,186 @@
+<div class="min-h-screen bg-gray-50/50 pt-28 pb-20">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Breadcrumb -->
+    <nav class="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-secondary mb-6">
+      <a routerLink="/" class="hover:text-primary transition-colors">Home</a>
+      <span class="text-gray-300">/</span>
+      <a routerLink="/products" class="hover:text-primary transition-colors">Marketplace</a>
+      <span class="text-gray-300">/</span>
+      <span class="text-dark">Services</span>
+    </nav>
+
+    <!-- Main Layout: Sidebar + Content -->
+    <div class="flex flex-col lg:flex-row gap-8">
+      <!-- Left Sidebar - Filters (Sticky) -->
+      <aside class="lg:w-80 flex-shrink-0">
+        <div class="bg-white rounded-3xl shadow-xl shadow-secondary/5 border border-secondary/10 p-6 sticky top-24 space-y-6">
+          <!-- Filters Header -->
+          <div class="flex items-center justify-between pb-4 border-b border-gray-100">
+            <h2 class="text-lg font-black text-dark uppercase tracking-widest">Filters</h2>
+            <button (click)="resetFilters()" class="text-xs font-black text-primary hover:text-dark transition-colors uppercase tracking-widest">
+              Clear All
+            </button>
+          </div>
+
+          <!-- Search -->
+          <div>
+            <label class="block text-[10px] font-black text-secondary uppercase tracking-widest mb-2">Search</label>
+            <div class="relative">
+              <input type="text" [(ngModel)]="searchQuery"
+                (input)="currentPage.set(1)"
+                placeholder="Search services..."
+                class="w-full pl-10 pr-4 py-3 bg-gray-50 border-2 border-transparent focus:border-primary focus:bg-white rounded-xl transition-all outline-none font-bold text-sm">
+              <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+          </div>
+
+          <!-- Categories -->
+          <div>
+            <label class="block text-[10px] font-black text-secondary uppercase tracking-widest mb-3">Categories</label>
+            <div class="space-y-2">
+              @for (cat of categories(); track cat) {
+                <label class="flex items-center gap-3 cursor-pointer group py-2 px-3 rounded-xl hover:bg-gray-50 transition-colors">
+                  <input type="radio" 
+                    name="category" 
+                    [value]="cat" 
+                    [(ngModel)]="selectedCategory"
+                    (change)="selectCategory(cat)"
+                    class="w-4 h-4 text-primary focus:ring-primary">
+                  <span class="text-sm font-bold text-dark group-hover:text-primary transition-colors">{{ cat }}</span>
+                </label>
+              }
+            </div>
+          </div>
+
+          <!-- Sort -->
+          <div>
+            <label class="block text-[10px] font-black text-secondary uppercase tracking-widest mb-3">Sort by</label>
+            <select [(ngModel)]="sortBy"
+              (change)="updateSort(sortBy())"
+              class="w-full px-4 py-3 bg-gray-50 border-2 border-transparent focus:border-primary focus:bg-white rounded-xl transition-all outline-none font-bold text-sm">
+              <option value="newest">Newest</option>
+              <option value="price-low">Price: Low to High</option>
+              <option value="price-high">Price: High to Low</option>
+            </select>
+          </div>
+
+          <!-- Results Count -->
+          <div class="pt-4 border-t border-gray-100">
+            <p class="text-xs font-bold text-secondary text-center">
+              <span class="text-dark font-black text-lg">{{ filteredServices().length }}</span><br>
+              services found
+            </p>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Right Content Area -->
+      <main class="flex-1 min-w-0">
+        <!-- Header -->
+        <div class="mb-10">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-5 h-10 bg-primary rounded-sm"></div>
+            <h1 class="text-5xl md:text-6xl font-black text-dark tracking-tighter leading-none">
+              Services<span class="text-primary">.</span>
+            </h1>
+          </div>
+          <p class="text-secondary font-bold text-lg">
+            Professional services from our campus community.
+          </p>
+        </div>
+
+        <!-- Services Grid -->
+        @if (isLoading()) {
+          <div class="flex flex-col items-center justify-center py-32">
+            <div class="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin mb-6"></div>
+            <p class="text-secondary font-black uppercase tracking-widest text-sm">Loading services...</p>
+          </div>
+        } @else if (errorMessage()) {
+          <div class="py-32 bg-white rounded-3xl border-2 border-red-100 flex flex-col items-center justify-center text-center">
+            <div class="w-24 h-24 bg-red-50 rounded-full flex items-center justify-center mb-8">
+              <svg class="h-12 w-12 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h3 class="text-3xl font-black text-dark mb-4 tracking-tighter">Error loading services</h3>
+            <p class="text-secondary font-bold max-w-sm mb-10">{{ errorMessage() }}</p>
+            <button (click)="loadServices()"
+              class="px-10 py-5 bg-dark text-white rounded-2xl font-black hover:bg-black transition-all uppercase tracking-widest text-xs">
+              Try Again
+            </button>
+          </div>
+        } @else if (paginatedServices().length > 0) {
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+            @for (service of paginatedServices(); track service.id) {
+              <app-service-card [service]="service"></app-service-card>
+            }
+          </div>
+
+          <!-- Pagination -->
+          @if (totalPages() > 1) {
+            <div class="flex flex-col md:flex-row items-center justify-between gap-6 pt-6 border-t border-secondary/10">
+              <span class="text-xs font-bold text-secondary">
+                Showing {{ (currentPage() - 1) * itemsPerPage() + 1 }} to
+                {{ Math.min(currentPage() * itemsPerPage(), filteredServices().length) }} of
+                {{ filteredServices().length }} services
+              </span>
+              <div class="flex items-center gap-2">
+                <button (click)="goToPage(currentPage() - 1)"
+                  [disabled]="currentPage() === 1"
+                  class="w-10 h-10 rounded-xl border-2 border-gray-100 flex items-center justify-center hover:border-primary disabled:opacity-30 transition-all font-bold">
+                  &laquo;
+                </button>
+                @for (page of [].constructor(totalPages()); track $index) {
+                  <button (click)="goToPage($index + 1)"
+                    [class.bg-dark]="$index + 1 === currentPage()"
+                    [class.text-white]="$index + 1 === currentPage()"
+                    class="w-10 h-10 rounded-xl border-2 border-gray-100 flex items-center justify-center font-black text-xs transition-all hover:border-primary">
+                    {{ $index + 1 }}
+                  </button>
+                }
+                <button (click)="goToPage(currentPage() + 1)"
+                  [disabled]="currentPage() === totalPages()"
+                  class="w-10 h-10 rounded-xl border-2 border-gray-100 flex items-center justify-center hover:border-primary disabled:opacity-30 transition-all font-bold">
+                  &raquo;
+                </button>
+              </div>
+            </div>
+          }
+        } @else {
+          <div class="py-32 bg-white rounded-3xl border-2 border-dashed border-gray-100 flex flex-col items-center justify-center text-center">
+            <div class="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mb-8">
+              <svg class="h-12 w-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <h3 class="text-3xl font-black text-dark mb-4 tracking-tighter">No services found</h3>
+            <p class="text-secondary font-bold max-w-sm mb-10">Try adjusting your filters or search query.</p>
+            <button (click)="resetFilters()"
+              class="px-10 py-5 bg-dark text-white rounded-2xl font-black hover:bg-black transition-all uppercase tracking-widest text-xs">
+              Clear all filters
+            </button>
+          </div>
+        }
+
+        <!-- Call to Action -->
+        <div class="mt-16 bg-soft-gradient rounded-3xl p-12 text-white text-center relative overflow-hidden">
+          <div class="relative z-10">
+            <h2 class="text-4xl font-black mb-4 tracking-tighter">Want to offer your services?</h2>
+            <p class="text-white/90 font-bold mb-8 max-w-2xl mx-auto">
+              Join our marketplace and connect with students who need your expertise.
+            </p>
+            <a routerLink="/seller/marketplace"
+              class="inline-flex items-center gap-3 px-10 py-5 bg-white text-primary rounded-2xl font-black hover:bg-gray-50 transition-all uppercase tracking-widest text-sm shadow-2xl">
+              Start Selling
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+            </a>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+</div>

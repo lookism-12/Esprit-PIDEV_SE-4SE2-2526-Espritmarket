@@ -704,35 +704,317 @@ export class ModerationComponent { }
 @Component({
     selector: 'app-marketplace',
     standalone: true,
-    imports: [CommonModule],
+    imports: [CommonModule, ReactiveFormsModule],
     template: `
-    <div class="p-6">
-      <h1 class="text-2xl font-bold mb-4 text-gray-800">Marketplace</h1>
-      <div class="bg-white rounded-lg shadow p-6">
-        <p class="text-gray-600 mb-4">Manage products and listings</p>
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <p class="text-sm text-blue-600 font-medium">Total Products</p>
-            <p class="text-2xl font-bold text-blue-800 mt-2">156</p>
+    <div class="p-6 max-w-7xl mx-auto">
+      <!-- Page Header -->
+      <div class="relative bg-white rounded-2xl p-8 mb-8 overflow-hidden shadow-soft group">
+        <div class="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl -mr-16 -mt-16 transition-all duration-700 group-hover:bg-blue-500/10"></div>
+        <div class="relative z-10">
+          <h1 class="text-3xl font-bold text-gray-900 mb-2 tracking-tight">📦 Marketplace Management</h1>
+          <p class="text-gray-500">Manage categories and product listings</p>
+        </div>
+      </div>
+
+      <!-- Success/Error Messages -->
+      @if (successMessage()) {
+        <div class="mb-6 bg-green-50 border border-green-200 text-green-800 px-6 py-4 rounded-xl flex items-center gap-3 shadow-sm animate-fade-in">
+          <svg class="w-6 h-6 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span class="font-semibold">{{ successMessage() }}</span>
+        </div>
+      }
+
+      @if (errorMessage()) {
+        <div class="mb-6 bg-red-50 border border-red-200 text-red-800 px-6 py-4 rounded-xl flex items-center gap-3 shadow-sm animate-fade-in">
+          <svg class="w-6 h-6 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span class="font-semibold">{{ errorMessage() }}</span>
+        </div>
+      }
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Left Column: Add Category Form -->
+        <div class="lg:col-span-1">
+          <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div class="flex items-center gap-3 mb-6">
+              <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                <span class="text-xl">➕</span>
+              </div>
+              <h2 class="text-xl font-bold text-gray-900">Add Category</h2>
+            </div>
+
+            <form [formGroup]="categoryForm" (ngSubmit)="createCategory()">
+              <div class="space-y-4">
+                <div>
+                  <label class="block text-sm font-bold text-gray-700 mb-2">
+                    Category Name *
+                  </label>
+                  <input 
+                    type="text"
+                    formControlName="name"
+                    placeholder="e.g., Electronics, Books, Clothing"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    [class.border-red-300]="categoryForm.get('name')?.invalid && categoryForm.get('name')?.touched"
+                  />
+                  @if (categoryForm.get('name')?.invalid && categoryForm.get('name')?.touched) {
+                    <p class="mt-1 text-sm text-red-600">Category name is required</p>
+                  }
+                </div>
+
+                <button 
+                  type="submit"
+                  [disabled]="categoryForm.invalid || isSubmitting()"
+                  class="w-full px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 shadow-sm">
+                  @if (isSubmitting()) {
+                    <div class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>Creating...</span>
+                  } @else {
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    <span>Create Category</span>
+                  }
+                </button>
+              </div>
+            </form>
+
+            <!-- Tips -->
+            <div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <p class="text-xs font-bold text-blue-900 mb-2">💡 Tips:</p>
+              <ul class="text-xs text-blue-800 space-y-1">
+                <li>• Use clear, descriptive names</li>
+                <li>• Keep names concise (2-3 words)</li>
+                <li>• Categories help organize products</li>
+              </ul>
+            </div>
           </div>
-          <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-            <p class="text-sm text-green-600 font-medium">Active Listings</p>
-            <p class="text-2xl font-bold text-green-800 mt-2">142</p>
+        </div>
+
+        <!-- Right Column: Categories List -->
+        <div class="lg:col-span-2">
+          <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+            <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 rounded-t-xl">
+              <div class="flex items-center justify-between">
+                <h2 class="text-xl font-bold text-gray-900">All Categories</h2>
+                <span class="px-3 py-1 bg-blue-100 text-blue-700 text-sm font-bold rounded-full">
+                  {{ categories().length }} total
+                </span>
+              </div>
+            </div>
+
+            @if (isLoadingCategories()) {
+              <div class="p-12 text-center">
+                <div class="inline-block w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+                <p class="text-gray-600 font-medium">Loading categories...</p>
+              </div>
+            } @else if (categories().length === 0) {
+              <div class="p-12 text-center">
+                <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span class="text-4xl">📦</span>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900 mb-2">No Categories Yet</h3>
+                <p class="text-gray-600 mb-4">Create your first category to start organizing products.</p>
+              </div>
+            } @else {
+              <div class="divide-y divide-gray-200">
+                @for (category of categories(); track category.id) {
+                  <div class="p-4 hover:bg-gray-50 transition-colors">
+                    <div class="flex items-center justify-between">
+                      <div class="flex items-center gap-3 flex-1">
+                        <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-sm">
+                          <span class="text-2xl">{{ category.icon || '📦' }}</span>
+                        </div>
+                        <div>
+                          <h3 class="font-bold text-gray-900">{{ category.name }}</h3>
+                          <p class="text-sm text-gray-500">
+                            {{ category.productCount || 0 }} products
+                          </p>
+                        </div>
+                      </div>
+                      <button 
+                        (click)="deleteCategory(category)"
+                        [disabled]="isSubmitting()"
+                        class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                        title="Delete category">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
           </div>
-          <div class="bg-orange-50 border border-orange-200 rounded-lg p-4">
-            <p class="text-sm text-orange-600 font-medium">Low Stock</p>
-            <p class="text-2xl font-bold text-orange-800 mt-2">8</p>
+        </div>
+      </div>
+
+      <!-- Statistics Cards -->
+      <div class="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+              <span class="text-2xl">📦</span>
+            </div>
+            <div>
+              <p class="text-sm text-gray-600 font-medium">Total Categories</p>
+              <p class="text-2xl font-bold text-gray-900">{{ categories().length }}</p>
+            </div>
           </div>
-          <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
-            <p class="text-sm text-purple-600 font-medium">Revenue (MTD)</p>
-            <p class="text-2xl font-bold text-purple-800 mt-2">$12.5K</p>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+              <span class="text-2xl">✅</span>
+            </div>
+            <div>
+              <p class="text-sm text-gray-600 font-medium">Active Products</p>
+              <p class="text-2xl font-bold text-gray-900">{{ getTotalProducts() }}</p>
+            </div>
+          </div>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+              <span class="text-2xl">👥</span>
+            </div>
+            <div>
+              <p class="text-sm text-gray-600 font-medium">Sellers</p>
+              <p class="text-2xl font-bold text-gray-900">24</p>
+            </div>
+          </div>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+              <span class="text-2xl">💰</span>
+            </div>
+            <div>
+              <p class="text-sm text-gray-600 font-medium">Revenue (MTD)</p>
+              <p class="text-2xl font-bold text-gray-900">12.5K TND</p>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  `
+  `,
+    styles: [`
+      @keyframes fade-in {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .animate-fade-in {
+        animation: fade-in 0.3s ease-out;
+      }
+      .shadow-soft {
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+      }
+    `]
 })
-export class MarketplaceComponent { }
+export class MarketplaceComponent implements OnInit {
+  private http = inject(HttpClient);
+  private fb = inject(FormBuilder);
+
+  categories = signal<any[]>([]);
+  isLoadingCategories = signal<boolean>(false);
+  isSubmitting = signal<boolean>(false);
+  successMessage = signal<string>('');
+  errorMessage = signal<string>('');
+
+  categoryForm: FormGroup;
+
+  constructor() {
+    this.categoryForm = this.fb.group({
+      name: ['', [Validators.required, Validators.minLength(2)]]
+    });
+  }
+
+  ngOnInit(): void {
+    this.loadCategories();
+  }
+
+  loadCategories(): void {
+    this.isLoadingCategories.set(true);
+    this.http.get<any[]>(`${environment.apiUrl}/categories`).subscribe({
+      next: (data) => {
+        const categories = data.map(cat => ({
+          id: cat.id,
+          name: cat.name,
+          icon: '📦',
+          productCount: cat.productIds?.length || 0
+        }));
+        this.categories.set(categories);
+        this.isLoadingCategories.set(false);
+      },
+      error: (err) => {
+        console.error('Failed to load categories:', err);
+        this.errorMessage.set('Failed to load categories. Please refresh the page.');
+        this.isLoadingCategories.set(false);
+      }
+    });
+  }
+
+  createCategory(): void {
+    if (this.categoryForm.invalid) return;
+
+    const name = this.categoryForm.get('name')?.value.trim();
+    this.isSubmitting.set(true);
+    this.errorMessage.set('');
+    this.successMessage.set('');
+
+    this.http.post<any>(`${environment.apiUrl}/categories`, { name }).subscribe({
+      next: () => {
+        this.successMessage.set(`✅ Category "${name}" created successfully!`);
+        this.categoryForm.reset();
+        this.loadCategories();
+        this.isSubmitting.set(false);
+        
+        setTimeout(() => this.successMessage.set(''), 5000);
+      },
+      error: (err) => {
+        console.error('Failed to create category:', err);
+        this.errorMessage.set(
+          err.error?.message || 'Failed to create category. Make sure you have ADMIN role.'
+        );
+        this.isSubmitting.set(false);
+      }
+    });
+  }
+
+  deleteCategory(category: any): void {
+    if (!confirm(`⚠️ Are you sure you want to delete "${category.name}"?\n\nThis action cannot be undone.`)) {
+      return;
+    }
+
+    this.isSubmitting.set(true);
+    this.errorMessage.set('');
+    this.successMessage.set('');
+
+    this.http.delete<void>(`${environment.apiUrl}/categories/${category.id}`).subscribe({
+      next: () => {
+        this.successMessage.set(`✅ Category "${category.name}" deleted successfully!`);
+        this.loadCategories();
+        this.isSubmitting.set(false);
+        
+        setTimeout(() => this.successMessage.set(''), 5000);
+      },
+      error: (err) => {
+        console.error('Failed to delete category:', err);
+        this.errorMessage.set(
+          err.error?.message || 'Failed to delete category. Make sure you have ADMIN role.'
+        );
+        this.isSubmitting.set(false);
+      }
+    });
+  }
+
+  getTotalProducts(): number {
+    return this.categories().reduce((sum, cat) => sum + (cat.productCount || 0), 0);
+  }
+}
 
 @Component({
     selector: 'app-mobility',

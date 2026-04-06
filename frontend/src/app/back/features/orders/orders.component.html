@@ -1,0 +1,275 @@
+<div class="p-6 max-w-7xl mx-auto">
+  <!-- Page Header -->
+  <div class="relative bg-white rounded-2xl p-8 mb-8 overflow-hidden shadow-soft group">
+    <div class="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl -mr-16 -mt-16 transition-all duration-700 group-hover:bg-blue-500/10"></div>
+    <div class="relative z-10">
+      <h1 class="text-3xl font-bold text-gray-900 mb-2 tracking-tight">📊 Orders & Transactions</h1>
+      <p class="text-gray-500">Monitor orders, transactions, and manage coupons</p>
+    </div>
+  </div>
+
+  <!-- Tab Navigation -->
+  <div class="bg-white rounded-xl shadow-sm mb-6 border border-gray-100">
+    <div class="flex border-b border-gray-200">
+      <button 
+        (click)="setActiveTab('orders')"
+        [class]="activeTab() === 'orders' 
+          ? 'flex-1 px-6 py-4 text-sm font-bold text-primary border-b-2 border-primary bg-primary/5 transition-all' 
+          : 'flex-1 px-6 py-4 text-sm font-semibold text-gray-600 hover:text-primary hover:bg-gray-50 transition-all'">
+        <span class="mr-2">📦</span> Orders
+      </button>
+      <button 
+        (click)="setActiveTab('transactions')"
+        [class]="activeTab() === 'transactions' 
+          ? 'flex-1 px-6 py-4 text-sm font-bold text-primary border-b-2 border-primary bg-primary/5 transition-all' 
+          : 'flex-1 px-6 py-4 text-sm font-semibold text-gray-600 hover:text-primary hover:bg-gray-50 transition-all'">
+        <span class="mr-2">💳</span> Transactions
+      </button>
+      <button 
+        (click)="setActiveTab('coupons')"
+        [class]="activeTab() === 'coupons' 
+          ? 'flex-1 px-6 py-4 text-sm font-bold text-primary border-b-2 border-primary bg-primary/5 transition-all' 
+          : 'flex-1 px-6 py-4 text-sm font-semibold text-gray-600 hover:text-primary hover:bg-gray-50 transition-all'">
+        <span class="mr-2">🎫</span> Coupons
+      </button>
+    </div>
+  </div>
+
+  <!-- Orders Tab -->
+  @if (activeTab() === 'orders') {
+    <!-- Orders Statistics -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+            <span class="text-2xl">📦</span>
+          </div>
+          <div>
+            <p class="text-sm text-gray-600 font-medium">Total Orders</p>
+            <p class="text-2xl font-bold text-gray-900">{{ orderStats().total }}</p>
+          </div>
+        </div>
+      </div>
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+            <span class="text-2xl">⏳</span>
+          </div>
+          <div>
+            <p class="text-sm text-gray-600 font-medium">Pending</p>
+            <p class="text-2xl font-bold text-gray-900">{{ orderStats().pending }}</p>
+          </div>
+        </div>
+      </div>
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+            <span class="text-2xl">✅</span>
+          </div>
+          <div>
+            <p class="text-sm text-gray-600 font-medium">Confirmed</p>
+            <p class="text-2xl font-bold text-gray-900">{{ orderStats().confirmed }}</p>
+          </div>
+        </div>
+      </div>
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+            <span class="text-2xl">💰</span>
+          </div>
+          <div>
+            <p class="text-sm text-gray-600 font-medium">Revenue</p>
+            <p class="text-2xl font-bold text-gray-900">{{ formatCurrency(orderStats().totalRevenue) }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Orders Table -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+        <h3 class="text-lg font-bold text-gray-900">Recent Orders</h3>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead class="bg-gray-50 border-b border-gray-200">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Order</th>
+              <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Customer</th>
+              <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Provider</th>
+              <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Product</th>
+              <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Amount</th>
+              <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+              <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Date</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200">
+            @for (order of orders(); track order.id + '-' + order.orderNumber) {
+              <tr class="hover:bg-gray-50 transition-colors">
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div>
+                    <p class="text-sm font-bold text-gray-900">{{ order.orderNumber }}</p>
+                    <p class="text-xs text-gray-500">{{ order.quantity }} × {{ formatCurrency(order.unitPrice) }}</p>
+                  </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div>
+                    <p class="text-sm font-semibold text-gray-900">{{ order.customerName }}</p>
+                    <p class="text-xs text-gray-500">{{ order.customerEmail }}</p>
+                  </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <p class="text-sm font-semibold text-gray-900">{{ order.providerName }}</p>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <p class="text-sm font-semibold text-gray-900 line-clamp-1">{{ order.productName }}</p>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <p class="text-sm font-bold text-gray-900">{{ formatCurrency(order.total) }}</p>
+                  <p class="text-xs text-gray-500">{{ order.paymentMethod }}</p>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold" [ngClass]="getStatusBadgeClass(order.status)">
+                    {{ getStatusIcon(order.status) }} {{ order.status }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {{ formatDate(order.orderDate) }}
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+
+  <!-- Transactions Tab -->
+  @if (activeTab() === 'transactions') {
+    <!-- Transaction Statistics -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+            <span class="text-2xl">💳</span>
+          </div>
+          <div>
+            <p class="text-sm text-gray-600 font-medium">Total Transactions</p>
+            <p class="text-2xl font-bold text-gray-900">{{ transactionStats().total }}</p>
+          </div>
+        </div>
+      </div>
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+            <span class="text-2xl">✅</span>
+          </div>
+          <div>
+            <p class="text-sm text-gray-600 font-medium">Completed</p>
+            <p class="text-2xl font-bold text-gray-900">{{ transactionStats().completed }}</p>
+          </div>
+        </div>
+      </div>
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+            <span class="text-2xl">⏳</span>
+          </div>
+          <div>
+            <p class="text-sm text-gray-600 font-medium">Pending</p>
+            <p class="text-2xl font-bold text-gray-900">{{ transactionStats().pending }}</p>
+          </div>
+        </div>
+      </div>
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+            <span class="text-2xl">💰</span>
+          </div>
+          <div>
+            <p class="text-sm text-gray-600 font-medium">Total Processed</p>
+            <p class="text-2xl font-bold text-gray-900">{{ formatCurrency(transactionStats().totalProcessed) }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Transactions Table -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+        <h3 class="text-lg font-bold text-gray-900">Recent Transactions</h3>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead class="bg-gray-50 border-b border-gray-200">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Transaction</th>
+              <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Order</th>
+              <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Type</th>
+              <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Amount</th>
+              <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Fee</th>
+              <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Net</th>
+              <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+              <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Date</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200">
+            @for (transaction of transactions(); track transaction.id + '-' + transaction.transactionId) {
+              <tr class="hover:bg-gray-50 transition-colors">
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div>
+                    <p class="text-sm font-bold text-gray-900">{{ transaction.transactionId }}</p>
+                    <p class="text-xs text-gray-500">{{ transaction.paymentMethod }}</p>
+                  </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <p class="text-sm font-semibold text-gray-900">{{ transaction.orderNumber }}</p>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold" 
+                        [ngClass]="transaction.type === 'PAYMENT' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'">
+                    {{ transaction.type === 'PAYMENT' ? '💳' : '↩️' }} {{ transaction.type }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <p class="text-sm font-bold text-gray-900">{{ formatCurrency(transaction.amount) }}</p>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <p class="text-sm text-gray-600">{{ formatCurrency(transaction.processingFee) }}</p>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <p class="text-sm font-bold text-green-600">{{ formatCurrency(transaction.netAmount) }}</p>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold" [ngClass]="getStatusBadgeClass(transaction.status)">
+                    {{ getStatusIcon(transaction.status) }} {{ transaction.status }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {{ formatDate(transaction.date) }}
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+
+  <!-- Coupons Tab -->
+  @if (activeTab() === 'coupons') {
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center">
+      <div class="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+        <span class="text-4xl">🎫</span>
+      </div>
+      <h3 class="text-xl font-bold text-gray-900 mb-2">Coupon Management</h3>
+      <p class="text-gray-600 mb-6">Create and manage discount coupons for your marketplace</p>
+      <a routerLink="/admin/coupons/create" class="btn-primary inline-flex items-center gap-2">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
+        Create New Coupon
+      </a>
+    </div>
+  }
+</div>

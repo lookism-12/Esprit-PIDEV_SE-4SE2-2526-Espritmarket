@@ -1,11 +1,24 @@
 <div
-    class="bg-white rounded-2xl border border-secondary/20 overflow-hidden group hover:shadow-2xl transition-all duration-500">
+    class="product-card bg-white rounded-2xl border border-secondary/20 overflow-hidden group hover:shadow-2xl transition-all duration-500 hover:-translate-y-1"
+    [class.opacity-75]="isOutOfStock()">
     <!-- Image -->
     <div class="relative aspect-[4/5] bg-secondary-light/30 overflow-hidden">
         <a [routerLink]="['/product', product().id]">
             <img [src]="product().imageUrl" [alt]="product().name"
-                class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                [class.grayscale]="isOutOfStock()">
         </a>
+        
+        <!-- Out of Stock Overlay -->
+        @if (isOutOfStock()) {
+            <div class="absolute inset-0 bg-gray-900/40 flex items-center justify-center pointer-events-none">
+                <div class="bg-white/95 backdrop-blur-sm px-6 py-3 rounded-xl shadow-2xl transform -rotate-12">
+                    <p class="text-red-600 font-black text-lg uppercase tracking-wider">Out of Stock</p>
+                </div>
+            </div>
+        }
+        
+        <!-- Favorite Button -->
         <div
             class="absolute top-4 right-4 flex flex-col gap-2 translate-x-16 group-hover:translate-x-0 transition-transform duration-500">
             <button
@@ -17,34 +30,107 @@
                 </svg>
             </button>
         </div>
+        
+        <!-- Quick Actions Overlay -->
         <div
-            class="absolute inset-x-0 bottom-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-500">
+            class="absolute inset-x-0 bottom-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-500 bg-gradient-to-t from-black/60 to-transparent">
+            
+            <!-- Quick View Button -->
             <a [routerLink]="['/product', product().id]"
-                class="w-full bg-dark text-white py-3 rounded-xl font-black hover:bg-black transition-all text-sm uppercase tracking-widest block text-center">
+                class="w-full bg-white/90 backdrop-blur-sm text-dark py-3 rounded-xl font-black hover:bg-white transition-all text-sm uppercase tracking-widest block text-center mb-3">
                 Quick View
             </a>
+            
+            <!-- Enhanced Role-based Action Buttons -->
+            @if (shouldShowCheckout()) {
+                <!-- Visitor: Enhanced Checkout Button -->
+                <button
+                    (click)="quickCheckout()"
+                    [disabled]="isOutOfStock()"
+                    [class]="'w-full py-3 rounded-xl font-black transition-all text-sm uppercase tracking-widest ' + 
+                            (isOutOfStock() ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 
+                             isLowStock() ? 'bg-orange-500 text-white hover:bg-orange-600 animate-pulse' : 
+                             'bg-primary text-white hover:bg-primary-dark')">
+                    @if (isOutOfStock()) {
+                        🚫 Out of Stock
+                    } @else if (isLowStock()) {
+                        🔥 Buy Now ({{ product().stock }} left!)
+                    } @else {
+                        🛒 Buy Now
+                    }
+                </button>
+            } @else if (shouldShowAddToCart()) {
+                <!-- Client: Enhanced Add to Cart -->
+                <button
+                    (click)="addToCart()"
+                    [disabled]="isOutOfStock() || isAddingToCart()"
+                    [class]="'w-full py-3 rounded-xl font-black transition-all text-sm uppercase tracking-widest ' + 
+                            (isOutOfStock() ? 'bg-gray-300 text-gray-500 cursor-not-allowed' :
+                             isLowStock() ? 'bg-orange-400 text-dark hover:bg-orange-500 animate-pulse' :
+                             'bg-accent text-dark hover:bg-accent-dark') + 
+                            (isAddingToCart() ? ' opacity-75' : '')">
+                    @if (isAddingToCart()) {
+                        <span class="inline-flex items-center gap-2">
+                            <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                            </svg>
+                            Adding...
+                        </span>
+                    } @else if (isOutOfStock()) {
+                        🚫 Out of Stock
+                    } @else if (isLowStock()) {
+                        ⚡ Add to Cart ({{ product().stock }} left!)
+                    } @else {
+                        ➕ Add to Cart
+                    }
+                </button>
+            } @else {
+                <!-- Other roles: View Details -->
+                <a [routerLink]="['/product', product().id]"
+                    class="w-full bg-gray-100 text-dark py-3 rounded-xl font-black hover:bg-gray-200 transition-all text-sm uppercase tracking-widest block text-center">
+                    👁️ View Details
+                </a>
+            }
         </div>
-        <div class="absolute top-4 left-4">
-            <span
-                class="bg-accent text-dark text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-tighter shadow-lg">New
-                Arrival</span>
+
+        <!-- Enhanced Status Badges -->
+        <div class="absolute top-4 left-4 flex flex-col gap-2">
+            @if (product().originalPrice && product().originalPrice! > product().price) {
+                <span class="bg-red-500 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-tighter shadow-lg">
+                    Sale
+                </span>
+            }
+            @if (!isOutOfStock()) {
+                <span class="bg-accent text-dark text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-tighter shadow-lg">
+                    New
+                </span>
+            }
+            <!-- Enhanced Stock Status Badge -->
+            <span [class]="'text-[10px] font-bold px-3 py-1 rounded-full shadow-lg flex items-center gap-1 ' + getStockStatusClass()"
+                  [class.animate-pulse]="stockStatusInfo().urgent">
+                <span>{{ getStockStatusIcon() }}</span>
+                {{ getStockStatusText() }}
+            </span>
         </div>
     </div>
 
-    <!-- Info -->
+    <!-- Product Info -->
     <div class="p-6">
         <div class="flex justify-between items-start mb-3">
-            <div>
-                <p class="text-[10px] font-black text-secondary uppercase tracking-widest mb-1">{{ product().category }}
-                </p>
+            <div class="flex-1">
+                <p class="text-[10px] font-black text-secondary uppercase tracking-widest mb-1">{{ product().category }}</p>
                 <a [routerLink]="['/product', product().id]">
-                    <h3 class="font-black text-dark text-xl group-hover:text-primary transition-colors leading-tight">{{
-                        product().name }}</h3>
+                    <h3 class="font-black text-dark text-xl group-hover:text-primary transition-colors leading-tight line-clamp-2">
+                        {{ product().name }}
+                    </h3>
                 </a>
+                <p class="text-xs text-gray-500 mt-1">by {{ product().sellerName }}</p>
             </div>
         </div>
 
-        <div class="flex items-center gap-2 mb-6">
+        <!-- Rating -->
+        <div class="flex items-center gap-2 mb-4">
             <div class="flex" role="img" [attr.aria-label]="'Rating: ' + product().rating + ' out of 5 stars'">
                 @for (star of stars(); track $index) {
                     @if (star === 'full') {
@@ -71,18 +157,68 @@
             <span class="text-secondary font-bold text-xs">({{ product().reviewsCount }})</span>
         </div>
 
+        <!-- Price and Action -->
         <div class="flex items-center justify-between pt-4 border-t border-secondary/10">
             <div class="flex flex-col">
-                <span class="text-[10px] font-bold text-secondary uppercase">Price</span>
-                <span class="text-2xl font-black text-primary">{{ product().price }} <span
-                        class="text-sm">TND</span></span>
+                @if (product().originalPrice && product().originalPrice! > product().price) {
+                    <span class="text-xs text-gray-400 line-through">{{ product().originalPrice }} TND</span>
+                }
+                <div class="flex items-baseline gap-1">
+                    <span class="text-2xl font-black text-primary">{{ product().price }}</span>
+                    <span class="text-sm font-semibold text-primary">TND</span>
+                </div>
+                @if (product().originalPrice && product().originalPrice! > product().price) {
+                    <span class="text-xs font-bold text-green-600">
+                        Save {{ ((product().originalPrice! - product().price) / product().originalPrice! * 100) | number:'1.0-0' }}%
+                    </span>
+                }
             </div>
+
+            <!-- Enhanced Main Action Button with Stock Awareness -->
             <button
-                aria-label="Add to cart"
-                class="w-12 h-12 bg-accent text-dark rounded-2xl flex items-center justify-center hover:bg-accent-dark transition-all transform active:scale-90 shadow-lg">
-                <svg class="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                </svg>
+                (click)="handleMainAction()"
+                [disabled]="isOutOfStock() || isAddingToCart()"
+                [class]="getActionButtonClasses()"
+                [attr.aria-label]="getActionButtonText()"
+                [attr.title]="isOutOfStock() ? 'This product is currently out of stock' : getActionButtonText()">
+                
+                @if (isAddingToCart()) {
+                    <svg class="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                } @else if (isOutOfStock()) {
+                    <!-- Out of stock icon -->
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728"></path>
+                    </svg>
+                } @else if (!isAuthenticated()) {
+                    <!-- Visitor: Shopping cart icon with urgency indicator -->
+                    <div class="relative">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 6.5M7 13v8a2 2 0 002 2h6a2 2 0 002-2v-8m-8 8V9a3 3 0 013-3h2a3 3 0 013 3v8" />
+                        </svg>
+                        @if (isLowStock()) {
+                            <div class="absolute -top-1 -right-1 w-3 h-3 bg-orange-400 rounded-full animate-ping"></div>
+                        }
+                    </div>
+                } @else if (isClient()) {
+                    <!-- Client: Plus icon with urgency indicator -->
+                    <div class="relative">
+                        <svg class="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        @if (isLowStock()) {
+                            <div class="absolute -top-1 -right-1 w-3 h-3 bg-orange-400 rounded-full animate-ping"></div>
+                        }
+                    </div>
+                } @else {
+                    <!-- Other roles: Eye icon -->
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                }
             </button>
         </div>
     </div>

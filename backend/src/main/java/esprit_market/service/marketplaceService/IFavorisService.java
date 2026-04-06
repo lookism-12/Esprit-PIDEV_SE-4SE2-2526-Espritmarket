@@ -18,4 +18,15 @@ public interface IFavorisService {
     void delete(ObjectId id);
 
     FavorisResponseDTO findById(ObjectId id);
+
+    // New methods for user-friendly favorites
+    FavorisResponseDTO toggleProductFavorite(ObjectId productId);
+
+    FavorisResponseDTO toggleServiceFavorite(ObjectId serviceId);
+
+    List<FavorisResponseDTO> getMyFavorites();
+
+    boolean isProductFavorited(ObjectId productId);
+
+    boolean isServiceFavorited(ObjectId serviceId);
 }

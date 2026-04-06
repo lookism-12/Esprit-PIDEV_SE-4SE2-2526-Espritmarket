@@ -47,4 +47,7 @@ public class CouponResponse {
     private Boolean isUsageLimitReached;
     
     private Integer remainingUsages;
+    
+    // ✅ PRODUCT LINKING: Products this coupon applies to
+    private java.util.List<String> productIds;
 }

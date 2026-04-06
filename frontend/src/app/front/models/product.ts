@@ -5,10 +5,12 @@ export interface Product {
     price: number;
     originalPrice?: number;
     category: string;
+    categoryIds?: string[]; // ✅ Added for backend compatibility
     subcategory?: string;
     imageUrl: string;
     images?: string[];
     sellerId: string;
+    shopId?: string; // ✅ Added shopId field for shop filtering
     sellerName: string;
     sellerAvatar?: string;
     rating: number;
@@ -22,12 +24,29 @@ export interface Product {
     viewCount?: number;
     createdAt?: Date;
     updatedAt?: Date;
+    // New stock management fields
+    maxPurchaseQuantity?: number;
+    isAvailable?: boolean;
+    stockWarningThreshold?: number;
+    // ✅ APPROVAL WORKFLOW FIELDS
+    status?: ProductStatus;
+    approvedAt?: Date;
+    approvedBy?: string;
+    rejectionReason?: string;
+}
+
+export enum ProductStatus {
+    PENDING = 'PENDING',
+    APPROVED = 'APPROVED',
+    REJECTED = 'REJECTED',
+    SUSPENDED = 'SUSPENDED'
 }
 
 export enum StockStatus {
     IN_STOCK = 'IN_STOCK',
-    LOW_STOCK = 'LOW_STOCK',
-    OUT_OF_STOCK = 'OUT_OF_STOCK'
+    LOW_STOCK = 'LOW_STOCK', 
+    OUT_OF_STOCK = 'OUT_OF_STOCK',
+    DISCONTINUED = 'DISCONTINUED'
 }
 
 export enum ProductCondition {
@@ -47,6 +66,7 @@ export interface ProductCategory {
     parentId?: string;
     children?: ProductCategory[];
     productCount: number;
+    productIds?: string[];
 }
 
 export interface Shop {

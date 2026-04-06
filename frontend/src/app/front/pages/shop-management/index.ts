@@ -1,0 +1,1 @@
+export { ShopManagement } from './shop-management';

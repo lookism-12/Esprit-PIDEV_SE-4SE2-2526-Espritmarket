@@ -28,6 +28,9 @@ export type { CreateCouponRequest, UpdateCouponRequest } from './coupon.service'
 export { NotificationService } from './notification.service';
 export type { NotificationListResponse } from './notification.service';
 
+export { ToastService } from './toast.service';
+export type { Toast } from './toast.service';
+
 // New Services
 export { FavoriteService } from './favorite.service';
 export { NegotiationService } from './negotiation.service';

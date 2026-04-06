@@ -2,8 +2,8 @@ import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute, Router } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Product, StockStatus, ProductCondition } from '../../models/product';
-import { ProductService } from '../../core/product.service';
+import { Product, StockStatus, ProductCondition, ProductStatus } from '../../models/product';
+import { ProductService } from '../../../core/services/product.service';
 import { CartService } from '../../core/cart.service';
 import { NegotiationStatus, ProposalStatus } from '../../models/negotiation.model';
 
@@ -31,37 +31,24 @@ export class ProductDetails implements OnInit {
   private fb = inject(FormBuilder);
 
   // State
-  product = signal<Product>({
-    id: '1',
-    name: 'Modern Laptop Stand',
-    description: 'Elevate your workspace with this ergonomic aluminum laptop stand. Designed to improve posture and cooling, this stand is perfect for long study sessions. Features adjustable height and non-slip rubber pads.',
-    price: 120,
-    originalPrice: 150,
-    category: 'Electronics',
-    imageUrl: 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?q=80&w=870&auto=format&fit=crop',
-    sellerId: 'seller1',
-    sellerName: 'Amine K.',
-    rating: 4.8,
-    reviewsCount: 12,
-    stock: 5,
-    stockStatus: StockStatus.IN_STOCK,
-    condition: ProductCondition.NEW,
-    isNegotiable: true,
-    isFavorite: false,
-    viewCount: 234
-  });
+  product = signal<Product | null>(null);
+  isLoadingProduct = signal(true);
+  productNotFound = signal(false);
 
-  images = signal([
-    'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?q=80&w=870&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1586528116311-ad86d7c493c8?q=80&w=870&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1544006659-f0b21f04cb1d?q=80&w=870&auto=format&fit=crop'
-  ]);
+  // Computed for safe access
+  safeProduct = computed(() => this.product() || {} as Product);
+  hasProduct = computed(() => this.product() !== null);
 
-  selectedImage = signal(this.images()[0]);
+  images = signal<string[]>([]);
+  selectedImage = signal<string>('');
   quantity = signal(1);
   isAddingToCart = signal(false);
   addedToCart = signal(false);
   activeTab = signal<'description' | 'reviews' | 'negotiation'>('description');
+
+  // Favorites
+  isFavorite = signal(false);
+  isTogglingFavorite = signal(false);
 
   // Negotiation state
   showNegotiationModal = signal(false);
@@ -71,88 +58,13 @@ export class ProductDetails implements OnInit {
   negotiationStatus = signal<NegotiationStatus>(NegotiationStatus.PENDING);
   aiSuggestedPrice = signal<number>(105);
   
-  negotiationHistory = signal<NegotiationProposal[]>([
-    {
-      id: '1',
-      proposedBy: 'buyer',
-      amount: 100,
-      message: 'Would you accept 100 TND?',
-      status: ProposalStatus.COUNTER_OFFERED,
-      createdAt: new Date('2024-02-25T10:30:00')
-    },
-    {
-      id: '2',
-      proposedBy: 'seller',
-      amount: 110,
-      message: 'I can do 110 TND, best I can offer.',
-      status: ProposalStatus.PENDING,
-      createdAt: new Date('2024-02-25T14:15:00')
-    }
-  ]);
+  negotiationHistory = signal<NegotiationProposal[]>([]);
 
-  // Mock reviews
-  reviews = signal([
-    {
-      id: '1',
-      userName: 'Ahmed B.',
-      rating: 5,
-      comment: 'Excellent quality! Perfect for my MacBook. Highly recommended for fellow students.',
-      date: new Date('2024-02-10'),
-      verified: true
-    },
-    {
-      id: '2',
-      userName: 'Sara M.',
-      rating: 4,
-      comment: 'Good product, arrived quickly. The seller was very responsive.',
-      date: new Date('2024-02-05'),
-      verified: true
-    },
-    {
-      id: '3',
-      userName: 'Youssef K.',
-      rating: 5,
-      comment: 'Great value for money. Sturdy build and looks professional.',
-      date: new Date('2024-01-28'),
-      verified: false
-    }
-  ]);
+  // Mock reviews (TODO: Load from API)
+  reviews = signal<any[]>([]);
 
-  // Related products for AI recommendations
-  relatedProducts = signal<Product[]>([
-    {
-      id: '10',
-      name: 'USB-C Hub 7-in-1',
-      description: 'All ports you need.',
-      price: 65,
-      category: 'Electronics',
-      imageUrl: 'https://images.unsplash.com/photo-1625723044792-44de16ccb4e9?q=80&w=870&auto=format&fit=crop',
-      sellerId: 'seller2',
-      sellerName: 'Sarra M.',
-      rating: 4.6,
-      reviewsCount: 15,
-      stock: 3,
-      stockStatus: StockStatus.IN_STOCK,
-      condition: ProductCondition.NEW,
-      isNegotiable: false
-    },
-    {
-      id: '11',
-      name: 'Laptop Sleeve 15"',
-      description: 'Premium protection.',
-      price: 35,
-      category: 'Electronics',
-      imageUrl: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?q=80&w=400',
-      sellerId: 'seller3',
-      sellerName: 'Mehdi B.',
-      rating: 4.8,
-      reviewsCount: 22,
-      stock: 8,
-      stockStatus: StockStatus.IN_STOCK,
-      condition: ProductCondition.NEW,
-      isNegotiable: true
-    }
-  ]);
+  // Related products from MongoDB
+  relatedProducts = signal<Product[]>([]);
 
   ngOnInit(): void {
     const productId = this.route.snapshot.paramMap.get('id');
@@ -170,7 +82,89 @@ export class ProductDetails implements OnInit {
   }
 
   private loadProduct(id: string): void {
-    console.log('Loading product:', id);
+    console.log('🔍 Loading product:', id);
+    this.isLoadingProduct.set(true);
+    this.productNotFound.set(false);
+    
+    this.productService.getById(id).subscribe({
+      next: (data) => {
+        console.log('✅ Product loaded:', data);
+        
+        // Map product data
+        const product: Product = {
+          id: (data as any).id || (data as any)._id,
+          name: data.name,
+          description: data.description,
+          price: data.price,
+          categoryIds: (data as any).categoryIds,
+          category: data.category || 'Others',
+          imageUrl: ((data as any).images && (data as any).images.length > 0) ? (data as any).images[0].url || (data as any).images[0] : 'assets/placeholder.png',
+          images: (data as any).images?.map((img: any) => img.url || img) || [],
+          sellerId: (data as any).shopId || 'Unknown',
+          sellerName: 'Marketplace Seller',
+          rating: 4.5,
+          reviewsCount: 12,
+          stock: data.stock || 0,
+          stockStatus: data.stock > 0 ? StockStatus.IN_STOCK : StockStatus.OUT_OF_STOCK,
+          condition: (data.condition as ProductCondition) || ProductCondition.NEW,
+          isNegotiable: (data as any).isNegotiable || false,
+          status: data.status || ProductStatus.APPROVED
+        };
+        
+        this.product.set(product);
+        
+        // Set images
+        const productImages = product.images && product.images.length > 0 
+          ? product.images 
+          : [product.imageUrl];
+        this.images.set(productImages);
+        this.selectedImage.set(productImages[0]);
+        
+        // Load related products (same category)
+        this.loadRelatedProducts(product.category);
+        
+        this.isLoadingProduct.set(false);
+      },
+      error: (err) => {
+        console.error('❌ Failed to load product:', err);
+        this.productNotFound.set(true);
+        this.isLoadingProduct.set(false);
+      }
+    });
+  }
+
+  private loadRelatedProducts(category: string): void {
+    this.productService.getAll().subscribe({
+      next: (products) => {
+        // Filter by category and take first 4 products, excluding current product
+        const related = products
+          .filter(p => (p as any).category === category && (p as any).id !== this.product()?.id)
+          .slice(0, 4)
+          .map((p: any) => ({
+            id: p.id || p._id,
+            name: p.name,
+            description: p.description,
+            price: p.price,
+            categoryIds: p.categoryIds,
+            category: p.category || category,
+            imageUrl: (p.images && p.images.length > 0) ? (p.images[0].url || p.images[0]) : 'assets/placeholder.png',
+            sellerId: p.shopId || 'Unknown',
+            sellerName: 'Marketplace Seller',
+            rating: 4.5,
+            reviewsCount: 10,
+            stock: p.stock || 0,
+            stockStatus: p.stock > 0 ? StockStatus.IN_STOCK : StockStatus.OUT_OF_STOCK,
+            condition: (p.condition as ProductCondition) || ProductCondition.NEW,
+            isNegotiable: p.isNegotiable || false,
+            status: p.status || ProductStatus.APPROVED
+          }));
+        
+        this.relatedProducts.set(related);
+      },
+      error: (err) => {
+        console.error('❌ Failed to load related products:', err);
+      }
+    });
   }
 
   selectImage(img: string): void {
@@ -178,7 +172,9 @@ export class ProductDetails implements OnInit {
   }
 
   increaseQuantity(): void {
-    const max = this.product().stock || 10;
+    const product = this.product();
+    if (!product) return;
+    const max = product.stock || 10;
     this.quantity.update(q => Math.min(max, q + 1));
   }
 
@@ -187,7 +183,8 @@ export class ProductDetails implements OnInit {
   }
 
   addToCart(): void {
-    if (this.product().stockStatus === StockStatus.OUT_OF_STOCK) return;
+    const product = this.product();
+    if (!product || product.stockStatus === StockStatus.OUT_OF_STOCK) return;
     
     this.isAddingToCart.set(true);
     setTimeout(() => {
@@ -199,7 +196,8 @@ export class ProductDetails implements OnInit {
   }
 
   buyNow(): void {
-    if (this.product().stockStatus === StockStatus.OUT_OF_STOCK) return;
+    const product = this.product();
+    if (!product || product.stockStatus === StockStatus.OUT_OF_STOCK) return;
     this.addToCart();
     setTimeout(() => {
       this.router.navigate(['/cart']);
@@ -207,7 +205,17 @@ export class ProductDetails implements OnInit {
   }
 
   toggleFavorite(): void {
-    this.product.update(p => ({ ...p, isFavorite: !p.isFavorite }));
+    const product = this.product();
+    if (!product) return;
+    
+    this.isTogglingFavorite.set(true);
+    
+    // TODO: Call API to toggle favorite
+    // For now, just toggle locally
+    setTimeout(() => {
+      this.isFavorite.update(v => !v);
+      this.isTogglingFavorite.set(false);
+    }, 300);
   }
 
   setActiveTab(tab: 'description' | 'reviews' | 'negotiation'): void {
@@ -220,24 +228,29 @@ export class ProductDetails implements OnInit {
 
   hasDiscount(): boolean {
     const p = this.product();
+    if (!p) return false;
     return !!p.originalPrice && p.originalPrice > p.price;
   }
 
   discountPercentage(): number {
     const p = this.product();
-    if (!p.originalPrice || p.originalPrice <= 0) return 0;
+    if (!p || !p.originalPrice || p.originalPrice <= 0) return 0;
     return ((p.originalPrice - p.price) / p.originalPrice) * 100;
   }
 
   contactSeller(): void {
-    this.router.navigate(['/chat'], { queryParams: { sellerId: this.product().sellerId } });
+    const product = this.product();
+    if (!product) return;
+    this.router.navigate(['/chat'], { queryParams: { sellerId: product.sellerId } });
   }
 
   // Negotiation methods
   openNegotiationModal(): void {
+    const product = this.product();
+    if (!product) return;
     this.showNegotiationModal.set(true);
     this.negotiationForm.patchValue({
-      proposedPrice: Math.floor(this.product().price * 0.9)
+      proposedPrice: Math.floor(product.price * 0.9)
     });
   }
 
@@ -311,7 +324,8 @@ export class ProductDetails implements OnInit {
     }
   }
 
-  getConditionText(condition: ProductCondition): string {
+  getConditionText(condition: ProductCondition | undefined): string {
+    if (!condition) return 'Unknown';
     return condition.replace('_', ' ');
   }
 

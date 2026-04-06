@@ -3,8 +3,10 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, ActivatedRoute } from '@angular/router';
 import { ProductCard } from '../../shared/components/product-card/product-card';
-import { Product, StockStatus, ProductCondition } from '../../models/product';
-import { ProductService } from '../../core/product.service';
+import { Product, StockStatus, ProductCondition, ProductStatus } from '../../models/product';
+import { ProductService } from '../../../core/services/product.service';
+import { CategoryService, Category } from '../../../core/services/category.service';
+import { AuthService } from '../../core/auth.service';
 
 @Component({
   selector: 'app-products',
@@ -14,118 +16,32 @@ import { ProductService } from '../../core/product.service';
   styleUrl: './products.scss',
 })
 export class Products implements OnInit {
+  protected readonly Math = Math;
   private route = inject(ActivatedRoute);
   private productService = inject(ProductService);
+  private categoryService = inject(CategoryService);
+  private authService = inject(AuthService);
+
+  // Auth State
+  isAdmin = computed(() => this.authService.isAdmin());
+  isSeller = computed(() => this.authService.isSeller());
+  isAuthenticated = computed(() => this.authService.isAuthenticated());
 
   // Products data
-  products = signal<Product[]>([
-    {
-      id: '1',
-      name: 'Modern Laptop Stand',
-      description: 'Ergonomic aluminum laptop stand for better productivity.',
-      price: 120,
-      category: 'Electronics',
-      imageUrl: 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?q=80&w=870&auto=format&fit=crop',
-      sellerId: 'seller1',
-      sellerName: 'Amine K.',
-      rating: 4.8,
-      reviewsCount: 12,
-      stock: 5,
-      stockStatus: StockStatus.IN_STOCK,
-      condition: ProductCondition.NEW,
-      isNegotiable: false
-    },
-    {
-      id: '2',
-      name: 'Wireless Headphones',
-      description: 'Noise cancelling premium headphones.',
-      price: 350,
-      originalPrice: 400,
-      category: 'Electronics',
-      imageUrl: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=870&auto=format&fit=crop',
-      sellerId: 'seller2',
-      sellerName: 'Sarra M.',
-      rating: 4.5,
-      reviewsCount: 25,
-      stock: 2,
-      stockStatus: StockStatus.LOW_STOCK,
-      condition: ProductCondition.LIKE_NEW,
-      isNegotiable: true
-    },
-    {
-      id: '5',
-      name: 'Mechanical Keyboard',
-      description: 'RGB mechanical keyboard with Cherry MX switches.',
-      price: 180,
-      category: 'Gaming',
-      imageUrl: 'https://images.unsplash.com/photo-1511467687858-23d96c32e4ae?q=80&w=870&auto=format&fit=crop',
-      sellerId: 'seller3',
-      sellerName: 'Yassine R.',
-      rating: 4.7,
-      reviewsCount: 18,
-      stock: 8,
-      stockStatus: StockStatus.IN_STOCK,
-      condition: ProductCondition.NEW,
-      isNegotiable: false
-    },
-    {
-      id: '6',
-      name: 'Organic Chemistry Notes',
-      description: 'Comprehensive notes for engineering students.',
-      price: 15,
-      category: 'Books',
-      imageUrl: 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?q=80&w=773&auto=format&fit=crop',
-      sellerId: 'seller4',
-      sellerName: 'Leila J.',
-      rating: 5.0,
-      reviewsCount: 42,
-      stock: 20,
-      stockStatus: StockStatus.IN_STOCK,
-      condition: ProductCondition.GOOD,
-      isNegotiable: true
-    },
-    {
-      id: '7',
-      name: 'IKEA Desk Lamp',
-      description: 'LED desk lamp with adjustable arm.',
-      price: 35,
-      category: 'Furniture',
-      imageUrl: 'https://images.unsplash.com/photo-1534073828943-f801091bb18c?q=80&w=774&auto=format&fit=crop',
-      sellerId: 'seller5',
-      sellerName: 'Karim O.',
-      rating: 4.3,
-      reviewsCount: 10,
-      stock: 0,
-      stockStatus: StockStatus.OUT_OF_STOCK,
-      condition: ProductCondition.GOOD,
-      isNegotiable: true
-    },
-    {
-      id: '8',
-      name: 'Scientific Calculator TI-84',
-      description: 'Essential for engineering exams.',
-      price: 85,
-      category: 'Electronics',
-      imageUrl: 'https://images.unsplash.com/photo-1564466809058-bf4114d55352?q=80&w=400',
-      sellerId: 'seller6',
-      sellerName: 'Ahmed S.',
-      rating: 4.9,
-      reviewsCount: 33,
-      stock: 4,
-      stockStatus: StockStatus.IN_STOCK,
-      condition: ProductCondition.LIKE_NEW,
-      isNegotiable: false
-    }
-  ]);
+  products = signal<Product[]>([]);
 
   // Filter state
   searchQuery = signal<string>('');
   selectedCategory = signal<string>('All');
   selectedCondition = signal<string>('All');
-  priceRange = signal<{ min: number; max: number }>({ min: 0, max: 1000 });
+  priceRange = signal<{ min: number; max: number }>({ min: 0, max: 10000 });
   sortBy = signal<string>('newest');
   showOnlyInStock = signal<boolean>(false);
   showOnlyNegotiable = signal<boolean>(false);
+  
+  // ✅ Added shop filtering
+  selectedShopId = signal<string | null>(null);
+  selectedShopName = signal<string | null>(null);
 
   // Pagination
   currentPage = signal<number>(1);
@@ -136,9 +52,26 @@ export class Products implements OnInit {
   viewMode = signal<'grid' | 'list'>('grid');
   showFilters = signal<boolean>(true);
 
-  // Categories
-  categories = ['All', 'Electronics', 'Books', 'Furniture', 'Gaming', 'Services', 'Others'];
+  // Categories from MongoDB
+  categoriesFromDB = signal<Category[]>([]);
+  categories = computed(() => {
+    const dbCategories = this.categoriesFromDB().map(c => c.name);
+    return ['All', ...dbCategories];
+  });
   conditions = ['All', 'NEW', 'LIKE_NEW', 'GOOD', 'FAIR'];
+
+  // Price filter fields for template binding
+  minPrice = 0;
+  maxPrice = 10000;
+
+  // Template-bound helpers
+
+  // Template event handlers
+  onSearchChange(): void { this.currentPage.set(1); }
+  onCategoryChange(): void { this.currentPage.set(1); }
+  onSortChange(): void { this.currentPage.set(1); }
+  resetFilters(): void { this.clearFilters(); }
+  changePage(page: number): void { this.goToPage(page); }
 
   // Computed
   filteredProducts = computed(() => {
@@ -150,13 +83,33 @@ export class Products implements OnInit {
       filtered = filtered.filter(p =>
         p.name.toLowerCase().includes(query) ||
         p.description.toLowerCase().includes(query) ||
-        p.category.toLowerCase().includes(query)
+        (p.category && p.category.toLowerCase().includes(query))
       );
     }
 
-    // Category filter
+    // Category filter - hybrid approach (checks both categoryIds and category name)
     if (this.selectedCategory() !== 'All') {
-      filtered = filtered.filter(p => p.category === this.selectedCategory());
+      const selectedCatName = this.selectedCategory();
+      const selectedCat = this.categoriesFromDB().find(c => c.name === selectedCatName);
+      
+      filtered = filtered.filter(p => {
+        // Check if product has categoryIds array with matching ID
+        const hasMatchingId = selectedCat && p.categoryIds && p.categoryIds.includes(selectedCat.id);
+        
+        // Check if product has category name that matches (case-insensitive)
+        const hasMatchingName = p.category && p.category.toLowerCase() === selectedCatName.toLowerCase();
+        
+        // Product matches if either condition is true
+        return hasMatchingId || hasMatchingName;
+      });
+      
+      console.log(`🏷️ Filtered by category "${selectedCatName}": ${filtered.length} products found`);
+    }
+
+    // ✅ Shop filter
+    if (this.selectedShopId()) {
+      filtered = filtered.filter(p => p.shopId === this.selectedShopId());
+      console.log(`🏪 Filtered by shop "${this.selectedShopName()}": ${filtered.length} products found`);
     }
 
     // Condition filter
@@ -195,6 +148,11 @@ export class Products implements OnInit {
         break;
     }
 
+    // Status filter: guests/clients only see approved; sellers and admins see all loaded items
+    if (!this.isAdmin() && !this.isSeller()) {
+      filtered = filtered.filter(p => p.status === ProductStatus.APPROVED);
+    }
+
     return filtered;
   });
 
@@ -212,7 +170,10 @@ export class Products implements OnInit {
   });
 
   ngOnInit(): void {
-    // Check for search query in URL
+    // Load categories first, then products (in loadCategories callback)
+    this.loadCategories();
+
+    // Check for search query and shop filter in URL
     this.route.queryParams.subscribe(params => {
       if (params['q']) {
         this.searchQuery.set(params['q']);
@@ -220,7 +181,111 @@ export class Products implements OnInit {
       if (params['category']) {
         this.selectedCategory.set(params['category']);
       }
+      if (params['shop']) {
+        this.filterByShop(params['shop'], params['shopName']);
+      }
     });
+  }
+
+  loadCategories(): void {
+    console.log('🏷️ Loading categories from MongoDB...');
+    this.categoryService.getAll().subscribe({
+      next: (categories) => {
+        console.log('✅ Categories loaded:', categories);
+        this.categoriesFromDB.set(categories);
+        // Load products AFTER categories are loaded for proper mapping
+        this.loadProducts();
+      },
+      error: (err) => {
+        console.error('❌ Failed to load categories:', err);
+        // Fallback to empty array if categories fail to load
+        this.categoriesFromDB.set([]);
+        // Still load products even if categories fail
+        this.loadProducts();
+      }
+    });
+  }
+
+  loadProducts(): void {
+    this.isLoading.set(true);
+    
+    // Always load approved products for marketplace browsing
+    // This ensures consistent behavior regardless of user role
+    const request = this.productService.getAll(); // ✅ Always use approved products
+
+    request.subscribe({
+      next: (data) => {
+        console.log('📦 Raw products from API:', data);
+        console.log('📦 Products count:', data.length);
+        // Handle both DTO and mapped Product formats
+        const mappedProducts = data.map(p => this.mapProduct(p));
+        console.log('📦 Mapped products:', mappedProducts);
+        this.products.set(mappedProducts);
+        this.isLoading.set(false);
+      },
+      error: (err) => {
+        console.error("❌ API ERROR", err);
+        this.isLoading.set(false);
+      }
+    });
+  }
+
+  mapProduct(product: any): Product {
+    const catIds = product.categoryIds as string[] | undefined;
+    
+    // Try to resolve category name from categoryIds
+    let categoryName = product.category || 'Others';
+    if (catIds && catIds.length > 0 && this.categoriesFromDB().length > 0) {
+      const firstCat = this.categoriesFromDB().find(c => c.id === catIds[0]);
+      if (firstCat) {
+        categoryName = firstCat.name;
+      }
+    }
+    
+    return {
+      id: product.id || product._id,
+      name: product.name,
+      description: product.description,
+      price: product.price,
+      categoryIds: catIds,
+      category: categoryName,
+      imageUrl: (product.images && product.images.length > 0) ? product.images[0].url || product.images[0] : 'assets/placeholder.png',
+      sellerId: product.shopId || 'Unknown',
+      shopId: product.shopId || 'Unknown',
+      sellerName: product.shopName || 'Marketplace Seller', // ✅ Use shop name from backend
+      rating: 4.5,
+      reviewsCount: 12,
+      stock: product.stock || 0,
+      stockStatus: product.stock > 0 ? StockStatus.IN_STOCK : StockStatus.OUT_OF_STOCK,
+      condition: product.condition || ProductCondition.NEW,
+      isNegotiable: product.isNegotiable || false,
+      status: (product.status as ProductStatus) || ProductStatus.PENDING
+    };
+  }
+
+  // --- Marketplace Actions ---
+
+  approveProduct(id: string): void {
+    this.productService.approveProduct(id).subscribe({
+      next: () => this.loadProducts(),
+      error: (err) => console.error('Failed to approve product', err)
+    });
+  }
+
+  rejectProduct(id: string): void {
+    this.productService.rejectProduct(id).subscribe({
+      next: () => this.loadProducts(),
+      error: (err) => console.error('Failed to reject product', err)
+    });
+  }
+
+  deleteProduct(id: string): void {
+    if (confirm('Are you sure you want to delete this product?')) {
+      this.productService.deleteProduct(id).subscribe({
+        next: () => this.loadProducts(),
+        error: (err) => console.error('Failed to delete product', err)
+      });
+    }
   }
 
   selectCategory(category: string): void {
@@ -270,10 +335,30 @@ export class Products implements OnInit {
     this.searchQuery.set('');
     this.selectedCategory.set('All');
     this.selectedCondition.set('All');
-    this.priceRange.set({ min: 0, max: 1000 });
+    this.priceRange.set({ min: 0, max: 10000 });
+    this.minPrice = 0;
+    this.maxPrice = 10000;
     this.showOnlyInStock.set(false);
     this.showOnlyNegotiable.set(false);
     this.sortBy.set('newest');
+    this.currentPage.set(1);
+    // ✅ Clear shop filter
+    this.selectedShopId.set(null);
+    this.selectedShopName.set(null);
+  }
+
+  // ✅ Added shop filtering method
+  filterByShop(shopId: string, shopName?: string): void {
+    console.log('🏪 Filtering products by shop:', shopId, shopName);
+    this.selectedShopId.set(shopId);
+    this.selectedShopName.set(shopName || 'Shop');
+    this.currentPage.set(1);
+  }
+
+  // ✅ Clear shop filter
+  clearShopFilter(): void {
+    this.selectedShopId.set(null);
+    this.selectedShopName.set(null);
     this.currentPage.set(1);
   }
 

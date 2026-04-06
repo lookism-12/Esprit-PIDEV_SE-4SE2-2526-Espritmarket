@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { providerGuard } from './core/provider.guard';
 
 // Front module routes - can be used for lazy loading as a group
 export const FRONT_ROUTES: Routes = [
@@ -11,6 +12,10 @@ export const FRONT_ROUTES: Routes = [
         loadComponent: () => import('./pages/products/products').then(m => m.Products)
     },
     {
+        path: 'add-product',
+        loadComponent: () => import('./pages/add-product/add-product').then(m => m.AddProduct)
+    },
+    {
         path: 'product/:id',
         loadComponent: () => import('./pages/product-details/product-details').then(m => m.ProductDetails)
     },
@@ -19,12 +24,21 @@ export const FRONT_ROUTES: Routes = [
         loadComponent: () => import('./pages/cart/cart').then(m => m.Cart)
     },
     {
+        path: 'checkout-success',
+        loadComponent: () => import('./pages/checkout-success/checkout-success').then(m => m.CheckoutSuccess)
+    },
+    {
         path: 'favorites',
         loadComponent: () => import('./pages/favorites/favorites').then(m => m.Favorites)
     },
     {
         path: 'profile',
         loadComponent: () => import('./pages/profile/profile').then(m => m.Profile)
+    },
+    {
+        path: 'provider/dashboard',
+        canActivate: [providerGuard],
+        loadComponent: () => import('./pages/provider-dashboard/provider-dashboard').then(m => m.ProviderDashboard)
     },
     {
         path: 'login',

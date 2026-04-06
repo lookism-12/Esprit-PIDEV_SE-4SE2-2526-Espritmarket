@@ -2,13 +2,14 @@ import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { Navbar } from './front/layout/navbar/navbar';
 import { Footer } from './front/layout/footer/footer';
+import { ToastContainer } from './front/shared/components/toast-container/toast-container';
 import { filter } from 'rxjs/operators';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { AuthService } from './front/core/auth.service';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, Navbar, Footer],
+  imports: [RouterOutlet, Navbar, Footer, ToastContainer],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
@@ -31,7 +32,7 @@ export class App implements OnInit {
 
   ngOnInit(): void {
     // CRITICAL: Handle role-based redirect on app initialization
-    // This ensures admin stays in back office after refresh
+    // This ensures users stay in correct interface after refresh
     
     const token = localStorage.getItem('authToken');
     const storedRole = localStorage.getItem('userRole');
@@ -49,19 +50,24 @@ export class App implements OnInit {
     setTimeout(() => {
       const currentRole = this.authService.userRole();
       
-      // If admin and NOT currently in admin area → redirect to admin
+      // ✅ CRITICAL FIX: Only ADMIN users should access admin interface
       if (currentRole === 'ADMIN' && !this.isAdminRoute()) {
-        console.log('🔄 Admin user detected on non-admin route, redirecting to /admin/dashboard');
+        console.log('🔄 ADMIN user detected on non-admin route, redirecting to /admin/dashboard');
         this.router.navigate(['/admin/dashboard']).then(success => {
           if (success) {
-            console.log('✅ Successfully redirected admin to back office');
+            console.log('✅ Successfully redirected ADMIN to back office');
           }
         });
       }
-      // If NOT admin and currently in admin area → redirect away
+      // ✅ CRITICAL FIX: If PROVIDER/CLIENT/etc in admin area → redirect to front-end
       else if (currentRole !== 'ADMIN' && this.isAdminRoute()) {
-        console.log('⚠️ Non-admin user in admin area, redirecting to home');
+        console.log(`⚠️ Non-admin user (${currentRole}) in admin area, redirecting to front-end profile`);
+        console.log('   🚫 PROVIDERS should NOT access admin interface');
         this.router.navigate(['/profile']);
+      }
+      // ✅ PROVIDER on front-end routes → stay there (correct behavior)
+      else if (currentRole === 'PROVIDER' && !this.isAdminRoute()) {
+        console.log('✅ PROVIDER user on front-end route - correct interface, no redirect needed');
       }
     }, 100);
   }

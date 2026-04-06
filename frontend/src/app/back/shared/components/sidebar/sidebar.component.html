@@ -1,48 +1,223 @@
-<aside class="w-64 bg-gradient-to-b from-primary to-primary-dark flex flex-col h-full font-sans shadow-2xl z-20 relative border-r border-black/20">
-  <!-- Logo Section -->
-  <div class="px-6 py-6 flex flex-col items-center justify-center border-b border-white/5 mb-2 bg-black/10">
-    <img src="assets/logo.png" alt="Esprit Market" class="h-12 object-contain filter brightness-0 invert drop-shadow-xl mb-2">
-    <div class="h-px w-10 bg-white/20 rounded-full"></div>
+<!-- Enhanced Sidebar with Red/Black Theme (Matching Front Office) -->
+<aside class="w-64 bg-gradient-to-b from-[#7D0408] via-[#8B0000] to-[#7D0408] flex flex-col h-full font-sans shadow-2xl z-20 relative border-r border-black/30">
+  
+  <!-- Enhanced Logo Section with Red Theme -->
+  <div class="px-6 py-8 flex flex-col items-center justify-center border-b border-white/10 mb-4 relative overflow-hidden bg-black/20">
+    <!-- Background decoration -->
+    <div class="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent"></div>
+    <div class="absolute top-0 right-0 w-16 h-16 bg-white/5 rounded-full -translate-y-8 translate-x-8"></div>
+    
+    <div class="relative z-10 text-center">
+      <div class="w-16 h-16 bg-gradient-to-br from-white/20 to-white/10 rounded-2xl flex items-center justify-center mb-3 shadow-lg border border-white/20 backdrop-blur-sm">
+        <img src="assets/logo.png" alt="Esprit Market" class="h-8 object-contain filter brightness-0 invert drop-shadow-lg">
+      </div>
+      <h2 class="text-white font-bold text-sm drop-shadow-sm">Admin Panel</h2>
+      <div class="w-12 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent mt-2"></div>
+    </div>
   </div>
   
-  <!-- Navigation -->
-  <nav class="flex-1 overflow-y-auto py-6 flex flex-col hide-scrollbar relative">
-    <div class="space-y-1 px-3 flex-1 relative z-10">
+  <!-- Enhanced Navigation with Red Theme -->
+  <nav class="flex-1 overflow-y-auto px-3 flex flex-col hide-scrollbar relative">
+    
+    <!-- Main Menu Items -->
+    <div class="space-y-2 mb-6">
+      <div class="text-xs font-bold text-white/60 uppercase tracking-wider px-4 mb-3">Main Menu</div>
+      
       <ng-container *ngFor="let item of menuItems">
         <a [routerLink]="item.route"
-          routerLinkActive="bg-white/10 font-bold border-l-4 border-white text-white shadow-inner"
+          routerLinkActive="nav-item-active"
           [routerLinkActiveOptions]="{exact: item.route === '/admin/dashboard'}"
-          class="flex items-center px-4 py-3 rounded-r-xl rounded-l-sm text-white/70 hover:bg-white/10 hover:text-white transition-all cursor-pointer group mb-1 border-l-4 border-transparent">
+          class="nav-item flex items-center px-4 py-3 rounded-xl text-white/70 hover:text-white transition-all cursor-pointer group relative overflow-hidden">
           
-          <span class="mr-3 text-lg opacity-80 group-hover:opacity-100 transition-opacity drop-shadow-sm text-white">{{ item.icon }}</span>
-          <span class="flex-1 text-[15px] font-medium group-hover:font-semibold drop-shadow-sm">{{ item.label }}</span>
+          <!-- Hover background effect -->
+          <div class="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-xl"></div>
           
-          @if (item.badge) {
-            <span class="bg-red-500 border border-white/20 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md">
-              {{ item.badge }}
-            </span>
-          }
+          <div class="relative z-10 flex items-center w-full">
+            <div class="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center mr-3 group-hover:bg-white/20 transition-colors border border-white/20">
+              <span class="text-lg drop-shadow-sm">{{ item.icon }}</span>
+            </div>
+            <span class="flex-1 text-sm font-medium drop-shadow-sm">{{ item.label }}</span>
+            
+            @if (item.badge) {
+              <span class="bg-gradient-to-r from-yellow-400 to-yellow-500 text-black text-xs font-bold px-2 py-1 rounded-full shadow-lg animate-pulse border border-yellow-300">
+                {{ item.badge }}
+              </span>
+            }
+          </div>
         </a>
       </ng-container>
     </div>
+
+    <!-- Marketplace Section -->
+    <div class="mb-6">
+      <div class="text-xs font-bold text-white/60 uppercase tracking-wider px-4 mb-3">Marketplace</div>
+      
+      <!-- Marketplace Header -->
+      <button 
+        (click)="toggleMarketplace()"
+        class="w-full flex items-center px-4 py-3 rounded-xl text-white/70 hover:text-white transition-all cursor-pointer group relative overflow-hidden mb-2"
+        [class.nav-item-active]="isMarketplaceOpen()">
+        
+        <div class="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-xl"></div>
+        
+        <div class="relative z-10 flex items-center w-full">
+          <div class="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center mr-3 group-hover:bg-white/20 transition-colors border border-white/20">
+            <span class="text-lg drop-shadow-sm">🛒</span>
+          </div>
+          <span class="flex-1 text-sm font-medium text-left drop-shadow-sm">Marketplace</span>
+          <div class="w-6 h-6 rounded-lg bg-white/10 flex items-center justify-center border border-white/20">
+            <span class="text-xs transition-transform duration-300 drop-shadow-sm" [class.rotate-90]="isMarketplaceOpen()">▶</span>
+          </div>
+        </div>
+      </button>
+
+      <!-- Marketplace Sub-menu with enhanced animation -->
+      <div class="overflow-hidden transition-all duration-300 ease-out" 
+           [style.max-height]="isMarketplaceOpen() ? '400px' : '0px'"
+           [style.opacity]="isMarketplaceOpen() ? '1' : '0'">
+        <div class="ml-6 space-y-1 pt-2">
+          <ng-container *ngFor="let subItem of marketplaceItems; let i = index">
+            <a [routerLink]="subItem.route"
+              routerLinkActive="bg-white/20 text-white border-l-2 border-white shadow-inner"
+              class="flex items-center px-3 py-2 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-all cursor-pointer group border-l-2 border-transparent"
+              [style.transition-delay]="isMarketplaceOpen() ? (i * 50) + 'ms' : '0ms'">
+              
+              <div class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center mr-3 group-hover:bg-white/20 transition-colors border border-white/20">
+                <span class="text-sm drop-shadow-sm">{{ subItem.icon }}</span>
+              </div>
+              <span class="text-sm font-medium drop-shadow-sm">{{ subItem.label }}</span>
+            </a>
+          </ng-container>
+        </div>
+      </div>
+    </div>
+
+    <!-- Forum Section -->
+    <div class="mb-6">
+      <div class="text-xs font-bold text-white/60 uppercase tracking-wider px-4 mb-3">Community</div>
+      
+      <!-- Forum Header -->
+      <button 
+        (click)="toggleForum()"
+        class="w-full flex items-center px-4 py-3 rounded-xl text-white/70 hover:text-white transition-all cursor-pointer group relative overflow-hidden mb-2"
+        [class.nav-item-active]="isForumOpen()">
+        
+        <div class="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-xl"></div>
+        
+        <div class="relative z-10 flex items-center w-full">
+          <div class="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center mr-3 group-hover:bg-white/20 transition-colors border border-white/20">
+            <span class="text-lg drop-shadow-sm">💬</span>
+          </div>
+          <span class="flex-1 text-sm font-medium text-left drop-shadow-sm">Forum</span>
+          <div class="w-6 h-6 rounded-lg bg-white/10 flex items-center justify-center border border-white/20">
+            <span class="text-xs transition-transform duration-300 drop-shadow-sm" [class.rotate-90]="isForumOpen()">▶</span>
+          </div>
+        </div>
+      </button>
+
+      <!-- Forum Sub-menu with enhanced animation -->
+      <div class="overflow-hidden transition-all duration-300 ease-out" 
+           [style.max-height]="isForumOpen() ? '400px' : '0px'"
+           [style.opacity]="isForumOpen() ? '1' : '0'">
+        <div class="ml-6 space-y-1 pt-2">
+          <ng-container *ngFor="let subItem of forumItems; let i = index">
+            <a [routerLink]="subItem.route"
+              routerLinkActive="bg-white/20 text-white border-l-2 border-white shadow-inner"
+              class="flex items-center px-3 py-2 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-all cursor-pointer group border-l-2 border-transparent"
+              [style.transition-delay]="isForumOpen() ? (i * 50) + 'ms' : '0ms'">
+              
+              <div class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center mr-3 group-hover:bg-white/20 transition-colors border border-white/20">
+                <span class="text-sm drop-shadow-sm">{{ subItem.icon }}</span>
+              </div>
+              <span class="text-sm font-medium drop-shadow-sm">{{ subItem.label }}</span>
+            </a>
+          </ng-container>
+        </div>
+      </div>
+    </div>
+
+    <!-- Provider Section (only for providers/sellers) -->
+    @if (isProvider()) {
+      <div class="mb-6">
+        <div class="text-xs font-bold text-white/60 uppercase tracking-wider px-4 mb-3">Provider Tools</div>
+        
+        <!-- Provider Header -->
+        <button 
+          (click)="toggleProvider()"
+          class="w-full flex items-center px-4 py-3 rounded-xl text-white/70 hover:text-white transition-all cursor-pointer group relative overflow-hidden mb-2"
+          [class.nav-item-active]="isProviderOpen()">
+          
+          <div class="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-xl"></div>
+          
+          <div class="relative z-10 flex items-center w-full">
+            <div class="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center mr-3 group-hover:bg-white/20 transition-colors border border-white/20">
+              <span class="text-lg drop-shadow-sm">👨‍💼</span>
+            </div>
+            <span class="flex-1 text-sm font-medium text-left drop-shadow-sm">Provider</span>
+            <div class="w-6 h-6 rounded-lg bg-white/10 flex items-center justify-center border border-white/20">
+              <span class="text-xs transition-transform duration-300 drop-shadow-sm" [class.rotate-90]="isProviderOpen()">▶</span>
+            </div>
+          </div>
+        </button>
+
+        <!-- Provider Sub-menu -->
+        <div class="overflow-hidden transition-all duration-300 ease-out" 
+             [style.max-height]="isProviderOpen() ? '300px' : '0px'"
+             [style.opacity]="isProviderOpen() ? '1' : '0'">
+          <div class="ml-6 space-y-1 pt-2">
+            <ng-container *ngFor="let subItem of providerItems; let i = index">
+              <a [routerLink]="subItem.route"
+                routerLinkActive="bg-white/20 text-white border-l-2 border-white shadow-inner"
+                class="flex items-center px-3 py-2 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-all cursor-pointer group border-l-2 border-transparent"
+                [style.transition-delay]="isProviderOpen() ? (i * 50) + 'ms' : '0ms'">
+                
+                <div class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center mr-3 group-hover:bg-white/20 transition-colors border border-white/20">
+                  <span class="text-sm drop-shadow-sm">{{ subItem.icon }}</span>
+                </div>
+                <span class="text-sm font-medium drop-shadow-sm">{{ subItem.label }}</span>
+              </a>
+            </ng-container>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Enhanced Quick Stats at bottom -->
+    <div class="mt-auto mb-4">
+      <div class="bg-gradient-to-r from-black/40 to-black/20 rounded-xl p-4 border border-white/10 backdrop-blur-sm">
+        <div class="text-xs font-bold text-white/70 uppercase tracking-wider mb-3">System Status</div>
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-white/80 drop-shadow-sm">Server</span>
+            <div class="flex items-center gap-1">
+              <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-lg shadow-green-400/50"></div>
+              <span class="text-xs text-green-400 font-medium drop-shadow-sm">Online</span>
+            </div>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-white/80 drop-shadow-sm">Database</span>
+            <div class="flex items-center gap-1">
+              <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-lg shadow-green-400/50"></div>
+              <span class="text-xs text-green-400 font-medium drop-shadow-sm">Connected</span>
+            </div>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-white/80 drop-shadow-sm">Load</span>
+            <div class="flex items-center gap-1">
+              <div class="w-2 h-2 bg-yellow-400 rounded-full animate-pulse shadow-lg shadow-yellow-400/50"></div>
+              <span class="text-xs text-yellow-400 font-medium drop-shadow-sm">Normal</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </nav>
   
-  <!-- Subtle decorative pattern or watermark at bottom -->
-  <div class="absolute bottom-0 w-full h-32 bg-gradient-to-t from-black/40 to-transparent pointer-events-none z-0"></div>
+  <!-- Enhanced decorative elements with red theme -->
+  <div class="absolute top-20 left-0 w-1 h-32 bg-gradient-to-b from-white/30 to-transparent opacity-50"></div>
+  <div class="absolute bottom-0 w-full h-32 bg-gradient-to-t from-black/60 to-transparent pointer-events-none"></div>
   
-  <style>
-    .hide-scrollbar::-webkit-scrollbar {
-      width: 4px;
-    }
-    .hide-scrollbar::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    .hide-scrollbar::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.15);
-      border-radius: 4px;
-    }
-    .hide-scrollbar:hover::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.3);
-    }
-  </style>
+  <!-- Subtle pattern overlay -->
+  <div class="absolute inset-0 opacity-5 pointer-events-none" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 20px 20px;"></div>
 </aside>

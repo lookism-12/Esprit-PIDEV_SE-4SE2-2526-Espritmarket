@@ -51,6 +51,7 @@ export class Navbar implements OnDestroy {
   isMenuOpen = signal(false);
   searchQuery = signal('');
   showProfileDropdown = signal(false);
+  showMarketplaceDropdown = signal(false); // ✅ Added marketplace dropdown state
   
   // Search state
   isSearchFocused = signal(false);
@@ -62,6 +63,7 @@ export class Navbar implements OnDestroy {
   userInitials = computed(() => this.authService.getInitials() || 'U');
   userAvatar = computed(() => this.authService.userAvatar() || null);
   isAdmin = computed(() => this.authService.userRole() === UserRole.ADMIN);
+  isProvider = computed(() => this.authService.userRole() === UserRole.PROVIDER);
 
   // Menu sections for the drawer
   menuSections: MenuSection[] = [
@@ -187,6 +189,10 @@ export class Navbar implements OnDestroy {
     // Close profile dropdown when clicking outside
     if (!target.closest('.profile-dropdown') && !target.closest('.profile-avatar-btn')) {
       this.showProfileDropdown.set(false);
+    }
+    // Close marketplace dropdown when clicking outside
+    if (!target.closest('.marketplace-dropdown') && !target.closest('.marketplace-trigger')) {
+      this.showMarketplaceDropdown.set(false);
     }
   }
 
@@ -374,5 +380,23 @@ export class Navbar implements OnDestroy {
   navigateToSignIn(): void {
     console.log('📍 User clicked Sign In button');
     this.router.navigate(['/login']);
+  }
+
+  /**
+   * ✅ Toggle marketplace dropdown
+   */
+  toggleMarketplaceDropdown(): void {
+    this.showMarketplaceDropdown.update(v => !v);
+    // Close other dropdowns
+    this.showNotifications.set(false);
+    this.showUserMenu.set(false);
+    this.showProfileDropdown.set(false);
+  }
+
+  /**
+   * ✅ Close marketplace dropdown
+   */
+  closeMarketplaceDropdown(): void {
+    this.showMarketplaceDropdown.set(false);
   }
 }

@@ -7,15 +7,22 @@ import esprit_market.entity.marketplace.Category;
 import esprit_market.entity.marketplace.Product;
 import esprit_market.entity.marketplace.ProductCategory;
 import esprit_market.entity.marketplace.ProductImage;
+import esprit_market.Enum.marketplaceEnum.ProductStatus;
 import esprit_market.entity.marketplace.Shop;
+import esprit_market.entity.user.User;
 import esprit_market.config.Exceptions.ResourceNotFoundException;
 import esprit_market.mappers.marketplace.ProductMapper;
 import esprit_market.repository.marketplaceRepository.CategoryRepository;
 import esprit_market.repository.marketplaceRepository.ProductCategoryRepository;
 import esprit_market.repository.marketplaceRepository.ProductRepository;
 import esprit_market.repository.marketplaceRepository.ShopRepository;
+import esprit_market.repository.userRepository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -25,15 +32,67 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class ProductService implements IProductService {
+    private static final Logger log = LoggerFactory.getLogger(ProductService.class);
+
     private final ProductRepository repository;
     private final ShopRepository shopRepository;
     private final CategoryRepository categoryRepository;
     private final ProductCategoryRepository productCategoryRepository;
+    private final UserRepository userRepository;
     private final ProductMapper mapper;
 
     @Override
     public List<ProductResponseDTO> findAll() {
-        return repository.findAll().stream()
+        List<Product> products = repository.findAll();
+        log.info("findAll() - Found {} products in database", products.size());
+        List<ProductResponseDTO> dtos = products.stream()
+                .map(mapper::toDTO)
+                .collect(Collectors.toList());
+        log.info("findAll() - Returning {} DTOs", dtos.size());
+        return dtos;
+    }
+
+    @Override
+    public List<ProductResponseDTO> findAllApproved() {
+        return repository.findByStatus(ProductStatus.APPROVED).stream()
+                .map(mapper::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ProductResponseDTO> findForCurrentSeller() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || auth.getName() == null) {
+            throw new IllegalStateException("Not authenticated");
+        }
+        User user = userRepository.findByEmail(auth.getName())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        Shop shop = shopRepository.findByOwnerId(user.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("No shop found for this seller"));
+        return repository.findByShopId(shop.getId()).stream()
+                .map(mapper::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ProductResponseDTO> findByShopId(String shopId) {
+        log.info("Finding products for shop ID: {}", shopId);
+        ObjectId shopObjectId = new ObjectId(shopId);
+        List<Product> products = repository.findByShopId(shopObjectId);
+        log.info("Found {} products for shop ID: {}", products.size(), shopId);
+        return products.stream()
+                .map(mapper::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Overloaded method to accept ObjectId directly
+     */
+    public List<ProductResponseDTO> findByShopId(ObjectId shopId) {
+        log.info("Finding products for shop ID: {}", shopId);
+        List<Product> products = repository.findByShopId(shopId);
+        log.info("Found {} products for shop ID: {}", products.size(), shopId);
+        return products.stream()
                 .map(mapper::toDTO)
                 .collect(Collectors.toList());
     }
@@ -56,6 +115,8 @@ public class ProductService implements IProductService {
 
     @Override
     public ProductResponseDTO create(ProductRequestDTO dto) {
+        log.info("create product: name={}, shopId={}, categoryIds={}",
+                dto.getName(), dto.getShopId(), dto.getCategoryIds());
         if (dto.getShopId() == null) {
             throw new IllegalArgumentException("Shop ID is mandatory");
         }
@@ -77,7 +138,10 @@ public class ProductService implements IProductService {
         }
 
         Product product = mapper.toEntity(dto);
+        product.setStatus(ProductStatus.PENDING);
+        log.info("Saving product to MongoDB: {}", product.getName());
         Product savedProduct = repository.save(product);
+        log.info("Product saved successfully with ID: {}", savedProduct.getId());
 
         // Maintain bidirectionality: update Category.productIds + create
         // ProductCategory links
@@ -96,7 +160,9 @@ public class ProductService implements IProductService {
                     .build());
         }
 
-        return mapper.toDTO(savedProduct);
+        ProductResponseDTO result = mapper.toDTO(savedProduct);
+        log.info("Returning ProductResponseDTO with ID: {}", result.getId());
+        return result;
     }
 
     @Override
@@ -186,5 +252,21 @@ public class ProductService implements IProductService {
 
         productCategoryRepository.deleteByProductId(id);
         repository.deleteById(id);
+    }
+
+    @Override
+    public ProductResponseDTO approve(ObjectId id) {
+        Product product = repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
+        product.setStatus(ProductStatus.APPROVED);
+        return mapper.toDTO(repository.save(product));
+    }
+
+    @Override
+    public ProductResponseDTO reject(ObjectId id) {
+        Product product = repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
+        product.setStatus(ProductStatus.REJECTED);
+        return mapper.toDTO(repository.save(product));
     }
 }

@@ -1,133 +1,69 @@
-import { Injectable, signal, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Router } from '@angular/router';
-import { Observable, tap, catchError, throwError, BehaviorSubject } from 'rxjs';
-import { environment } from '../../../../environment';
-
-export interface AdminUser {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone?: string;
-  avatarUrl?: string;
-  roles: string[];
-}
+import { Injectable, inject } from '@angular/core';
+import { AuthService } from '../../../front/core/auth.service';
+import { UserRole } from '../../../front/models/user.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AdminAuthService {
-  private readonly apiUrl = `${environment.apiUrl}/users`;
-  private router = inject(Router);
+  private authService = inject(AuthService);
 
-  // Reactive state - Signal for immediate UI updates
-  readonly currentUser = signal<AdminUser | null>(null);
-  readonly isAuthenticated = signal<boolean>(false);
-
-  // BehaviorSubject for component subscriptions
-  // This enables real-time synchronization across navbar, sidebar, etc.
-  private userSubject = new BehaviorSubject<AdminUser | null>(null);
-  public user$ = this.userSubject.asObservable();
-
-  constructor(private http: HttpClient) {
-    this.initializeAuthState();
-  }
-
-  private initializeAuthState(): void {
-    const token = localStorage.getItem('authToken');
-    if (token) {
-      this.isAuthenticated.set(true);
-      this.loadCurrentUser().subscribe({
-        next: () => console.log('✅ Admin user restored from token'),
-        error: () => this.logout()
-      });
-    }
+  /**
+   * Check if current user is admin
+   */
+  isAdmin(): boolean {
+    const role = this.authService.userRole();
+    return role === UserRole.ADMIN;
   }
 
   /**
-   * Load current user from backend and update both signal and subject
-   * This ensures all components get real-time updates
+   * Check if current user is seller/provider
    */
-  loadCurrentUser(): Observable<AdminUser> {
-    return this.http.get<AdminUser>(`${this.apiUrl}/me`).pipe(
-      tap((user) => {
-        // Convert relative avatar URL to absolute if needed
-        if (user.avatarUrl && !user.avatarUrl.startsWith('http')) {
-          const backendHost = environment.apiUrl.replace('/api', '');
-          user.avatarUrl = backendHost + user.avatarUrl;
-          console.log('✓ Admin avatar URL converted to absolute:', user.avatarUrl);
-        }
-        
-        // Update BOTH signal and subject for synchronization
-        this.currentUser.set(user);
-        this.userSubject.next(user);  // ← KEY: Notify all subscribers
-        this.isAuthenticated.set(true);
-        
-        console.log('✅ Admin user loaded and synchronized:', { 
-          name: user.firstName + ' ' + user.lastName, 
-          avatar: user.avatarUrl 
-        });
-      }),
-      catchError((error) => {
-        console.error('Failed to load admin user:', error);
-        return throwError(() => error);
-      })
-    );
+  isSeller(): boolean {
+    const role = this.authService.userRole();
+    return role === UserRole.PROVIDER || role === 'SELLER' as any;
   }
 
   /**
-   * Update user avatar URL immediately in both signal and subject
-   * Called after successful avatar upload
+   * Check if user is authenticated
    */
-  updateUserAvatar(avatarUrl: string): void {
-    const currentUserValue = this.currentUser();
-    if (currentUserValue) {
-      // Ensure URL is absolute
-      let absoluteUrl = avatarUrl;
-      if (!absoluteUrl.startsWith('http')) {
-        const backendHost = environment.apiUrl.replace('/api', '');
-        absoluteUrl = backendHost + absoluteUrl;
-      }
-
-      // Update user object
-      const updatedUser = {
-        ...currentUserValue,
-        avatarUrl: absoluteUrl
-      };
-
-      // Update both signal and subject for instant synchronization
-      this.currentUser.set(updatedUser);
-      this.userSubject.next(updatedUser);  // ← KEY: Notify all subscribers instantly
-
-      console.log('✅ Avatar updated in auth service:', absoluteUrl);
-    }
+  isAuthenticated(): boolean {
+    return this.authService.isAuthenticated();
   }
 
-  getUserInitials(): string {
-    const user = this.currentUser();
-    if (!user) return 'AU';
-    return `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
+  /**
+   * Get current user ID
+   */
+  getUserId(): string | null {
+    return this.authService.userId();
   }
 
-  getFullName(): string {
-    const user = this.currentUser();
-    if (!user) return 'Admin User';
-    return `${user.firstName} ${user.lastName}`;
+  /**
+   * Get current user role
+   */
+  getUserRole(): UserRole | null {
+    return this.authService.userRole();
   }
 
-  getEmail(): string {
-    const user = this.currentUser();
-    return user?.email || 'admin@esprit.tn';
+  /**
+   * Get current user (proxy to AuthService)
+   */
+  get currentUser() {
+    return this.authService.currentUser;
   }
 
+  /**
+   * Logout user (proxy to AuthService)
+   */
   logout(): void {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('userId');
-    localStorage.removeItem('userRole');
-    this.currentUser.set(null);
-    this.userSubject.next(null);  // ← Clear subject as well
-    this.isAuthenticated.set(false);
-    this.router.navigate(['/login']); // Redirect to Sign In page
+    this.authService.logout();
+  }
+
+  /**
+   * Update user avatar (placeholder - implement if needed)
+   */
+  updateUserAvatar(url: string): void {
+    // TODO: Implement avatar update logic
+    console.log('Avatar update requested:', url);
   }
 }

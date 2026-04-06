@@ -38,12 +38,22 @@ export class JwtUtil {
 
     // Try 'roles' array first (Spring Security typically uses this)
     if (decoded.roles && Array.isArray(decoded.roles) && decoded.roles.length > 0) {
-      return decoded.roles[0]; // Return first role
+      let role = decoded.roles[0]; // Return first role
+      // Strip 'ROLE_' prefix if present (Spring Security adds this)
+      if (role.startsWith('ROLE_')) {
+        role = role.substring(5);
+      }
+      return role;
     }
 
     // Fallback to 'role' field
     if (decoded.role) {
-      return decoded.role;
+      let role = decoded.role;
+      // Strip 'ROLE_' prefix if present
+      if (role.startsWith('ROLE_')) {
+        role = role.substring(5);
+      }
+      return role;
     }
 
     return null;

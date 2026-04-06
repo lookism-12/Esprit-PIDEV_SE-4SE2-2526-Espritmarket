@@ -1,8 +1,9 @@
-import { Component, signal, computed, OnInit, OnDestroy } from '@angular/core';
+import { Component, signal, computed, OnInit, OnDestroy, inject } from '@angular/core';
 import { ProductCard } from '../../shared/components/product-card/product-card';
 import { Product, StockStatus, ProductCondition } from '../../models/product';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { ProductService } from '../../core/product.service';
 
 interface Promotion {
   id: string;
@@ -23,78 +24,14 @@ interface Promotion {
   styleUrl: './home.scss',
 })
 export class Home implements OnInit, OnDestroy {
+  private productService = inject(ProductService);
+
   // Countdown timer
   countdown = signal({ days: 3, hours: 23, minutes: 19, seconds: 56 });
   private countdownInterval: ReturnType<typeof setInterval> | null = null;
 
-  featuredProducts = signal<Product[]>([
-    {
-      id: '1',
-      name: 'Modern Laptop Stand',
-      description: 'Ergonomic aluminum laptop stand for better productivity.',
-      price: 120,
-      category: 'Electronics',
-      imageUrl: 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?q=80&w=870&auto=format&fit=crop',
-      sellerId: 'seller1',
-      sellerName: 'Amine K.',
-      rating: 4.8,
-      reviewsCount: 12,
-      stock: 5,
-      stockStatus: StockStatus.IN_STOCK,
-      condition: ProductCondition.NEW,
-      isNegotiable: false
-    },
-    {
-      id: '2',
-      name: 'Wireless Noise Cancelling Headphones',
-      description: 'Premium sound quality with long battery life.',
-      price: 350,
-      originalPrice: 400,
-      category: 'Electronics',
-      imageUrl: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=870&auto=format&fit=crop',
-      sellerId: 'seller2',
-      sellerName: 'Sarra M.',
-      rating: 4.5,
-      reviewsCount: 25,
-      stock: 2,
-      stockStatus: StockStatus.LOW_STOCK,
-      condition: ProductCondition.LIKE_NEW,
-      isNegotiable: true
-    },
-    {
-      id: '3',
-      name: 'Calculus Made Easy',
-      description: 'Perfect textbook for first-year engineering students.',
-      price: 45,
-      category: 'Books',
-      imageUrl: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?q=80&w=774&auto=format&fit=crop',
-      sellerId: 'seller3',
-      sellerName: 'Mehdi B.',
-      rating: 4.9,
-      reviewsCount: 8,
-      stock: 10,
-      stockStatus: StockStatus.IN_STOCK,
-      condition: ProductCondition.GOOD,
-      isNegotiable: true
-    },
-    {
-      id: '4',
-      name: 'Ergonomic Office Chair',
-      description: 'Very comfortable chair, barely used.',
-      price: 250,
-      originalPrice: 320,
-      category: 'Furniture',
-      imageUrl: 'https://images.unsplash.com/photo-1505797149-43b007664e31?q=80&w=870&auto=format&fit=crop',
-      sellerId: 'seller4',
-      sellerName: 'Ines T.',
-      rating: 4.2,
-      reviewsCount: 15,
-      stock: 1,
-      stockStatus: StockStatus.LOW_STOCK,
-      condition: ProductCondition.LIKE_NEW,
-      isNegotiable: true
-    }
-  ]);
+  featuredProducts = signal<Product[]>([]);
+  recommendedProducts = signal<Product[]>([]);
 
   // Promotions
   promotions = signal<Promotion[]>([
@@ -133,41 +70,7 @@ export class Home implements OnInit, OnDestroy {
     }
   ]);
 
-  // AI Recommendations (placeholder)
-  recommendedProducts = signal<Product[]>([
-    {
-      id: '5',
-      name: 'Mechanical Keyboard RGB',
-      description: 'Cherry MX switches, full RGB backlighting.',
-      price: 180,
-      category: 'Gaming',
-      imageUrl: 'https://images.unsplash.com/photo-1511467687858-23d96c32e4ae?q=80&w=870&auto=format&fit=crop',
-      sellerId: 'seller5',
-      sellerName: 'Yassine R.',
-      rating: 4.7,
-      reviewsCount: 18,
-      stock: 8,
-      stockStatus: StockStatus.IN_STOCK,
-      condition: ProductCondition.NEW,
-      isNegotiable: false
-    },
-    {
-      id: '6',
-      name: 'USB-C Hub 7-in-1',
-      description: 'All ports you need in one compact hub.',
-      price: 65,
-      category: 'Electronics',
-      imageUrl: 'https://images.unsplash.com/photo-1625723044792-44de16ccb4e9?q=80&w=870&auto=format&fit=crop',
-      sellerId: 'seller6',
-      sellerName: 'Ahmed S.',
-      rating: 4.6,
-      reviewsCount: 9,
-      stock: 12,
-      stockStatus: StockStatus.IN_STOCK,
-      condition: ProductCondition.NEW,
-      isNegotiable: true
-    }
-  ]);
+  // AI Recommendations (placeholder) - managed above
 
   // Categories
   categories = signal([
@@ -181,12 +84,102 @@ export class Home implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.startCountdown();
+    this.loadProducts();
   }
 
   ngOnDestroy(): void {
     if (this.countdownInterval) {
       clearInterval(this.countdownInterval);
     }
+  }
+
+  private loadProducts(): void {
+    // Load featured products from backend
+    this.productService.getAll({ limit: 4 }).subscribe({
+      next: (products) => {
+        this.featuredProducts.set(products.slice(0, 4));
+        this.recommendedProducts.set(products.slice(4, 6));
+        console.log('✅ Home products loaded:', products.length);
+      },
+      error: (err) => {
+        console.error('❌ Failed to load home products:', err);
+        // Keep using fallback/hardcoded data if backend fails
+        this.setFallbackProducts();
+      }
+    });
+  }
+
+  private setFallbackProducts(): void {
+    this.featuredProducts.set([
+      {
+        id: '1',
+        name: 'Modern Laptop Stand',
+        description: 'Ergonomic aluminum laptop stand for better productivity.',
+        price: 120,
+        category: 'Electronics',
+        imageUrl: 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?q=80&w=870&auto=format&fit=crop',
+        sellerId: 'seller1',
+        sellerName: 'Amine K.',
+        rating: 4.8,
+        reviewsCount: 12,
+        stock: 5,
+        stockStatus: StockStatus.IN_STOCK,
+        condition: ProductCondition.NEW,
+        isNegotiable: false
+      },
+      {
+        id: '2',
+        name: 'Wireless Noise Cancelling Headphones',
+        description: 'Premium sound quality with long battery life.',
+        price: 350,
+        originalPrice: 400,
+        category: 'Electronics',
+        imageUrl: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=870&auto=format&fit=crop',
+        sellerId: 'seller2',
+        sellerName: 'Sarra M.',
+        rating: 4.5,
+        reviewsCount: 25,
+        stock: 2,
+        stockStatus: StockStatus.LOW_STOCK,
+        condition: ProductCondition.LIKE_NEW,
+        isNegotiable: true
+      }
+    ]);
+
+    this.recommendedProducts.set([
+      {
+        id: '5',
+        name: 'Mechanical Keyboard RGB',
+        description: 'Cherry MX switches, full RGB backlighting.',
+        price: 180,
+        category: 'Gaming',
+        imageUrl: 'https://images.unsplash.com/photo-1511467687858-23d96c32e4ae?q=80&w=870&auto=format&fit=crop',
+        sellerId: 'seller5',
+        sellerName: 'Yassine R.',
+        rating: 4.7,
+        reviewsCount: 18,
+        stock: 8,
+        stockStatus: StockStatus.IN_STOCK,
+        condition: ProductCondition.NEW,
+        isNegotiable: false
+      },
+      {
+        id: '6',
+        name: 'USB-C Hub 7-in-1',
+        description: 'All ports you need in one compact hub.',
+        price: 65,
+        category: 'Electronics',
+        imageUrl: 'https://images.unsplash.com/photo-1625723044792-44de16ccb4e9?q=80&w=870&auto=format&fit=crop',
+        sellerId: 'seller6',
+        sellerName: 'Ahmed S.',
+        rating: 4.6,
+        reviewsCount: 9,
+        stock: 12,
+        stockStatus: StockStatus.IN_STOCK,
+        condition: ProductCondition.NEW,
+        isNegotiable: true
+      }
+    ]);
   }
 
   private startCountdown(): void {

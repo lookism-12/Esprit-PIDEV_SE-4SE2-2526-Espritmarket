@@ -80,6 +80,43 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.BAD_REQUEST, "Bad Request", ex.getMessage(), request.getRequestURI());
     }
 
+    // ==================== CART-SPECIFIC EXCEPTIONS ====================
+    
+    @ExceptionHandler(esprit_market.service.cartService.CartNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleCartNotFoundException(
+            esprit_market.service.cartService.CartNotFoundException ex, HttpServletRequest request) {
+        log.warn("Cart not found: {}", ex.getMessage());
+        return buildErrorResponse(HttpStatus.NOT_FOUND, "Not Found", ex.getMessage(), request.getRequestURI());
+    }
+    
+    @ExceptionHandler(esprit_market.service.cartService.UserNotAuthenticatedException.class)
+    public ResponseEntity<Map<String, Object>> handleUserNotAuthenticatedException(
+            esprit_market.service.cartService.UserNotAuthenticatedException ex, HttpServletRequest request) {
+        log.warn("User not authenticated: {}", ex.getMessage());
+        return buildErrorResponse(HttpStatus.UNAUTHORIZED, "Unauthorized", ex.getMessage(), request.getRequestURI());
+    }
+    
+    @ExceptionHandler(esprit_market.service.cartService.InsufficientStockException.class)
+    public ResponseEntity<Map<String, Object>> handleInsufficientStockException(
+            esprit_market.service.cartService.InsufficientStockException ex, HttpServletRequest request) {
+        log.warn("Insufficient stock: {}", ex.getMessage());
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, "Bad Request", ex.getMessage(), request.getRequestURI());
+    }
+    
+    @ExceptionHandler(esprit_market.service.cartService.CouponNotValidException.class)
+    public ResponseEntity<Map<String, Object>> handleCouponNotValidException(
+            esprit_market.service.cartService.CouponNotValidException ex, HttpServletRequest request) {
+        log.warn("Coupon not valid: {}", ex.getMessage());
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, "Bad Request", ex.getMessage(), request.getRequestURI());
+    }
+    
+    @ExceptionHandler(esprit_market.service.cartService.DiscountNotValidException.class)
+    public ResponseEntity<Map<String, Object>> handleDiscountNotValidException(
+            esprit_market.service.cartService.DiscountNotValidException ex, HttpServletRequest request) {
+        log.warn("Discount not valid: {}", ex.getMessage());
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, "Bad Request", ex.getMessage(), request.getRequestURI());
+    }
+
     @ExceptionHandler(org.springframework.security.authentication.BadCredentialsException.class)
     public ResponseEntity<Map<String, Object>> handleBadCredentialsException(
             org.springframework.security.authentication.BadCredentialsException ex, HttpServletRequest request) {
@@ -87,14 +124,37 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.UNAUTHORIZED, "Unauthorized", "Invalid email or password", request.getRequestURI());
     }
 
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ResponseEntity<Map<String, Object>> handleAccessDeniedException(
+            org.springframework.security.access.AccessDeniedException ex, HttpServletRequest request) {
+        log.warn("Access denied: {}", ex.getMessage());
+        return buildErrorResponse(HttpStatus.FORBIDDEN, "Forbidden", "Access denied", request.getRequestURI());
+    }
+
+    @ExceptionHandler(org.springframework.security.core.AuthenticationException.class)
+    public ResponseEntity<Map<String, Object>> handleAuthenticationException(
+            org.springframework.security.core.AuthenticationException ex, HttpServletRequest request) {
+        log.warn("Authentication failed: {}", ex.getMessage());
+        return buildErrorResponse(HttpStatus.UNAUTHORIZED, "Unauthorized", "Authentication required", request.getRequestURI());
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGenericException(
             Exception ex, HttpServletRequest request) {
         log.error("Unexpected error occurred", ex);
+        
+        // For debugging: show actual error message during development
+        String message = "An unexpected error occurred. Please try again later.";
+        if (request.getRequestURI().contains("/uploads/") || 
+            request.getRequestURI().contains("/cart")) {
+            message = ex.getMessage() != null ? ex.getMessage() : ex.getClass().getSimpleName();
+            log.error("API error details: ", ex);
+        }
+        
         return buildErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR,
                 "Internal Server Error",
-                "An unexpected error occurred. Please try again later.",
+                message,
                 request.getRequestURI()
         );
     }

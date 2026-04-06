@@ -6,10 +6,17 @@ import esprit_market.entity.marketplace.Shop;
 import esprit_market.config.Exceptions.ResourceNotFoundException;
 import esprit_market.mappers.marketplace.ShopMapper;
 import esprit_market.repository.marketplaceRepository.ShopRepository;
+import esprit_market.repository.marketplaceRepository.ProductRepository;
 import esprit_market.repository.userRepository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+
+import esprit_market.entity.user.User;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -17,14 +24,21 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class ShopService implements IShopService {
+    private static final Logger log = LoggerFactory.getLogger(ShopService.class);
+    
     private final ShopRepository repository;
     private final UserRepository userRepository;
+    private final ProductRepository productRepository;
     private final ShopMapper mapper;
 
     @Override
     public List<ShopResponseDTO> findAll() {
-        return repository.findAll().stream()
-                .map(mapper::toDTO)
+        log.info("findAll() - Loading all shops");
+        List<Shop> shops = repository.findAll();
+        log.info("findAll() - Found {} shops", shops.size());
+        
+        return shops.stream()
+                .map(this::enrichShopDTO)
                 .collect(Collectors.toList());
     }
 
@@ -32,7 +46,51 @@ public class ShopService implements IShopService {
     public ShopResponseDTO findById(ObjectId id) {
         Shop shop = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Shop not found with id: " + id));
-        return mapper.toDTO(shop);
+        return enrichShopDTO(shop);
+    }
+
+    @Override
+    public ShopResponseDTO findMyShop() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || auth.getName() == null) {
+            throw new ResourceNotFoundException("Not authenticated");
+        }
+        User user = userRepository.findByEmail(auth.getName())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        Shop shop = repository.findByOwnerId(user.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("No shop found for this account"));
+        return enrichShopDTO(shop);
+    }
+    
+    /**
+     * Enrich shop DTO with owner name, email, and comprehensive statistics
+     */
+    private ShopResponseDTO enrichShopDTO(Shop shop) {
+        ShopResponseDTO dto = mapper.toDTO(shop);
+        
+        // Add owner name and email
+        if (shop.getOwnerId() != null) {
+            userRepository.findById(shop.getOwnerId()).ifPresent(user -> {
+                dto.setOwnerName(user.getFirstName() + " " + user.getLastName());
+                dto.setOwnerEmail(user.getEmail());
+            });
+        }
+        
+        // Calculate comprehensive product statistics
+        List<esprit_market.entity.marketplace.Product> products = productRepository.findByShopId(shop.getId());
+        dto.setProductCount(products.size());
+        
+        // Count approved products
+        long approvedCount = products.stream()
+                .filter(p -> p.getStatus() == esprit_market.Enum.marketplaceEnum.ProductStatus.APPROVED)
+                .count();
+        dto.setApprovedProductCount((int) approvedCount);
+        
+        // TODO: Calculate average rating and reviews from future review system
+        dto.setAverageRating(0.0);
+        dto.setTotalReviews(0);
+        
+        return dto;
     }
 
     @Override
@@ -45,7 +103,8 @@ public class ShopService implements IShopService {
                             () -> new ResourceNotFoundException("User (owner) not found with id: " + dto.getOwnerId()));
         }
         Shop shop = mapper.toEntity(dto);
-        return mapper.toDTO(repository.save(shop));
+        Shop saved = repository.save(shop);
+        return enrichShopDTO(saved);
     }
 
     @Override
@@ -53,18 +112,50 @@ public class ShopService implements IShopService {
         Shop existingShop = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Shop not found with id: " + id));
 
-        // Affectation Owner: validate and assign
+        // Update basic fields
+        if (dto.getName() != null) {
+            existingShop.setName(dto.getName());
+        }
+        if (dto.getDescription() != null) {
+            existingShop.setDescription(dto.getDescription());
+        }
+        if (dto.getAddress() != null) {
+            existingShop.setAddress(dto.getAddress());
+        }
+        if (dto.getPhone() != null) {
+            existingShop.setPhone(dto.getPhone());
+        }
+        if (dto.getEmail() != null) {
+            existingShop.setEmail(dto.getEmail());
+        }
+        if (dto.getLogo() != null) {
+            existingShop.setLogo(dto.getLogo());
+        }
+        
+        // Update social links
+        if (dto.getSocialLinks() != null) {
+            existingShop.setSocialLinks(dto.getSocialLinks());
+        }
+        
+        // Update active status
+        if (dto.getIsActive() != null) {
+            existingShop.setActive(dto.getIsActive());
+        }
+        
+        // Update timestamp
+        existingShop.setUpdatedAt(java.time.LocalDateTime.now());
+
+        // Validate and update owner if changed
         if (dto.getOwnerId() != null) {
             ObjectId ownerId = new ObjectId(dto.getOwnerId());
             userRepository.findById(ownerId)
                     .orElseThrow(
                             () -> new ResourceNotFoundException("User (owner) not found with id: " + dto.getOwnerId()));
             existingShop.setOwnerId(ownerId);
-        } else {
-            existingShop.setOwnerId(null);
         }
 
-        return mapper.toDTO(repository.save(existingShop));
+        Shop saved = repository.save(existingShop);
+        return enrichShopDTO(saved);
     }
 
     @Override

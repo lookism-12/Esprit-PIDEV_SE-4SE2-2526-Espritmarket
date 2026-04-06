@@ -32,15 +32,30 @@
 
         <div class="h-6 w-px bg-white/20 hidden md:block"></div>
 
-        <!-- Icons -->
-        <div class="flex items-center space-x-1 text-white">
-            <button class="p-2 hover:bg-white/10 rounded-full transition-colors relative text-lg">
-                🔔
-                <span class="absolute top-1 right-1 w-2 h-2 bg-yellow-400 rounded-full border border-[#7D0408] text-xs shadow-sm shadow-black/20"></span>
-            </button>
-            <button class="p-2 hover:bg-white/10 rounded-full transition-colors text-lg">
-                ✉️
-            </button>
+        <!-- Enhanced Icons Section with Fixed Badge Display -->
+        <div class="flex items-center space-x-4 text-white">
+            <!-- Messages Icon with Guaranteed Visible Badge -->
+            <div class="icon-container">
+                <button class="icon-button p-3 rounded-xl transition-all duration-300">
+                    <div class="text-xl">💬</div>
+                </button>
+                <div class="notification-badge message-badge">3</div>
+            </div>
+
+            <!-- Notifications Icon with Guaranteed Visible Badge -->
+            <div class="icon-container">
+                <button class="icon-button p-3 rounded-xl transition-all duration-300">
+                    <div class="text-xl">🔔</div>
+                </button>
+                <div class="notification-badge notification-badge-red">5</div>
+            </div>
+
+            <!-- Settings Icon -->
+            <div class="icon-container">
+                <button class="icon-button p-3 rounded-xl transition-all duration-300 group">
+                    <div class="text-xl group-hover:rotate-90 transition-transform duration-300">⚙️</div>
+                </button>
+            </div>
         </div>
 
         <!-- User Profile Dropdown -->
@@ -96,13 +111,13 @@
                         </a>
 
                         <a 
-                            routerLink="/"
+                            routerLink="/admin/settings"
                             (click)="toggleProfileMenu()"
                             class="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors cursor-pointer text-gray-700">
-                            <div class="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center text-lg shadow-sm border border-gray-100">🏠</div>
+                            <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-lg shadow-sm border border-blue-100">⚙️</div>
                             <div>
-                                <p class="text-sm font-bold text-gray-900">Back to Front</p>
-                                <p class="text-[11px] text-gray-500 font-medium">Public marketplace</p>
+                                <p class="text-sm font-bold text-gray-900">Settings</p>
+                                <p class="text-[11px] text-gray-500 font-medium">System configuration</p>
                             </div>
                         </a>
                     </div>

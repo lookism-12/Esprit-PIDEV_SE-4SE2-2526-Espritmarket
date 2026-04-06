@@ -29,7 +29,7 @@ public class CouponCreateRequest {
     @Positive(message = "Discount value must be positive")
     private Double discountValue;
     
-    @Future(message = "Expiration date must be in the future")
+    // @Future(message = "Expiration date must be in the future")
     private LocalDate expirationDate;
     
     private Double minCartAmount;
@@ -43,4 +43,7 @@ public class CouponCreateRequest {
     private Boolean combinableWithDiscount;
     
     private String description;
+    
+    // ✅ PRODUCT LINKING: Allow coupon to be linked to specific products
+    private java.util.List<String> productIds;
 }

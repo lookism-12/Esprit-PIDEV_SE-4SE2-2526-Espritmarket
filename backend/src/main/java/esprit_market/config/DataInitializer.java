@@ -4,15 +4,18 @@ import esprit_market.Enum.cartEnum.DiscountType;
 import esprit_market.Enum.userEnum.Role;
 import esprit_market.entity.cart.Discount;
 import esprit_market.entity.marketplace.Category;
+import esprit_market.entity.marketplace.Product;
 import esprit_market.entity.marketplace.ServiceEntity;
 import esprit_market.entity.marketplace.Shop;
 import esprit_market.entity.user.User;
 import esprit_market.repository.cartRepository.DiscountRepository;
 import esprit_market.repository.marketplaceRepository.CategoryRepository;
+import esprit_market.repository.marketplaceRepository.ProductRepository;
 import esprit_market.repository.marketplaceRepository.ServiceRepository;
 import esprit_market.repository.marketplaceRepository.ShopRepository;
 import esprit_market.repository.userRepository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
@@ -35,6 +38,7 @@ public class DataInitializer implements CommandLineRunner {
     private final PasswordEncoder passwordEncoder;
     private final DiscountRepository discountRepository;
     private final CategoryRepository categoryRepository;
+    private final ProductRepository productRepository;
     private final ShopRepository shopRepository;
     private final ServiceRepository serviceRepository;
     private final MongoTemplate mongoTemplate;
@@ -78,11 +82,64 @@ public class DataInitializer implements CommandLineRunner {
             });
         }
 
+        // ✅ Initialize Test CLIENT User for Cart Testing
+        String clientEmail = "client@test.com";
+        String clientPassword = "test123";
+        
+        if (!userRepository.existsByEmail(clientEmail)) {
+            User testClient = User.builder()
+                    .firstName("Test")
+                    .lastName("Client") 
+                    .email(clientEmail)
+                    .password(passwordEncoder.encode(clientPassword))
+                    .roles(Collections.singletonList(Role.CLIENT))
+                    .enabled(true)
+                    .build();
+
+            User savedClient = userRepository.save(testClient);
+            log.info("✅ Test CLIENT user created: {} with ID: {}", clientEmail, savedClient.getId());
+            log.warn("🔧 TEMP FIX: Update CartController getUserId() with this actual ID: {}", savedClient.getId());
+        } else {
+            User existingClient = userRepository.findByEmail(clientEmail).orElse(null);
+            if (existingClient != null) {
+                log.info("✅ Test CLIENT user exists: {} with ID: {}", clientEmail, existingClient.getId());
+                log.warn("🔧 TEMP FIX: Use this ID in CartController: {}", existingClient.getId());
+            }
+        }
+
+        // ✅ Initialize Test PROVIDER User for Provider Dashboard Testing
+        String providerEmail = "provider@test.com";
+        String providerPassword = "test123";
+        
+        if (!userRepository.existsByEmail(providerEmail)) {
+            User testProvider = User.builder()
+                    .firstName("Test")
+                    .lastName("Provider")
+                    .email(providerEmail)
+                    .password(passwordEncoder.encode(providerPassword))
+                    .roles(Collections.singletonList(Role.PROVIDER))
+                    .enabled(true)
+                    .businessName("Test Shop")
+                    .businessType("Electronics")
+                    .build();
+
+            User savedProvider = userRepository.save(testProvider);
+            log.info("✅ Test PROVIDER user created: {} with ID: {}", providerEmail, savedProvider.getId());
+        } else {
+            User existingProvider = userRepository.findByEmail(providerEmail).orElse(null);
+            if (existingProvider != null) {
+                log.info("✅ Test PROVIDER user exists: {} with ID: {}", providerEmail, existingProvider.getId());
+            }
+        }
+
         // Initialize Default Discounts (Cart module)
         initializeDiscounts();
 
         // Initialize Default Services for Negotiation (Marketplace module)
         initializeServices();
+        
+        // Initialize Demo Products for Cart Testing
+        initializeDemoProducts();
     }
 
     private void initializeDiscounts() {
@@ -133,7 +190,13 @@ public class DataInitializer implements CommandLineRunner {
         User admin = userRepository.findByEmail("admin@espritmarket.tn").orElse(null);
         Shop shop = shopRepository.findAll().stream().findFirst().orElseGet(() -> {
             Shop newShop = Shop.builder()
+                    .name("Admin Shop")
+                    .description("Default shop for services")
+                    .logo("https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400")
+                    .address("Esprit Campus, Tunis")
+                    .phone("+216 71 000 000")
                     .ownerId(admin != null ? admin.getId() : null)
+                    .productIds(new java.util.ArrayList<>())
                     .build();
             return shopRepository.save(newShop);
         });
@@ -173,6 +236,129 @@ public class DataInitializer implements CommandLineRunner {
         log.info("Services available for negotiation testing:");
         serviceRepository.findAll()
                 .forEach(s -> log.info("Service ID '{}' ({}): {}", s.getName(), s.getPrice(), s.getId()));
+    }
+
+    private void initializeDemoProducts() {
+        if (productRepository.count() < 3) {
+            
+            // Get or create category
+            Category category = categoryRepository.findAll().stream().findFirst().orElseGet(() -> {
+                Category newCat = Category.builder().name("Electronics").build();
+                return categoryRepository.save(newCat);
+            });
+            
+            // ✅ Get provider's shop (not admin's)
+            User provider = userRepository.findByEmail("provider@test.com").orElse(null);
+            Shop shop = null;
+            
+            if (provider != null) {
+                shop = shopRepository.findByOwnerId(provider.getId()).orElseGet(() -> {
+                    Shop newShop = Shop.builder()
+                            .name(provider.getBusinessName() != null ? 
+                                  provider.getBusinessName() : 
+                                  provider.getFirstName() + "'s Shop")
+                            .description("Official shop of " + provider.getFirstName())
+                            .logo("https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400")
+                            .address(provider.getAddress() != null ? provider.getAddress() : "Esprit Campus, Tunis")
+                            .phone(provider.getPhone() != null ? provider.getPhone() : "+216 12 345 678")
+                            .ownerId(provider.getId())
+                            .productIds(new java.util.ArrayList<>())
+                            .build();
+                    Shop savedShop = shopRepository.save(newShop);
+                    log.info("✅ Created shop '{}' for provider: {} (ID: {})", savedShop.getName(), provider.getEmail(), savedShop.getId());
+                    return savedShop;
+                });
+                log.info("✅ Using provider's shop: {} for demo products", shop.getId());
+            } else {
+                // Fallback to admin's shop if provider doesn't exist
+                User admin = userRepository.findByEmail("admin@espritmarket.tn").orElse(null);
+                shop = shopRepository.findAll().stream().findFirst().orElseGet(() -> {
+                    Shop newShop = Shop.builder()
+                            .name("Default Shop")
+                            .description("Fallback shop for products")
+                            .logo("https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400")
+                            .address("Esprit Campus, Tunis")
+                            .phone("+216 71 000 000")
+                            .ownerId(admin != null ? admin.getId() : null)
+                            .productIds(new java.util.ArrayList<>())
+                            .build();
+                    return shopRepository.save(newShop);
+                });
+            }
+
+            // Create demo products with proper stock for cart testing
+            Product product1 = Product.builder()
+                    .name("iPhone 15 Pro")
+                    .description("Latest iPhone with advanced features")
+                    .price(1299.99)
+                    .stock(50)  // Sufficient stock for testing
+                    .shopId(shop.getId())
+                    .categoryIds(Collections.singletonList(category.getId()))
+                    .build();
+
+            Product product2 = Product.builder()
+                    .name("MacBook Air M3")
+                    .description("Ultra-thin laptop with M3 chip")
+                    .price(1499.99)
+                    .stock(25)
+                    .shopId(shop.getId())
+                    .categoryIds(Collections.singletonList(category.getId()))
+                    .build();
+
+            Product product3 = Product.builder()
+                    .name("AirPods Pro")
+                    .description("Wireless earbuds with noise cancellation")
+                    .price(249.99)
+                    .stock(100)
+                    .shopId(shop.getId())
+                    .categoryIds(Collections.singletonList(category.getId()))
+                    .build();
+
+            Product saved1 = productRepository.save(product1);
+            Product saved2 = productRepository.save(product2);
+            Product saved3 = productRepository.save(product3);
+
+            // ✅ CRITICAL: Approve demo products so they're visible on marketplace
+            User admin = userRepository.findByEmail("admin@espritmarket.tn").orElse(null);
+            ObjectId adminId = admin != null ? admin.getId() : null;
+            
+            saved1.setStatus(esprit_market.Enum.marketplaceEnum.ProductStatus.APPROVED);
+            saved1.setApprovedAt(java.time.LocalDateTime.now());
+            saved1.setApprovedBy(adminId);
+            saved1 = productRepository.save(saved1);
+            
+            saved2.setStatus(esprit_market.Enum.marketplaceEnum.ProductStatus.APPROVED);
+            saved2.setApprovedAt(java.time.LocalDateTime.now());
+            saved2.setApprovedBy(adminId);
+            saved2 = productRepository.save(saved2);
+            
+            saved3.setStatus(esprit_market.Enum.marketplaceEnum.ProductStatus.APPROVED);
+            saved3.setApprovedAt(java.time.LocalDateTime.now());
+            saved3.setApprovedBy(adminId);
+            saved3 = productRepository.save(saved3);
+
+            log.info("✅ Demo products created and APPROVED for cart testing:");
+            log.info("Product ID '{}' ({}): {} - Stock: {} - Status: {}", saved1.getName(), saved1.getPrice(), saved1.getId(), saved1.getStock(), saved1.getStatus());
+            log.info("Product ID '{}' ({}): {} - Stock: {} - Status: {}", saved2.getName(), saved2.getPrice(), saved2.getId(), saved2.getStock(), saved2.getStatus());
+            log.info("Product ID '{}' ({}): {} - Stock: {} - Status: {}", saved3.getName(), saved3.getPrice(), saved3.getId(), saved3.getStock(), saved3.getStatus());
+            
+            // ✅ CRITICAL: Log the EXACT product ID that frontend should use
+            log.warn("🔧 FRONTEND FIX: Use this Product ID in your cart tests: {}", saved1.getId());
+            log.warn("🔧 CURL TEST: curl -X POST http://localhost:8090/api/cart/items -H \"Content-Type: application/json\" -d '{{\"productId\":\"{}\",\"quantity\":3}}'", saved1.getId());
+
+        } else {
+            log.info("Demo products already exist. Listing for cart testing:");
+            productRepository.findAll().forEach(p -> 
+                log.info("Product ID '{}' ({}): {} - Stock: {}", p.getName(), p.getPrice(), p.getId(), p.getStock())
+            );
+            
+            // Log first product for easy testing
+            Product firstProduct = productRepository.findAll().stream().findFirst().orElse(null);
+            if (firstProduct != null) {
+                log.warn("🔧 FRONTEND FIX: Use this Product ID: {}", firstProduct.getId());
+                log.warn("🔧 CURL TEST: curl -X POST http://localhost:8090/api/cart/items -H \"Content-Type: application/json\" -d '{{\"productId\":\"{}\",\"quantity\":3}}'", firstProduct.getId());
+            }
+        }
     }
 
     private void migrateLegacyRoles() {

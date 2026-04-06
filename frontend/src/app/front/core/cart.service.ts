@@ -1,23 +1,30 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
-import { Cart, CartItem, CartSummary, AddToCartRequest, UpdateCartItemRequest } from '../models/cart.model';
+import { Observable, tap, catchError, throwError, BehaviorSubject } from 'rxjs';
+import { CartResponse, CartItemResponse, AddToCartRequest, UpdateCartItemRequest } from '../models/cart.model';
+import { environment } from '../../../environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class CartService {
-  private readonly apiUrl = '/api/cart'; // TODO: Configure environment
+  private readonly apiUrl = `${environment.apiUrl}/cart`;
+  private http = inject(HttpClient);
 
   // Reactive state
-  readonly cart = signal<Cart | null>(null);
+  readonly cart = signal<CartResponse | null>(null);
+  readonly cartItems = signal<CartItemResponse[]>([]);
   readonly isLoading = signal<boolean>(false);
   readonly error = signal<string | null>(null);
+
+  // Subject for cart updates (for real-time UI updates)
+  private cartUpdateSubject = new BehaviorSubject<boolean>(false);
+  readonly cartUpdated$ = this.cartUpdateSubject.asObservable();
 
   // Computed values
   readonly itemCount = computed(() => {
     const cart = this.cart();
-    return cart?.items.reduce((sum, item) => sum + item.quantity, 0) ?? 0;
+    return cart?.totalQuantity ?? 0;
   });
 
   readonly cartTotal = computed(() => {
@@ -25,99 +32,341 @@ export class CartService {
     return cart?.total ?? 0;
   });
 
-  constructor(private http: HttpClient) {
-    // TODO: Load cart from localStorage or fetch from API on init
+  readonly subtotal = computed(() => {
+    const cart = this.cart();
+    return cart?.subtotal ?? 0;
+  });
+
+  readonly discountAmount = computed(() => {
+    const cart = this.cart();
+    return cart?.discountAmount ?? 0;
+  });
+
+  readonly taxAmount = computed(() => {
+    const cart = this.cart();
+    return cart?.taxAmount ?? 0;
+  });
+
+  constructor() {
+    this.initializeCartSync();
+  }
+
+  /**
+   * Initialize cart sync on service creation
+   */
+  private initializeCartSync(): void {
+    // Listen for cart updates and refresh data
+    this.cartUpdated$.subscribe(() => {
+      console.log('🔄 Cart update detected, refreshing data...');
+    });
   }
 
   /**
    * Get current user's cart
-   * @returns Observable with cart data
    */
-  getCart(): Observable<Cart> {
-    // TODO: Implement actual HTTP call
-    // return this.http.get<Cart>(this.apiUrl);
-    console.log('CartService.getCart() called');
-    return of({} as Cart);
+  getCart(): Observable<CartResponse> {
+    this.isLoading.set(true);
+    this.error.set(null);
+
+    return this.http.get<CartResponse>(this.apiUrl).pipe(
+      tap((cart) => {
+        this.cart.set(cart);
+        this.isLoading.set(false);
+        console.log('🛒 Cart loaded from backend:', cart);
+      }),
+      catchError((error) => {
+        console.error('❌ Failed to load cart:', error);
+        this.isLoading.set(false);
+        this.error.set(this.getErrorMessage(error));
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * Get current user's cart items
+   */
+  getCartItems(): Observable<CartItemResponse[]> {
+    this.isLoading.set(true);
+    this.error.set(null);
+
+    return this.http.get<CartItemResponse[]>(`${this.apiUrl}/items`).pipe(
+      tap((items) => {
+        this.cartItems.set(items);
+        this.isLoading.set(false);
+        console.log('🛒 Cart items loaded:', items);
+      }),
+      catchError((error) => {
+        console.error('❌ Failed to load cart items:', error);
+        this.isLoading.set(false);
+        this.error.set(this.getErrorMessage(error));
+        return throwError(() => error);
+      })
+    );
   }
 
   /**
    * Add an item to the cart
-   * @param request - Add to cart request with productId and quantity
-   * @returns Observable with updated cart
    */
-  addItem(request: AddToCartRequest): Observable<Cart> {
-    // TODO: Implement actual HTTP call
-    // return this.http.post<Cart>(`${this.apiUrl}/items`, request);
-    console.log('CartService.addItem() called with:', request);
-    return of({} as Cart);
-  }
+  addItem(request: AddToCartRequest): Observable<CartItemResponse> {
+    this.isLoading.set(true);
+    this.error.set(null);
 
-  /**
-   * Remove an item from the cart
-   * @param itemId - Cart item ID to remove
-   * @returns Observable with updated cart
-   */
-  removeItem(itemId: string): Observable<Cart> {
-    // TODO: Implement actual HTTP call
-    // return this.http.delete<Cart>(`${this.apiUrl}/items/${itemId}`);
-    console.log('CartService.removeItem() called with itemId:', itemId);
-    return of({} as Cart);
+    // ✅ ENHANCED VALIDATION: Check for null/undefined values
+    if (!request.productId) {
+      const error = 'Product ID is required';
+      console.error('❌ Cart validation error:', error);
+      this.error.set(error);
+      this.isLoading.set(false);
+      return throwError(() => new Error(error));
+    }
+
+    if (!request.quantity || request.quantity <= 0) {
+      const error = 'Quantity must be greater than 0';
+      console.error('❌ Cart validation error:', error);
+      this.error.set(error);
+      this.isLoading.set(false);
+      return throwError(() => new Error(error));
+    }
+
+    // ✅ ENSURE PROPER DATA TYPES
+    const backendRequest = {
+      productId: String(request.productId).trim(),
+      quantity: Number(request.quantity)
+    };
+
+    console.log('🛒 Adding item to cart:', backendRequest);
+    console.log('🔍 Request validation:', {
+      productIdType: typeof backendRequest.productId,
+      productIdLength: backendRequest.productId.length,
+      quantityType: typeof backendRequest.quantity,
+      quantityValue: backendRequest.quantity
+    });
+
+    return this.http.post<CartItemResponse>(`${this.apiUrl}/items`, backendRequest).pipe(
+      tap((cartItem) => {
+        console.log('✅ Item added to cart:', cartItem);
+        // Refresh both cart and cart items to get updated data
+        this.refreshCartAndItems();
+        this.cartUpdateSubject.next(true);
+        this.isLoading.set(false);
+      }),
+      catchError((error) => {
+        console.error('❌ Failed to add item to cart:', error);
+        
+        // ✅ ENHANCED ERROR HANDLING WITH FIELD DETAILS
+        if (error.status === 400 && error.error?.fieldErrors) {
+          const fieldErrors = error.error.fieldErrors;
+          let errorMessage = 'Validation failed:\n';
+          
+          Object.keys(fieldErrors).forEach(field => {
+            errorMessage += `• ${field}: ${fieldErrors[field]}\n`;
+          });
+          
+          console.error('🔍 Field validation errors:', fieldErrors);
+          this.error.set(errorMessage);
+        } else {
+          this.error.set(this.getErrorMessage(error));
+        }
+        
+        this.isLoading.set(false);
+        return throwError(() => error);
+      })
+    );
   }
 
   /**
    * Update quantity of a cart item
-   * @param request - Update request with itemId and new quantity
-   * @returns Observable with updated cart
    */
-  updateQuantity(request: UpdateCartItemRequest): Observable<Cart> {
-    // TODO: Implement actual HTTP call
-    // return this.http.patch<Cart>(`${this.apiUrl}/items/${request.itemId}`, { quantity: request.quantity });
-    console.log('CartService.updateQuantity() called with:', request);
-    return of({} as Cart);
+  updateItemQuantity(itemId: string, quantity: number): Observable<CartItemResponse> {
+    this.isLoading.set(true);
+    this.error.set(null);
+
+    const request: UpdateCartItemRequest = { quantity };
+
+    return this.http.put<CartItemResponse>(`${this.apiUrl}/items/${itemId}`, request).pipe(
+      tap((cartItem) => {
+        console.log('✅ Cart item quantity updated:', cartItem);
+        this.refreshCartAndItems();
+        this.cartUpdateSubject.next(true);
+        this.isLoading.set(false);
+      }),
+      catchError((error) => {
+        console.error('❌ Failed to update item quantity:', error);
+        this.error.set(this.getErrorMessage(error));
+        this.isLoading.set(false);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * Remove an item from the cart
+   */
+  removeItem(itemId: string): Observable<void> {
+    this.isLoading.set(true);
+    this.error.set(null);
+
+    return this.http.delete<void>(`${this.apiUrl}/items/${itemId}`).pipe(
+      tap(() => {
+        console.log('✅ Item removed from cart:', itemId);
+        this.refreshCartAndItems();
+        this.cartUpdateSubject.next(true);
+        this.isLoading.set(false);
+      }),
+      catchError((error) => {
+        console.error('❌ Failed to remove item:', error);
+        this.error.set(this.getErrorMessage(error));
+        this.isLoading.set(false);
+        return throwError(() => error);
+      })
+    );
   }
 
   /**
    * Clear all items from the cart
-   * @returns Observable with empty cart
    */
-  clearCart(): Observable<Cart> {
-    // TODO: Implement actual HTTP call
-    // return this.http.delete<Cart>(`${this.apiUrl}/clear`);
-    console.log('CartService.clearCart() called');
-    return of({} as Cart);
+  clearCart(): Observable<void> {
+    this.isLoading.set(true);
+    this.error.set(null);
+
+    return this.http.delete<void>(`${this.apiUrl}/clear`).pipe(
+      tap(() => {
+        console.log('✅ Cart cleared');
+        this.cart.set(null);
+        this.cartItems.set([]);
+        this.cartUpdateSubject.next(true);
+        this.isLoading.set(false);
+      }),
+      catchError((error) => {
+        console.error('❌ Failed to clear cart:', error);
+        this.error.set(this.getErrorMessage(error));
+        this.isLoading.set(false);
+        return throwError(() => error);
+      })
+    );
   }
 
   /**
    * Apply a coupon code to the cart
-   * @param couponCode - Coupon code to apply
-   * @returns Observable with updated cart including discount
    */
-  applyCoupon(couponCode: string): Observable<Cart> {
-    // TODO: Implement actual HTTP call
-    // return this.http.post<Cart>(`${this.apiUrl}/coupon`, { couponCode });
-    console.log('CartService.applyCoupon() called with:', couponCode);
-    return of({} as Cart);
+  applyCoupon(couponCode: string): Observable<CartResponse> {
+    this.isLoading.set(true);
+    this.error.set(null);
+
+    const request = { couponCode };
+
+    return this.http.post<CartResponse>(`${this.apiUrl}/coupon`, request).pipe(
+      tap((cart) => {
+        console.log('✅ Coupon applied:', cart);
+        this.cart.set(cart);
+        this.cartUpdateSubject.next(true);
+        this.isLoading.set(false);
+      }),
+      catchError((error) => {
+        console.error('❌ Failed to apply coupon:', error);
+        this.error.set(this.getErrorMessage(error));
+        this.isLoading.set(false);
+        return throwError(() => error);
+      })
+    );
   }
 
   /**
    * Remove applied coupon from cart
-   * @returns Observable with updated cart
    */
-  removeCoupon(): Observable<Cart> {
-    // TODO: Implement actual HTTP call
-    // return this.http.delete<Cart>(`${this.apiUrl}/coupon`);
-    console.log('CartService.removeCoupon() called');
-    return of({} as Cart);
+  removeCoupon(): Observable<CartResponse> {
+    this.isLoading.set(true);
+    this.error.set(null);
+
+    return this.http.delete<CartResponse>(`${this.apiUrl}/coupon`).pipe(
+      tap((cart) => {
+        console.log('✅ Coupon removed:', cart);
+        this.cart.set(cart);
+        this.cartUpdateSubject.next(true);
+        this.isLoading.set(false);
+      }),
+      catchError((error) => {
+        console.error('❌ Failed to remove coupon:', error);
+        this.error.set(this.getErrorMessage(error));
+        this.isLoading.set(false);
+        return throwError(() => error);
+      })
+    );
   }
 
   /**
-   * Get cart summary (for checkout preview)
-   * @returns Observable with cart summary
+   * Checkout (convert cart to order)
    */
-  getCartSummary(): Observable<CartSummary> {
-    // TODO: Implement actual HTTP call
-    // return this.http.get<CartSummary>(`${this.apiUrl}/summary`);
-    console.log('CartService.getCartSummary() called');
-    return of({} as CartSummary);
+  checkout(checkoutData: any): Observable<CartResponse> {
+    this.isLoading.set(true);
+    this.error.set(null);
+
+    return this.http.post<CartResponse>(`${this.apiUrl}/checkout`, checkoutData).pipe(
+      tap((order) => {
+        console.log('✅ Order created:', order);
+        // Clear cart state after successful checkout
+        this.cart.set(null);
+        this.cartItems.set([]);
+        this.cartUpdateSubject.next(true);
+        this.isLoading.set(false);
+      }),
+      catchError((error) => {
+        console.error('❌ Failed to checkout:', error);
+        this.error.set(this.getErrorMessage(error));
+        this.isLoading.set(false);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * Get user orders
+   */
+  getOrders(): Observable<CartResponse[]> {
+    return this.http.get<CartResponse[]>(`${this.apiUrl}/orders`).pipe(
+      catchError((error) => {
+        console.error('❌ Failed to get orders:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * Refresh cart data
+   */
+  refreshCart(): void {
+    this.refreshCartAndItems();
+  }
+
+  /**
+   * Refresh both cart and cart items data
+   */
+  private refreshCartAndItems(): void {
+    // Refresh cart totals
+    this.getCart().subscribe({
+      error: (error) => console.warn('Failed to refresh cart:', error)
+    });
+    // Refresh cart items
+    this.getCartItems().subscribe({
+      error: (error) => console.warn('Failed to refresh cart items:', error)
+    });
+  }
+
+  /**
+   * Get user-friendly error message
+   */
+  private getErrorMessage(error: any): string {
+    if (error.status === 401) {
+      return 'Please log in to access your cart';
+    } else if (error.status === 403) {
+      return 'You do not have permission to perform this action';
+    } else if (error.status === 404) {
+      return 'Cart or item not found';
+    } else if (error.status >= 500) {
+      return 'Server error. Please try again later';
+    } else {
+      return error.error?.message || 'An unexpected error occurred';
+    }
   }
 }

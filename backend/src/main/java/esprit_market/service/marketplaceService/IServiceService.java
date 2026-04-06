@@ -9,6 +9,11 @@ import java.util.List;
 public interface IServiceService {
     List<ServiceResponseDTO> findAll();
 
+    /**
+     * All services for the current seller's shop (any status).
+     */
+    List<ServiceResponseDTO> findForCurrentSeller();
+
     ServiceResponseDTO findById(ObjectId id);
 
     ServiceResponseDTO create(ServiceRequestDTO dto);

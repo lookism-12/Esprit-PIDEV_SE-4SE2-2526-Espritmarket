@@ -1,13 +1,12 @@
 import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { MetricCardComponent } from '../../shared/components/metric-card/metric-card.component';
 import { DashboardService } from '../../core/services/dashboard.service';
 
 @Component({
     selector: 'app-dashboard',
     standalone: true,
-    imports: [CommonModule, MetricCardComponent, RouterLink],
+    imports: [CommonModule, RouterLink],
     templateUrl: './dashboard.component.html'
 })
 export class DashboardComponent implements OnInit {
@@ -54,13 +53,103 @@ export class DashboardComponent implements OnInit {
         }
     ];
 
-    secondaryMetrics = [
-        { label: 'Support Tickets', value: '8', icon: '🎧', color: 'text-orange-600' },
-        { label: 'Flagged Content', value: '5', icon: '🚩', color: 'text-red-600' },
-        { label: 'Avg. Order Value', value: '$85', icon: '📈', color: 'text-green-600' },
-        { label: 'AI Models Active', value: '6/6', icon: '🖥️', color: 'text-purple-600' },
-        { label: 'System Uptime', value: '99.9%', icon: '🖧', color: 'text-green-600' },
-        { label: 'New Feedback', value: '14', icon: '✉️', color: 'text-blue-600' }
+    quickActions = [
+        {
+            title: 'Create Coupon',
+            description: 'Generate discount codes',
+            icon: '🎫',
+            route: '/admin/coupons/create',
+            bgColor: 'bg-purple-50 text-purple-600'
+        },
+        {
+            title: 'Manage Users',
+            description: 'View and moderate users',
+            icon: '👥',
+            route: '/admin/users',
+            bgColor: 'bg-blue-50 text-blue-600'
+        },
+        {
+            title: 'Review Products',
+            description: 'Approve pending listings',
+            icon: '📦',
+            route: '/admin/marketplace/products',
+            bgColor: 'bg-green-50 text-green-600'
+        },
+        {
+            title: 'Support Tickets',
+            description: 'Handle customer issues',
+            icon: '🎧',
+            route: '/admin/support',
+            bgColor: 'bg-orange-50 text-orange-600'
+        }
+    ];
+
+    chartData = [
+        { label: 'Mon', value: 75 },
+        { label: 'Tue', value: 55 },
+        { label: 'Wed', value: 85 },
+        { label: 'Thu', value: 65 },
+        { label: 'Fri', value: 90 },
+        { label: 'Sat', value: 45 },
+        { label: 'Sun', value: 70 }
+    ];
+
+    recentActivities = [
+        {
+            title: 'New user registered',
+            time: '2 min ago',
+            icon: '👤',
+            bgColor: 'bg-green-50 text-green-600',
+            description: 'A new user has successfully completed registration'
+        },
+        {
+            title: 'Product approved',
+            time: '5 min ago',
+            icon: '✅',
+            bgColor: 'bg-blue-50 text-blue-600',
+            description: 'Product listing has been reviewed and approved'
+        },
+        {
+            title: 'Order completed',
+            time: '8 min ago',
+            icon: '📦',
+            bgColor: 'bg-purple-50 text-purple-600',
+            description: 'Customer order has been successfully completed'
+        },
+        {
+            title: 'Support ticket resolved',
+            time: '12 min ago',
+            icon: '🎧',
+            bgColor: 'bg-orange-50 text-orange-600',
+            description: 'Customer support issue has been resolved'
+        }
+    ];
+
+    actionableAlerts = [
+        {
+            title: 'Pending Reviews',
+            value: '23',
+            subtitle: 'Products awaiting approval',
+            icon: '⏳',
+            route: '/admin/marketplace/products',
+            color: 'bg-gradient-to-br from-orange-500 to-orange-600'
+        },
+        {
+            title: 'Support Tickets',
+            value: '8',
+            subtitle: 'Unresolved customer issues',
+            icon: '🎧',
+            route: '/admin/support',
+            color: 'bg-gradient-to-br from-red-500 to-red-600'
+        },
+        {
+            title: 'KYC Applications',
+            value: '12',
+            subtitle: 'Identity verifications pending',
+            icon: '🛡️',
+            route: '/admin/users',
+            color: 'bg-gradient-to-br from-blue-500 to-blue-600'
+        }
     ];
 
     // Calendar state
@@ -80,78 +169,132 @@ export class DashboardComponent implements OnInit {
       const daysInMonth = new Date(year, month + 1, 0).getDate();
       
       const days = [];
-      const prevMonthLastDay = new Date(year, month, 0).getDate();
       
-      // Padding from previous month
+      // Previous month days
+      const prevMonth = new Date(year, month - 1, 0);
       for (let i = firstDayOfMonth - 1; i >= 0; i--) {
-        days.push({ day: prevMonthLastDay - i, currentMonth: false });
+        days.push({
+          day: prevMonth.getDate() - i,
+          currentMonth: false,
+          isToday: false
+        });
       }
       
       // Current month days
-      for (let i = 1; i <= daysInMonth; i++) {
-        days.push({ day: i, currentMonth: true, isToday: this.isToday(i, month, year) });
+      const today = new Date();
+      for (let day = 1; day <= daysInMonth; day++) {
+        const isToday = today.getFullYear() === year && 
+                       today.getMonth() === month && 
+                       today.getDate() === day;
+        days.push({
+          day,
+          currentMonth: true,
+          isToday
+        });
       }
       
-      // Padding for next month to fill the grid (6 rows * 7 days = 42)
-      const totalCells = 42;
-      const nextMonthDays = totalCells - days.length;
-      for (let i = 1; i <= nextMonthDays; i++) {
-        days.push({ day: i, currentMonth: false });
+      // Next month days to fill the grid
+      const remainingDays = 42 - days.length;
+      for (let day = 1; day <= remainingDays; day++) {
+        days.push({
+          day,
+          currentMonth: false,
+          isToday: false
+        });
       }
       
       return days;
     });
 
-    kycApplications: any[] = [];
-    recentActivities: any[] = [];
-    systemStatus: any[] = [];
-    serverLoad = 42;
+    constructor() {}
 
-    actionableAlerts = [
-      { title: 'Pending KYC', value: '12', subtitle: 'Awaiting Verification', icon: '🆔', color: 'bg-[#7D0408]', route: '/admin/moderation' },
-      { title: 'Flagged Content', value: '5', subtitle: 'Reported by Users', icon: '🚩', color: 'bg-[#C5A023]', route: '/admin/moderation' },
-      { title: 'Open Tickets', value: '8', subtitle: 'Support Required', icon: '🎧', color: 'bg-[#508D96]', route: '/admin/support' }
-    ];
+    ngOnInit(): void {}
 
-    constructor(private dashboardService: DashboardService) { }
-
-    ngOnInit() {
-        this.dashboardService.getMetrics().subscribe(data => this.metrics = data);
-        this.dashboardService.getKycApplications().subscribe(data => this.kycApplications = data);
-        this.dashboardService.getRecentActivities().subscribe(data => this.recentActivities = data);
-        this.dashboardService.getSystemStatus().subscribe(data => this.systemStatus = data);
+    getCurrentDate(): string {
+        return new Date().toLocaleDateString('en-US', { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+        });
     }
 
-    private isToday(day: number, month: number, year: number): boolean {
-      const today = new Date();
-      return today.getDate() === day && today.getMonth() === month && today.getFullYear() === year;
+    getMetricBorderColor(color: string): string {
+        const colors: { [key: string]: string } = {
+            'blue': 'border-l-blue-500',
+            'green': 'border-l-green-500',
+            'orange': 'border-l-orange-500',
+            'purple': 'border-l-purple-500'
+        };
+        return colors[color] || 'border-l-gray-500';
     }
 
-    prevMonth() {
-      this.currentDate.update((d: Date) => new Date(d.getFullYear(), d.getMonth() - 1, 1));
+    getMetricBgGradient(color: string): string {
+        const colors: { [key: string]: string } = {
+            'blue': 'bg-gradient-to-br from-blue-500 to-blue-600',
+            'green': 'bg-gradient-to-br from-green-500 to-green-600',
+            'orange': 'bg-gradient-to-br from-orange-500 to-orange-600',
+            'purple': 'bg-gradient-to-br from-purple-500 to-purple-600'
+        };
+        return colors[color] || 'bg-gradient-to-br from-gray-500 to-gray-600';
     }
 
-    nextMonth() {
-      this.currentDate.update((d: Date) => new Date(d.getFullYear(), d.getMonth() + 1, 1));
+    getMetricBgColor(color: string): string {
+        const colors: { [key: string]: string } = {
+            'blue': 'bg-blue-500',
+            'green': 'bg-green-500',
+            'orange': 'bg-orange-500',
+            'purple': 'bg-purple-500'
+        };
+        return colors[color] || 'bg-gray-500';
     }
 
-    getActivityIconClass(type: string): string {
-        switch (type) {
-            case 'success': return 'bg-green-100 text-green-600';
-            case 'warning': return 'bg-yellow-100 text-yellow-600';
-            case 'info': return 'bg-blue-100 text-blue-600';
-            case 'error': return 'bg-red-100 text-red-600';
-            default: return 'bg-gray-100 text-gray-600';
-        }
+    getMetricIconBg(color: string): string {
+        const colors: { [key: string]: string } = {
+            'blue': 'bg-blue-50 text-blue-600 border-blue-200',
+            'green': 'bg-green-50 text-green-600 border-green-200',
+            'orange': 'bg-orange-50 text-orange-600 border-orange-200',
+            'purple': 'bg-purple-50 text-purple-600 border-purple-200'
+        };
+        return colors[color] || 'bg-gray-50 text-gray-600 border-gray-200';
     }
 
-    getStatusColor(status: string): string {
-        return status === 'operational' ? 'text-green-500' : 'text-yellow-500';
+    getMetricProgressColor(color: string): string {
+        const colors: { [key: string]: string } = {
+            'blue': 'bg-gradient-to-r from-blue-500 to-blue-600',
+            'green': 'bg-gradient-to-r from-green-500 to-green-600',
+            'orange': 'bg-gradient-to-r from-orange-500 to-orange-600',
+            'purple': 'bg-gradient-to-r from-purple-500 to-purple-600'
+        };
+        return colors[color] || 'bg-gradient-to-r from-gray-500 to-gray-600';
     }
 
-    getStatusBadgeClass(status: string): string {
-        return status === 'operational'
-            ? 'bg-green-100 text-green-700'
-            : 'bg-yellow-100 text-yellow-700';
+    getChartBarColor(index: number): string {
+        const colors = [
+            'bg-[#7D0408]',
+            'bg-[#C5A023]',
+            'bg-[#508D96]',
+            'bg-[#7D0408]',
+            'bg-[#C5A023]',
+            'bg-[#508D96]',
+            'bg-[#7D0408]'
+        ];
+        return colors[index] || 'bg-gray-400';
+    }
+
+    prevMonth(): void {
+        this.currentDate.update(date => {
+            const newDate = new Date(date);
+            newDate.setMonth(newDate.getMonth() - 1);
+            return newDate;
+        });
+    }
+
+    nextMonth(): void {
+        this.currentDate.update(date => {
+            const newDate = new Date(date);
+            newDate.setMonth(newDate.getMonth() + 1);
+            return newDate;
+        });
     }
 }

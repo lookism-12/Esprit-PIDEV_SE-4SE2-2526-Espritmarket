@@ -25,9 +25,16 @@ public class ServiceController {
         return service.findAll();
     }
 
+    @GetMapping("/mine")
+    @PreAuthorize("hasAnyRole('SELLER', 'PROVIDER')")
+    @Operation(summary = "Services for the authenticated seller's shop (all statuses)")
+    public List<ServiceResponseDTO> getMine() {
+        return service.findForCurrentSeller();
+    }
+
     @PostMapping
-    @PreAuthorize("hasRole('PROVIDER')")
-    @Operation(summary = "Create a new service (PROVIDER only)")
+    @PreAuthorize("hasRole('ADMIN') or ((hasAnyRole('SELLER', 'PROVIDER')) and @marketplaceSecurity.isShopOwner(authentication, #dto.shopId))")
+    @Operation(summary = "Create a new service (SELLER/PROVIDER/ADMIN)")
     public ServiceResponseDTO create(@RequestBody ServiceRequestDTO dto) {
         return service.create(dto);
     }
@@ -39,15 +46,15 @@ public class ServiceController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('PROVIDER')")
-    @Operation(summary = "Update an existing service (PROVIDER only)")
+    @PreAuthorize("hasRole('ADMIN') or ((hasAnyRole('SELLER', 'PROVIDER')) and @marketplaceSecurity.isServiceOwner(authentication, #id))")
+    @Operation(summary = "Update an existing service (SELLER/PROVIDER/ADMIN)")
     public ServiceResponseDTO update(@PathVariable ObjectId id, @RequestBody ServiceRequestDTO dto) {
         return service.update(id, dto);
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('PROVIDER')")
-    @Operation(summary = "Delete a service (PROVIDER only)")
+    @PreAuthorize("hasRole('ADMIN') or ((hasAnyRole('SELLER', 'PROVIDER')) and @marketplaceSecurity.isServiceOwner(authentication, #id))")
+    @Operation(summary = "Delete a service (SELLER/PROVIDER/ADMIN)")
     public void deleteById(@PathVariable ObjectId id) {
         service.deleteById(id);
     }

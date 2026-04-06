@@ -34,7 +34,17 @@
 
                 <!-- Categories -->
                 <div class="premium-card p-4">
-                    <h3 class="font-bold text-dark mb-4">Categories</h3>
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-dark">Categories</h3>
+                        @if (isAdmin()) {
+                            <button
+                                type="button"
+                                (click)="openManageCategories()"
+                                class="text-xs font-bold px-3 py-1.5 bg-primary text-white rounded-lg hover:opacity-90 transition-opacity">
+                                + Add
+                            </button>
+                        }
+                    </div>
                     <div class="space-y-1">
                         <button 
                             (click)="selectCategory('all')"
@@ -114,12 +124,12 @@
                                             @if (post.author.avatar) {
                                                 <img [src]="post.author.avatar" class="w-full h-full rounded-full object-cover">
                                             } @else {
-                                                {{ post.author.name.charAt(0) }}
+                                                {{ getUserDisplayName(post.authorId).charAt(0) }}
                                             }
                                         </div>
                                         <div>
                                             <div class="flex items-center gap-2">
-                                                <span class="font-bold text-dark">{{ post.author.name }}</span>
+                                                <span class="font-bold text-dark">{{ getUserDisplayName(post.authorId) }}</span>
                                                 @if (post.author.badge) {
                                                     <span class="px-2 py-0.5 text-[10px] font-bold rounded-full" [ngClass]="getBadgeClass(post.moderationBadge)">
                                                         {{ post.author.badge }}
@@ -187,11 +197,24 @@
                                         </svg>
                                         <span class="font-semibold text-sm">{{ post.comments }} Comments</span>
                                     </button>
-                                    <button class="ml-auto text-gray-400 hover:text-gray-600 transition-colors">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                                        </svg>
-                                    </button>
+                                    @if (canManagePost(post)) {
+                                        <div class="ml-auto flex items-center gap-2">
+                                            <button
+                                                (click)="openUpdatePostModal(post)"
+                                                class="text-gray-400 hover:text-primary transition-colors">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.586a2 2 0 010 2.828L12 13l-4 1 1-4 8.586-8.586a2 2 0 012.828 0z" />
+                                                </svg>
+                                            </button>
+                                            <button
+                                                (click)="deletePost(post)"
+                                                class="text-gray-400 hover:text-red-600 transition-colors">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3m9 0H6" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    }
                                 </div>
 
                                 <!-- Comment Section (Expanded) -->
@@ -210,7 +233,128 @@
                                                 Post
                                             </button>
                                         </form>
-                                        <p class="text-sm text-gray-500 text-center">Comments will appear here...</p>
+                                        @if (expandedPostCommentsLoading()) {
+                                            <p class="text-sm text-gray-500 text-center">Loading comments...</p>
+                                        } @else {
+                                            @if (expandedComments().length === 0) {
+                                                <p class="text-sm text-gray-500 text-center">No comments yet. Be the first!</p>
+                                            } @else {
+                                                <div class="space-y-3">
+                                                    @for (c of expandedComments(); track c.id) {
+                                                        <div class="bg-gray-50 border border-gray-100 rounded-xl p-4">
+                                                            <div class="flex items-start justify-between gap-4">
+                                                                <div class="min-w-0">
+                                                                    <div class="text-xs text-gray-500 font-bold">
+                                                                        {{ getUserDisplayName(c.authorId) }} • {{ getTimeAgo(c.createdAt) }}
+                                                                    </div>
+                                                                    @if (editingCommentId() === c.id) {
+                                                                        <form
+                                                                            [formGroup]="editCommentForm"
+                                                                            (ngSubmit)="submitEditComment(c)"
+                                                                            class="mt-2 flex gap-3">
+                                                                            <input
+                                                                                type="text"
+                                                                                formControlName="content"
+                                                                                class="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
+                                                                            >
+                                                                            <button
+                                                                                type="submit"
+                                                                                [disabled]="editCommentForm.invalid"
+                                                                                class="px-4 py-2 bg-primary text-white font-semibold text-sm rounded-xl hover:bg-primary-dark transition-colors disabled:opacity-50">
+                                                                                Save
+                                                                            </button>
+                                                                            <button
+                                                                                type="button"
+                                                                                (click)="cancelEditComment()"
+                                                                                class="px-3 py-2 bg-white border border-gray-200 text-gray-700 font-semibold text-sm rounded-xl hover:bg-gray-50 transition-colors">
+                                                                                Cancel
+                                                                            </button>
+                                                                        </form>
+                                                                    } @else {
+                                                                        <p class="text-sm text-gray-800 whitespace-pre-wrap mt-2">
+                                                                            {{ c.content }}
+                                                                        </p>
+                                                                    }
+                                                                </div>
+                                                                <div class="flex items-start gap-2">
+                                                                    <button
+                                                                        type="button"
+                                                                        (click)="startReply(c.id)"
+                                                                        class="text-xs font-bold text-primary hover:underline whitespace-nowrap">
+                                                                        Reply
+                                                                    </button>
+
+                                                                    @if (canManageComment(c) && editingCommentId() !== c.id) {
+                                                                        <div class="flex items-center gap-2">
+                                                                            <button
+                                                                                type="button"
+                                                                                (click)="updateComment(c)"
+                                                                                class="text-xs font-bold text-gray-500 hover:text-primary transition-colors">
+                                                                                Edit
+                                                                            </button>
+                                                                            <button
+                                                                                type="button"
+                                                                                (click)="deleteComment(c)"
+                                                                                class="text-xs font-bold text-gray-500 hover:text-red-600 transition-colors">
+                                                                                Delete
+                                                                            </button>
+                                                                        </div>
+                                                                    }
+                                                                </div>
+                                                            </div>
+
+                                                            @if (activeReplyingCommentId() === c.id) {
+                                                                <form [formGroup]="replyForm" (ngSubmit)="submitReply()" class="mt-3 flex gap-3">
+                                                                    <input 
+                                                                        type="text"
+                                                                        formControlName="content"
+                                                                        placeholder="Write a reply..."
+                                                                        class="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary focus:border-transparent">
+                                                                    <button 
+                                                                        type="submit"
+                                                                        [disabled]="replyForm.invalid"
+                                                                        class="px-4 py-2 bg-primary text-white font-semibold text-sm rounded-xl hover:bg-primary-dark transition-colors disabled:opacity-50">
+                                                                        Reply
+                                                                    </button>
+                                                                </form>
+                                                            }
+
+                                                            @if (c.replies.length > 0) {
+                                                                <div class="mt-3 pl-4 border-l border-gray-200 space-y-2">
+                                                                    @for (r of c.replies; track r.id) {
+                                                                        <div class="bg-white border border-gray-100 rounded-lg p-3">
+                                                                            <div class="text-[11px] text-gray-500 font-bold">
+                                                                                {{ getUserDisplayName(r.authorId) }} • {{ getTimeAgo(r.createdAt) }}
+                                                                            </div>
+                                                                            <p class="text-sm text-gray-800 whitespace-pre-wrap mt-1">
+                                                                                {{ r.content }}
+                                                                            </p>
+
+                                                                            @if (canManageReply(r)) {
+                                                                                <div class="mt-2 flex items-center gap-3">
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        (click)="updateReply(r, c.postId)"
+                                                                                        class="text-xs font-bold text-gray-500 hover:text-primary transition-colors">
+                                                                                        Edit
+                                                                                    </button>
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        (click)="deleteReply(r, c.postId)"
+                                                                                        class="text-xs font-bold text-gray-500 hover:text-red-600 transition-colors">
+                                                                                        Delete
+                                                                                    </button>
+                                                                                </div>
+                                                                            }
+                                                                        </div>
+                                                                    }
+                                                                </div>
+                                                            }
+                                                        </div>
+                                                    }
+                                                </div>
+                                            }
+                                        }
                                     </div>
                                 }
                             </div>
@@ -316,6 +460,191 @@
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Update Post Modal -->
+@if (showUpdatePostModal()) {
+    <div class="fixed inset-0 z-50 overflow-y-auto" (click)="closeUpdatePostModal()">
+        <div class="fixed inset-0 bg-black/50"></div>
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl" (click)="$event.stopPropagation()">
+                <div class="p-6 border-b border-gray-100">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xl font-bold text-dark">Update Post</h3>
+                        <button (click)="closeUpdatePostModal()" class="text-gray-400 hover:text-gray-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <form [formGroup]="updatePostForm" (ngSubmit)="submitUpdatePost()" class="p-6 space-y-4">
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-2">Category</label>
+                        <select
+                            formControlName="categoryId"
+                            class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
+                            [disabled]="!isAdmin()">
+                            @for (cat of categories(); track cat.id) {
+                                <option [value]="cat.id">{{ cat.icon }} {{ cat.name }}</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-2">Title</label>
+                        <input
+                            type="text"
+                            formControlName="title"
+                            class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
+                            [readonly]="false">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-2">Content</label>
+                        <textarea
+                            formControlName="content"
+                            rows="5"
+                            class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary focus:border-transparent resize-none"></textarea>
+                    </div>
+
+                    @if (isAdmin()) {
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <label class="flex items-center gap-3 p-3 border border-gray-100 rounded-xl">
+                                <input type="checkbox" formControlName="pinned" />
+                                <span class="text-sm font-bold text-gray-800">Pinned</span>
+                            </label>
+                            <label class="flex items-center gap-3 p-3 border border-gray-100 rounded-xl">
+                                <input type="checkbox" formControlName="approved" />
+                                <span class="text-sm font-bold text-gray-800">Approved</span>
+                            </label>
+                        </div>
+                    }
+
+                    <div class="flex gap-3 pt-4">
+                        <button type="button" (click)="closeUpdatePostModal()" class="flex-1 px-4 py-3 border border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-colors">
+                            Cancel
+                        </button>
+                        <button type="submit" [disabled]="updatePostForm.invalid" class="flex-1 btn-primary py-3 disabled:opacity-50">
+                            Update
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Manage Categories Modal (Admin) -->
+@if (showManageCategoriesModal()) {
+    <div class="fixed inset-0 z-50 overflow-y-auto" (click)="closeManageCategories()">
+        <div class="fixed inset-0 bg-black/50"></div>
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl" (click)="$event.stopPropagation()">
+                <div class="p-6 border-b border-gray-100">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xl font-bold text-dark">Manage Categories</h3>
+                        <button (click)="closeManageCategories()" class="text-gray-400 hover:text-gray-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="border border-gray-100 rounded-xl p-4">
+                        <h4 class="text-sm font-bold text-gray-900 mb-3">
+                            {{ editingCategoryId() ? 'Edit Category' : 'Add Category' }}
+                        </h4>
+
+                        <form [formGroup]="categoryForm" (ngSubmit)="submitCategory()" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-bold text-gray-700 mb-1">Name</label>
+                                <input
+                                    type="text"
+                                    formControlName="name"
+                                    class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
+                                    placeholder="e.g. Development"
+                                />
+                                @if (categoryForm.get('name')?.invalid && (categoryForm.get('name')?.dirty || categoryForm.get('name')?.touched)) {
+                                    <p class="text-red-500 text-xs mt-1">Name is required (2-100 chars).</p>
+                                }
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-gray-700 mb-1">Description</label>
+                                <textarea
+                                    rows="4"
+                                    formControlName="description"
+                                    class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
+                                    placeholder="Category description..."
+                                ></textarea>
+                                @if (categoryForm.get('description')?.invalid && (categoryForm.get('description')?.dirty || categoryForm.get('description')?.touched)) {
+                                    <p class="text-red-500 text-xs mt-1">Description is required (5-500 chars).</p>
+                                }
+                            </div>
+
+                            <div class="flex gap-3 pt-2">
+                                <button
+                                    type="submit"
+                                    class="flex-1 btn-primary py-2 disabled:opacity-50"
+                                    [disabled]="isSavingCategory()">
+                                    {{ editingCategoryId() ? 'Update' : 'Create' }}
+                                </button>
+                                <button
+                                    type="button"
+                                    (click)="closeManageCategories()"
+                                    class="flex-1 px-3 py-2 border border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-colors">
+                                    Cancel
+                                </button>
+                            </div>
+
+                            @if (isSavingCategory()) {
+                                <p class="text-xs text-gray-500 pt-1">Saving...</p>
+                            }
+                        </form>
+                    </div>
+
+                    <div class="border border-gray-100 rounded-xl p-4">
+                        <h4 class="text-sm font-bold text-gray-900 mb-3">Existing Categories</h4>
+
+                        @if (categories().length === 0) {
+                            <p class="text-sm text-gray-500">No categories.</p>
+                        } @else {
+                            <div class="space-y-3 max-h-[360px] overflow-y-auto hide-scrollbar pr-1">
+                                @for (c of categories(); track c.id) {
+                                    <div class="p-3 bg-gray-50 border border-gray-100 rounded-xl">
+                                        <div class="flex items-start justify-between gap-3">
+                                            <div class="min-w-0">
+                                                <p class="text-sm font-bold text-gray-900 line-clamp-1">{{ c.name }}</p>
+                                                <p class="text-xs text-gray-600 line-clamp-2 mt-1">{{ c.description }}</p>
+                                            </div>
+                                            <div class="flex flex-col gap-2">
+                                                <button
+                                                    type="button"
+                                                    (click)="openEditCategory(c)"
+                                                    class="text-xs font-bold text-primary hover:underline">
+                                                    Edit
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    (click)="deleteCategory(c)"
+                                                    class="text-xs font-bold text-red-600 hover:underline">
+                                                    Delete
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
             </div>
         </div>
     </div>

@@ -54,24 +54,29 @@ export const adminAuthGuard: CanActivateFn = (
     return router.createUrlTree(['/']);
   }
 
-  // Step 4: Check if admin role
+  // Step 4: Check if admin role ONLY (providers and other roles should NOT access admin interface)
   if (userRole === 'ADMIN') {
-    console.log('✅ AdminAuthGuard: Admin verified, allowing access to /admin');
+    console.log(`✅ AdminAuthGuard: ADMIN verified, allowing access to /admin`);
     return true;
   }
 
-  // Step 5: User is authenticated but NOT admin
-  console.log('❌ AdminAuthGuard: User is not admin, access denied');
-  console.log(`   User role: ${userRole} (required: ADMIN)`);
+  // Step 5: User is authenticated but NOT admin - DENY ACCESS
+  console.log('❌ AdminAuthGuard: User is not admin, access DENIED');
+  console.log(`   User role: ${userRole} (required: ADMIN only)`);
+  console.log('   🚫 PROVIDERS, CLIENTS, and other roles CANNOT access admin interface');
   
   // Redirect based on role to appropriate location
   switch(userRole) {
     case 'PROVIDER':
-      return router.createUrlTree(['/provider/dashboard']);
+    case 'SELLER':
+      console.log('   → Redirecting PROVIDER to front-end profile');
+      return router.createUrlTree(['/profile']); // ✅ Providers go to front-end
     case 'DRIVER':
+      console.log('   → Redirecting DRIVER to driver dashboard');
       return router.createUrlTree(['/driver/dashboard']);
     case 'CLIENT':
     default:
+      console.log('   → Redirecting CLIENT to front-end profile');
       return router.createUrlTree(['/profile']);
   }
 };

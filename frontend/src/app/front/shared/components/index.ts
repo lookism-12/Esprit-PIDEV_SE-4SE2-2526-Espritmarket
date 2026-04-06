@@ -18,3 +18,4 @@ export type { TableColumn, TableConfig, SortEvent, PageEvent } from './table.com
 
 // Existing components
 export { ProductCard } from './product-card/product-card';
+export { ToastContainer } from './toast-container/toast-container';
