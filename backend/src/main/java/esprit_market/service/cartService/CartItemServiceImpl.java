@@ -1,9 +1,12 @@
 package esprit_market.service.cartService;
 
+import esprit_market.Enum.cartEnum.CartStatus;
 import esprit_market.dto.cartDto.CartItemResponse;
 import esprit_market.entity.cart.CartItem;
 import esprit_market.mappers.cartMapper.CartItemMapper;
 import esprit_market.repository.cartRepository.CartItemRepository;
+import esprit_market.repository.cartRepository.CartRepository;
+import esprit_market.repository.userRepository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
 import org.springframework.stereotype.Service;
@@ -15,6 +18,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class CartItemServiceImpl implements ICartItemService {
     private final CartItemRepository repository;
+    private final CartRepository cartRepository;
+    private final UserRepository userRepository;
     private final CartItemMapper mapper;
 
     @Override
@@ -39,6 +44,23 @@ public class CartItemServiceImpl implements ICartItemService {
     @Override
     public List<CartItemResponse> findByCartId(ObjectId cartId) {
         return repository.findByCartId(cartId).stream()
+                .map(mapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<CartItemResponse> findOrderedItemsByUserId(ObjectId userId) {
+        // Fetch the user object since the entity uses @DBRef user
+        var user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        
+        // 1. Trouver tous les paniers de l'utilisateur qui ne sont pas en DRAFT
+        // Utiliser findByUser au lieu de findByUserId pour la compatibilité @DBRef
+        return cartRepository.findByUser(user).stream()
+                .filter(cart -> cart.getStatus() != CartStatus.DRAFT)
+                // 2. Récupérer tous les items de ces paniers
+                .flatMap(cart -> repository.findByCartId(cart.getId()).stream())
+                // 3. Mapper en Response
                 .map(mapper::toResponse)
                 .collect(Collectors.toList());
     }

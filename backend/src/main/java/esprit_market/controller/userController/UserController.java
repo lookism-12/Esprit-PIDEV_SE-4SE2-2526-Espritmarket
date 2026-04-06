@@ -117,6 +117,19 @@ public class UserController {
         return ResponseEntity.ok(userService.findAll(pageable));
     }
 
+    @GetMapping("/role/{rolePath}")
+    @Operation(summary = "Get users by role")
+    public ResponseEntity<java.util.List<UserDTO>> getUsersByRole(@PathVariable String rolePath) {
+        log.info("Fetching users by role: {}", rolePath);
+        try {
+            Role role = Role.valueOf(rolePath.toUpperCase());
+            return ResponseEntity.ok(userService.findByRole(role));
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid role requested: {}", rolePath);
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
     @GetMapping("/{id}")
     @Operation(summary = "Get user by ID")
     public ResponseEntity<UserDTO> getUserById(@PathVariable String id) {

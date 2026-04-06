@@ -1,0 +1,352 @@
+<div class="max-w-4xl mx-auto space-y-8 animate-fade-in relative z-10">
+  
+  <!-- Form/Search Toggle Container -->
+  <div class="bg-white/70 backdrop-blur-xl rounded-3xl p-8 lg:p-10 border border-white shadow-[0_8px_30px_rgb(0,0,0,0.06)] relative overflow-hidden transition-all duration-300">
+    <div class="absolute -top-20 right-0 w-64 h-64 bg-yellow-400/5 rounded-full blur-3xl"></div>
+    
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-8 border-b border-gray-200 pb-6 relative z-10">
+      <div>
+        <h2 class="text-2xl font-bold text-gray-900 tracking-tight">Support Services</h2>
+        <p class="text-gray-500 mt-2 font-medium">Track an existing request or open a new support ticket.</p>
+      </div>
+      <button (click)="toggleMode()"
+              class="px-5 py-2.5 rounded-xl font-bold transition-all text-sm shrink-0 border-2 active:scale-95 flex items-center gap-2"
+              [class.bg-white]="!showCreateForm()" [class.text-primary]="!showCreateForm()" [class.border-primary]="!showCreateForm()" [class.shadow-sm]="!showCreateForm()" [class.hover:bg-primary-50]="!showCreateForm()"
+              [class.bg-gray-100]="showCreateForm()" [class.text-gray-700]="showCreateForm()" [class.border-transparent]="showCreateForm()" [class.hover:bg-gray-200]="showCreateForm()">
+        @if (showCreateForm()) {
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+          Back to Tracking
+        } @else {
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          New Request
+        }
+      </button>
+    </div>
+
+    <!-- MAIN VIEWS -->
+    <div class="relative z-10 min-h-[200px]">
+      
+      <!-- ==================== SEARCH MODE ==================== -->
+      @if (!showCreateForm()) {
+        <div class="animate-[fade-in-up_0.3s_ease-out]">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+            <div class="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3">
+              <p class="text-[11px] uppercase tracking-wider text-gray-500">Mes demandes</p>
+              <p class="text-xl font-bold text-gray-900 mt-1">{{ myFeedbacks().length }}</p>
+            </div>
+            <div class="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3">
+              <p class="text-[11px] uppercase tracking-wider text-blue-700">Avec reponse admin</p>
+              <p class="text-xl font-bold text-blue-900 mt-1">{{ countFeedbacksWithAdminResponse() }}</p>
+            </div>
+            <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+              <p class="text-[11px] uppercase tracking-wider text-emerald-700">Mode affichage</p>
+              <p class="text-sm font-semibold text-emerald-900 mt-2">{{ hasSearched() ? 'Filtre par article' : 'Toutes mes demandes' }}</p>
+            </div>
+          </div>
+
+          <div class="flex max-w-xl items-center relative z-10 mb-10">
+            <div class="relative w-full group">
+              <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors group-focus-within:text-primary">
+                <svg class="h-5 w-5 text-gray-400 group-focus-within:text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              <input [ngModel]="searchItemId()" 
+                    (ngModelChange)="searchItemId.set($event)"
+                    (keyup.enter)="trackFeedback()"
+                    type="text" 
+                    class="block w-full pl-11 pr-32 py-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-gray-900 font-mono shadow-inner focus:ring-4 focus:ring-primary/20 focus:bg-white focus:border-primary transition-all duration-300 outline-none" 
+                    placeholder="Item Reference (e.g., 65f0a000)">
+              <button (click)="trackFeedback()"
+                      class="absolute inset-y-2 right-2 px-6 text-white font-bold bg-primary hover:bg-primary-dark rounded-xl transition-all shadow-sm active:scale-95 duration-200">
+                Search
+              </button>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 mb-8" *ngIf="hasSearched()">
+            <button (click)="clearSearch()" class="px-3 py-1.5 rounded-lg text-xs font-semibold border border-gray-300 text-gray-700 hover:bg-gray-100">
+              Afficher toutes mes demandes
+            </button>
+            <span class="text-xs text-gray-500">Filtre actif: {{ searchItemId() }}</span>
+          </div>
+
+          <!-- Search Results -->
+          @if (isSearching()) {
+            <div class="flex justify-center p-8"><div class="animate-spin rounded-full h-10 w-10 border-4 border-primary border-t-transparent"></div></div>
+          } @else {
+
+            @if (isLoadingMyFeedbacks() && !hasSearched()) {
+              <div class="text-center p-8 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                <p class="font-medium text-gray-700">Chargement de vos demandes...</p>
+              </div>
+            }
+
+            @if (myFeedbacksError() && !hasSearched()) {
+              <div class="text-center p-6 bg-red-50 rounded-2xl border border-red-200 text-red-700 text-sm font-medium">
+                {{ myFeedbacksError() }}
+              </div>
+            }
+            
+            @if (displayedFeedbacks().length === 0 && !isLoadingMyFeedbacks()) {
+              <div class="text-center p-8 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                <span class="text-4xl mb-3 block">🧐</span>
+                <p class="font-medium text-gray-900">Aucune demande trouvee.</p>
+                <p class="text-gray-500 text-sm mt-1">Vous pouvez ouvrir une nouvelle demande depuis ce meme espace.</p>
+              </div>
+            }
+
+            <div class="space-y-4">
+              @for (fb of displayedFeedbacks(); track fb.id) {
+                <div class="bg-white border border-gray-100 p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow group flex flex-col md:flex-row gap-6">
+                  <!-- Meta Left -->
+                  <div class="md:w-1/3 shrink-0 flex flex-col gap-3">
+                    <span [class]="'px-3 py-1 bg-gray-50 rounded-full text-[11px] font-extrabold uppercase tracking-wide border w-fit ' + getStatusInfo(fb.status).color">
+                      {{ getStatusInfo(fb.status).label }}
+                    </span>
+                    <div class="text-sm">
+                      <p class="text-gray-400 font-medium uppercase tracking-widest text-[10px] mb-0.5">Type</p>
+                      <p class="font-bold text-gray-800">{{ fb.type === 'SAV' ? '⚠️ Claim' : '💬 Feedback' }}</p>
+                    </div>
+                    <div class="text-sm">
+                      <p class="text-gray-400 font-medium uppercase tracking-widest text-[10px] mb-0.5">Date</p>
+                      <p class="font-medium text-gray-800">{{ formatDate(fb.creationDate) }}</p>
+                    </div>
+                    <div class="text-xs text-gray-500" *ngIf="fb.priority">
+                      Priorite: <span class="font-semibold text-gray-700">{{ fb.priority }}</span>
+                    </div>
+                  </div>
+                  <!-- Content Right -->
+                  <div class="md:w-2/3 border-t md:border-t-0 md:border-l border-gray-100 pt-4 md:pt-0 md:pl-6">
+                    <div class="flex items-center justify-between mb-2">
+                       <h4 class="font-bold text-gray-900">{{ fb.reason || 'Request Details' }}</h4>
+                       <span class="text-lg bg-gray-50 px-2 rounded tracking-[0.2em]">{{ getRatingStars(fb.rating) }}</span>
+                    </div>
+                    <p class="text-gray-600 bg-gray-50 p-4 rounded-xl text-sm italic relative">
+                      "{{ fb.message }}"
+                      <span class="absolute top-2 left-2 text-2xl text-gray-200 -z-0">"</span>
+                    </p>
+
+                    <div class="mt-4">
+                      <div class="flex items-center gap-2 mb-2">
+                        @for (step of timelineSteps(fb.status); track step.label) {
+                          <div class="h-2 w-2 rounded-full" [class.bg-primary]="step.active" [class.bg-gray-300]="!step.active"></div>
+                          <span class="text-xs" [class.text-primary]="step.active" [class.text-gray-400]="!step.active">{{ step.label }}</span>
+                        }
+                      </div>
+                    </div>
+
+                    <div class="mt-3" *ngIf="fb.adminResponse">
+                      <div class="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-900">
+                        <span class="font-semibold">Reponse admin:</span> {{ fb.adminResponse }}
+                      </div>
+                    </div>
+
+                    <div class="mt-3" *ngIf="!fb.adminResponse && (fb.status === 'INVESTIGATING' || fb.status === 'PENDING')">
+                      <div class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                        Votre demande est en cours de traitement. La reponse admin apparaitra ici.
+                      </div>
+                    </div>
+
+                    <div class="mt-4 flex gap-2" *ngIf="canEdit(fb)">
+                      <button (click)="openEditPending(fb)" class="px-3 py-1.5 text-xs rounded-lg border border-primary text-primary hover:bg-primary/5">Modifier</button>
+                      <button (click)="removePending(fb)" class="px-3 py-1.5 text-xs rounded-lg border border-red-400 text-red-600 hover:bg-red-50">Supprimer</button>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+
+      <!-- ==================== CREATE MODE ==================== -->
+      @if (showCreateForm()) {
+        <div class="animate-[fade-in-up_0.3s_ease-out]">
+          
+          @if (successMsg()) {
+            <div class="bg-green-50 border-l-4 border-green-500 p-6 rounded-xl text-green-800 flex items-center gap-4 mb-6 shadow-sm">
+              <div class="bg-green-100 p-2 rounded-full"><svg class="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg></div>
+              <p class="font-bold">{{ successMsg() }}</p>
+            </div>
+          }
+          @if (errorMsg()) {
+            <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-xl text-red-800 flex items-center gap-3 mb-6 font-medium font-sm shadow-sm">
+              <svg class="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+              {{ errorMsg() }}
+            </div>
+          }
+
+          <form [formGroup]="feedbackForm" (ngSubmit)="submitFeedback()" class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <!-- Item ID (Dropdown instead of text) -->
+              <div class="space-y-1.5">
+                <label class="block text-sm font-bold text-gray-700">Ordered Item <span class="text-red-500">*</span></label>
+                <select formControlName="cartItemId" 
+                        class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-gray-50 focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all font-medium appearance-none shadow-inner cursor-pointer outline-none" 
+                        [class.border-red-300]="isFieldInvalid('cartItemId')" [class.bg-red-50]="isFieldInvalid('cartItemId')">
+                  <option value="" disabled selected>Select an item from your recent orders...</option>
+                  <option *ngIf="isLoadingCartItems()" value="" disabled>Loading your cart items...</option>
+                  <option *ngFor="let item of cartItems()" [value]="item.id">
+                    {{ item.name }} x{{ item.quantity }} ({{ item.unitPrice | number:'1.2-2' }} TND)
+                  </option>
+                  <option *ngIf="!isLoadingCartItems() && cartItems().length === 0" value="" disabled>
+                    No cart items found for your account
+                  </option>
+                </select>
+                @if (isFieldInvalid('cartItemId')) {
+                  <p class="text-xs text-red-500 font-medium">Please select an item.</p>
+                }
+                @if (cartItemsError()) {
+                  <p class="text-xs text-amber-600 font-medium">{{ cartItemsError() }}</p>
+                }
+              </div>
+
+              <!-- Type -->
+              <div class="space-y-1.5">
+                <label class="block text-sm font-bold text-gray-700">Request Type <span class="text-red-500">*</span></label>
+                <div class="grid grid-cols-2 gap-2">
+                  <button type="button" (click)="feedbackForm.patchValue({ type: 'SAV' })"
+                          class="px-3 py-2 rounded-xl border-2 font-semibold text-sm transition-all"
+                          [class.border-red-500]="isComplaintType()" [class.bg-red-50]="isComplaintType()" [class.text-red-700]="isComplaintType()"
+                          [class.border-gray-200]="!isComplaintType()" [class.text-gray-600]="!isComplaintType()">
+                    Reclamation
+                  </button>
+                  <button type="button" (click)="feedbackForm.patchValue({ type: 'FEEDBACK' })"
+                          class="px-3 py-2 rounded-xl border-2 font-semibold text-sm transition-all"
+                          [class.border-blue-500]="!isComplaintType()" [class.bg-blue-50]="!isComplaintType()" [class.text-blue-700]="!isComplaintType()"
+                          [class.border-gray-200]="isComplaintType()" [class.text-gray-600]="isComplaintType()">
+                    Avis / Feedback
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- SAV FORM -->
+            @if (isComplaintType()) {
+              <div class="space-y-1.5">
+                <label class="block text-sm font-bold text-gray-700">Nature du probleme</label>
+                <select formControlName="problemNature" class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-gray-50 focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none">
+                  @for (problem of complaintNatures; track problem.value) {
+                    <option [value]="problem.value">{{ problem.label }}</option>
+                  }
+                </select>
+              </div>
+
+              <div class="space-y-1.5">
+                <label class="block text-sm font-bold text-gray-700">Niveau d urgence</label>
+                <div class="grid grid-cols-3 gap-2">
+                  @for (priority of priorityOptions; track priority.value) {
+                    <button type="button" (click)="setPriority(priority.value)"
+                            class="px-3 py-2 rounded-xl border-2 text-sm font-semibold transition-all"
+                            [class]="feedbackForm.value.priority === priority.value ? priority.className : 'border-gray-200 text-gray-600 hover:border-gray-300'">
+                      {{ priority.label }}
+                    </button>
+                  }
+                </div>
+              </div>
+
+              <div class="space-y-1.5">
+                <label class="block text-sm font-bold text-gray-700">Solution souhaitee</label>
+                <select formControlName="desiredSolution" class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-gray-50 focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none">
+                  @for (solution of desiredSolutions; track solution.value) {
+                    <option [value]="solution.value">{{ solution.label }}</option>
+                  }
+                </select>
+              </div>
+            } @else {
+              <div class="space-y-2 bg-gray-50 p-6 rounded-2xl border border-gray-100 shadow-inner">
+                <label class="block text-sm font-bold text-gray-700">Evaluation du produit</label>
+                <div class="flex gap-2">
+                  @for (star of ratingArray; track star) {
+                    <button type="button" (click)="setRating(star)"
+                            class="text-3xl transition-transform hover:scale-110 active:scale-90 outline-none"
+                            [class.grayscale]="feedbackForm.value.rating < star" [class.opacity-40]="feedbackForm.value.rating < star">
+                      ⭐
+                    </button>
+                  }
+                </div>
+              </div>
+
+              <div class="space-y-1.5">
+                <label class="block text-sm font-bold text-gray-700">Tags positifs</label>
+                <div class="flex flex-wrap gap-2">
+                  @for (tag of positiveTagOptions; track tag) {
+                    <button type="button" (click)="togglePositiveTag(tag)"
+                            class="px-3 py-1.5 rounded-full text-xs border transition-all"
+                            [class.bg-blue-100]="selectedTags().includes(tag)"
+                            [class.text-blue-700]="selectedTags().includes(tag)"
+                            [class.border-blue-300]="selectedTags().includes(tag)"
+                            [class.border-gray-200]="!selectedTags().includes(tag)"
+                            [class.text-gray-600]="!selectedTags().includes(tag)">
+                      {{ tag }}
+                    </button>
+                  }
+                </div>
+              </div>
+
+              <div class="space-y-1.5">
+                <label class="block text-sm font-bold text-gray-700">Je recommande ce produit</label>
+                <div class="grid grid-cols-2 gap-2">
+                  <button type="button" (click)="setRecommend(true)" class="px-3 py-2 rounded-xl border-2 font-semibold text-sm"
+                          [class.border-blue-500]="feedbackForm.value.recommendsProduct" [class.bg-blue-50]="feedbackForm.value.recommendsProduct" [class.text-blue-700]="feedbackForm.value.recommendsProduct"
+                          [class.border-gray-200]="!feedbackForm.value.recommendsProduct" [class.text-gray-600]="!feedbackForm.value.recommendsProduct">Oui</button>
+                  <button type="button" (click)="setRecommend(false)" class="px-3 py-2 rounded-xl border-2 font-semibold text-sm"
+                          [class.border-blue-500]="feedbackForm.value.recommendsProduct === false" [class.bg-blue-50]="feedbackForm.value.recommendsProduct === false" [class.text-blue-700]="feedbackForm.value.recommendsProduct === false"
+                          [class.border-gray-200]="feedbackForm.value.recommendsProduct !== false" [class.text-gray-600]="feedbackForm.value.recommendsProduct !== false">Non</button>
+                </div>
+              </div>
+            }
+
+            <!-- Subject / Reason -->
+            <div class="space-y-1.5">
+              <label class="block text-sm font-bold text-gray-700">Sujet</label>
+              <input formControlName="reason" type="text" placeholder="Ex: Item damaged upon arrival"
+                     class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-gray-50 focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all font-medium shadow-inner outline-none">
+            </div>
+
+            <!-- Message -->
+            <div class="space-y-1.5">
+              <label class="block text-sm font-bold text-gray-700">Request Details <span class="text-red-500">*</span></label>
+              <textarea formControlName="message" rows="4" placeholder="Please describe your issue in detail..."
+                        class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-gray-50 focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all font-medium resize-none shadow-inner outline-none"
+                        [class.border-red-300]="isFieldInvalid('message')" [class.bg-red-50]="isFieldInvalid('message')"></textarea>
+              <div class="flex justify-between items-center">
+                @if (isFieldInvalid('message')) {
+                  <p class="text-xs text-red-500 font-medium">Message doit etre entre 10 et {{ messageLimit() }} caracteres.</p>
+                } @else {
+                  <p class="text-xs text-gray-500">{{ messageRemaining() }} caracteres restants.</p>
+                }
+                <p class="text-xs text-gray-400">{{ messageLength() }}/{{ messageLimit() }}</p>
+              </div>
+            </div>
+
+            <!-- Submit -->
+            <div class="pt-4 border-t border-gray-100 flex justify-end">
+              <button type="submit" [disabled]="isSubmitting()"
+                      class="px-8 py-3.5 rounded-xl font-bold text-white transition-all transform active:scale-95 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                      [class.bg-red-600]="isComplaintType()" [class.hover:bg-red-700]="isComplaintType()"
+                      [class.bg-blue-600]="!isComplaintType()" [class.hover:bg-blue-700]="!isComplaintType()">
+                @if (isSubmitting()) {
+                  <span class="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin"></span>
+                  Submitting...
+                } @else {
+                  {{ isComplaintType() ? 'Soumettre la reclamation' : 'Publier mon avis' }}
+                  <svg class="w-4 h-4 hidden sm:block" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                }
+              </button>
+            </div>
+          </form>
+        </div>
+      }
+
+    </div>
+  </div>
+</div>
+
+<style>
+  @keyframes fade-in-up {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>

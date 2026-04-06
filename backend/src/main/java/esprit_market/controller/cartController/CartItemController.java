@@ -40,6 +40,13 @@ public class CartItemController {
         return ResponseEntity.ok(items);
     }
 
+    @GetMapping("/ordered")
+    public ResponseEntity<List<CartItemResponse>> getMyOrderedItems(Authentication authentication) {
+        ObjectId userId = getUserId(authentication);
+        List<CartItemResponse> items = cartItemService.findOrderedItemsByUserId(userId);
+        return ResponseEntity.ok(items);
+    }
+
     @PostMapping
     public ResponseEntity<CartItemResponse> addProductToCart(
             @Valid @RequestBody AddToCartRequest request,

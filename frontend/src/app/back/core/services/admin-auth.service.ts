@@ -121,13 +121,13 @@ export class AdminAuthService {
     return user?.email || 'admin@esprit.tn';
   }
 
-  logout(): void {
+    logout(): void {
     localStorage.removeItem('authToken');
     localStorage.removeItem('userId');
     localStorage.removeItem('userRole');
     this.currentUser.set(null);
-    this.userSubject.next(null);  // ← Clear subject as well
+    this.userSubject.next(null);
     this.isAuthenticated.set(false);
-    this.router.navigate(['/login']); // Redirect to Sign In page
+    window.location.href = '/login';
   }
 }

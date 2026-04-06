@@ -70,6 +70,21 @@ export const routes: Routes = [
         loadComponent: () => import('./front/pages/profile/profile').then(m => m.Profile),
         canActivate: [authGuard]
     },
+    {
+        path: 'profile/sav',
+        loadComponent: () => import('./front/pages/client-sav/client-sav.component').then(m => m.ClientSavComponent),
+        canActivate: [authGuard]
+    },
+    {
+        path: 'profile/tracking',
+        loadComponent: () => import('./front/pages/client-sav/client-delivery/client-delivery.component').then(m => m.ClientDeliveryComponent),
+        canActivate: [authGuard]
+    },
+    {
+        path: 'profile/support',
+        loadComponent: () => import('./front/pages/client-sav/client-feedback/client-feedback.component').then(m => m.ClientFeedbackComponent),
+        canActivate: [authGuard]
+    },
     // Orders (Buyer)
     {
         path: 'orders',
@@ -149,7 +164,11 @@ export const routes: Routes = [
             },
             {
                 path: 'dashboard',
-                loadComponent: () => import('./front/pages/carpooling/carpooling').then(m => m.Carpooling)
+                loadComponent: () => import('./front/pages/driver-deliveries/driver-deliveries.component').then(m => m.DriverDeliveriesComponent)
+            },
+            {
+                path: 'deliveries',
+                loadComponent: () => import('./front/pages/driver-deliveries/driver-deliveries.component').then(m => m.DriverDeliveriesComponent)
             },
             {
                 path: 'rides',

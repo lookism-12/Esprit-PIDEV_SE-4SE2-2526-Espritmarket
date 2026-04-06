@@ -14,5 +14,7 @@ public interface ICartItemService {
     
     List<CartItemResponse> findByCartId(ObjectId cartId);
     
+    List<CartItemResponse> findOrderedItemsByUserId(ObjectId userId);
+    
     void deleteByCartId(ObjectId cartId);
 }

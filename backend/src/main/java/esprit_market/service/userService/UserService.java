@@ -54,6 +54,14 @@ public class UserService implements IUserService {
     }
 
     @Override
+    public java.util.List<UserDTO> findByRole(esprit_market.Enum.userEnum.Role role) {
+        log.info("Fetching users by role: {}", role);
+        return userRepository.findByRolesContaining(role).stream()
+                .map(userMapper::toDTO)
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    @Override
     @Transactional
     public UserDTO save(User user) {
         log.info("Saving user with email: {}", user.getEmail());

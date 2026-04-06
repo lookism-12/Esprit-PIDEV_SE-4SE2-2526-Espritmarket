@@ -5,6 +5,8 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 public class SavFeedbackRequestDTO {
 
@@ -21,6 +23,20 @@ public class SavFeedbackRequestDTO {
     private String reason;
 
     private String status;
+
+    private String problemNature;
+
+    private String priority;
+
+    private String desiredSolution;
+
+    private List<String> positiveTags;
+
+    private Boolean recommendsProduct;
+
+    private String adminResponse;
+
+    private Boolean readByAdmin;
 
     @NotBlank(message = "L'ID du produit acheté (CartItem) est obligatoire pour lier le feedback/réclamation")
     private String cartItemId;

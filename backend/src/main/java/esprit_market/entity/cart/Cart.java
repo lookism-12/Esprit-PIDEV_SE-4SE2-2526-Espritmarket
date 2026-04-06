@@ -22,6 +22,8 @@ public class Cart {
     @Id
     private ObjectId id;
     
+    private String reference;
+    
     @DBRef
     @JsonIgnore
     private User user;

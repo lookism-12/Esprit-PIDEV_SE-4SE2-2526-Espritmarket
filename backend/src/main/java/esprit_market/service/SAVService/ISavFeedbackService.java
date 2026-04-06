@@ -23,6 +23,8 @@ public interface ISavFeedbackService {
 
     SavFeedbackResponseDTO updateFeedbackStatus(String id, String status);
 
+    SavFeedbackResponseDTO updateFeedbackAdminResponse(String id, String adminResponse);
+
     // FR-SAV4
     void deleteFeedback(String id);
 }

@@ -13,5 +13,7 @@ public interface UserRepository extends MongoRepository<User, ObjectId> {
 
     boolean existsByEmail(String email);
 
+    java.util.List<User> findByRolesContaining(esprit_market.Enum.userEnum.Role role);
+
     Optional<User> findByResetToken(String resetToken);
 }

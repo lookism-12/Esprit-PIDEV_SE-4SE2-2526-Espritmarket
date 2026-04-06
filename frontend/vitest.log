@@ -1,0 +1,14 @@
+
+> esprit-market-front@0.0.0 test
+> vitest run src/app/back/core/services/sav.service.spec.ts
+
+
+[1m[46m RUN [49m[22m [36mv4.1.1 [39m[90mC:/Users/Eya/pi 4/Espritmarket/frontend[39m
+
+ [32m✓[39m src/app/back/core/services/sav.service.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 70[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m7 passed[39m[22m[90m (7)[39m
+[2m   Start at [22m 07:59:33
+[2m   Duration [22m 2.05s[2m (transform 114ms, setup 562ms, import 78ms, tests 70ms, environment 1.04s)[22m
+

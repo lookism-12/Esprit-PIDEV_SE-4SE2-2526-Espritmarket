@@ -30,6 +30,7 @@ public class SavFeedbackService implements ISavFeedbackService {
         }
 
         SavFeedback feedback = savMapper.toSavFeedbackEntity(request);
+        feedback.setReadByAdmin(false);
         SavFeedback saved = savFeedbackRepository.save(feedback);
         return savMapper.toSavFeedbackResponse(saved);
     }
@@ -79,6 +80,15 @@ public class SavFeedbackService implements ISavFeedbackService {
         if (request.getStatus() != null) {
             feedback.setStatus(request.getStatus());
         }
+        feedback.setProblemNature(request.getProblemNature());
+        feedback.setPriority(request.getPriority());
+        feedback.setDesiredSolution(request.getDesiredSolution());
+        feedback.setPositiveTags(request.getPositiveTags());
+        feedback.setRecommendsProduct(request.getRecommendsProduct());
+        feedback.setAdminResponse(request.getAdminResponse());
+        if (request.getReadByAdmin() != null) {
+            feedback.setReadByAdmin(request.getReadByAdmin());
+        }
         feedback.setCartItemId(new ObjectId(request.getCartItemId()));
 
         SavFeedback updated = savFeedbackRepository.save(feedback);
@@ -91,6 +101,20 @@ public class SavFeedbackService implements ISavFeedbackService {
                 .orElseThrow(() -> new RuntimeException("Feedback introuvable avec l'ID: " + id));
 
         feedback.setStatus(status);
+        if (!"PENDING".equalsIgnoreCase(status)) {
+            feedback.setReadByAdmin(true);
+        }
+        SavFeedback updated = savFeedbackRepository.save(feedback);
+        return savMapper.toSavFeedbackResponse(updated);
+    }
+
+    @Override
+    public SavFeedbackResponseDTO updateFeedbackAdminResponse(String id, String adminResponse) {
+        SavFeedback feedback = savFeedbackRepository.findById(new ObjectId(id))
+                .orElseThrow(() -> new RuntimeException("Feedback introuvable avec l'ID: " + id));
+
+        feedback.setAdminResponse(adminResponse);
+        feedback.setReadByAdmin(true);
         SavFeedback updated = savFeedbackRepository.save(feedback);
         return savMapper.toSavFeedbackResponse(updated);
     }

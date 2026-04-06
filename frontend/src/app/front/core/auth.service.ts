@@ -297,7 +297,7 @@ export class AuthService {
         this.router.navigate(['/driver/dashboard']);
         break;
       case UserRole.DELIVERY:
-        this.router.navigate(['/profile']);
+        this.router.navigate(['/driver/deliveries']);
         break;
       case UserRole.PASSENGER:
         this.router.navigate(['/carpooling']);

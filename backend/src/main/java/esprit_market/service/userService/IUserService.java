@@ -13,6 +13,8 @@ public interface IUserService {
 
     UserDTO findById(String id);
 
+    java.util.List<UserDTO> findByRole(esprit_market.Enum.userEnum.Role role);
+
     UserDTO save(User user);
 
     void deleteById(String id);

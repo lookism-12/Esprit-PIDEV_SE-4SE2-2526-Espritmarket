@@ -1,0 +1,148 @@
+<div class="max-w-4xl mx-auto space-y-8 animate-fade-in relative z-10">
+  
+  <!-- Search/Tracking Input Section -->
+  <div class="bg-white/70 backdrop-blur-xl rounded-3xl p-8 border border-white shadow-[0_8px_30px_rgb(0,0,0,0.06)] transform hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-all duration-300 relative overflow-hidden">
+    <!-- Decorative background elements -->
+    <div class="absolute -top-10 -right-10 w-40 h-40 bg-primary/5 rounded-full blur-2xl"></div>
+    <div class="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent"></div>
+    
+    <div class="text-center mb-8 relative z-10">
+      <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 text-primary mb-4 shadow-inner ring-4 ring-white">
+        <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+      </div>
+      <h2 class="text-2xl font-bold text-gray-900 tracking-tight">Where is my package?</h2>
+      <p class="text-gray-500 mt-2 font-medium">Enter your Cart Ref ID to track its delivery in real-time.</p>
+    </div>
+
+    <div class="flex max-w-xl mx-auto items-center relative z-10">
+      <div class="relative w-full">
+        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+          <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+          </svg>
+        </div>
+        <input [(ngModel)]="trackingNumber" 
+               (keyup.enter)="trackDelivery()"
+               type="text" 
+               class="block w-full pl-11 pr-32 py-4 bg-white border-2 border-gray-100 rounded-2xl text-gray-900 font-mono shadow-sm focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all duration-300 focus:outline-none sm:text-lg" 
+               placeholder="Ex: CART-1234-XYZ">
+        <button (click)="trackDelivery()"
+                class="absolute inset-y-2 right-2 flex items-center px-6 text-white font-bold bg-primary hover:bg-primary-dark rounded-xl transition-colors shadow-sm cursor-pointer z-20 hover:scale-105 active:scale-95 duration-200">
+          Track
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  @if (isLoading()) {
+    <div class="flex flex-col items-center justify-center py-20 bg-white/50 backdrop-blur-sm rounded-3xl border border-white/50 shadow-sm animate-pulse">
+      <div class="relative w-24 h-24">
+        <div class="absolute inset-0 border-4 border-gray-100 rounded-full"></div>
+        <div class="absolute inset-0 border-4 border-primary rounded-full border-t-transparent animate-spin"></div>
+        <div class="absolute inset-0 flex items-center justify-center text-2xl animate-pulse">📦</div>
+      </div>
+      <p class="mt-6 text-primary-dark font-medium px-4">Locating package via Esprit Market providers...</p>
+    </div>
+  }
+
+  <!-- Results View -->
+  @if (!isLoading() && hasSearched() && deliveries() !== null) {
+    <div class="space-y-6">
+      
+      <!-- Empty State -->
+      @if (deliveries()!.length === 0) {
+        <div class="bg-white/80 backdrop-blur-md rounded-3xl p-10 text-center border border-dashed border-gray-300 shadow-sm transition-all duration-500 hover:shadow-md animate-[fade-in-up_0.5s_ease-out]">
+          <div class="w-20 h-20 mx-auto rounded-full bg-red-50 flex items-center justify-center text-4xl shadow-inner mb-4 animate-bounce">
+            🤷‍♂️
+          </div>
+          <h3 class="text-xl font-bold text-gray-900">Cart Not Found</h3>
+          <p class="text-gray-500 mt-2 font-medium">We couldn't find any shipment matching this reference. Please check the Cart ID and try again.</p>
+        </div>
+      }
+
+      <!-- Found Deliveries -->
+      @for (delivery of deliveries(); track delivery.id) {
+        <div class="bg-white/90 backdrop-blur-xl rounded-3xl overflow-hidden border border-white shadow-[0_10px_40px_rgb(0,0,0,0.06)] transition-all duration-500 hover:shadow-[0_20px_50px_rgb(0,0,0,0.1)] relative group">
+          
+          <!-- Glossy shine effect -->
+          <div class="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 bg-gradient-to-tr from-white/0 via-white/40 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+
+          <div class="p-8">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+              <div>
+                <span class="inline-flex items-center px-3 py-1 bg-gray-100 text-gray-500 rounded-full text-xs font-bold uppercase tracking-widest mb-2 border border-black/5 shadow-sm">
+                  Official Delivery
+                </span>
+                <h3 class="font-extrabold text-2xl text-gray-900 tracking-tight flex items-center gap-2">
+                  <span class="text-3xl drop-shadow-sm">{{ getStatusInfo(delivery.status).icon }}</span> 
+                  # {{ delivery.id.substring(0,8).toUpperCase() }}
+                </h3>
+              </div>
+              <div class="text-left sm:text-right bg-gray-50 rounded-2xl p-4 border border-gray-100 shadow-inner w-full sm:w-auto">
+                <span class="text-xs font-semibold text-gray-400 uppercase tracking-widest block mb-1">Expected Delivery</span>
+                <p class="text-primary-dark font-bold text-lg leading-none">{{ formatDate(delivery.deliveryDate) }}</p>
+              </div>
+            </div>
+
+            <!-- Progress Bar Tracker -->
+            <div class="relative pt-6 pb-2 px-2.5">
+              <div class="overflow-hidden h-2.5 mb-8 text-xs flex rounded-full bg-gray-100 shadow-inner border border-gray-200">
+                <div [style.width.%]="getStatusInfo(delivery.status).percentage" 
+                     class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-gradient-to-r from-primary to-green-400 transition-all duration-1000 ease-out relative">
+                     <!-- Inner animated shine to show movement -->
+                     @if (delivery.status !== 'DELIVERED' && delivery.status !== 'RETURNED') {
+                       <div class="absolute top-0 left-0 h-full w-full opacity-30 bg-[length:2rem_2rem] border-primary border" style="background-image: linear-gradient(45deg,rgba(255,255,255,.15) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.15) 50%,rgba(255,255,255,.15) 75%,transparent 75%,transparent); animation: progress-bar-stripes 1s linear infinite;"></div>
+                     }
+                  </div>
+              </div>
+
+              <!-- Tracker steps text -->
+              <div class="flex justify-between w-full absolute top-[36px] px-1 text-xs sm:text-sm font-semibold text-gray-400">
+                <div [class.text-yellow-600]="delivery.status === 'PREPARING' || delivery.status === 'IN_TRANSIT' || delivery.status === 'DELIVERED'">Preparing</div>
+                <div [class.text-blue-600]="delivery.status === 'IN_TRANSIT' || delivery.status === 'DELIVERED'">Shipped</div>
+                <div [class.text-green-600]="delivery.status === 'DELIVERED'">Delivered</div>
+              </div>
+            </div>
+
+            <div class="mt-10 bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-2xl p-6 border border-gray-100 flex items-start gap-4">
+              <div class="w-10 h-10 rounded-full bg-white flex items-center justify-center text-primary shadow-sm shrink-0 border border-gray-100">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+              <div>
+                <h4 class="text-sm font-bold text-gray-900 mb-1">Destination</h4>
+                <p class="text-gray-600 leading-relaxed font-medium">{{ delivery.address }}</p>
+              </div>
+            </div>
+            
+            @if (delivery.status === 'RETURNED') {
+              <div class="mt-4 bg-red-50 text-red-700 p-4 rounded-xl border border-red-100 text-sm font-medium flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                This package has been returned. Please contact support for more details.
+              </div>
+            }
+
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>
+
+<style>
+  @keyframes progress-bar-stripes {
+    from { background-position: 2rem 0; }
+    to { background-position: 0 0; }
+  }
+  @keyframes fade-in-up {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>

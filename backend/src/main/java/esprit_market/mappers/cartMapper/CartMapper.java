@@ -36,8 +36,14 @@ public class CartMapper {
         boolean hasDiscount = (cart.getAppliedCouponCode() != null || cart.getAppliedDiscountId() != null);
         double savingsAmount = cart.getDiscountAmount() != null ? cart.getDiscountAmount() : 0.0;
         
+        String ref = cart.getReference();
+        if (ref == null && cart.getId() != null) {
+            ref = "CMD-" + cart.getId().toHexString().substring(18).toUpperCase();
+        }
+        
         return CartResponse.builder()
             .id(cart.getId() != null ? cart.getId().toHexString() : null)
+            .reference(ref)
             .userId(cart.getUserId() != null ? cart.getUserId().toHexString() : null)
             .creationDate(cart.getCreationDate())
             .lastUpdated(cart.getLastUpdated())

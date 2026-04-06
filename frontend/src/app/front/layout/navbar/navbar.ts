@@ -107,8 +107,8 @@ export class Navbar implements OnDestroy {
       icon: '📦',
       items: [
         { label: 'My Orders', route: '/orders', icon: '🛍️' },
-        { label: 'Track Deliveries', route: '/tracking', icon: '📍' },
-        { label: 'My Claims', route: '/claims', icon: '📄' }
+        { label: 'Track Deliveries', route: '/profile/tracking', icon: '📍' },
+        { label: 'Support Service', route: '/profile/support', icon: '🛠️' }
       ]
     },
     {
@@ -333,6 +333,12 @@ export class Navbar implements OnDestroy {
   goToProfile(): void {
     this.router.navigate(['/profile']);
     this.closeProfileDropdown();
+  }
+
+  goToAfterSales(): void {
+    this.router.navigate(['/profile/sav']);
+    this.closeProfileDropdown();
+    this.closeDrawer();
   }
 
   /**

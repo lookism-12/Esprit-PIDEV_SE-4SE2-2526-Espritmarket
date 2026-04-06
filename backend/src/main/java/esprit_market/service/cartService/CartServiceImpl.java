@@ -102,9 +102,10 @@ public class CartServiceImpl implements ICartService {
      * and link it to the User document.
      */
     private Cart createNewCart(User user) {
-
+        String randomRef = "CMD-" + java.util.UUID.randomUUID().toString().substring(0,8).toUpperCase();
         Cart cart = Cart.builder()
                 .user(user)
+                .reference(randomRef)
                 .creationDate(LocalDateTime.now())
                 .lastUpdated(LocalDateTime.now())
                 .subtotal(0.0)

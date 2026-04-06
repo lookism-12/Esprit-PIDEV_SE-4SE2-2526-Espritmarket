@@ -17,7 +17,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/cart")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('CLIENT')")
+@PreAuthorize("hasRole('CLIENT') or hasRole('ADMIN')")
 public class CartController {
 
     private final ICartService cartService;
@@ -180,5 +180,11 @@ public class CartController {
                 new ObjectId(orderId)
         );
         return ResponseEntity.ok(summary);
+    }
+
+    @GetMapping("/all")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<CartResponse>> getAllCarts() {
+        return ResponseEntity.ok(cartService.findAllCarts());
     }
 }

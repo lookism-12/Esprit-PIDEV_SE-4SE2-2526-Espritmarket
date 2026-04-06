@@ -1,0 +1,527 @@
+<div class="feedback-page">
+
+  <!-- ===== PAGE HEADER ===== -->
+  <div class="page-header">
+    <div class="header-left">
+      <div class="header-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+      </div>
+      <div>
+        <h1 class="page-title">Réclamations &amp; Feedbacks</h1>
+        <p class="page-subtitle">Module SAV — <span class="count-badge">{{ filtered.length }}</span> enregistrement(s){{ showArchivesOnly ? ' · Archives' : '' }}</p>
+      </div>
+    </div>
+    <button class="btn-toggle-archive" (click)="toggleArchiveView()"
+      [class.active]="showArchivesOnly">
+      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"></polyline><rect x="1" y="3" width="22" height="5"></rect><line x1="10" y1="12" x2="14" y2="12"></line></svg>
+      {{ showArchivesOnly ? 'Voir actifs' : 'Voir archives' }}
+    </button>
+  </div>
+
+  <!-- ===== STATS CARDS ===== -->
+  <div class="stats-grid">
+    <div class="stat-card stat-pending">
+      <div class="stat-icon">⏳</div>
+      <div class="stat-value">{{ countByStatus('PENDING') }}</div>
+      <div class="stat-label">En attente</div>
+    </div>
+    <div class="stat-card stat-investigating">
+      <div class="stat-icon">🔍</div>
+      <div class="stat-value">{{ countByStatus('INVESTIGATING') }}</div>
+      <div class="stat-label">En cours</div>
+    </div>
+    <div class="stat-card stat-resolved">
+      <div class="stat-icon">✅</div>
+      <div class="stat-value">{{ countByStatus('RESOLVED') }}</div>
+      <div class="stat-label">Résolus</div>
+    </div>
+    <div class="stat-card stat-total">
+      <div class="stat-icon">📊</div>
+      <div class="stat-value">{{ feedbacks.length }}</div>
+      <div class="stat-label">Total</div>
+    </div>
+  </div>
+
+  <!-- ===== FILTERS ===== -->
+  <div class="filters-bar">
+    <div class="search-wrap">
+      <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      <input type="text" [(ngModel)]="searchTerm" (ngModelChange)="applyFilters()"
+        placeholder="Rechercher message, raison, ID..." class="search-input">
+    </div>
+    <select [(ngModel)]="typeFilter" (ngModelChange)="applyFilters()" class="filter-select">
+      <option value="">Tous les types</option>
+      <option value="SAV">⚠️ Réclamation</option>
+      <option value="FEEDBACK">💬 Feedback</option>
+    </select>
+    <select [(ngModel)]="statusFilter" (ngModelChange)="applyFilters()" class="filter-select">
+      <option value="">Tous les statuts</option>
+      <option *ngFor="let s of statusOptions" [value]="s">{{ getStatusLabel(s) }}</option>
+    </select>
+    <select [(ngModel)]="priorityFilter" (ngModelChange)="applyFilters()" class="filter-select">
+      <option value="">Toutes priorités</option>
+      <option *ngFor="let p of priorityOptions" [value]="p">{{ p }}</option>
+    </select>
+    <input type="date" [(ngModel)]="dateFilter" (ngModelChange)="applyFilters()" class="filter-select">
+    <button (click)="searchTerm=''; statusFilter=''; typeFilter=''; priorityFilter=''; dateFilter=''; applyFilters()" class="btn-reset">
+      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      Réinitialiser
+    </button>
+  </div>
+
+  <!-- Spinner -->
+  <div *ngIf="isLoading" class="loader-wrap">
+    <div class="spinner"></div>
+    <p class="loader-text">Chargement des feedbacks...</p>
+  </div>
+
+  <!-- ===== CARDS LIST ===== -->
+  <div *ngIf="!isLoading" class="cards-list">
+
+    <!-- Empty State -->
+    <div *ngIf="filtered.length === 0" class="empty-state">
+      <div class="empty-icon">🗂️</div>
+      <div class="empty-title">Aucune réclamation trouvée</div>
+      <div class="empty-sub">Essayez de modifier vos filtres ou attendez de nouveaux retours.</div>
+    </div>
+
+    <!-- Feedback Card -->
+    <div *ngFor="let fb of filtered" class="feedback-card" [class.unread]="isUnread(fb)">
+
+      <!-- Card Main Row -->
+      <div class="card-main">
+
+        <!-- Left: Type + Unread badge -->
+        <div class="card-col-type">
+          <span class="type-badge" [class.type-sav]="fb.type === 'SAV'" [class.type-feedback]="fb.type === 'FEEDBACK'">
+            {{ getTypeLabel(fb.type) }}
+          </span>
+          <span *ngIf="isUnread(fb)" class="unread-dot" title="Non lu"></span>
+        </div>
+
+        <!-- Center: Message + Reason + Rating -->
+        <div class="card-col-content">
+          <div class="card-message" [title]="fb.message">{{ fb.message }}</div>
+          <div class="card-meta">
+            <span *ngIf="fb.reason" class="card-reason" [title]="fb.reason">{{ fb.reason }}</span>
+            <span *ngIf="fb.priority" class="priority-badge" [class.priority-low]="fb.priority === 'LOW'" [class.priority-moderate]="fb.priority === 'MODERATE'" [class.priority-urgent]="fb.priority === 'URGENT'">
+              {{ fb.priority }}
+            </span>
+          </div>
+          <div class="card-rating" [title]="fb.rating + '/5'">{{ getRatingStars(fb.rating) }}</div>
+        </div>
+
+        <!-- Right: Status + Date + CartID -->
+        <div class="card-col-right">
+          <button class="status-badge" (click)="openStatusModal(fb)"
+            [class.status-pending]="fb.status === 'PENDING'"
+            [class.status-investigating]="fb.status === 'INVESTIGATING'"
+            [class.status-resolved]="fb.status === 'RESOLVED'"
+            [class.status-rejected]="fb.status === 'REJECTED'"
+            [class.status-archived]="fb.status === 'ARCHIVED'"
+            title="Cliquer pour changer le statut">
+            {{ getStatusLabel(fb.status) }}
+          </button>
+          <div class="card-date">{{ formatDate(fb.creationDate) }}</div>
+          <div class="card-cartid" [title]="fb.cartItemId">
+            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+            {{ fb.cartItemId | slice:0:12 }}…
+          </div>
+        </div>
+
+        <!-- Expand toggle for admin response (SAV only) -->
+        <button *ngIf="fb.type === 'SAV'" class="expand-btn"
+          (click)="toggleResponsePanel(fb)"
+          [class.expanded]="activeResponseId === fb.id"
+          [title]="activeResponseId === fb.id ? 'Fermer la réponse' : 'Voir / Ajouter réponse'">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+      </div>
+
+      <!-- ===== ADMIN RESPONSE PANEL (expandable) ===== -->
+      <div class="response-panel" *ngIf="fb.type === 'SAV' && activeResponseId === fb.id">
+        <div class="response-panel-inner">
+          <div class="response-header">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+            <span>Réponse administrateur</span>
+          </div>
+
+          <!-- Existing response display (read-only preview) -->
+          <div *ngIf="fb.adminResponse" class="existing-response">
+            <div class="existing-response-label">Réponse actuelle :</div>
+            <p>{{ fb.adminResponse }}</p>
+          </div>
+
+          <!-- No response hint -->
+          <div *ngIf="!fb.adminResponse" class="no-response-hint">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+            Aucune réponse admin pour le moment.
+          </div>
+
+          <!-- Editor (always shown when panel open) -->
+          <div class="response-editor">
+            <textarea [(ngModel)]="adminResponseDraft" rows="3"
+              class="response-textarea"
+              [placeholder]="fb.adminResponse ? 'Modifier la réponse...' : 'Rédigez votre réponse à la réclamation...'"></textarea>
+            <div class="response-actions">
+              <button (click)="cancelResponseEditor()" class="btn-cancel-response">Annuler</button>
+              <button (click)="saveAdminResponse(fb)" class="btn-save-response">
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                Enregistrer
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /feedback-card -->
+  </div><!-- /cards-list -->
+</div><!-- /feedback-page -->
+
+<!-- ===== STATUS MODAL ===== -->
+<app-modal *ngIf="showStatusModal"
+  [isOpen]="showStatusModal"
+  title="🔄 Mettre à jour le statut"
+  [showCancel]="false"
+  [showConfirm]="false"
+  (onClose)="closeModals()">
+  <div class="modal-body">
+    <p class="modal-desc">
+      {{ getTypeLabel(selectedFeedback?.type || '') }} :
+      <strong>{{ selectedFeedback?.message | slice:0:60 }}…</strong>
+    </p>
+    <div class="status-grid">
+      <button *ngFor="let s of statusOptions" (click)="newStatus = s"
+        class="status-option"
+        [class.status-option-active]="newStatus === s">
+        {{ getStatusLabel(s) }}
+      </button>
+    </div>
+    <div class="modal-footer">
+      <button (click)="closeModals()" class="btn-modal-cancel">Annuler</button>
+      <button (click)="updateStatus()" class="btn-modal-confirm">Confirmer</button>
+    </div>
+  </div>
+</app-modal>
+
+<!-- ===== SCOPED STYLES ===== -->
+<style>
+/* ── Layout ──────────────────────────────────────── */
+.feedback-page {
+  padding: 28px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  font-family: 'Inter', sans-serif;
+  background: #f5f6fa;
+  min-height: 100vh;
+}
+
+/* ── Header ──────────────────────────────────────── */
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.header-left { display: flex; align-items: center; gap: 16px; }
+.header-icon {
+  width: 46px; height: 46px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(99,102,241,.35);
+}
+.page-title { font-size: 1.45rem; font-weight: 700; color: #1e1e2e; margin: 0; }
+.page-subtitle { font-size: .82rem; color: #8890a8; margin: 3px 0 0; }
+.count-badge {
+  background: #ede9fe; color: #6d28d9;
+  padding: 1px 8px; border-radius: 20px;
+  font-weight: 700; font-size: .78rem;
+}
+.btn-toggle-archive {
+  display: flex; align-items: center; gap: 7px;
+  padding: 9px 18px; border-radius: 10px;
+  border: 1.5px solid #e2e2ea;
+  background: #fff; color: #555d75;
+  font-size: .84rem; font-weight: 600; cursor: pointer;
+  transition: all .2s;
+}
+.btn-toggle-archive:hover, .btn-toggle-archive.active {
+  background: #1e1e2e; color: #fff; border-color: #1e1e2e;
+}
+
+/* ── Stats ───────────────────────────────────────── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+.stat-card {
+  border-radius: 16px;
+  padding: 20px 18px;
+  display: flex; flex-direction: column; align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.06);
+  transition: transform .2s, box-shadow .2s;
+}
+.stat-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,.1); }
+.stat-icon { font-size: 1.5rem; }
+.stat-value { font-size: 1.8rem; font-weight: 800; line-height: 1; }
+.stat-label { font-size: .78rem; font-weight: 500; letter-spacing: .03em; text-transform: uppercase; }
+.stat-pending    { background: linear-gradient(135deg, #fff8e1, #fff3cc); color: #92630a; }
+.stat-investigating { background: linear-gradient(135deg, #e8f0fe, #d4e3fc); color: #1a56c4; }
+.stat-resolved   { background: linear-gradient(135deg, #e6f9ef, #d1f5e0); color: #156534; }
+.stat-total      { background: linear-gradient(135deg, #ede9fe, #ddd6fe); color: #5b21b6; }
+
+/* ── Filters ─────────────────────────────────────── */
+.filters-bar {
+  display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+  background: #fff; padding: 14px 18px; border-radius: 14px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.06);
+}
+.search-wrap {
+  flex: 1; min-width: 200px;
+  position: relative; display: flex; align-items: center;
+}
+.search-icon { position: absolute; left: 11px; color: #aab0c6; pointer-events: none; }
+.search-input {
+  width: 100%; padding: 9px 12px 9px 34px;
+  border: 1.5px solid #e2e2ea; border-radius: 10px;
+  font-size: .85rem; color: #333;
+  outline: none; transition: border-color .2s;
+}
+.search-input:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,.12); }
+.filter-select {
+  padding: 9px 12px; border: 1.5px solid #e2e2ea;
+  border-radius: 10px; font-size: .85rem; color: #333;
+  outline: none; background: #fff; cursor: pointer;
+  transition: border-color .2s;
+}
+.filter-select:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,.12); }
+.btn-reset {
+  display: flex; align-items: center; gap: 5px;
+  padding: 9px 14px; border-radius: 10px;
+  border: 1.5px solid #e2e2ea; background: #fff;
+  color: #8890a8; font-size: .84rem; cursor: pointer;
+  transition: all .2s;
+}
+.btn-reset:hover { background: #fee2e2; border-color: #fca5a5; color: #dc2626; }
+
+/* ── Loader ──────────────────────────────────────── */
+.loader-wrap { display: flex; flex-direction: column; align-items: center; padding: 60px 0; gap: 14px; }
+.spinner {
+  width: 38px; height: 38px; border-radius: 50%;
+  border: 4px solid #e0e7ff; border-top-color: #6366f1;
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loader-text { font-size: .9rem; color: #aab0c6; }
+
+/* ── Empty State ─────────────────────────────────── */
+.empty-state {
+  text-align: center; padding: 64px 24px;
+  background: #fff; border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.05);
+}
+.empty-icon { font-size: 3.2rem; margin-bottom: 10px; }
+.empty-title { font-size: 1.1rem; font-weight: 700; color: #333; }
+.empty-sub   { font-size: .85rem; color: #aab0c6; margin-top: 6px; }
+
+/* ── Cards ───────────────────────────────────────── */
+.cards-list { display: flex; flex-direction: column; gap: 10px; }
+.feedback-card {
+  background: #fff; border-radius: 16px;
+  border: 1.5px solid #e9eaf0;
+  box-shadow: 0 2px 10px rgba(0,0,0,.04);
+  overflow: hidden;
+  transition: box-shadow .25s, border-color .25s;
+}
+.feedback-card:hover { box-shadow: 0 6px 24px rgba(0,0,0,.09); border-color: #c7c9d9; }
+.feedback-card.unread { border-left: 4px solid #6366f1; }
+
+.card-main {
+  display: flex; align-items: center; gap: 16px;
+  padding: 16px 18px;
+}
+
+/* Type col */
+.card-col-type { display: flex; align-items: center; gap: 8px; min-width: 130px; }
+.type-badge {
+  padding: 5px 12px; border-radius: 20px;
+  font-size: .78rem; font-weight: 700; white-space: nowrap;
+}
+.type-sav      { background: #fee2e2; color: #b91c1c; }
+.type-feedback { background: #dbeafe; color: #1d4ed8; }
+.unread-dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99,102,241,.2);
+  flex-shrink: 0;
+}
+
+/* Content col */
+.card-col-content { flex: 1; min-width: 0; }
+.card-message {
+  font-size: .9rem; font-weight: 600; color: #1e1e2e;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.card-meta { display: flex; align-items: center; gap: 8px; margin-top: 4px; flex-wrap: wrap; }
+.card-reason {
+  font-size: .78rem; color: #6e7491;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px;
+}
+.priority-badge {
+  padding: 2px 9px; border-radius: 10px;
+  font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+}
+.priority-low      { background: #d1fae5; color: #065f46; }
+.priority-moderate { background: #fef3c7; color: #92400e; }
+.priority-urgent   { background: #fee2e2; color: #991b1b; }
+.card-rating { font-size: .88rem; margin-top: 5px; letter-spacing: .06em; }
+
+/* Right col */
+.card-col-right {
+  display: flex; flex-direction: column; align-items: flex-end; gap: 6px;
+  min-width: 130px;
+}
+.status-badge {
+  padding: 5px 12px; border-radius: 20px;
+  font-size: .78rem; font-weight: 700; cursor: pointer; border: none;
+  transition: transform .15s, opacity .15s; white-space: nowrap;
+}
+.status-badge:hover { transform: scale(1.04); opacity: .88; }
+.status-pending      { background: #fef3c7; color: #92400e; }
+.status-investigating{ background: #dbeafe; color: #1d4ed8; }
+.status-resolved     { background: #d1fae5; color: #065f46; }
+.status-rejected     { background: #fee2e2; color: #991b1b; }
+.status-archived     { background: #f3f4f6; color: #6b7280; }
+.card-date { font-size: .76rem; color: #aab0c6; }
+.card-cartid {
+  display: flex; align-items: center; gap: 4px;
+  font-family: 'SFMono-Regular', Consolas, monospace;
+  font-size: .74rem; color: #b0b6cc;
+}
+
+/* Expand button */
+.expand-btn {
+  width: 32px; height: 32px; border-radius: 50%;
+  border: 1.5px solid #e2e2ea; background: #f8f8fc;
+  display: flex; align-items: center; justify-content: center;
+  color: #8890a8; cursor: pointer;
+  transition: all .2s; flex-shrink: 0;
+}
+.expand-btn:hover { background: #ede9fe; border-color: #c4b5fd; color: #7c3aed; }
+.expand-btn.expanded { background: #6366f1; border-color: #6366f1; color: #fff; transform: rotate(180deg); }
+
+/* ── Response Panel ──────────────────────────────── */
+.response-panel {
+  border-top: 1.5px solid #ede9fe;
+  background: linear-gradient(135deg, #fafafe, #f0f0fc);
+  animation: slideDown .22s ease;
+}
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.response-panel-inner { padding: 18px 22px; }
+.response-header {
+  display: flex; align-items: center; gap: 8px;
+  font-size: .84rem; font-weight: 700; color: #5b21b6;
+  margin-bottom: 12px;
+}
+.existing-response {
+  background: #fff; border: 1.5px solid #ddd6fe; border-radius: 12px;
+  padding: 14px 16px; margin-bottom: 14px;
+  font-size: .88rem; color: #3d3b5c; line-height: 1.6;
+  position: relative;
+}
+.existing-response-label { font-size: .75rem; font-weight: 700; color: #7c3aed; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; }
+.existing-response p { margin: 0; }
+.btn-edit-response {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 12px; border-radius: 8px;
+  border: 1.5px solid #c4b5fd; background: #ede9fe;
+  color: #7c3aed; font-size: .78rem; font-weight: 600; cursor: pointer;
+  transition: background .2s;
+}
+.btn-edit-response:hover { background: #ddd6fe; }
+.no-response-hint {
+  display: flex; align-items: center; gap: 6px;
+  font-size: .82rem; color: #aab0c6; margin-bottom: 10px;
+  font-style: italic;
+}
+.response-textarea {
+  width: 100%; padding: 12px 14px;
+  border: 1.5px solid #ddd6fe; border-radius: 12px;
+  font-size: .88rem; color: #1e1e2e;
+  resize: vertical; outline: none;
+  transition: border-color .2s;
+  background: #fff; box-sizing: border-box;
+  font-family: inherit;
+}
+.response-textarea:focus { border-color: #7c3aed; box-shadow: 0 0 0 3px rgba(124,58,237,.12); }
+.response-actions {
+  display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;
+}
+.btn-cancel-response {
+  padding: 8px 16px; border-radius: 9px;
+  border: 1.5px solid #e2e2ea; background: #fff;
+  color: #6e7491; font-size: .84rem; font-weight: 600; cursor: pointer;
+  transition: background .2s;
+}
+.btn-cancel-response:hover { background: #f3f4f6; }
+.btn-save-response {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 18px; border-radius: 9px;
+  border: none; background: linear-gradient(135deg, #7c3aed, #6366f1);
+  color: #fff; font-size: .84rem; font-weight: 700; cursor: pointer;
+  box-shadow: 0 3px 10px rgba(99,102,241,.35);
+  transition: opacity .2s, transform .15s;
+}
+.btn-save-response:hover { opacity: .9; transform: translateY(-1px); }
+
+/* ── Modal ───────────────────────────────────────── */
+.modal-body { padding: 4px 4px 0; }
+.modal-desc { font-size: .9rem; color: #555d75; margin-bottom: 16px; }
+.status-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr);
+  gap: 8px; margin-bottom: 20px;
+}
+.status-option {
+  padding: 10px 14px; border-radius: 10px;
+  border: 1.5px solid #e2e2ea; background: #fff;
+  color: #555d75; font-size: .86rem; font-weight: 600; cursor: pointer;
+  text-align: left; transition: all .2s;
+}
+.status-option:hover { border-color: #6366f1; color: #6366f1; background: #f0f0ff; }
+.status-option-active { border-color: #6366f1 !important; background: #ede9fe !important; color: #5b21b6 !important; }
+.modal-footer { display: flex; justify-content: flex-end; gap: 10px; }
+.btn-modal-cancel {
+  padding: 9px 20px; border-radius: 10px;
+  border: 1.5px solid #e2e2ea; background: #fff;
+  color: #555d75; font-size: .88rem; font-weight: 600; cursor: pointer;
+}
+.btn-modal-cancel:hover { background: #f3f4f6; }
+.btn-modal-confirm {
+  padding: 9px 22px; border-radius: 10px;
+  border: none; background: linear-gradient(135deg, #6366f1, #7c3aed);
+  color: #fff; font-size: .88rem; font-weight: 700; cursor: pointer;
+  box-shadow: 0 3px 10px rgba(99,102,241,.35);
+  transition: opacity .2s;
+}
+.btn-modal-confirm:hover { opacity: .9; }
+
+/* ── Responsive ──────────────────────────────────── */
+@media (max-width: 900px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .card-main { flex-wrap: wrap; }
+  .card-col-right { align-items: flex-start; }
+}
+@media (max-width: 600px) {
+  .feedback-page { padding: 16px; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+</style>

@@ -8,5 +8,7 @@ public enum CartStatus {
     PARTIALLY_CANCELLED,
     PARTIALLY_REFUNDED,
     REFUNDED,
-    PENDING
+    PENDING,
+    COMPLETED,
+    CHECKED_OUT
 }

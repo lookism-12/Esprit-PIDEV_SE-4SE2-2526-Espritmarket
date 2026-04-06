@@ -42,7 +42,8 @@ export const BACK_ROUTES: Routes = [
             },
             {
                 path: 'support',
-                loadComponent: () => import('./features/support/support.component').then(m => m.SupportComponent)
+                loadComponent: () => import('./features/sav/feedback/sav-feedback.component')
+                    .then(m => m.SavFeedbackComponent)
             },
             {
                 path: 'community',
@@ -59,6 +60,22 @@ export const BACK_ROUTES: Routes = [
             {
                 path: 'settings',
                 loadComponent: () => import('./features/placeholders').then(m => m.SettingsComponent)
+            },
+            {
+                path: 'sav',
+                children: [
+                    {
+                        path: 'delivery',
+                        loadComponent: () => import('./features/sav/delivery/delivery.component')
+                            .then(m => m.DeliveryComponent)
+                    },
+                    {
+                        path: 'feedback',
+                        loadComponent: () => import('./features/sav/feedback/sav-feedback.component')
+                            .then(m => m.SavFeedbackComponent)
+                    },
+                    { path: '', redirectTo: 'delivery', pathMatch: 'full' }
+                ]
             }
         ]
     }

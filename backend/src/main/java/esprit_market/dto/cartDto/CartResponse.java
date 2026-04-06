@@ -18,6 +18,8 @@ public class CartResponse {
     
     private String id;
     
+    private String reference;
+    
     private String userId;
     
     private LocalDateTime creationDate;

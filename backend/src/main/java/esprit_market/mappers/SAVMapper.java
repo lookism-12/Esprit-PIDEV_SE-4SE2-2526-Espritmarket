@@ -49,6 +49,13 @@ public class SAVMapper {
                 .rating(dto.getRating())
                 .reason(dto.getReason())
                 .status(dto.getStatus() != null ? dto.getStatus() : "PENDING")
+                .problemNature(dto.getProblemNature())
+                .priority(dto.getPriority())
+                .desiredSolution(dto.getDesiredSolution())
+                .positiveTags(dto.getPositiveTags())
+                .recommendsProduct(dto.getRecommendsProduct())
+                .adminResponse(dto.getAdminResponse())
+                .readByAdmin(dto.getReadByAdmin() != null ? dto.getReadByAdmin() : false)
                 .cartItemId(new ObjectId(dto.getCartItemId()))
                 .build();
     }
@@ -64,6 +71,13 @@ public class SAVMapper {
                 .rating(entity.getRating())
                 .reason(entity.getReason())
                 .status(entity.getStatus())
+                .problemNature(entity.getProblemNature())
+                .priority(entity.getPriority())
+                .desiredSolution(entity.getDesiredSolution())
+                .positiveTags(entity.getPositiveTags())
+                .recommendsProduct(entity.getRecommendsProduct())
+                .adminResponse(entity.getAdminResponse())
+                .readByAdmin(entity.getReadByAdmin())
                 .creationDate(entity.getCreationDate())
                 .cartItemId(entity.getCartItemId() != null ? entity.getCartItemId().toHexString() : null)
                 .build();

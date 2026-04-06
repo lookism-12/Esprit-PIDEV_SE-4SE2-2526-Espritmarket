@@ -112,6 +112,15 @@
                 <configuration>
                     <source>${java.version}</source>
                     <target>${java.version}</target>
+                    <!-- Temporarily exclude carpooling domain from compilation -->
+                    <excludes>
+                        <exclude>**/controller/carpoolingController/**/*.java</exclude>
+                        <exclude>**/service/carpoolingService/**/*.java</exclude>
+                        <exclude>**/dto/carpoolingDto/**/*.java</exclude>
+                        <exclude>**/mappers/carpooling/**/*.java</exclude>
+                        <exclude>**/entity/carpooling/**/*.java</exclude>
+                        <exclude>**/repository/carpooling/**/*.java</exclude>
+                    </excludes>
                     <annotationProcessorPaths>
                         <path>
                             <groupId>org.projectlombok</groupId>
