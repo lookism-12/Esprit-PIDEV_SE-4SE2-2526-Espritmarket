@@ -13,6 +13,7 @@ import java.util.List;
 @Repository
 public interface ProductRepository extends MongoRepository<Product, ObjectId> {
     List<Product> findByShopId(ObjectId shopId);
+    List<Product> findByShopIdIn(List<ObjectId> shopIds);
     
     // Add method to find approved products directly
     List<Product> findByStatus(ProductStatus status);

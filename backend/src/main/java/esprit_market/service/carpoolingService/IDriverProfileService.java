@@ -30,4 +30,6 @@ public interface IDriverProfileService {
     DriverStatsDTO getDriverStats(ObjectId id);
 
     void incrementTotalRidesAndEarnings(ObjectId driverProfileId, float earnings);
+
+    long countUnverifiedDrivers();
 }

@@ -1,0 +1,53 @@
+<div class="admin-container">
+  <header class="admin-header">
+    <div class="header-left">
+      <h1>Global Notifications</h1>
+      <p>Manage platform alerts and broadcast messages to all users.</p>
+    </div>
+    <button class="btn btn-primary" (click)="openBroadcast()">+ Broadcast Alert</button>
+  </header>
+
+  <div *ngIf="isLoading()" class="loading-state">Loading system notifications...</div>
+
+  <div class="table-container" *ngIf="!isLoading() && notifications().length > 0">
+    <table class="admin-table">
+      <thead>
+        <tr><th>Title</th><th>Message</th><th>Type</th><th>Recipients</th><th>Status</th><th>Date</th></tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let notification of notifications()">
+          <td><strong>{{ notification.title }}</strong></td>
+          <td class="msg-col">{{ notification.description }}</td>
+          <td><span class="type-badge">{{ notification.type }}</span></td>
+          <td>{{ getRecipientCount(notification) }}</td>
+          <td><span class="status-indicator" [class.read]="notification.read">{{ notification.read ? 'Read' : 'Unread' }}</span></td>
+          <td class="date">{{ notification.createdAt | date:'short' }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="modal-overlay" *ngIf="showBroadcastModal()">
+    <div class="modal-content">
+      <h2>Broadcast System Alert</h2>
+      <p>This message will be sent to all registered users.</p>
+      <div class="form-group">
+        <label>Alert Title</label>
+        <input type="text" [ngModel]="broadcastTitle()" (ngModelChange)="broadcastTitle.set($event)"
+               class="form-control" placeholder="E.g. System Maintenance">
+      </div>
+      <div class="form-group">
+        <label>Message Content</label>
+        <textarea [ngModel]="broadcastMessage()" (ngModelChange)="broadcastMessage.set($event)"
+                  class="form-control" rows="4" placeholder="Type your message here..."></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" (click)="closeBroadcast()" [disabled]="isSending()">Cancel</button>
+        <button class="btn btn-primary" (click)="sendBroadcast()"
+                [disabled]="!broadcastTitle() || !broadcastMessage() || isSending()">
+          {{ isSending() ? 'Sending...' : 'Send Broadcast' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

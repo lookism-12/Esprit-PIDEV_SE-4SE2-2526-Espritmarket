@@ -1,20 +1,15 @@
 <header class="bg-gradient-to-r from-primary to-primary-dark h-16 flex items-center justify-between px-6 z-20 shadow-md relative border-b border-black/20 w-full">
     <!-- Left Section -->
     <div class="flex items-center gap-6">
-        <div class="md:hidden">
-            <button class="text-white hover:text-white/80 transition-colors">
-                ☰
-            </button>
-        </div>
-        
         <div class="flex items-center gap-4">
-            <img src="assets/logo.png" alt="Esprit Market" class="h-9 object-contain filter brightness-0 invert drop-shadow-md">
-            
+            <a href="/products" class="flex items-center cursor-pointer hover:opacity-90 transition-opacity">
+              <div class="w-10 h-10 rounded-xl bg-white flex items-center justify-center overflow-hidden shadow-md">
+                <img src="assets/logo.png" alt="Esprit Market" class="w-full h-full object-contain p-0.5">
+              </div>
+            </a>
             <div class="h-6 w-px bg-white/20 hidden md:block"></div>
-            
             <h2 class="text-[18px] font-extrabold text-white tracking-tight drop-shadow-sm hidden lg:block uppercase tracking-widest">Admin Panel</h2>
         </div>
-        
         <div class="hidden xl:flex items-center bg-white/10 px-3 py-1 rounded-full border border-white/20 shadow-inner ml-4">
             <span class="w-2 h-2 rounded-full bg-green-400 mr-2 shadow-[0_0_8px_rgba(74,222,128,0.8)]"></span>
             <span class="text-[11px] font-bold text-white uppercase tracking-wider">All Systems Operational</span>
@@ -32,40 +27,126 @@
 
         <div class="h-6 w-px bg-white/20 hidden md:block"></div>
 
-        <!-- Enhanced Icons Section with Fixed Badge Display -->
-        <div class="flex items-center space-x-4 text-white">
-            <!-- Messages Icon with Guaranteed Visible Badge -->
-            <div class="icon-container">
-                <button class="icon-button p-3 rounded-xl transition-all duration-300">
-                    <div class="text-xl">💬</div>
-                </button>
-                <div class="notification-badge message-badge">3</div>
-            </div>
+        <!-- Icons Section -->
+        <div class="flex items-center space-x-2 text-white">
 
-            <!-- Notifications Icon with Guaranteed Visible Badge -->
-            <div class="icon-container">
-                <button class="icon-button p-3 rounded-xl transition-all duration-300">
+            <!-- Notifications Icon -->
+            <div class="icon-container notifications-panel-wrapper relative">
+                <button
+                    (click)="toggleNotificationsPanel()"
+                    class="icon-button p-2.5 rounded-xl transition-all duration-300 hover:bg-white/10"
+                    [class.bg-white\/20]="showNotificationsPanel()">
                     <div class="text-xl">🔔</div>
                 </button>
-                <div class="notification-badge notification-badge-red">5</div>
+                @if (unreadCount() > 0) {
+                    <div class="notification-badge notification-badge-red">{{ unreadCount() > 9 ? '9+' : unreadCount() }}</div>
+                }
+
+                <!-- Notifications Dropdown -->
+                @if (showNotificationsPanel()) {
+                    <div class="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-50">
+                        <div class="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-primary to-primary-dark text-white">
+                            <h3 class="font-bold text-sm">Notifications</h3>
+                            @if (unreadCount() > 0) {
+                                <button (click)="markAllAsRead()" class="text-xs hover:underline opacity-80">Mark all read</button>
+                            }
+                        </div>
+
+                        @if (isLoadingNotifications()) {
+                            <div class="p-6 text-center text-gray-400 text-sm">Loading...</div>
+                        } @else if (notifications().length === 0) {
+                            <div class="p-8 text-center">
+                                <span class="text-3xl block mb-2">🔔</span>
+                                <p class="text-gray-400 text-sm">No notifications</p>
+                            </div>
+                        } @else {
+                            <div class="max-h-72 overflow-y-auto divide-y divide-gray-50">
+                                @for (n of notifications(); track n.id) {
+                                    <div (click)="markAsRead(n.id)"
+                                         class="flex gap-3 px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors"
+                                         [class.bg-blue-50]="!n.read">
+                                        <span class="text-lg mt-0.5">🔔</span>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-sm font-semibold text-gray-800 truncate">{{ n.title }}</p>
+                                            <p class="text-xs text-gray-500 line-clamp-1 mt-0.5">{{ n.description || n.message }}</p>
+                                        </div>
+                                        @if (!n.read) {
+                                            <span class="w-2 h-2 bg-primary rounded-full mt-1.5 flex-shrink-0"></span>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+
+                        <button (click)="navigateTo('/admin/notifications')"
+                            class="block w-full p-3 text-center text-primary font-bold text-sm hover:bg-gray-50 transition-colors border-t border-gray-100">
+                            View All Notifications →
+                        </button>
+                    </div>
+                }
             </div>
 
             <!-- Settings Icon -->
-            <div class="icon-container">
-                <button class="icon-button p-3 rounded-xl transition-all duration-300 group">
+            <div class="icon-container settings-panel-wrapper relative">
+                <button
+                    (click)="toggleSettingsPanel()"
+                    class="icon-button p-2.5 rounded-xl transition-all duration-300 hover:bg-white/10 group"
+                    [class.bg-white\/20]="showSettingsPanel()">
                     <div class="text-xl group-hover:rotate-90 transition-transform duration-300">⚙️</div>
                 </button>
+
+            <!-- Theme Toggle -->
+            <button
+                (click)="themeService.toggle()"
+                class="icon-button p-2.5 rounded-xl transition-all duration-300 hover:bg-white/10"
+                [attr.aria-label]="themeService.theme() === 'dark' ? 'Light mode' : 'Dark mode'">
+                @if (themeService.theme() === 'dark') {
+                    <div class="text-xl">☀️</div>
+                } @else {
+                    <div class="text-xl">🌙</div>
+                }
+            </button>
+
+                <!-- Settings Dropdown -->
+                @if (showSettingsPanel()) {
+                    <div class="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-50">
+                        <div class="px-4 py-3 bg-gray-50 border-b border-gray-100">
+                            <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Quick Settings</p>
+                        </div>
+                        <div class="py-1">
+                            <button (click)="navigateTo('/admin/settings')"
+                                class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                                <span>⚙️</span> System Settings
+                            </button>
+                            <button (click)="navigateTo('/admin/notifications')"
+                                class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                                <span>🔔</span> Notifications
+                            </button>
+                            <button (click)="navigateTo('/admin/negotiations')"
+                                class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                                <span>🤝</span> Negotiations
+                            </button>
+                            <button (click)="navigateTo('/admin/users')"
+                                class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                                <span>👥</span> Users
+                            </button>
+                            <div class="h-px bg-gray-100 my-1"></div>
+                            <button (click)="navigateTo('/admin/profile')"
+                                class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                                <span>👤</span> My Profile
+                            </button>
+                        </div>
+                    </div>
+                }
             </div>
         </div>
 
         <!-- User Profile Dropdown -->
-        <div class="relative ml-2">
-            <button 
+        <div class="relative ml-2 profile-menu-wrapper">
+            <button
                 (click)="toggleProfileMenu()"
                 class="flex items-center gap-3 cursor-pointer hover:bg-white/10 rounded-full py-1 pr-3 pl-1.5 transition-colors border border-transparent hover:border-white/20 shadow-sm">
-                
                 <img [src]="userAvatar()" alt="Admin Profile" class="w-9 h-9 rounded-full object-contain bg-white p-0.5 ring-2 ring-white/30 shadow-md">
-                
                 <div class="hidden md:block text-left">
                     <p class="text-sm font-bold text-white leading-tight drop-shadow-sm">{{ userName() }}</p>
                     <p class="text-[11px] text-white/80 leading-tight">Super Admin</p>
@@ -73,10 +154,8 @@
                 <span class="text-white/60 text-xs hidden md:block drop-shadow-sm">▼</span>
             </button>
 
-            <!-- Dropdown Menu -->
             @if (showProfileMenu()) {
-                <div class="absolute right-0 mt-3 w-64 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-50 animate-fade-in divide-y divide-gray-100 ring-1 ring-black/5">
-                    <!-- User Info -->
+                <div class="absolute right-0 mt-3 w-64 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-50 divide-y divide-gray-100 ring-1 ring-black/5">
                     <div class="p-5 bg-gradient-to-br from-gray-50 to-gray-100">
                         <div class="flex flex-col items-center text-center">
                             <img [src]="userAvatar()" alt="Admin Profile" class="w-16 h-16 rounded-full object-contain bg-white p-1.5 shadow-md ring-4 ring-white mb-3">
@@ -85,12 +164,8 @@
                             <span class="mt-2 text-[10px] font-bold text-[#7D0408] bg-red-50 px-2.5 py-1 rounded-full uppercase tracking-wider">Super Admin</span>
                         </div>
                     </div>
-
-                    <!-- Menu Items -->
                     <div class="py-2 bg-white">
-                        <a 
-                            routerLink="/admin/dashboard"
-                            (click)="toggleProfileMenu()"
+                        <a routerLink="/admin/dashboard" (click)="toggleProfileMenu()"
                             class="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors cursor-pointer text-gray-700">
                             <div class="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center text-lg shadow-sm border border-red-100">📊</div>
                             <div>
@@ -98,10 +173,7 @@
                                 <p class="text-[11px] text-gray-500 font-medium">Main overview</p>
                             </div>
                         </a>
-
-                        <a 
-                            routerLink="/admin/profile"
-                            (click)="toggleProfileMenu()"
+                        <a routerLink="/admin/profile" (click)="toggleProfileMenu()"
                             class="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors cursor-pointer text-gray-700">
                             <div class="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center text-lg shadow-sm border border-gray-100">👤</div>
                             <div>
@@ -109,10 +181,15 @@
                                 <p class="text-[11px] text-gray-500 font-medium">Account configurations</p>
                             </div>
                         </a>
-
-                        <a 
-                            routerLink="/admin/settings"
-                            (click)="toggleProfileMenu()"
+                        <a routerLink="/admin/notifications" (click)="toggleProfileMenu()"
+                            class="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors cursor-pointer text-gray-700">
+                            <div class="w-8 h-8 rounded-lg bg-yellow-50 flex items-center justify-center text-lg shadow-sm border border-yellow-100">🔔</div>
+                            <div>
+                                <p class="text-sm font-bold text-gray-900">Notifications</p>
+                                <p class="text-[11px] text-gray-500 font-medium">Manage alerts</p>
+                            </div>
+                        </a>
+                        <a routerLink="/admin/settings" (click)="toggleProfileMenu()"
                             class="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors cursor-pointer text-gray-700">
                             <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-lg shadow-sm border border-blue-100">⚙️</div>
                             <div>
@@ -121,13 +198,10 @@
                             </div>
                         </a>
                     </div>
-                    
                     <div class="p-2 bg-gray-50">
-                        <button 
-                            (click)="logout()"
+                        <button (click)="logout()"
                             class="w-full flex items-center justify-center gap-2 px-4 py-2.5 hover:bg-red-50 bg-white rounded-lg transition-colors text-center text-red-600 shadow-sm border border-red-100 font-bold text-sm">
-                            <span class="text-lg">🚪</span>
-                            Logout Securely
+                            <span class="text-lg">🚪</span> Logout Securely
                         </button>
                     </div>
                 </div>

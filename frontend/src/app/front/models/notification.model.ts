@@ -1,16 +1,34 @@
-// WebSocket notification types for real-time updates
+// Backend-aligned notification types
+export enum NotificationType {
+  // Backend types
+  INTERNAL_NOTIFICATION = 'INTERNAL_NOTIFICATION',
+  EXTERNAL_NOTIFICATION = 'EXTERNAL_NOTIFICATION',
+  RIDE_UPDATE = 'RIDE_UPDATE',
+  NEGOTIATION_UPDATE = 'NEGOTIATION_UPDATE',
+  ORDER_CONFIRMATION = 'ORDER_CONFIRMATION',
+  PROMOTION = 'PROMOTION',
+  SYSTEM = 'SYSTEM',
 
-export interface AppNotification {
-  id: string;
-  userId: string;
-  type: NotificationType;
-  title: string;
-  message: string;
-  data?: NotificationData;
-  priority: NotificationPriority;
-  isRead: boolean;
-  createdAt: Date;
-  readAt?: Date;
+  // Legacy frontend types (kept for backward compatibility)
+  ORDER_PLACED = 'ORDER_PLACED',
+  ORDER_CONFIRMED = 'ORDER_CONFIRMED',
+  ORDER_SHIPPED = 'ORDER_SHIPPED',
+  ORDER_DELIVERED = 'ORDER_DELIVERED',
+  ORDER_CANCELLED = 'ORDER_CANCELLED',
+  ORDER_REFUNDED = 'ORDER_REFUNDED',
+  PAYMENT_RECEIVED = 'PAYMENT_RECEIVED',
+  PAYMENT_FAILED = 'PAYMENT_FAILED',
+  REFUND_PROCESSED = 'REFUND_PROCESSED',
+  PRODUCT_SOLD = 'PRODUCT_SOLD',
+  PRODUCT_LOW_STOCK = 'PRODUCT_LOW_STOCK',
+  PRODUCT_OUT_OF_STOCK = 'PRODUCT_OUT_OF_STOCK',
+  NEW_MESSAGE = 'NEW_MESSAGE',
+  NEW_REVIEW = 'NEW_REVIEW',
+  ACCOUNT_UPDATE = 'ACCOUNT_UPDATE',
+  NEW_COUPON = 'NEW_COUPON',
+  COUPON_EXPIRING = 'COUPON_EXPIRING',
+  SYSTEM_ALERT = 'SYSTEM_ALERT',
+  MAINTENANCE = 'MAINTENANCE'
 }
 
 export enum NotificationPriority {
@@ -19,37 +37,27 @@ export enum NotificationPriority {
   HIGH = 'HIGH'
 }
 
-export enum NotificationType {
-  // Order notifications
-  ORDER_PLACED = 'ORDER_PLACED',
-  ORDER_CONFIRMED = 'ORDER_CONFIRMED',
-  ORDER_SHIPPED = 'ORDER_SHIPPED',
-  ORDER_DELIVERED = 'ORDER_DELIVERED',
-  ORDER_CANCELLED = 'ORDER_CANCELLED',
-  ORDER_REFUNDED = 'ORDER_REFUNDED',
+// Backend-aligned response shape
+export interface NotificationResponse {
+  id: string;
+  type: NotificationType;
+  title: string;
+  message: string;        // mapped from backend 'description'
+  description?: string;   // backend field alias
+  read: boolean;
+  active: boolean;
+  notification_status?: boolean;
+  linkedObjectId?: string;
+  createdAt: string;
+}
 
-  // Payment notifications
-  PAYMENT_RECEIVED = 'PAYMENT_RECEIVED',
-  PAYMENT_FAILED = 'PAYMENT_FAILED',
-  REFUND_PROCESSED = 'REFUND_PROCESSED',
-
-  // Product notifications
-  PRODUCT_SOLD = 'PRODUCT_SOLD',
-  PRODUCT_LOW_STOCK = 'PRODUCT_LOW_STOCK',
-  PRODUCT_OUT_OF_STOCK = 'PRODUCT_OUT_OF_STOCK',
-
-  // User notifications
-  NEW_MESSAGE = 'NEW_MESSAGE',
-  NEW_REVIEW = 'NEW_REVIEW',
-  ACCOUNT_UPDATE = 'ACCOUNT_UPDATE',
-
-  // Promotion notifications
-  NEW_COUPON = 'NEW_COUPON',
-  COUPON_EXPIRING = 'COUPON_EXPIRING',
-
-  // System notifications
-  SYSTEM_ALERT = 'SYSTEM_ALERT',
-  MAINTENANCE = 'MAINTENANCE'
+// Full app notification (merges backend + frontend fields)
+export interface AppNotification extends NotificationResponse {
+  userId?: string;
+  data?: NotificationData;
+  priority?: NotificationPriority;
+  isRead?: boolean;
+  readAt?: Date;
 }
 
 export interface NotificationData {
@@ -84,4 +92,12 @@ export interface NotificationFilter {
   endDate?: Date;
   page?: number;
   limit?: number;
+}
+
+export interface MarkAsReadRequest {
+  notificationId: string;
+}
+
+export interface DeactivateNotificationRequest {
+  notificationId: string;
 }

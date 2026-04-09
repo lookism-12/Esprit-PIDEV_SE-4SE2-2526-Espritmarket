@@ -1,0 +1,51 @@
+<div class="negotiations-container">
+  <div class="header">
+    <h1>Negotiations</h1>
+    <p>Create and manage negotiation lifecycle.</p>
+  </div>
+
+  <form class="modal-content" [formGroup]="createForm" (ngSubmit)="createNegotiation()">
+    <h2>Create Negotiation</h2>
+    <input placeholder="Product UUID" formControlName="productId">
+    <input type="number" placeholder="Proposed Price" formControlName="proposedPrice">
+    <button class="btn btn-primary" type="submit" [disabled]="createForm.invalid">Create</button>
+  </form>
+
+  <div class="modal-content">
+    <h2>Load Details</h2>
+    <input #negId placeholder="Negotiation UUID">
+    <button class="btn btn-secondary" (click)="loadById(negId.value)">Load</button>
+  </div>
+
+  <div *ngIf="isLoading()" class="loading-state">
+    <div class="spinner"></div>
+    <p>Loading negotiation...</p>
+  </div>
+
+  <div *ngIf="error()" class="error-state">{{ error() }}</div>
+
+  <div class="modal-overlay" *ngIf="selected() as negotiation">
+    <div class="modal-content">
+      <h2>{{ negotiation.productName }}</h2>
+      <span class="badge" [ngClass]="getStatusClass(negotiation.status)">{{ negotiation.status }}</span>
+      <p>Client: {{ negotiation.clientFullName }}</p>
+      <p>Created at: {{ negotiation.createdAt | date:'short' }}</p>
+      <h3>Proposals</h3>
+      <ul>
+        <li *ngFor="let p of negotiation.proposals">
+          {{ p.amount | number:'1.2-2' }} - {{ p.status === 'ACCEPTED' ? 'ACCEPTED' : 'PENDING' }}
+          ({{ p.createdAt | date:'short' }})
+        </li>
+      </ul>
+      <form [formGroup]="actionForm">
+        <input type="number" formControlName="newPrice" placeholder="Counter price">
+      </form>
+      <div class="modal-actions">
+        <button class="btn btn-accept" (click)="applyAction('ACCEPT')">Accept</button>
+        <button class="btn btn-reject" (click)="applyAction('REJECT')">Reject</button>
+        <button class="btn btn-counter" (click)="applyAction('COUNTER')">Counter</button>
+        <button class="btn btn-secondary" (click)="closeNegotiation()">Close</button>
+      </div>
+    </div>
+  </div>
+</div>

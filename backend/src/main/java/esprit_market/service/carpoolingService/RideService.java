@@ -44,6 +44,7 @@ public class RideService implements IRideService {
     private final NotificationService notificationService;
     private final IPassengerProfileService passengerProfileService;
     private final IDriverProfileService driverProfileService;
+    private final RatingService ratingService;
     private final RideMapper rideMapper;
 
     public RideService(RideRepository rideRepository,
@@ -56,6 +57,7 @@ public class RideService implements IRideService {
                       NotificationService notificationService,
                       @Lazy IPassengerProfileService passengerProfileService,
                       @Lazy IDriverProfileService driverProfileService,
+                      RatingService ratingService,
                       RideMapper rideMapper) {
         this.rideRepository = rideRepository;
         this.vehicleRepository = vehicleRepository;
@@ -67,6 +69,7 @@ public class RideService implements IRideService {
         this.notificationService = notificationService;
         this.passengerProfileService = passengerProfileService;
         this.driverProfileService = driverProfileService;
+        this.ratingService = ratingService;
         this.rideMapper = rideMapper;
     }
 
@@ -403,6 +406,46 @@ public class RideService implements IRideService {
                 driverProfileService.incrementTotalRidesAndEarnings(ride.getDriverProfileId(), totalEarnings);
                 log.debug("Ride {} transitioned to COMPLETED", ride.getId());
             }
+        }
+    }
+
+    @Override
+    public long countActiveRides() {
+        return rideRepository.countByStatusIn(java.util.List.of(RideStatus.ACCEPTED, RideStatus.ON_ROUTE, RideStatus.IN_PROGRESS));
+    }
+
+    @Override
+    @Transactional
+    public void rateRide(String rideId, Integer rating, String comment, boolean isDriverRating) {
+        if (rating < 1 || rating > 5) throw new IllegalArgumentException("Rating must be between 1 and 5");
+
+        Ride ride = rideRepository.findById(new ObjectId(rideId))
+                .orElseThrow(() -> new IllegalArgumentException("Ride not found"));
+
+        if (isDriverRating) {
+            ride.setDriverRating(rating);
+            ride.setDriverComment(comment);
+            rideRepository.save(ride);
+            ratingService.updateDriverAverageRating(ride.getDriverProfileId());
+            driverProfileRepository.findById(ride.getDriverProfileId())
+                    .flatMap(dp -> userRepository.findById(dp.getUserId()))
+                    .ifPresent(driverUser -> notificationService.sendNotification(driverUser,
+                            "New Driver Rating ⭐",
+                            "You received a " + rating + "-star rating!" + (comment != null && !comment.isEmpty() ? " Comment: " + comment : ""),
+                            esprit_market.Enum.notificationEnum.NotificationType.RIDE_UPDATE, rideId));
+        } else {
+            ride.setPassengerRating(rating);
+            ride.setPassengerComment(comment);
+            rideRepository.save(ride);
+            bookingRepository.findByRideId(ride.getId()).stream().findFirst().ifPresent(b -> {
+                ratingService.updatePassengerAverageRating(b.getPassengerProfileId());
+                passengerProfileRepository.findById(b.getPassengerProfileId())
+                        .flatMap(pp -> userRepository.findById(pp.getUserId()))
+                        .ifPresent(passengerUser -> notificationService.sendNotification(passengerUser,
+                                "New Passenger Rating ⭐",
+                                "You received a " + rating + "-star rating!" + (comment != null && !comment.isEmpty() ? " Comment: " + comment : ""),
+                                esprit_market.Enum.notificationEnum.NotificationType.RIDE_UPDATE, rideId));
+            });
         }
     }
 }

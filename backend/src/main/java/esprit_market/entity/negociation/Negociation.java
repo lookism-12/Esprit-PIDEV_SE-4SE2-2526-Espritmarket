@@ -1,6 +1,7 @@
 package esprit_market.entity.negociation;
 
 import esprit_market.Enum.negociationEnum.NegociationStatuts;
+import esprit_market.entity.marketplace.Product;
 import esprit_market.entity.marketplace.ServiceEntity;
 import esprit_market.entity.user.User;
 import lombok.*;
@@ -24,15 +25,18 @@ public class Negociation {
     private ObjectId id;
 
     @DBRef
-    private User client; // résolu via JWT (Spring Security)
+    private User client;
 
     @DBRef
     private ServiceEntity service;
 
+    @DBRef
+    private Product product;
+
     private NegociationStatuts statuts;
 
     @Builder.Default
-    private List<Proposal> proposals = new ArrayList<>(); // composition (embedded)
+    private List<Proposal> proposals = new ArrayList<>();
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

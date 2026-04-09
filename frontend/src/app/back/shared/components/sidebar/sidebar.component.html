@@ -8,11 +8,14 @@
     <div class="absolute top-0 right-0 w-16 h-16 bg-white/5 rounded-full -translate-y-8 translate-x-8"></div>
     
     <div class="relative z-10 text-center">
-      <div class="w-16 h-16 bg-gradient-to-br from-white/20 to-white/10 rounded-2xl flex items-center justify-center mb-3 shadow-lg border border-white/20 backdrop-blur-sm">
-        <img src="assets/logo.png" alt="Esprit Market" class="h-8 object-contain filter brightness-0 invert drop-shadow-lg">
-      </div>
-      <h2 class="text-white font-bold text-sm drop-shadow-sm">Admin Panel</h2>
-      <div class="w-12 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent mt-2"></div>
+      <a href="/products" target="_blank" class="block mb-2 hover:scale-105 transition-transform">
+        <div class="w-20 h-20 mx-auto rounded-2xl bg-white shadow-xl flex items-center justify-center overflow-hidden border-2 border-white/30">
+          <img src="assets/logo.png" alt="Esprit Market" class="w-full h-full object-contain p-1">
+        </div>
+      </a>
+      <h2 class="text-white font-bold text-sm drop-shadow-sm mt-2">Esprit Market</h2>
+      <p class="text-white/50 text-[10px] font-semibold uppercase tracking-widest">Admin Panel</p>
+      <div class="w-12 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent mt-2 mx-auto"></div>
     </div>
   </div>
   
@@ -126,6 +129,47 @@
               class="flex items-center px-3 py-2 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-all cursor-pointer group border-l-2 border-transparent"
               [style.transition-delay]="isForumOpen() ? (i * 50) + 'ms' : '0ms'">
               
+              <div class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center mr-3 group-hover:bg-white/20 transition-colors border border-white/20">
+                <span class="text-sm drop-shadow-sm">{{ subItem.icon }}</span>
+              </div>
+              <span class="text-sm font-medium drop-shadow-sm">{{ subItem.label }}</span>
+            </a>
+          </ng-container>
+        </div>
+      </div>
+    </div>
+
+    <!-- Carpooling Section -->
+    <div class="mb-6">
+      <div class="text-xs font-bold text-white/60 uppercase tracking-wider px-4 mb-3">Carpooling</div>
+
+      <button
+        (click)="toggleCarpooling()"
+        class="w-full flex items-center px-4 py-3 rounded-xl text-white/70 hover:text-white transition-all cursor-pointer group relative overflow-hidden mb-2"
+        [class.nav-item-active]="isCarpoolingOpen()">
+
+        <div class="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-xl"></div>
+
+        <div class="relative z-10 flex items-center w-full">
+          <div class="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center mr-3 group-hover:bg-white/20 transition-colors border border-white/20">
+            <span class="text-lg drop-shadow-sm">🚗</span>
+          </div>
+          <span class="flex-1 text-sm font-medium text-left drop-shadow-sm">Carpooling</span>
+          <div class="w-6 h-6 rounded-lg bg-white/10 flex items-center justify-center border border-white/20">
+            <span class="text-xs transition-transform duration-300 drop-shadow-sm" [class.rotate-90]="isCarpoolingOpen()">▶</span>
+          </div>
+        </div>
+      </button>
+
+      <div class="overflow-hidden transition-all duration-300 ease-out"
+           [style.max-height]="isCarpoolingOpen() ? '400px' : '0px'"
+           [style.opacity]="isCarpoolingOpen() ? '1' : '0'">
+        <div class="ml-6 space-y-1 pt-2">
+          <ng-container *ngFor="let subItem of carpoolingItems; let i = index">
+            <a [routerLink]="subItem.route"
+              routerLinkActive="bg-white/20 text-white border-l-2 border-white shadow-inner"
+              class="flex items-center px-3 py-2 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-all cursor-pointer group border-l-2 border-transparent"
+              [style.transition-delay]="isCarpoolingOpen() ? (i * 50) + 'ms' : '0ms'">
               <div class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center mr-3 group-hover:bg-white/20 transition-colors border border-white/20">
                 <span class="text-sm drop-shadow-sm">{{ subItem.icon }}</span>
               </div>

@@ -1,0 +1,48 @@
+<div class="max-w-4xl mx-auto">
+  @if (isLoading()) {
+    <div class="flex justify-center py-12">
+      <div class="animate-spin rounded-full h-8 w-8 border-4 border-primary border-t-transparent"></div>
+    </div>
+  } @else if (errorMsg()) {
+    <div class="dm-alert-red p-4 rounded-xl text-sm text-center">{{ errorMsg() }}</div>
+  } @else if (deliveries().length === 0) {
+    <div class="text-center py-12 dm-card-inner border-dashed">
+      <span class="text-4xl block mb-3">📭</span>
+      <p class="font-semibold dm-title">No deliveries found</p>
+      <p class="text-sm dm-muted mt-1">Your deliveries will appear here once assigned.</p>
+    </div>
+  } @else {
+    <div class="space-y-3">
+      @for (delivery of deliveries(); track delivery.id) {
+        <div class="dm-card p-5 shadow-sm hover:shadow-md transition-shadow">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+              <span class="text-2xl">{{ getStatusInfo(delivery.status).icon }}</span>
+              <div>
+                <p class="font-bold dm-title">{{ delivery.address }}</p>
+                @if (delivery.deliveryDate) {
+                  <p class="text-xs dm-muted mt-0.5">Expected: {{ formatDate(delivery.deliveryDate) }}</p>
+                }
+              </div>
+            </div>
+            <span [class]="'px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide border shrink-0 ' + getStatusInfo(delivery.status).color">
+              {{ getStatusInfo(delivery.status).label }}
+            </span>
+          </div>
+          <!-- Progress -->
+          <div class="mt-4">
+            <div class="flex gap-1">
+              @for (step of ['PREPARING', 'IN_TRANSIT', 'DELIVERED']; track step) {
+                <div class="flex-1 h-1.5 rounded-full transition-all duration-500"
+                  [class]="isStepActive(delivery.status, step) ? 'bg-primary' : 'dm-progress-track'"></div>
+              }
+            </div>
+            <div class="flex justify-between mt-1 text-[10px] dm-muted font-medium uppercase tracking-wider">
+              <span>Preparing</span><span>In Transit</span><span>Delivered</span>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

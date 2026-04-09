@@ -1,14 +1,167 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { TestBed, getTestBed } from '@angular/core/testing';
+import { BrowserDynamicTestingModule, platformBrowserDynamicTesting } from '@angular/platform-browser-dynamic/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { of } from 'rxjs';
+import { NegotiationService } from './negotiation.service';
+import { Negotiation, NegotiationResponse, NegotiationStatus, ProposalType } from '../models/negotiation.model';
+import { environment } from '../../../environment';
 
-describe('Feature Not Yet Integrated', () => {
-  it('should be implemented after backend integration', () => {
-    // TODO: This component/service is part of a feature that is not yet
-    // fully integrated with the backend. Real unit tests will be implemented
-    // after the backend endpoints are ready and tested.
-    // 
-    // For now, only the Auth/User module (login, register, auth service) 
-    // has functional tests. Other modules should be tested once they are
-    // connected to real backend APIs.
-    expect(true).toBe(true);
+const BASE = `${environment.apiUrl}/negociations`;
+
+function makeResponse(overrides: Partial<NegotiationResponse> = {}): NegotiationResponse {
+  return {
+    id: 'neg-001', clientId: 'client-001', clientFullName: 'Alice Smith',
+    productId: 'prod-001', productName: 'Wireless Keyboard', productOriginalPrice: 85,
+    status: NegotiationStatus.IN_PROGRESS, proposals: [],
+    createdAt: '2026-03-29T10:00:00', updatedAt: '2026-03-30T10:00:00', ...overrides,
+  };
+}
+
+describe('NegotiationService', () => {
+  let service: NegotiationService;
+  let http: HttpTestingController;
+
+  beforeEach(() => {
+    if (!getTestBed().platform) {
+      getTestBed().initTestEnvironment(BrowserDynamicTestingModule, platformBrowserDynamicTesting());
+    }
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [NegotiationService, provideHttpClient(), provideHttpClientTesting()],
+    });
+    service = TestBed.inject(NegotiationService);
+    http    = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => http.verify());
+
+  describe('createNegotiation()', () => {
+    it('POSTs to /negociations with mapped payload', () => {
+      service.createNegotiation({ productId: 'prod-001', proposedPrice: 70 }).subscribe();
+      const req = http.expectOne(BASE);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual({ serviceId: 'prod-001', amount: 70 });
+      req.flush(makeResponse());
+    });
+  });
+
+  describe('getNegotiationById()', () => {
+    it('GETs /negociations/:id', () => {
+      service.getNegotiationById('neg-001').subscribe(r => expect(r.id).toBe('neg-001'));
+      const req = http.expectOne(`${BASE}/neg-001`);
+      expect(req.request.method).toBe('GET');
+      req.flush(makeResponse());
+    });
+  });
+
+  describe('getAll()', () => {
+    it('GETs /negociations/my and wraps in { negotiations }', () => {
+      service.getAll().subscribe(r => expect(r.negotiations).toHaveLength(1));
+      const req = http.expectOne(`${BASE}/my`);
+      expect(req.request.method).toBe('GET');
+      req.flush([makeResponse() as Negotiation]);
+    });
+  });
+
+  describe('getProviderNegotiations()', () => {
+    it('GETs /negociations/all', () => {
+      service.getProviderNegotiations().subscribe();
+      const req = http.expectOne(`${BASE}/all`);
+      expect(req.request.method).toBe('GET');
+      req.flush([]);
+    });
+  });
+
+  describe('getIncomingNegociations()', () => {
+    it('GETs /negociations/all and wraps in { negotiations }', () => {
+      service.getIncomingNegociations().subscribe(r => expect(r.negotiations).toHaveLength(1));
+      const req = http.expectOne(`${BASE}/all`);
+      req.flush([makeResponse() as Negotiation]);
+    });
+  });
+
+  describe('accept()', () => {
+    it('PATCHes /negociations/:id/status/direct with status=ACCEPTED', () => {
+      service.accept('neg-001').subscribe(r => expect(r.status).toBe(NegotiationStatus.ACCEPTED));
+      const req = http.expectOne(r => r.url === `${BASE}/neg-001/status/direct`);
+      expect(req.request.method).toBe('PATCH');
+      expect(req.request.params.get('status')).toBe('ACCEPTED');
+      req.flush(makeResponse({ status: NegotiationStatus.ACCEPTED }));
+    });
+  });
+
+  describe('reject()', () => {
+    it('PATCHes /negociations/:id/status/direct with status=REJECTED', () => {
+      service.reject('neg-001').subscribe();
+      const req = http.expectOne(r => r.url === `${BASE}/neg-001/status/direct`);
+      expect(req.request.params.get('status')).toBe('REJECTED');
+      req.flush(makeResponse({ status: NegotiationStatus.REJECTED }));
+    });
+  });
+
+  describe('submitCounterProposal()', () => {
+    it('POSTs to /negociations/:id/proposals/direct with amount and type', () => {
+      service.submitCounterProposal({ negotiationId: 'neg-001', amount: 75, message: 'Counter' }).subscribe();
+      const req = http.expectOne(`${BASE}/neg-001/proposals/direct`);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual({ amount: 75, message: 'Counter', type: 'COUNTER_PROPOSAL' });
+      req.flush(makeResponse());
+    });
+  });
+
+  describe('updateNegotiation() — COUNTER action', () => {
+    it('POSTs to /proposals/direct when action is COUNTER', () => {
+      service.updateNegotiation('neg-001', { action: 'COUNTER', newPrice: 60 }).subscribe();
+      const req = http.expectOne(`${BASE}/neg-001/proposals/direct`);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body.amount).toBe(60);
+      expect(req.request.body.type).toBe('COUNTER_PROPOSAL');
+      req.flush(makeResponse());
+    });
+  });
+
+  describe('cancel()', () => {
+    it('DELETEs /negociations/:id', () => {
+      service.cancel('neg-001').subscribe();
+      const req = http.expectOne(`${BASE}/neg-001`);
+      expect(req.request.method).toBe('DELETE');
+      req.flush(null);
+    });
+  });
+
+  describe('provider dashboard aliases', () => {
+    it('acceptNegotiation delegates to accept()', () => {
+      const spy = vi.spyOn(service, 'accept').mockReturnValue(of(makeResponse()));
+      service.acceptNegotiation('neg-001').subscribe();
+      expect(spy).toHaveBeenCalledWith('neg-001');
+    });
+    it('rejectNegotiation delegates to reject()', () => {
+      const spy = vi.spyOn(service, 'reject').mockReturnValue(of(makeResponse()));
+      service.rejectNegotiation('neg-001').subscribe();
+      expect(spy).toHaveBeenCalledWith('neg-001');
+    });
+    it('counterOffer delegates to submitCounterProposal()', () => {
+      const spy = vi.spyOn(service, 'submitCounterProposal').mockReturnValue(of(makeResponse()));
+      service.counterOffer('neg-001', 55).subscribe();
+      expect(spy).toHaveBeenCalledWith({ negotiationId: 'neg-001', amount: 55 });
+    });
+  });
+
+  describe('getAllAdmin()', () => {
+    it('GETs /negociations with page and size params', () => {
+      service.getAllAdmin(0, 20).subscribe();
+      const req = http.expectOne(r =>
+        r.url === BASE && r.params.get('page') === '0' && r.params.get('size') === '20'
+      );
+      expect(req.request.method).toBe('GET');
+      req.flush({ content: [] });
+    });
+    it('returns empty content array when API returns null content', () => {
+      service.getAllAdmin().subscribe(r => expect(r.content).toEqual([]));
+      const req = http.expectOne(r => r.url === BASE);
+      req.flush({});
+    });
   });
 });

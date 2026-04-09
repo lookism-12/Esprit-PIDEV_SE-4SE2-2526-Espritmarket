@@ -26,7 +26,7 @@ export const BACK_ROUTES: Routes = [
             },
             {
                 path: 'moderation',
-                loadComponent: () => import('./features/placeholders').then(m => m.ModerationComponent)
+                loadComponent: () => import('./features/moderation/moderation.component').then(m => m.ModerationComponent)
             },
             {
                 path: 'marketplace',
@@ -130,7 +130,39 @@ export const BACK_ROUTES: Routes = [
             },
             {
                 path: 'notifications',
-                loadComponent: () => import('./features/placeholders').then(m => m.NotificationsComponent)
+                loadComponent: () => import('./features/notifications/notifications.component').then(m => m.AdminNotificationsComponent)
+            },
+            {
+                path: 'negotiations',
+                loadComponent: () => import('./features/negotiations/negotiations.component').then(m => m.NegotiationsComponent)
+            },
+            {
+                path: 'carpooling',
+                loadComponent: () => import('./features/carpooling/carpooling-admin.component').then(m => m.CarpoolingAdminComponent)
+            },
+            {
+                path: 'carpooling/rides',
+                loadComponent: () => import('./features/carpooling/carpooling-admin.component').then(m => m.CarpoolingAdminComponent)
+            },
+            {
+                path: 'carpooling/requests',
+                loadComponent: () => import('./features/carpooling/carpooling-admin.component').then(m => m.CarpoolingAdminComponent)
+            },
+            {
+                path: 'carpooling/drivers',
+                loadComponent: () => import('./features/carpooling/carpooling-admin.component').then(m => m.CarpoolingAdminComponent)
+            },
+            {
+                path: 'carpooling/passengers',
+                loadComponent: () => import('./features/carpooling/carpooling-admin.component').then(m => m.CarpoolingAdminComponent)
+            },
+            {
+                path: 'carpooling/payments',
+                loadComponent: () => import('./features/carpooling/carpooling-admin.component').then(m => m.CarpoolingAdminComponent)
+            },
+            {
+                path: 'sav',
+                loadComponent: () => import('./features/sav/sav-admin.component').then(m => m.SavAdminComponent)
             },
             {
                 path: 'analytics',

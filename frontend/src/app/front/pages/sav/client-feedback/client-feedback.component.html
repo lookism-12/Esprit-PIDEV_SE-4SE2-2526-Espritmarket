@@ -1,0 +1,290 @@
+<div class="max-w-4xl mx-auto">
+  <div class="dm-card shadow-sm overflow-hidden">
+
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 p-6 border-b dm-divider">
+      <div>
+        <h2 class="text-xl font-bold dm-title">Support Services</h2>
+        <p class="text-sm dm-muted mt-1">Track an existing request or open a new support ticket.</p>
+      </div>
+      <button (click)="toggleMode()"
+        class="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border-2 transition-all active:scale-95 shrink-0"
+        [class]="showCreateForm() ? 'dm-toggle-idle' : 'border-primary text-primary bg-transparent'">
+        @if (showCreateForm()) {
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+          Back
+        } @else {
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          New Request
+        }
+      </button>
+    </div>
+
+    <div class="p-6">
+
+      <!-- ===== LIST / SEARCH MODE ===== -->
+      @if (!showCreateForm()) {
+
+        <!-- Stats -->
+        <div class="grid grid-cols-3 gap-3 mb-6">
+          <div class="dm-stat">
+            <p class="text-[10px] uppercase tracking-wider dm-muted">My Requests</p>
+            <p class="text-2xl font-bold dm-title mt-0.5">{{ myFeedbacks().length }}</p>
+          </div>
+          <div class="rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 px-4 py-3">
+            <p class="text-[10px] uppercase tracking-wider text-blue-600 dark:text-blue-400">Admin Replied</p>
+            <p class="text-2xl font-bold text-blue-900 dark:text-blue-300 mt-0.5">{{ countFeedbacksWithAdminResponse() }}</p>
+          </div>
+          <div class="rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 px-4 py-3">
+            <p class="text-[10px] uppercase tracking-wider text-emerald-600 dark:text-emerald-400">View Mode</p>
+            <p class="text-xs font-semibold text-emerald-900 dark:text-emerald-300 mt-1.5">{{ hasSearched() ? 'Filtered' : 'All requests' }}</p>
+          </div>
+        </div>
+
+        <!-- Search -->
+        <div class="flex gap-2 mb-4">
+          <div class="relative flex-1">
+            <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+            <input [ngModel]="searchItemId()" (ngModelChange)="searchItemId.set($event)" (keyup.enter)="trackFeedback()"
+              type="text" placeholder="Item Reference (e.g., 65f0a000)"
+              class="dm-input pl-9 pr-4">
+          </div>
+          <button (click)="trackFeedback()" class="px-5 py-2.5 bg-primary hover:bg-primary-dark text-white text-sm font-semibold rounded-xl transition-all active:scale-95">Search</button>
+        </div>
+
+        @if (hasSearched()) {
+          <div class="flex items-center gap-2 mb-4">
+            <button (click)="clearSearch()" class="px-3 py-1.5 rounded-lg text-xs font-semibold border dm-divider dm-body hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">Show all</button>
+            <span class="text-xs dm-muted">Filter: {{ searchItemId() }}</span>
+          </div>
+        }
+
+        @if (errorMsg()) {
+          <div class="dm-alert-red p-3 rounded-xl text-sm mb-4">{{ errorMsg() }}</div>
+        }
+
+        @if (isSearching() || (isLoadingMyFeedbacks() && !hasSearched())) {
+          <div class="flex justify-center py-10">
+            <div class="animate-spin rounded-full h-8 w-8 border-4 border-primary border-t-transparent"></div>
+          </div>
+        } @else {
+          @if (myFeedbacksError() && !hasSearched()) {
+            <div class="dm-alert-red p-4 rounded-xl text-sm">{{ myFeedbacksError() }}</div>
+          }
+          @if (displayedFeedbacks().length === 0) {
+            <div class="text-center py-12 dm-card-inner border-dashed">
+              <span class="text-4xl block mb-3">🧐</span>
+              <p class="font-semibold dm-title">No requests found.</p>
+              <p class="text-sm dm-muted mt-1">Open a new request using the button above.</p>
+            </div>
+          }
+          <div class="space-y-3">
+            @for (fb of displayedFeedbacks(); track fb.id) {
+              <div class="dm-row">
+                <div class="flex flex-col md:flex-row gap-5">
+                  <!-- Left meta -->
+                  <div class="md:w-40 shrink-0 flex flex-col gap-2.5">
+                    <span [class]="'px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border w-fit ' + getStatusInfo(fb.status).color">{{ getStatusInfo(fb.status).label }}</span>
+                    <div>
+                      <p class="text-[10px] uppercase tracking-widest dm-muted mb-0.5">Type</p>
+                      <p class="text-sm font-bold dm-title">{{ fb.type === 'SAV' ? '⚠️ Claim' : '💬 Feedback' }}</p>
+                    </div>
+                    <div>
+                      <p class="text-[10px] uppercase tracking-widest dm-muted mb-0.5">Date</p>
+                      <p class="text-sm dm-body">{{ formatDate(fb.creationDate) }}</p>
+                    </div>
+                    @if (fb.priority) {
+                      <p class="text-xs dm-muted">Priority: <span class="font-semibold dm-body">{{ fb.priority }}</span></p>
+                    }
+                  </div>
+                  <!-- Right content -->
+                  <div class="flex-1 border-t md:border-t-0 md:border-l dm-divider pt-4 md:pt-0 md:pl-5">
+                    <div class="flex items-center justify-between mb-2">
+                      <h4 class="font-bold dm-title text-sm">{{ fb.reason || 'Request Details' }}</h4>
+                      <span class="text-base tracking-[0.15em]">{{ getRatingStars(fb.rating) }}</span>
+                    </div>
+                    <p class="dm-quote">"{{ fb.message }}"</p>
+                    <!-- Timeline dots -->
+                    <div class="flex items-center gap-1.5 mt-3">
+                      @for (step of timelineSteps(fb.status); track step.label) {
+                        <div class="h-1.5 w-1.5 rounded-full" [class]="step.active ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'"></div>
+                        <span class="text-[10px]" [class]="step.active ? 'text-primary' : 'dm-muted'">{{ step.label }}</span>
+                      }
+                    </div>
+                    @if (fb.adminResponse) {
+                      <div class="dm-alert-blue mt-3 rounded-lg px-3 py-2 text-sm">
+                        <span class="font-semibold">Admin reply:</span> {{ fb.adminResponse }}
+                      </div>
+                    }
+                    @if (!fb.adminResponse && (fb.status === 'INVESTIGATING' || fb.status === 'PENDING')) {
+                      <div class="dm-alert-amber mt-3 rounded-lg px-3 py-2 text-xs">
+                        Your request is being processed. Admin reply will appear here.
+                      </div>
+                    }
+                    @if (canEdit(fb)) {
+                      <div class="mt-3 flex gap-2">
+                        <button (click)="openEditPending(fb)" class="px-3 py-1.5 text-xs rounded-lg border border-primary text-primary hover:bg-primary/5 transition-colors">Edit</button>
+                        <button (click)="removePending(fb)" class="px-3 py-1.5 text-xs rounded-lg border border-red-400 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">Delete</button>
+                      </div>
+                    }
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      }
+
+      <!-- ===== CREATE / EDIT MODE ===== -->
+      @if (showCreateForm()) {
+        @if (successMsg()) {
+          <div class="dm-alert-green flex items-center gap-3 p-4 rounded-xl mb-5">
+            <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            <p class="font-semibold text-sm">{{ successMsg() }}</p>
+          </div>
+        }
+        @if (errorMsg()) {
+          <div class="dm-alert-red flex items-center gap-3 p-4 rounded-xl mb-5">
+            <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01"/></svg>
+            <p class="text-sm font-medium">{{ errorMsg() }}</p>
+          </div>
+        }
+
+        <form [formGroup]="feedbackForm" (ngSubmit)="submitFeedback()" class="space-y-5">
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <!-- Item -->
+            <div class="space-y-1.5">
+              <label class="dm-label">Ordered Item <span class="text-red-500">*</span></label>
+              <select formControlName="cartItemId" class="dm-input appearance-none cursor-pointer"
+                [class.border-red-400]="isFieldInvalid('cartItemId')">
+                <option value="" disabled selected>Select an item from your orders...</option>
+                @if (isLoadingCartItems()) { <option value="" disabled>Loading items...</option> }
+                @for (item of cartItems(); track item.id) {
+                  <option [value]="item.id">{{ item.name }} x{{ item.quantity }} ({{ item.unitPrice | number:'1.2-2' }} TND)</option>
+                }
+                @if (!isLoadingCartItems() && cartItems().length === 0) { <option value="" disabled>No items found</option> }
+              </select>
+              @if (isFieldInvalid('cartItemId')) { <p class="text-xs text-red-500">Please select an item.</p> }
+              @if (cartItemsError()) { <p class="text-xs text-amber-500">{{ cartItemsError() }}</p> }
+            </div>
+
+            <!-- Type -->
+            <div class="space-y-1.5">
+              <label class="dm-label">Request Type <span class="text-red-500">*</span></label>
+              <div class="grid grid-cols-2 gap-2">
+                <button type="button" (click)="feedbackForm.patchValue({ type: 'SAV' })"
+                  class="py-2.5 rounded-xl border-2 font-semibold text-sm transition-all"
+                  [class]="isComplaintType() ? 'dm-toggle-active-red' : 'dm-toggle-idle'">⚠️ Claim</button>
+                <button type="button" (click)="feedbackForm.patchValue({ type: 'FEEDBACK' })"
+                  class="py-2.5 rounded-xl border-2 font-semibold text-sm transition-all"
+                  [class]="!isComplaintType() ? 'dm-toggle-active-blue' : 'dm-toggle-idle'">💬 Feedback</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- SAV fields -->
+          @if (isComplaintType()) {
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div class="space-y-1.5">
+                <label class="dm-label">Problem Nature</label>
+                <select formControlName="problemNature" class="dm-input appearance-none">
+                  @for (p of complaintNatures; track p.value) { <option [value]="p.value">{{ p.label }}</option> }
+                </select>
+              </div>
+              <div class="space-y-1.5">
+                <label class="dm-label">Desired Solution</label>
+                <select formControlName="desiredSolution" class="dm-input appearance-none">
+                  @for (s of desiredSolutions; track s.value) { <option [value]="s.value">{{ s.label }}</option> }
+                </select>
+              </div>
+            </div>
+            <div class="space-y-1.5">
+              <label class="dm-label">Urgency Level</label>
+              <div class="flex gap-2">
+                @for (p of priorityOptions; track p.value) {
+                  <button type="button" (click)="setPriority(p.value)"
+                    class="flex-1 py-2 rounded-xl border-2 text-sm font-semibold transition-all"
+                    [class]="feedbackForm.value.priority === p.value ? p.className : 'dm-toggle-idle'">{{ p.label }}</button>
+                }
+              </div>
+            </div>
+          } @else {
+            <!-- Feedback fields -->
+            <div class="dm-card-inner p-4 space-y-2">
+              <label class="dm-label">Product Rating</label>
+              <div class="flex gap-1.5">
+                @for (star of ratingArray; track star) {
+                  <button type="button" (click)="setRating(star)" class="text-2xl transition-transform hover:scale-110 active:scale-90 outline-none"
+                    [class.grayscale]="feedbackForm.value.rating < star" [class.opacity-40]="feedbackForm.value.rating < star">⭐</button>
+                }
+              </div>
+            </div>
+            <div class="space-y-1.5">
+              <label class="dm-label">Positive Tags</label>
+              <div class="flex flex-wrap gap-2">
+                @for (tag of positiveTagOptions; track tag) {
+                  <button type="button" (click)="togglePositiveTag(tag)"
+                    class="px-3 py-1.5 rounded-full text-xs border transition-all"
+                    [class]="selectedTags().includes(tag)
+                      ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-300 dark:border-blue-700'
+                      : 'dm-toggle-idle'">{{ tag }}</button>
+                }
+              </div>
+            </div>
+            <div class="space-y-1.5">
+              <label class="dm-label">Would you recommend this product?</label>
+              <div class="flex gap-2">
+                <button type="button" (click)="setRecommend(true)" class="flex-1 py-2 rounded-xl border-2 font-semibold text-sm transition-all"
+                  [class]="feedbackForm.value.recommendsProduct ? 'dm-toggle-active-blue' : 'dm-toggle-idle'">Yes</button>
+                <button type="button" (click)="setRecommend(false)" class="flex-1 py-2 rounded-xl border-2 font-semibold text-sm transition-all"
+                  [class]="feedbackForm.value.recommendsProduct === false ? 'dm-toggle-active-blue' : 'dm-toggle-idle'">No</button>
+              </div>
+            </div>
+          }
+
+          <!-- Subject -->
+          <div class="space-y-1.5">
+            <label class="dm-label">Subject</label>
+            <input formControlName="reason" type="text" placeholder="e.g. Item damaged upon arrival" class="dm-input">
+          </div>
+
+          <!-- Message -->
+          <div class="space-y-1.5">
+            <label class="dm-label">Details <span class="text-red-500">*</span></label>
+            <textarea formControlName="message" rows="4" placeholder="Describe your issue in detail..."
+              class="dm-input resize-none"
+              [class.border-red-400]="isFieldInvalid('message')"></textarea>
+            <div class="flex justify-between text-xs dm-muted">
+              @if (isFieldInvalid('message')) {
+                <span class="text-red-500">Message must be 10–{{ messageLimit() }} characters.</span>
+              } @else {
+                <span>{{ messageRemaining() }} characters remaining</span>
+              }
+              <span>{{ messageLength() }}/{{ messageLimit() }}</span>
+            </div>
+          </div>
+
+          <!-- Submit -->
+          <div class="flex justify-end pt-2">
+            <button type="submit" [disabled]="isSubmitting()"
+              class="flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm text-white transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+              [class]="isComplaintType() ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'">
+              @if (isSubmitting()) {
+                <span class="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin"></span>
+                Submitting...
+              } @else {
+                {{ isComplaintType() ? 'Submit Claim' : 'Publish Review' }}
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+              }
+            </button>
+          </div>
+
+        </form>
+      }
+
+    </div>
+  </div>
+</div>

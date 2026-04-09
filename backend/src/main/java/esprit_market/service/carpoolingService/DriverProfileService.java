@@ -196,4 +196,9 @@ public class DriverProfileService implements IDriverProfileService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         return driverProfileMapper.toResponseDTO(driverProfileRepository.findByUserId(user.getId()).orElse(null));
     }
+
+    @Override
+    public long countUnverifiedDrivers() {
+        return driverProfileRepository.countByIsVerifiedFalse();
+    }
 }

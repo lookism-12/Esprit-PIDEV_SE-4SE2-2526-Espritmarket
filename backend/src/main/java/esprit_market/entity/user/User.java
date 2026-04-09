@@ -66,6 +66,13 @@ public class User {
     private String deliveryZone;
 
     @Builder.Default
+    private boolean notificationsEnabled = true;
+    @Builder.Default
+    private boolean internalNotificationsEnabled = true;
+    @Builder.Default
+    private boolean externalNotificationsEnabled = true;
+
+    @Builder.Default
     private List<ObjectId> notificationIds = new ArrayList<>();
     @Builder.Default
     private List<ObjectId> externalNotificationIds = new ArrayList<>();

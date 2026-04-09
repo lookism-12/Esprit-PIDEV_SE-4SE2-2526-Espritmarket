@@ -1,4 +1,4 @@
-<div class="min-h-screen bg-gray-50/50 pt-28 pb-20 px-4 md:px-8">
+<div class="min-h-screen pt-28 pb-20 px-4 md:px-8" style="background-color: var(--bg-color);">
     <div class="max-w-7xl mx-auto">
         <!-- Header Section -->
         <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
@@ -6,9 +6,9 @@
                 <nav class="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-secondary mb-4">
                     <a routerLink="/" class="hover:text-primary transition-colors">Home</a>
                     <span class="text-gray-300">/</span>
-                    <span class="text-dark">Marketplace</span>
+                    <span style="color: var(--text-color)">Marketplace</span>
                 </nav>
-                <h1 class="text-5xl md:text-6xl font-black text-dark tracking-tighter leading-none mb-4">
+                <h1 class="text-5xl md:text-6xl font-black tracking-tighter leading-none mb-4" style="color: var(--text-color)">
                     Marketplace<span class="text-primary">.</span>
                 </h1>
                 <p class="text-secondary font-bold max-w-lg">
@@ -21,11 +21,11 @@
         <div class="flex flex-col lg:flex-row gap-8">
             <!-- Left Sidebar - Filters -->
             <aside class="lg:w-80 flex-shrink-0">
-                <div class="bg-white rounded-3xl shadow-xl shadow-secondary/5 border border-secondary/10 p-6 sticky top-24 space-y-6">
+                <div class="rounded-3xl shadow-xl border p-6 sticky top-24 space-y-6" style="background-color: var(--card-bg); border-color: var(--border);">
                     <!-- Filters Header -->
-                    <div class="flex items-center justify-between pb-4 border-b border-gray-100">
-                        <h2 class="text-lg font-black text-dark uppercase tracking-widest">Filters</h2>
-                        <button (click)="resetFilters()" class="text-xs font-black text-primary hover:text-dark transition-colors uppercase tracking-widest">
+                    <div class="flex items-center justify-between pb-4 border-b" style="border-color: var(--border)">
+                        <h2 class="text-lg font-black uppercase tracking-widest" style="color: var(--text-color)">Filters</h2>
+                        <button (click)="resetFilters()" class="text-xs font-black text-primary hover:text-primary-dark transition-colors uppercase tracking-widest">
                             Clear All
                         </button>
                     </div>
@@ -37,7 +37,8 @@
                             <input type="text" [(ngModel)]="searchQuery"
                                 (input)="onSearchChange()"
                                 placeholder="Search products..."
-                                class="w-full pl-10 pr-4 py-3 bg-gray-50 border-2 border-transparent focus:border-primary focus:bg-white rounded-xl transition-all outline-none font-bold text-sm">
+                                class="w-full pl-10 pr-4 py-3 border-2 border-transparent focus:border-primary rounded-xl transition-all outline-none font-bold text-sm"
+                                style="background-color: var(--input-bg); color: var(--text-color);">
                             <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                             </svg>
@@ -47,16 +48,11 @@
                     <!-- Categories -->
                     <div>
                         <label class="block text-[10px] font-black text-secondary uppercase tracking-widest mb-3">Categories</label>
-                        <div class="space-y-2">
+                        <div class="space-y-1">
                             @for (cat of categories(); track cat) {
-                                <label class="flex items-center gap-3 cursor-pointer group py-2 px-3 rounded-xl hover:bg-gray-50 transition-colors">
-                                    <input type="radio" 
-                                        name="category" 
-                                        [value]="cat" 
-                                        [(ngModel)]="selectedCategory"
-                                        (change)="onCategoryChange()"
-                                        class="w-4 h-4 text-primary focus:ring-primary">
-                                    <span class="text-sm font-bold text-dark group-hover:text-primary transition-colors">{{ cat }}</span>
+                                <label class="flex items-center gap-3 cursor-pointer group py-2 px-3 rounded-xl transition-colors" style="hover:background-color: var(--subtle)">
+                                    <input type="radio" name="category" [value]="cat" [(ngModel)]="selectedCategory" (change)="onCategoryChange()" class="w-4 h-4 text-primary focus:ring-primary">
+                                    <span class="text-sm font-bold group-hover:text-primary transition-colors" style="color: var(--text-color)">{{ cat }}</span>
                                 </label>
                             }
                         </div>
@@ -65,16 +61,11 @@
                     <!-- Condition -->
                     <div>
                         <label class="block text-[10px] font-black text-secondary uppercase tracking-widest mb-3">Condition</label>
-                        <div class="space-y-2">
+                        <div class="space-y-1">
                             @for (cond of conditions; track cond) {
-                                <label class="flex items-center gap-3 cursor-pointer group py-2 px-3 rounded-xl hover:bg-gray-50 transition-colors">
-                                    <input type="radio" 
-                                        name="condition" 
-                                        [value]="cond" 
-                                        [(ngModel)]="selectedCondition"
-                                        (change)="selectCondition(cond)"
-                                        class="w-4 h-4 text-primary focus:ring-primary">
-                                    <span class="text-sm font-bold text-dark group-hover:text-primary transition-colors">{{ cond === 'All' ? 'All' : cond.replace('_', ' ') }}</span>
+                                <label class="flex items-center gap-3 cursor-pointer group py-2 px-3 rounded-xl transition-colors">
+                                    <input type="radio" name="condition" [value]="cond" [(ngModel)]="selectedCondition" (change)="selectCondition(cond)" class="w-4 h-4 text-primary focus:ring-primary">
+                                    <span class="text-sm font-bold group-hover:text-primary transition-colors" style="color: var(--text-color)">{{ cond === 'All' ? 'All' : cond.replace('_', ' ') }}</span>
                                 </label>
                             }
                         </div>
@@ -84,18 +75,14 @@
                     <div>
                         <label class="block text-[10px] font-black text-secondary uppercase tracking-widest mb-3">Price Range (TND)</label>
                         <div class="space-y-3">
-                            <div class="flex items-center gap-3">
-                                <input type="number" 
-                                    [(ngModel)]="minPrice"
-                                    (change)="updatePriceRange(minPrice, maxPrice)"
-                                    placeholder="Min"
-                                    class="flex-1 px-4 py-2 bg-gray-50 border-2 border-transparent focus:border-primary focus:bg-white rounded-xl transition-all outline-none font-bold text-sm">
-                                <span class="text-secondary font-black">—</span>
-                                <input type="number" 
-                                    [(ngModel)]="maxPrice"
-                                    (change)="updatePriceRange(minPrice, maxPrice)"
-                                    placeholder="Max"
-                                    class="flex-1 px-4 py-2 bg-gray-50 border-2 border-transparent focus:border-primary focus:bg-white rounded-xl transition-all outline-none font-bold text-sm">
+                            <div class="flex items-center gap-2">
+                                <input type="number" [(ngModel)]="minPrice" (change)="updatePriceRange(minPrice, maxPrice)" placeholder="Min"
+                                    class="flex-1 min-w-0 w-0 px-3 py-2 border-2 border-transparent focus:border-primary rounded-xl transition-all outline-none font-bold text-sm"
+                                    style="background-color: var(--input-bg); color: var(--text-color);">
+                                <span class="text-secondary font-black shrink-0">—</span>
+                                <input type="number" [(ngModel)]="maxPrice" (change)="updatePriceRange(minPrice, maxPrice)" placeholder="Max" min="0"
+                                    class="flex-1 min-w-0 w-0 px-3 py-2 border-2 border-transparent focus:border-primary rounded-xl transition-all outline-none font-bold text-sm"
+                                    style="background-color: var(--input-bg); color: var(--text-color); box-shadow: none !important;">
                             </div>
                             <div class="flex items-center justify-between text-xs font-bold text-secondary">
                                 <span>{{ priceRange().min }} TND</span>
@@ -106,23 +93,17 @@
 
                     <!-- Stock Filter -->
                     <div>
-                        <label class="flex items-center gap-3 cursor-pointer group py-3 px-3 rounded-xl hover:bg-gray-50 transition-colors">
-                            <input type="checkbox" 
-                                [(ngModel)]="showOnlyInStock"
-                                (change)="toggleStockFilter()"
-                                class="w-5 h-5 text-primary rounded focus:ring-primary">
-                            <span class="text-sm font-bold text-dark group-hover:text-primary transition-colors">In Stock Only</span>
+                        <label class="flex items-center gap-3 cursor-pointer group py-3 px-3 rounded-xl transition-colors">
+                            <input type="checkbox" [(ngModel)]="showOnlyInStock" (change)="toggleStockFilter()" class="w-5 h-5 text-primary rounded focus:ring-primary">
+                            <span class="text-sm font-bold group-hover:text-primary transition-colors" style="color: var(--text-color)">In Stock Only</span>
                         </label>
                     </div>
 
                     <!-- Negotiable Filter -->
                     <div>
-                        <label class="flex items-center gap-3 cursor-pointer group py-3 px-3 rounded-xl hover:bg-gray-50 transition-colors">
-                            <input type="checkbox" 
-                                [(ngModel)]="showOnlyNegotiable"
-                                (change)="toggleNegotiableFilter()"
-                                class="w-5 h-5 text-primary rounded focus:ring-primary">
-                            <span class="text-sm font-bold text-dark group-hover:text-primary transition-colors">Negotiable Price</span>
+                        <label class="flex items-center gap-3 cursor-pointer group py-3 px-3 rounded-xl transition-colors">
+                            <input type="checkbox" [(ngModel)]="showOnlyNegotiable" (change)="toggleNegotiableFilter()" class="w-5 h-5 text-primary rounded focus:ring-primary">
+                            <span class="text-sm font-bold group-hover:text-primary transition-colors" style="color: var(--text-color)">Negotiable Price</span>
                         </label>
                     </div>
                 </div>
@@ -131,15 +112,15 @@
             <!-- Right Content Area -->
             <main class="flex-1 min-w-0">
                 <!-- Sort Bar -->
-                <div class="bg-white rounded-2xl shadow-sm border border-secondary/10 p-4 mb-6 flex items-center justify-between">
+                <div class="rounded-2xl shadow-sm border p-4 mb-6 flex items-center justify-between" style="background-color: var(--card-bg); border-color: var(--border);">
                     <p class="text-xs font-bold text-secondary">
-                        <span class="text-dark font-black">{{ filteredProducts().length }}</span> products found
+                        <span class="font-black" style="color: var(--text-color)">{{ filteredProducts().length }}</span> products found
                     </p>
                     <div class="flex items-center gap-3">
                         <label class="text-xs font-black text-secondary uppercase tracking-widest">Sort by:</label>
-                        <select [(ngModel)]="sortBy"
-                            (change)="onSortChange()"
-                            class="px-4 py-2 bg-gray-50 border-2 border-transparent focus:border-primary focus:bg-white rounded-xl transition-all outline-none font-bold text-xs uppercase tracking-widest appearance-none">
+                        <select [(ngModel)]="sortBy" (change)="onSortChange()"
+                            class="px-4 py-2 border-2 border-transparent focus:border-primary rounded-xl transition-all outline-none font-bold text-xs uppercase tracking-widest appearance-none"
+                            style="background-color: var(--input-bg); color: var(--text-color);">
                             <option value="newest">Newest</option>
                             <option value="price-low">Price: Low to High</option>
                             <option value="price-high">Price: High to Low</option>
@@ -190,13 +171,13 @@
                         </div>
                     </div>
                 } @else {
-                    <div class="py-32 bg-white rounded-3xl border-2 border-dashed border-gray-100 flex flex-col items-center justify-center text-center">
-                        <div class="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mb-8">
+                    <div class="py-32 rounded-3xl border-2 border-dashed flex flex-col items-center justify-center text-center" style="background-color: var(--card-bg); border-color: var(--border);">
+                        <div class="w-24 h-24 rounded-full flex items-center justify-center mb-8" style="background-color: var(--subtle);">
                             <svg class="h-12 w-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                             </svg>
                         </div>
-                        <h3 class="text-3xl font-black text-dark mb-4 tracking-tighter">No products found</h3>
+                        <h3 class="text-3xl font-black mb-4 tracking-tighter" style="color: var(--text-color)">No products found</h3>
                         <p class="text-secondary font-bold max-w-sm mb-10">Try adjusting your filters or search query.</p>
                         <button (click)="resetFilters()"
                             class="px-10 py-5 bg-dark text-white rounded-2xl font-black hover:bg-black transition-all uppercase tracking-widest text-xs">

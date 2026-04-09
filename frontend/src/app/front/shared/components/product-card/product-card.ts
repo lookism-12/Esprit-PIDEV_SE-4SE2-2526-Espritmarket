@@ -1,4 +1,4 @@
-import { Component, input, computed, inject, OnInit, OnDestroy, effect } from '@angular/core';
+import { Component, input, computed, inject, signal, OnInit, OnDestroy, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
 import { Product } from '../../../models/product';
@@ -6,6 +6,7 @@ import { CartService } from '../../../core/cart.service';
 import { AuthService } from '../../../core/auth.service';
 import { ToastService } from '../../../core/toast.service';
 import { StockService } from '../../../core/stock.service';
+import { FavoriteService } from '../../../core/favorite.service';
 import { UserRole } from '../../../models/user.model';
 import { Subscription } from 'rxjs';
 
@@ -23,8 +24,12 @@ export class ProductCard implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private toastService = inject(ToastService);
   private stockService = inject(StockService);
+  readonly favoriteService = inject(FavoriteService);
   private router = inject(Router);
   private subscription = new Subscription();
+
+  readonly isFavorited = computed(() => this.favoriteService.isProductFavorited(this.product().id));
+  readonly isTogglingFavorite = signal(false);
 
   // Generate star array based on rating
   readonly stars = computed(() => {
@@ -311,5 +316,28 @@ export class ProductCard implements OnInit, OnDestroy {
       // For other roles, just navigate to product details
       this.router.navigate(['/product', this.product().id]);
     }
+  }
+
+  toggleFavorite(event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!this.isAuthenticated()) {
+      this.toastService.info('Please log in to save favorites');
+      this.router.navigate(['/login']);
+      return;
+    }
+    if (this.isTogglingFavorite()) return;
+    this.isTogglingFavorite.set(true);
+    this.favoriteService.toggleProduct(this.product().id).subscribe({
+      next: (result) => {
+        this.isTogglingFavorite.set(false);
+        if (result) {
+          this.toastService.success(`${this.product().name} added to favorites ❤️`);
+        } else {
+          this.toastService.info(`${this.product().name} removed from favorites`);
+        }
+      },
+      error: () => this.isTogglingFavorite.set(false)
+    });
   }
 }

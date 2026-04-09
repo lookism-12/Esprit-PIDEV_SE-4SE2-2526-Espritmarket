@@ -10,7 +10,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 
 @RestController
@@ -53,17 +52,15 @@ public class DeliveryController {
 
     @Operation(summary = "Update Delivery Details (FR-DEL3)")
     @PutMapping("/{id}")
-    public ResponseEntity<DeliveryResponseDTO> updateDelivery(
-            @PathVariable String id,
-            @Valid @RequestBody DeliveryRequestDTO request) {
+    public ResponseEntity<DeliveryResponseDTO> updateDelivery(@PathVariable String id,
+                                                               @Valid @RequestBody DeliveryRequestDTO request) {
         return ResponseEntity.ok(deliveryService.updateDelivery(id, request));
     }
 
     @Operation(summary = "Update Delivery Status Only (FR-DEL3)")
     @PatchMapping("/{id}/status")
-    public ResponseEntity<DeliveryResponseDTO> updateDeliveryStatus(
-            @PathVariable String id,
-            @RequestParam String status) {
+    public ResponseEntity<DeliveryResponseDTO> updateDeliveryStatus(@PathVariable String id,
+                                                                      @RequestParam String status) {
         return ResponseEntity.ok(deliveryService.updateDeliveryStatus(id, status));
     }
 

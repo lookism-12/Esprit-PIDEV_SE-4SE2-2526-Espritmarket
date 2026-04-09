@@ -14,4 +14,8 @@ public class NegociationRequest {
 
     @NotBlank(message = "Service ID is required")
     private String serviceId;
+
+    private Double amount;
+
+    private String message;
 }

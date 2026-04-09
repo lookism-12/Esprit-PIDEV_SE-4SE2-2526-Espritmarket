@@ -13,4 +13,6 @@ public interface DriverProfileRepository extends MongoRepository<DriverProfile, 
     Optional<DriverProfile> findByUserId(ObjectId userId);
 
     boolean existsByUserId(ObjectId userId);
+
+    long countByIsVerifiedFalse();
 }

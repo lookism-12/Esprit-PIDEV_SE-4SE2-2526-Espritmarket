@@ -1,7 +1,10 @@
-import { Component, computed, signal, inject } from '@angular/core';
+import { Component, computed, signal, inject, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { RouterLink, Router } from '@angular/router';
 import { AdminAuthService } from '../../../core/services/admin-auth.service';
+import { NotificationService } from '../../../../front/core/notification.service';
+import { AppNotification } from '../../../../front/models/notification.model';
+import { ThemeService } from '../../../../front/core/theme.service';
 
 @Component({
     selector: 'app-header',
@@ -53,13 +56,18 @@ import { AdminAuthService } from '../../../core/services/admin-auth.service';
 })
 export class HeaderComponent {
     private adminAuthService = inject(AdminAuthService);
-    
+    private notificationService = inject(NotificationService);
+    private router = inject(Router);
+    readonly themeService = inject(ThemeService);
+
     showProfileMenu = signal(false);
-    
-    // Direct reference to the reactive user signal
+    showNotificationsPanel = signal(false);
+    showSettingsPanel = signal(false);
+    notifications = signal<AppNotification[]>([]);
+    isLoadingNotifications = signal(false);
+
     readonly currentUser = this.adminAuthService.currentUser;
 
-    // Computed signals that instantly update when currentUser changes
     readonly userName = computed(() => {
         const user = this.currentUser();
         return user ? `${user.firstName} ${user.lastName}` : 'Admin User';
@@ -81,8 +89,63 @@ export class HeaderComponent {
         return user?.avatar || 'assets/logo.png';
     });
 
+    readonly unreadCount = computed(() =>
+        this.notifications().filter(n => !n.read).length
+    );
+
+    @HostListener('document:click', ['$event'])
+    onDocumentClick(event: Event): void {
+        const target = event.target as HTMLElement;
+        if (!target.closest('.notifications-panel-wrapper')) this.showNotificationsPanel.set(false);
+        if (!target.closest('.settings-panel-wrapper')) this.showSettingsPanel.set(false);
+        if (!target.closest('.profile-menu-wrapper')) this.showProfileMenu.set(false);
+    }
+
     toggleProfileMenu(): void {
         this.showProfileMenu.update(v => !v);
+        this.showNotificationsPanel.set(false);
+        this.showSettingsPanel.set(false);
+    }
+
+    toggleNotificationsPanel(): void {
+        const opening = !this.showNotificationsPanel();
+        this.showNotificationsPanel.set(opening);
+        this.showProfileMenu.set(false);
+        this.showSettingsPanel.set(false);
+        if (opening) this.loadNotifications();
+    }
+
+    toggleSettingsPanel(): void {
+        this.showSettingsPanel.update(v => !v);
+        this.showProfileMenu.set(false);
+        this.showNotificationsPanel.set(false);
+    }
+
+    loadNotifications(): void {
+        this.isLoadingNotifications.set(true);
+        this.notificationService.getAllAdmin().subscribe({
+            next: (items) => { this.notifications.set(items.slice(0, 10)); this.isLoadingNotifications.set(false); },
+            error: () => this.isLoadingNotifications.set(false)
+        });
+    }
+
+    markAsRead(id: string): void {
+        this.notificationService.markAsRead(id).subscribe(() => {
+            this.notifications.update(list => list.map(n => n.id === id ? { ...n, read: true } : n));
+        });
+    }
+
+    markAllAsRead(): void {
+        this.notificationService.markAllAsRead().subscribe(() => {
+            this.notifications.update(list => list.map(n => ({ ...n, read: true })));
+        });
+    }
+
+    navigateTo(path: string): void {
+        this.router.navigate([path]);
+        this.showNotificationsPanel.set(false);
+        this.showSettingsPanel.set(false);
+        this.showProfileMenu.set(false);
     }
 
     logout(): void {

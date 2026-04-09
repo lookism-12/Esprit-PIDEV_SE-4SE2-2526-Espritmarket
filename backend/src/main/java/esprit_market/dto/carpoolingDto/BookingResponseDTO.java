@@ -17,6 +17,7 @@ public class BookingResponseDTO {
     private String bookingId;
     private String rideId;
     private String passengerProfileId;
+    private String passengerName;
     private Integer numberOfSeats;
     private String pickupLocation;
     private String dropoffLocation;

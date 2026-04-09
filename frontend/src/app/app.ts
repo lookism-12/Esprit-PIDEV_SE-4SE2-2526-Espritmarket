@@ -27,7 +27,13 @@ export class App implements OnInit {
   );
 
   protected isAdminRoute = computed(() => {
-    return this.currentUrl()?.url?.startsWith('/admin') ?? false;
+    const url = this.currentUrl()?.url ?? '';
+    return url.startsWith('/admin');
+  });
+
+  protected isAuthRoute = computed(() => {
+    const url = this.currentUrl()?.url ?? '';
+    return url.startsWith('/login') || url.startsWith('/register');
   });
 
   ngOnInit(): void {

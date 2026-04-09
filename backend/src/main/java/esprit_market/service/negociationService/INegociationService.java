@@ -17,7 +17,15 @@ public interface INegociationService {
 
     Page<NegociationResponse> getAllNegociations(Pageable pageable);
 
+    List<NegociationResponse> getAllNegociationsList();
+
+    NegociationResponse updateStatusDirect(String id, NegociationStatuts status);
+
+    NegociationResponse addProposalDirect(String negociationId, ProposalRequest request, String senderId);
+
     List<NegociationResponse> getMyNegociations(String clientId);
+
+    List<NegociationResponse> getIncomingNegociations(String userId);
 
     List<NegociationResponse> getNegociationsByServiceId(String serviceId);
 

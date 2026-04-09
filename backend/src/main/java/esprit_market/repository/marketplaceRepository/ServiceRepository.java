@@ -10,4 +10,5 @@ import java.util.List;
 @Repository
 public interface ServiceRepository extends MongoRepository<ServiceEntity, ObjectId> {
     List<ServiceEntity> findByShopId(ObjectId shopId);
+    List<ServiceEntity> findByShopIdIn(List<ObjectId> shopIds);
 }

@@ -34,4 +34,6 @@ public interface RideRepository extends MongoRepository<Ride, ObjectId> {
                         Integer availableSeats, RideStatus status);
 
         List<Ride> findByVehicleId(ObjectId vehicleId);
+
+    long countByStatusIn(java.util.Collection<RideStatus> statuses);
 }

@@ -55,12 +55,6 @@
                   <span>🔧</span>
                   <span>Services</span>
                 </a>
-                <a routerLink="/favorites" 
-                   (click)="closeMarketplaceDropdown()"
-                   class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition-colors">
-                  <span>❤️</span>
-                  <span>Favorites</span>
-                </a>
                 <a routerLink="/shop" 
                    (click)="closeMarketplaceDropdown()"
                    class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition-colors">
@@ -136,6 +130,21 @@
 
           <!-- Action Icons -->
           <div class="flex items-center gap-1 sm:gap-2">
+            <!-- Theme Toggle -->
+            <button
+              (click)="themeService.toggle()"
+              class="icon-btn"
+              [attr.aria-label]="themeService.theme() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'">
+              @if (themeService.theme() === 'dark') {
+                <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+                </svg>
+              } @else {
+                <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+                </svg>
+              }
+            </button>
             <!-- Notifications -->
             <div class="relative">
               <button
@@ -200,11 +209,14 @@
             </div>
 
             <!-- Favorites -->
-            <a routerLink="/favorites" class="icon-btn" aria-label="Favorites">
+            <a routerLink="/favorites" class="icon-btn relative" aria-label="Favorites">
               <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                   d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
               </svg>
+              @if (favoriteCount() > 0) {
+                <span class="icon-badge icon-badge-accent">{{ favoriteCount() > 9 ? '9+' : favoriteCount() }}</span>
+              }
             </a>
 
             <!-- Cart -->
@@ -376,7 +388,7 @@
     (click)="onOverlayClick($event)">
     
     <!-- Drawer Panel -->
-    <div class="drawer-panel fixed top-0 right-0 h-full w-full max-w-md bg-gradient-to-b from-gray-900 to-black shadow-2xl z-[101] animate-slideInRight">
+    <div class="drawer-panel fixed top-0 right-0 h-full w-full max-w-md bg-gradient-to-b from-[#7D0408] to-[#3d0204] shadow-2xl z-[101] animate-slideInRight">
       <!-- Drawer Header -->
       <div class="flex items-center justify-between p-6 border-b border-white/10">
         <div class="flex items-center gap-3">
@@ -476,7 +488,7 @@
         <!-- Bottom Branding -->
         <div class="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black to-transparent">
           <div class="text-center">
-            <p class="text-gray-500 text-xs">© 2024 ESPRIT Market</p>
+            <p class="text-gray-300 text-xs">© 2026 ESPRIT Market</p>
             <p class="text-gray-600 text-xs mt-1">Student Marketplace Platform</p>
           </div>
         </div>

@@ -9,7 +9,6 @@ import esprit_market.repository.cartRepository.CartItemRepository;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
 import org.springframework.stereotype.Service;
-
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -23,15 +22,12 @@ public class SavFeedbackService implements ISavFeedbackService {
 
     @Override
     public SavFeedbackResponseDTO createFeedback(SavFeedbackRequestDTO request) {
-        // Enforce cart item reference (You can only review what you ordered)
         if (!cartItemRepository.existsById(new ObjectId(request.getCartItemId()))) {
-            throw new RuntimeException(
-                    "Article du panier (CartItem) introuvable pour l'ID: " + request.getCartItemId());
+            throw new RuntimeException("Article du panier (CartItem) introuvable pour l'ID: " + request.getCartItemId());
         }
-
         SavFeedback feedback = savMapper.toSavFeedbackEntity(request);
-        SavFeedback saved = savFeedbackRepository.save(feedback);
-        return savMapper.toSavFeedbackResponse(saved);
+        feedback.setReadByAdmin(false);
+        return savMapper.toSavFeedbackResponse(savFeedbackRepository.save(feedback));
     }
 
     @Override
@@ -66,33 +62,41 @@ public class SavFeedbackService implements ISavFeedbackService {
     public SavFeedbackResponseDTO updateFeedback(String id, SavFeedbackRequestDTO request) {
         SavFeedback feedback = savFeedbackRepository.findById(new ObjectId(id))
                 .orElseThrow(() -> new RuntimeException("Feedback introuvable avec l'ID: " + id));
-
         if (!cartItemRepository.existsById(new ObjectId(request.getCartItemId()))) {
-            throw new RuntimeException(
-                    "Article du panier (CartItem) introuvable pour l'ID: " + request.getCartItemId());
+            throw new RuntimeException("Article du panier (CartItem) introuvable pour l'ID: " + request.getCartItemId());
         }
-
         feedback.setType(request.getType());
         feedback.setMessage(request.getMessage());
         feedback.setRating(request.getRating());
         feedback.setReason(request.getReason());
-        if (request.getStatus() != null) {
-            feedback.setStatus(request.getStatus());
-        }
+        if (request.getStatus() != null) feedback.setStatus(request.getStatus());
+        feedback.setProblemNature(request.getProblemNature());
+        feedback.setPriority(request.getPriority());
+        feedback.setDesiredSolution(request.getDesiredSolution());
+        feedback.setPositiveTags(request.getPositiveTags());
+        feedback.setRecommendsProduct(request.getRecommendsProduct());
+        feedback.setAdminResponse(request.getAdminResponse());
+        if (request.getReadByAdmin() != null) feedback.setReadByAdmin(request.getReadByAdmin());
         feedback.setCartItemId(new ObjectId(request.getCartItemId()));
-
-        SavFeedback updated = savFeedbackRepository.save(feedback);
-        return savMapper.toSavFeedbackResponse(updated);
+        return savMapper.toSavFeedbackResponse(savFeedbackRepository.save(feedback));
     }
 
     @Override
     public SavFeedbackResponseDTO updateFeedbackStatus(String id, String status) {
         SavFeedback feedback = savFeedbackRepository.findById(new ObjectId(id))
                 .orElseThrow(() -> new RuntimeException("Feedback introuvable avec l'ID: " + id));
-
         feedback.setStatus(status);
-        SavFeedback updated = savFeedbackRepository.save(feedback);
-        return savMapper.toSavFeedbackResponse(updated);
+        if (!"PENDING".equalsIgnoreCase(status)) feedback.setReadByAdmin(true);
+        return savMapper.toSavFeedbackResponse(savFeedbackRepository.save(feedback));
+    }
+
+    @Override
+    public SavFeedbackResponseDTO updateFeedbackAdminResponse(String id, String adminResponse) {
+        SavFeedback feedback = savFeedbackRepository.findById(new ObjectId(id))
+                .orElseThrow(() -> new RuntimeException("Feedback introuvable avec l'ID: " + id));
+        feedback.setAdminResponse(adminResponse);
+        feedback.setReadByAdmin(true);
+        return savMapper.toSavFeedbackResponse(savFeedbackRepository.save(feedback));
     }
 
     @Override

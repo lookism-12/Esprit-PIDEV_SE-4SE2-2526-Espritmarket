@@ -47,4 +47,9 @@ public class Ride {
     private LocalDateTime updatedAt;
 
     private LocalDateTime completedAt;
+
+    private Integer passengerRating;
+    private Integer driverRating;
+    private String passengerComment;
+    private String driverComment;
 }

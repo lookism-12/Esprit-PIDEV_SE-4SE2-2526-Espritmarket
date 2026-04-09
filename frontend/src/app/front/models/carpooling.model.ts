@@ -1,254 +1,155 @@
 import { User } from './user.model';
 
-// Carpooling Core Models
-export interface Ride {
-  id: string;
-  driverId: string;
-  driver: Driver;
-  vehicle: Vehicle;
-  departure: RideLocation;
-  destination: RideLocation;
-  departureTime: Date;
-  estimatedArrivalTime: Date;
-  availableSeats: number;
-  totalSeats: number;
-  pricePerSeat: number;
-  status: RideStatus;
-  preferences: RidePreferences;
-  bookings: Booking[];
-  route?: RouteInfo;
-  isRecurring: boolean;
-  recurringDays?: number[];
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface Driver {
-  id: string;
-  user: Pick<User, 'id' | 'firstName' | 'lastName' | 'avatar' | 'phone'>;
-  licenseNumber: string;
-  licenseExpiry: Date;
-  licenseImage?: string;
-  isVerified: boolean;
-  rating: number;
-  totalRides: number;
-  totalReviews: number;
-  memberSince: Date;
-}
-
-export interface Vehicle {
-  id: string;
-  driverId: string;
-  brand: string;
-  model: string;
-  year: number;
-  color: string;
-  licensePlate: string;
-  type: VehicleType;
-  features: VehicleFeature[];
-  images?: string[];
-  isActive: boolean;
-  createdAt: Date;
-}
-
-export enum VehicleType {
-  CAR = 'CAR',
-  SUV = 'SUV',
-  VAN = 'VAN',
-  MOTORCYCLE = 'MOTORCYCLE'
-}
-
-export enum VehicleFeature {
-  AIR_CONDITIONING = 'AIR_CONDITIONING',
-  MUSIC = 'MUSIC',
-  USB_CHARGER = 'USB_CHARGER',
-  WIFI = 'WIFI',
-  PET_FRIENDLY = 'PET_FRIENDLY',
-  LUGGAGE_SPACE = 'LUGGAGE_SPACE',
-  CHILD_SEAT = 'CHILD_SEAT'
-}
-
-export interface RideLocation {
-  address: string;
-  city: string;
-  coordinates?: {
-    lat: number;
-    lng: number;
-  };
-  landmark?: string;
-  isOnCampus: boolean;
-  campusGate?: string;
-}
-
-export interface RidePreferences {
-  smokingAllowed: boolean;
-  petsAllowed: boolean;
-  musicAllowed: boolean;
-  chattinessLevel: 'quiet' | 'moderate' | 'chatty';
-  luggageSize: 'small' | 'medium' | 'large';
-  genderPreference?: 'same' | 'any';
-}
-
-export interface RouteInfo {
-  distance: number;
-  duration: number;
-  polyline?: string;
-  stops?: RideLocation[];
-}
-
 export enum RideStatus {
-  SCHEDULED = 'SCHEDULED',
-  ACTIVE = 'ACTIVE',
+  PENDING = 'PENDING',
+  CONFIRMED = 'CONFIRMED',
   IN_PROGRESS = 'IN_PROGRESS',
   COMPLETED = 'COMPLETED',
-  CANCELLED = 'CANCELLED',
-  FULL = 'FULL'
-}
-
-// Booking Models
-export interface Booking {
-  id: string;
-  rideId: string;
-  passengerId: string;
-  passenger: Pick<User, 'id' | 'firstName' | 'lastName' | 'avatar' | 'phone'>;
-  seatsBooked: number;
-  pickupLocation?: RideLocation;
-  dropoffLocation?: RideLocation;
-  status: BookingStatus;
-  totalPrice: number;
-  paymentStatus: BookingPaymentStatus;
-  bookedAt: Date;
-  confirmedAt?: Date;
-  cancelledAt?: Date;
-  cancellationReason?: string;
+  CANCELLED = 'CANCELLED'
 }
 
 export enum BookingStatus {
   PENDING = 'PENDING',
   CONFIRMED = 'CONFIRMED',
-  REJECTED = 'REJECTED',
-  CANCELLED_BY_PASSENGER = 'CANCELLED_BY_PASSENGER',
-  CANCELLED_BY_DRIVER = 'CANCELLED_BY_DRIVER',
-  COMPLETED = 'COMPLETED',
-  NO_SHOW = 'NO_SHOW'
+  CANCELLED = 'CANCELLED',
+  COMPLETED = 'COMPLETED'
 }
 
-export enum BookingPaymentStatus {
+export enum RideRequestStatus {
   PENDING = 'PENDING',
-  PAID = 'PAID',
-  REFUNDED = 'REFUNDED'
+  ACCEPTED = 'ACCEPTED',
+  CANCELLED = 'CANCELLED'
 }
 
-// Ride Rating & Review
-export interface RideReview {
+export enum VehicleType {
+  CAR = 'CAR', SUV = 'SUV', VAN = 'VAN', MOTORCYCLE = 'MOTORCYCLE'
+}
+
+export enum VehicleFeature {
+  AIR_CONDITIONING = 'AIR_CONDITIONING', MUSIC = 'MUSIC', USB_CHARGER = 'USB_CHARGER',
+  WIFI = 'WIFI', PET_FRIENDLY = 'PET_FRIENDLY', LUGGAGE_SPACE = 'LUGGAGE_SPACE', CHILD_SEAT = 'CHILD_SEAT'
+}
+
+export interface Ride {
+  rideId: string; driverProfileId: string; driverName: string; driverRating: number;
+  vehicleId: string; vehicleMake: string; vehicleModel: string;
+  departureLocation: string; destinationLocation: string; departureTime: string;
+  availableSeats: number; pricePerSeat: number; status: RideStatus;
+  estimatedDurationMinutes: number; totalSeats: number; bookedSeats: number;
+  paidBookingsCount: number; completedAt?: string;
+}
+
+export interface RideRequest {
+  id: string; passengerProfileId: string; passengerName: string;
+  departureLocation: string; destinationLocation: string; departureTime: string;
+  requestedSeats: number; proposedPrice: number; status: RideRequestStatus;
+  driverId?: string; driverName?: string;
+}
+
+export interface DriverProfile {
+  id: string; userId: string; fullName: string; email: string;
+  licenseNumber: string; licenseDocument: string; isVerified: boolean;
+  averageRating: number; totalRidesCompleted: number; totalEarnings: number;
+  rideIds: string[]; vehicleIds: string[]; createdAt: string; updatedAt: string;
+}
+
+export interface Driver {
   id: string;
-  rideId: string;
-  bookingId: string;
-  reviewerId: string;
-  revieweeId: string;
-  reviewerRole: 'driver' | 'passenger';
-  rating: number;
-  comment?: string;
-  criteria: RideReviewCriteria;
-  createdAt: Date;
+  user: Pick<User, 'id' | 'firstName' | 'lastName' | 'avatar' | 'phone'>;
+  licenseNumber: string; isVerified: boolean; rating: number; memberSince: string;
 }
 
-export interface RideReviewCriteria {
-  punctuality: number;
-  safety: number;
-  communication: number;
-  cleanliness?: number;
-  comfort?: number;
+export interface PassengerProfile {
+  id: string; userId: string; fullName: string; email: string;
+  averageRating: number; preferences: string; bookingIds: string[];
+  totalRidesCompleted: number; createdAt: string; updatedAt: string;
 }
 
-// Request DTOs
+export interface Vehicle {
+  id: string; driverId: string; brand: string; model: string; year: number;
+  color: string; licensePlate: string; type: VehicleType; features: VehicleFeature[];
+  images?: string[]; isActive: boolean;
+}
+
+export interface Booking {
+  id: string; rideId: string; passengerId: string; seatsBooked: number;
+  status: BookingStatus; totalPrice: number; bookedAt: string;
+}
+
+export interface RidePayment {
+  id: string; bookingId: string; amount: number; status: string;
+  createdAt: string; updatedAt?: string;
+}
+
 export interface CreateRideRequest {
-  vehicleId: string;
-  departure: RideLocation;
-  destination: RideLocation;
-  departureTime: Date;
-  availableSeats: number;
-  pricePerSeat: number;
-  preferences: RidePreferences;
-  isRecurring?: boolean;
-  recurringDays?: number[];
+  vehicleId: string; departureLocation: string; destinationLocation: string;
+  departureTime: string; availableSeats: number; pricePerSeat: number;
 }
 
-export interface SearchRideRequest {
-  from: string;
-  to: string;
-  date: Date;
-  seats?: number;
-  maxPrice?: number;
-  preferences?: Partial<RidePreferences>;
-}
+export interface SearchRideRequest { from: string; to: string; date: string; seats?: number; }
 
 export interface CreateBookingRequest {
-  rideId: string;
-  seatsBooked: number;
-  pickupLocation?: RideLocation;
-  dropoffLocation?: RideLocation;
-  message?: string;
+  rideId: string; seatsBooked: number; pickupLocation?: string; dropoffLocation?: string;
 }
 
 export interface CreateVehicleRequest {
-  brand: string;
-  model: string;
-  year: number;
-  color: string;
-  licensePlate: string;
-  type: VehicleType;
-  features: VehicleFeature[];
-  images?: string[];
+  brand: string; model: string; year: number; color: string;
+  licensePlate: string; type: VehicleType; features: VehicleFeature[];
 }
 
-export interface CreateRideReviewRequest {
-  rideId: string;
-  bookingId: string;
-  rating: number;
-  comment?: string;
-  criteria: RideReviewCriteria;
+export interface RideReview {
+  id: string; rideId: string; bookingId: string; rating: number; comment?: string; createdAt: string;
 }
 
-// Filter & Response Types
-export interface RideFilter {
-  from?: string;
-  to?: string;
-  date?: Date;
-  minSeats?: number;
-  maxPrice?: number;
-  status?: RideStatus;
-  driverId?: string;
-  page?: number;
-  limit?: number;
+export interface CreateRideReviewRequest { rideId: string; bookingId: string; rating: number; comment?: string; }
+
+export interface RideListResponse { rides: Ride[]; total: number; page: number; totalPages: number; }
+export interface BookingListResponse { bookings: Booking[]; total: number; page: number; totalPages: number; }
+export interface RideFilter { from?: string; to?: string; status?: string; }
+export interface BookingFilter { status?: string; }
+
+export interface SmartMatchRecommendation { ride: Ride; matchScore: number; matchReasons: string[]; }
+
+export interface AdminDashboardStats {
+  activeRidesCount: number; pendingRequestsCount: number; unverifiedDriversCount: number; totalRevenue: number;
+  activeRidesGrowth: number; pendingRequestsGrowth: number; unverifiedDriversGrowth: number; totalRevenueGrowth: number;
 }
 
-export interface RideListResponse {
-  rides: Ride[];
-  total: number;
-  page: number;
-  totalPages: number;
+// Dashboard Models
+export interface DashboardData {
+  completedRides: number; averageRating: number; earningsThisMonth: number; activeRides: number;
+  totalEarnings: number; scheduledRides: ScheduledRide[]; pendingBookings: BookingRequest[];
+  currentVehicle: Vehicle | null; recentActivities: Activity[]; earningsHistory: number[];
+  earningsLabels: string[]; driverName: string; isVerified: boolean; totalBalance?: number; recentReviews: Review[];
 }
 
-export interface BookingFilter {
-  status?: BookingStatus;
-  rideId?: string;
-  passengerId?: string;
-  page?: number;
-  limit?: number;
+export interface Review {
+  id: string; passengerName: string; passengerAvatar?: string; rating: number; comment: string; createdAt: string;
 }
 
-export interface BookingListResponse {
-  bookings: Booking[];
-  total: number;
-  page: number;
-  totalPages: number;
+export interface ScheduledRide {
+  rideId: string; departureLocation: string; destinationLocation: string; departureTime: string;
+  availableSeats: number; pricePerSeat: number;
+  status: 'UPCOMING' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
+  passengerName?: string; passengerCount?: number;
 }
 
-// Smart Matching (placeholder for AI)
-export interface SmartMatchRecommendation {
-  ride: Ride;
-  matchScore: number;
-  matchReasons: string[];
-  estimatedPickupTime?: Date;
+export interface BookingRequest {
+  bookingId: string; rideId: string; passengerName: string; passengerAvatar?: string;
+  seatsRequested: number; status: 'PENDING' | 'ACCEPTED' | 'DECLINED'; createdAt?: number;
+}
+
+export interface Activity {
+  activityId?: string;
+  type: 'BOOKING_REQUEST' | 'RIDE_COMPLETED' | 'REVIEW_RECEIVED' | 'PAYMENT_RECEIVED';
+  message: string; passengerName?: string; passengerAvatar?: string; timestamp: number;
+  status: 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'COMPLETED';
+}
+
+export interface PerformanceStats {
+  completedRides: number; averageRating: number; totalEarnings: number; activeRides: number;
+}
+
+export interface QuickAction {
+  title: string; value: string; icon: string; color: string; path?: string;
 }

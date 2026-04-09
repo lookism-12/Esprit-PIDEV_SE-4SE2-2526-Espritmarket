@@ -17,4 +17,8 @@ public interface IRidePaymentService {
     List<RidePaymentResponseDTO> findByStatus(PaymentStatus status);
 
     RidePaymentResponseDTO updateStatus(ObjectId id, PaymentStatus status);
+
+    double getTotalCompletedRevenue();
+
+    long countCompletedPayments();
 }

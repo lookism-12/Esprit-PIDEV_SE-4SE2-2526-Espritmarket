@@ -12,7 +12,6 @@ import esprit_market.Enum.userEnum.Role;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
 import org.springframework.stereotype.Service;
-
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -27,21 +26,17 @@ public class DeliveryService implements IDeliveryService {
 
     @Override
     public DeliveryResponseDTO createDelivery(DeliveryRequestDTO request) {
-        // Validate dependencies
         User assignedUser = userRepository.findById(new ObjectId(request.getUserId()))
                 .orElseThrow(() -> new RuntimeException("Utilisateur introuvable avec l'ID: " + request.getUserId()));
-
-        if (assignedUser.getRoles() == null || (!assignedUser.getRoles().contains(Role.DELIVERY)
-                && !assignedUser.getRoles().contains(Role.ADMIN))) {
+        if (assignedUser.getRoles() == null ||
+                (!assignedUser.getRoles().contains(Role.DELIVERY) && !assignedUser.getRoles().contains(Role.ADMIN))) {
             throw new RuntimeException("L'utilisateur assigné doit obligatoirement avoir le rôle DELIVERY ou ADMIN.");
         }
         if (!cartRepository.existsById(new ObjectId(request.getCartId()))) {
             throw new RuntimeException("Panier (Cart) introuvable avec l'ID: " + request.getCartId());
         }
-
         Delivery delivery = savMapper.toDeliveryEntity(request);
-        Delivery savedDelivery = deliveryRepository.save(delivery);
-        return savMapper.toDeliveryResponse(savedDelivery);
+        return savMapper.toDeliveryResponse(deliveryRepository.save(delivery));
     }
 
     @Override
@@ -76,39 +71,29 @@ public class DeliveryService implements IDeliveryService {
     public DeliveryResponseDTO updateDelivery(String id, DeliveryRequestDTO request) {
         Delivery delivery = deliveryRepository.findById(new ObjectId(id))
                 .orElseThrow(() -> new RuntimeException("Livraison introuvable avec l'ID: " + id));
-
-        // Validate dependencies
         User assignedUser = userRepository.findById(new ObjectId(request.getUserId()))
                 .orElseThrow(() -> new RuntimeException("Utilisateur introuvable avec l'ID: " + request.getUserId()));
-
-        if (assignedUser.getRoles() == null || (!assignedUser.getRoles().contains(Role.DELIVERY)
-                && !assignedUser.getRoles().contains(Role.ADMIN))) {
+        if (assignedUser.getRoles() == null ||
+                (!assignedUser.getRoles().contains(Role.DELIVERY) && !assignedUser.getRoles().contains(Role.ADMIN))) {
             throw new RuntimeException("L'utilisateur assigné doit obligatoirement avoir le rôle DELIVERY ou ADMIN.");
         }
         if (!cartRepository.existsById(new ObjectId(request.getCartId()))) {
             throw new RuntimeException("Panier (Cart) introuvable avec l'ID: " + request.getCartId());
         }
-
         delivery.setAddress(request.getAddress());
         delivery.setDeliveryDate(request.getDeliveryDate());
-        if (request.getStatus() != null) {
-            delivery.setStatus(request.getStatus());
-        }
+        if (request.getStatus() != null) delivery.setStatus(request.getStatus());
         delivery.setUserId(new ObjectId(request.getUserId()));
         delivery.setCartId(new ObjectId(request.getCartId()));
-
-        Delivery updated = deliveryRepository.save(delivery);
-        return savMapper.toDeliveryResponse(updated);
+        return savMapper.toDeliveryResponse(deliveryRepository.save(delivery));
     }
 
     @Override
     public DeliveryResponseDTO updateDeliveryStatus(String id, String status) {
         Delivery delivery = deliveryRepository.findById(new ObjectId(id))
                 .orElseThrow(() -> new RuntimeException("Livraison introuvable avec l'ID: " + id));
-
         delivery.setStatus(status);
-        Delivery updated = deliveryRepository.save(delivery);
-        return savMapper.toDeliveryResponse(updated);
+        return savMapper.toDeliveryResponse(deliveryRepository.save(delivery));
     }
 
     @Override

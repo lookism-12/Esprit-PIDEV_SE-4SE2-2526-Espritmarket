@@ -1,679 +1,135 @@
-<div class="bg-gray-50 min-h-screen py-12">
-    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+﻿<div class="min-h-screen" style="background-color: var(--bg-color)">
 
-        <!-- Profile Header -->
-        <div class="premium-card p-8 mb-8">
-            <div class="flex flex-col md:flex-row items-center gap-8">
-                <!-- Avatar with Upload Button -->
-                <div class="relative group">
-                    @if (user().avatarUrl && isValidImageUrl(user().avatarUrl)) {
-                        <img 
-                            [src]="user().avatarUrl" 
-                            alt="Avatar" 
-                            class="w-32 h-32 rounded-full object-cover shadow-xl border-4 border-primary"
-                            (load)="onAvatarLoadSuccess()"
-                            (error)="onAvatarLoadError()">
-                    } @else {
-                        <div class="w-32 h-32 bg-primary text-white rounded-full flex items-center justify-center text-5xl font-extrabold shadow-xl border-4 border-primary">
-                            {{ (user().firstName.charAt(0) || '?') + (user().lastName.charAt(0) || '') }}
-                        </div>
-                    }
-                    <button 
-                        (click)="openAvatarUpload()"
-                        class="absolute bottom-0 right-0 bg-primary text-white rounded-full p-2 shadow-lg hover:bg-primary/90 opacity-0 group-hover:opacity-100 transition-opacity">
-                        📷
-                    </button>
-                </div>
+  <!-- COVER -->
+  <div class="relative h-52 md:h-64 bg-gradient-to-br from-[#7D0408] via-[#8B0000] to-[#3d0000] overflow-hidden">
+    <div class="absolute inset-0 opacity-10" style="background-image:radial-gradient(circle at 2px 2px,white 1px,transparent 0);background-size:32px 32px"></div>
+    <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+    <button class="absolute bottom-3 right-4 flex items-center gap-2 px-3 py-1.5 bg-black/40 hover:bg-black/60 text-white text-xs font-bold rounded-lg backdrop-blur-sm transition-all">📷 Edit Cover</button>
+  </div>
 
-                <div class="flex-1 text-center md:text-left space-y-2">
-                    <h1 class="text-3xl font-extrabold text-dark">{{ user().firstName }} {{ user().lastName }}</h1>
-                    <p class="text-gray-500 font-medium">{{ user().email }}</p>
-                    <div class="flex flex-wrap justify-center md:justify-start gap-3 mt-4">
-                        @if (user().isVerified) {
-                            <span class="flex items-center px-3 py-1 bg-green-50 text-green-600 rounded-full text-xs font-bold ring-1 ring-green-500/20">
-                                <svg class="h-4 w-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                    <path d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" />
-                                </svg>
-                                Verified
-                            </span>
-                        }
-                        <span class="flex items-center px-3 py-1 bg-yellow-50 text-yellow-600 rounded-full text-xs font-bold ring-1 ring-yellow-500/20">
-                            <svg class="h-4 w-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                            </svg>
-                            {{ user().reputation }} Rating
-                        </span>
-                        <!-- Loyalty Level Badge -->
-                        <span class="flex items-center px-3 py-1 rounded-full text-xs font-bold border" [ngClass]="getLevelBadgeClass(loyaltyAccount()?.level || 'BRONZE')">
-                            <span class="mr-1">{{ getLevelIcon(loyaltyAccount()?.level || 'BRONZE') }}</span>
-                            {{ loyaltyAccount()?.level || 'BRONZE' }} Member
-                        </span>
-                    </div>
-                </div>
+  <div class="max-w-5xl mx-auto px-4">
 
-                <!-- Action Buttons -->
-                <div class="flex flex-col gap-2 w-full md:w-auto">
-                    <button (click)="startEditing()" class="bg-primary text-white w-full rounded-xl py-3 px-4 font-bold shadow hover:bg-primary-dark transition-colors flex items-center justify-center gap-2">
-                        ✏️ Edit Profile
-                    </button>
-                    <button (click)="openPasswordChange()" class="bg-dark text-white w-full rounded-xl py-3 px-4 font-bold shadow hover:bg-black transition-colors flex items-center justify-center gap-2">
-                        🔐 Change Password
-                    </button>
-                </div>
-            </div>
+    <!-- IDENTITY BAR -->
+    <div class="relative flex flex-col md:flex-row md:items-end gap-4 -mt-14 pb-4 border-b" style="border-color:var(--border)">
+      <div class="relative group shrink-0 z-10">
+        @if (user().avatarUrl && isValidImageUrl(user().avatarUrl)) {
+          <img [src]="user().avatarUrl" alt="Avatar" class="w-28 h-28 rounded-full object-cover shadow-2xl border-4" style="border-color:var(--bg-color)" (error)="onAvatarLoadError()">
+        } @else {
+          <div class="w-28 h-28 rounded-full bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center text-4xl font-extrabold text-white shadow-2xl border-4" style="border-color:var(--bg-color)">
+            {{ (user().firstName.charAt(0)||'?')+(user().lastName.charAt(0)||'') }}
+          </div>
+        }
+        <button (click)="openAvatarUpload()" class="absolute bottom-1 right-1 w-8 h-8 rounded-full flex items-center justify-center text-sm shadow-md transition-all opacity-0 group-hover:opacity-100" style="background-color:var(--subtle)">📷</button>
+      </div>
+      <div class="flex-1 flex flex-col md:flex-row md:items-end justify-between gap-3 pb-1">
+        <div>
+          <h1 class="text-2xl font-extrabold" style="color:var(--text-color)">{{ user().firstName }} {{ user().lastName }}</h1>
+          <div class="flex flex-wrap items-center gap-2 mt-1">
+            <span class="px-2.5 py-0.5 bg-primary/10 text-primary rounded-full text-[10px] font-black uppercase tracking-wide">{{ user().role }}</span>
+            @if (loyaltyAccount()) {
+              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold border" [ngClass]="getLevelBadgeClass(loyaltyAccount()!.level)">{{ getLevelIcon(loyaltyAccount()!.level) }} {{ loyaltyAccount()!.level }}</span>
+            }
+            <span class="text-xs" style="color:var(--muted)">{{ user().email }}</span>
+          </div>
         </div>
-
-        <!-- Stats & Info -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <div class="premium-card p-6 text-center">
-                <div class="text-2xl font-black text-dark">{{ user().ordersCount }}</div>
-                <div class="text-xs text-gray-400 font-bold uppercase tracking-widest mt-1">Orders</div>
-            </div>
-            <div class="premium-card p-6 text-center">
-                <div class="text-2xl font-black text-dark">{{ listings().length }}</div>
-                <div class="text-xs text-gray-400 font-bold uppercase tracking-widest mt-1">Listings</div>
-            </div>
-            <div class="premium-card p-6 text-center">
-                <div class="text-2xl font-black text-primary">{{ loyaltyAccount()?.points || 0 }}</div>
-                <div class="text-xs text-gray-400 font-bold uppercase tracking-widest mt-1">Points</div>
-            </div>
-            <div class="premium-card p-6 text-center">
-                <div class="text-2xl font-black text-dark">{{ user().joinedDate }}</div>
-                <div class="text-xs text-gray-400 font-bold uppercase tracking-widest mt-1">Member Since</div>
-            </div>
+        <div class="flex gap-2 shrink-0">
+          <button (click)="startEditing()" class="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-dark text-white font-bold rounded-xl text-sm transition-all active:scale-95">✏️ Edit Profile</button>
+          <button (click)="openPasswordChange()" class="px-4 py-2 font-bold rounded-xl text-sm transition-all" style="background-color:var(--subtle);color:var(--text-color)">🔐</button>
         </div>
-
-        <!-- Tabs/Section -->
-        <div class="premium-card overflow-hidden">
-            <div class="border-b border-gray-100 flex overflow-x-auto">
-                <button 
-                    (click)="setActiveTab('listings')"
-                    class="px-6 py-5 text-sm font-bold whitespace-nowrap transition-colors"
-                    [ngClass]="activeTab() === 'listings' ? 'text-primary border-b-2 border-primary' : 'text-gray-500 hover:text-dark'">
-                    My Listings
-                </button>
-                <button 
-                    (click)="setActiveTab('orders')"
-                    class="px-6 py-5 text-sm font-bold whitespace-nowrap transition-colors"
-                    [ngClass]="activeTab() === 'orders' ? 'text-primary border-b-2 border-primary' : 'text-gray-500 hover:text-dark'">
-                    Order History
-                </button>
-                <!-- Provider-specific tab for managing shop orders -->
-                @if (isProvider()) {
-                    <button 
-                        (click)="setActiveTab('shop-orders')"
-                        class="px-6 py-5 text-sm font-bold whitespace-nowrap transition-colors"
-                        [ngClass]="activeTab() === 'shop-orders' ? 'text-primary border-b-2 border-primary' : 'text-gray-500 hover:text-dark'">
-                        🏪 Shop Orders
-                    </button>
-                }
-                <button 
-                    (click)="setActiveTab('loyalty')"
-                    class="px-6 py-5 text-sm font-bold whitespace-nowrap transition-colors"
-                    [ngClass]="activeTab() === 'loyalty' ? 'text-primary border-b-2 border-primary' : 'text-gray-500 hover:text-dark'">
-                    🏆 Loyalty Points
-                </button>
-                <button 
-                    (click)="setActiveTab('preferences')"
-                    class="px-6 py-5 text-sm font-bold whitespace-nowrap transition-colors"
-                    [ngClass]="activeTab() === 'preferences' ? 'text-primary border-b-2 border-primary' : 'text-gray-500 hover:text-dark'">
-                    Preferences
-                </button>
-                <button 
-                    (click)="setActiveTab('settings')"
-                    class="px-6 py-5 text-sm font-bold whitespace-nowrap transition-colors"
-                    [ngClass]="activeTab() === 'settings' ? 'text-primary border-b-2 border-primary' : 'text-gray-500 hover:text-dark'">
-                    Settings
-                </button>
-            </div>
-
-            <!-- LISTINGS TAB -->
-            @if (activeTab() === 'listings') {
-                @if (listings().length > 0) {
-                    <div class="p-6 space-y-4">
-                        @for (listing of listings(); track listing.id) {
-                            <div class="flex items-center gap-6 p-4 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-colors">
-                                <div class="w-20 h-20 bg-gray-200 rounded-xl overflow-hidden flex-shrink-0">
-                                    <img [src]="listing.imageUrl" [alt]="listing.name" class="w-full h-full object-cover">
-                                </div>
-                                <div class="flex-1">
-                                    <h4 class="font-bold text-dark">{{ listing.name }}</h4>
-                                    <p class="text-primary font-extrabold">{{ listing.price }} TND</p>
-                                    <div class="flex items-center gap-4 mt-1">
-                                        <span class="text-xs text-gray-400">{{ listing.views }} views</span>
-                                        <span class="text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded-full font-bold">{{ listing.status }}</span>
-                                    </div>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <button class="p-2 text-gray-400 hover:text-primary transition-colors" title="Edit">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                        </svg>
-                                    </button>
-                                    <button (click)="deleteListing(listing.id)" class="p-2 text-gray-400 hover:text-red-500 transition-colors" title="Delete">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                        </svg>
-                                    </button>
-                                </div>
-                            </div>
-                        }
-                        <div class="pt-4">
-                            <a routerLink="/seller/products/new" class="bg-primary text-white w-full rounded-xl py-3 px-4 font-bold shadow hover:bg-primary-dark transition-colors flex items-center justify-center">
-                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                                </svg>
-                                Post New Ad
-                            </a>
-                        </div>
-                    </div>
-                } @else {
-                    <div class="p-12 text-center">
-                        <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-300">
-                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                            </svg>
-                        </div>
-                        <h3 class="text-lg font-bold text-dark">Your listings will appear here</h3>
-                        <p class="text-gray-500 mb-6">You haven't posted any items yet. Want to sell something?</p>
-                        <button class="bg-primary text-white w-full rounded-xl py-3 px-4 font-bold shadow hover:bg-primary-dark transition-colors flex items-center justify-center">Post a New Ad</button>
-                    </div>
-                }
-            }
-
-            <!-- ORDERS TAB -->
-            @if (activeTab() === 'orders') {
-                @if (isLoadingOrders()) {
-                    <div class="p-12 text-center">
-                        <svg class="animate-spin h-8 w-8 text-primary mx-auto mb-4" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        <p class="text-gray-500">Loading orders...</p>
-                    </div>
-                } @else if (realOrders().length > 0) {
-                    <div class="p-6 space-y-4">
-                        @for (order of realOrders(); track order.id) {
-                            <div class="border border-gray-100 rounded-2xl p-6 hover:border-primary/30 transition-colors">
-                                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-                                    <div>
-                                        <h4 class="font-bold text-dark">Order #{{ order.id }}</h4>
-                                        <p class="text-sm text-gray-400">{{ order.creationDate | date:'mediumDate' }}</p>
-                                    </div>
-                                    <div class="flex items-center gap-4">
-                                        <span [class]="'px-3 py-1 rounded-full text-xs font-bold ' + getStatusClass(order.status)">
-                                            {{ order.status }}
-                                        </span>
-                                        <span class="text-lg font-extrabold text-primary">{{ order.total | number:'1.2-2' }} TND</span>
-                                    </div>
-                                </div>
-                                <div class="flex items-center justify-between pt-4 border-t border-gray-50">
-                                    <p class="text-sm text-gray-500">
-                                        {{ order.items.length || 0 }} item(s)
-                                    </p>
-                                    <a [routerLink]="['/orders', order.id]" class="text-primary font-bold text-sm hover:underline">
-                                        View Details →
-                                    </a>
-                                </div>
-                            </div>
-                        }
-                    </div>
-                } @else {
-                    <div class="p-12 text-center">
-                        <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-300">
-                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                            </svg>
-                        </div>
-                        <h3 class="text-lg font-bold text-dark">No orders yet</h3>
-                        <p class="text-gray-500 mb-6">Your order history will appear here once you make a purchase.</p>
-                        <a routerLink="/products" class="bg-primary text-white w-full rounded-xl py-3 px-4 font-bold shadow hover:bg-primary-dark transition-colors flex items-center justify-center">Start Shopping</a>
-                    </div>
-                }
-            }
-
-            <!-- SHOP ORDERS TAB (Provider Dashboard) -->
-            @if (activeTab() === 'shop-orders' && isProvider()) {
-                <div class="p-6">
-                    <div class="flex items-center justify-between mb-6">
-                        <h3 class="text-2xl font-bold text-dark">Shop Orders Dashboard</h3>
-                        <div class="flex items-center gap-4">
-                            <div class="flex items-center gap-2">
-                                <span class="w-3 h-3 bg-yellow-400 rounded-full"></span>
-                                <span class="text-sm text-gray-600">{{ shopOrders().filter(o => o.status === 'PENDING').length }} pending</span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <span class="w-3 h-3 bg-blue-400 rounded-full"></span>
-                                <span class="text-sm text-gray-600">{{ shopOrders().filter(o => o.status === 'CONFIRMED' || o.status === 'PROCESSING').length }} active</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    @if (isLoadingShopOrders()) {
-                        <div class="p-12 text-center">
-                            <svg class="animate-spin h-8 w-8 text-primary mx-auto mb-4" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            <p class="text-gray-500">Loading shop orders...</p>
-                        </div>
-                    } @else if (shopOrders().length > 0) {
-                        <div class="space-y-6">
-                            @for (order of shopOrders(); track order.id) {
-                                <div class="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-all">
-                                    <!-- Order Header -->
-                                    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
-                                        <div class="flex items-center gap-4">
-                                            <div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                                                <span class="text-primary font-bold text-lg">{{ order.buyer.firstName.charAt(0) || 'C' }}</span>
-                                            </div>
-                                            <div>
-                                                <h4 class="font-bold text-dark text-lg">{{ order.orderNumber }}</h4>
-                                                <p class="text-sm text-gray-600">{{ order.buyer.firstName }} {{ order.buyer.lastName }} • {{ order.buyer.email }}</p>
-                                                <p class="text-xs text-gray-400">{{ order.createdAt | date:'medium' }}</p>
-                                            </div>
-                                        </div>
-                                        <div class="flex items-center gap-4">
-                                            <span class="px-4 py-2 rounded-full text-sm font-bold border" [ngClass]="getOrderStatusClass(order.status)">
-                                                {{ order.status }}
-                                            </span>
-                                            <span class="text-xl font-bold text-primary">{{ order.total }} TND</span>
-                                        </div>
-                                    </div>
-
-                                    <!-- Order Items -->
-                                    <div class="bg-gray-50 rounded-lg p-4 mb-4">
-                                        <h5 class="font-semibold text-dark mb-2">Order Items:</h5>
-                                        @for (item of order.items; track item.id) {
-                                            <div class="flex items-center justify-between py-2 border-b border-gray-200 last:border-b-0">
-                                                <div class="flex-1">
-                                                    <p class="font-medium text-dark">{{ item.product?.name || 'Product' }}</p>
-                                                    <p class="text-sm text-gray-500">Quantity: {{ item.quantity }}</p>
-                                                </div>
-                                                <p class="font-bold text-primary">{{ item.totalPrice }} TND</p>
-                                            </div>
-                                        }
-                                    </div>
-
-                                    <!-- Shipping Address -->
-                                    @if (order.shipping.address) {
-                                        <div class="bg-blue-50 rounded-lg p-4 mb-4">
-                                            <h5 class="font-semibold text-dark mb-2">📦 Shipping Address:</h5>
-                                            <p class="text-sm text-gray-700">
-                                                {{ order.shipping.address.fullName }}<br>
-                                                {{ order.shipping.address.address }}<br>
-                                                {{ order.shipping.address.city }}{{ order.shipping.address.postalCode ? ', ' + order.shipping.address.postalCode : '' }}<br>
-                                                📞 {{ order.shipping.address.phone }}
-                                            </p>
-                                        </div>
-                                    }
-
-                                    <!-- Order Actions (Status Management) -->
-                                    <div class="flex items-center gap-2 pt-4 border-t border-gray-200">
-                                        <label class="text-sm font-semibold text-gray-700 mr-2">Update Status:</label>
-                                        @for (availableStatus of getAvailableStatusTransitions(order.status); track availableStatus) {
-                                            <button 
-                                                (click)="updateOrderStatus(order.id, availableStatus)"
-                                                class="px-4 py-2 text-sm font-bold rounded-lg transition-colors"
-                                                [ngClass]="availableStatus === 'CONFIRMED' ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' : 
-                                                           availableStatus === 'PROCESSING' ? 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200' :
-                                                           availableStatus === 'SHIPPED' ? 'bg-purple-100 text-purple-700 hover:bg-purple-200' :
-                                                           availableStatus === 'DELIVERED' ? 'bg-green-100 text-green-700 hover:bg-green-200' :
-                                                           availableStatus === 'COMPLETED' ? 'bg-green-200 text-green-800 hover:bg-green-300' :
-                                                           availableStatus === 'CANCELLED' ? 'bg-red-100 text-red-700 hover:bg-red-200' :
-                                                           'bg-gray-100 text-gray-700 hover:bg-gray-200'">
-                                                {{ availableStatus }}
-                                            </button>
-                                        }
-                                        @if (getAvailableStatusTransitions(order.status).length === 0) {
-                                            <span class="text-sm text-gray-500 italic">No actions available</span>
-                                        }
-                                    </div>
-                                </div>
-                            }
-                        </div>
-                    } @else {
-                        <div class="p-12 text-center">
-                            <div class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <svg class="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                                </svg>
-                            </div>
-                            <h3 class="text-lg font-bold text-dark">No shop orders yet</h3>
-                            <p class="text-gray-500 mb-6">Orders from customers will appear here. Make sure your products are visible and attractive!</p>
-                            <a routerLink="/seller/products/new" class="bg-primary text-white px-6 py-3 rounded-xl font-bold shadow hover:bg-primary-dark transition-colors inline-flex items-center">
-                                📝 Add New Product
-                            </a>
-                        </div>
-                    }
-                </div>
-            }
-
-            <!-- LOYALTY TAB -->
-            @if (activeTab() === 'loyalty') {
-                <div class="p-6">
-                    <!-- Loyalty Overview -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                        <!-- Points Card -->
-                        <div class="bg-gradient-to-br from-primary to-primary-dark rounded-2xl p-6 text-white">
-                            <div class="flex items-center justify-between mb-4">
-                                <span class="text-white/80 text-sm font-semibold">Available Points</span>
-                                <span class="px-3 py-1 bg-white/20 rounded-full text-xs font-bold">
-                                    {{ getLevelIcon(loyaltyAccount()?.level || 'BRONZE') }} {{ loyaltyAccount()?.level || 'BRONZE' }}
-                                </span>
-                            </div>
-                            <p class="text-5xl font-black mb-2">{{ loyaltyAccount()?.points || 0 }}</p>
-                            <p class="text-white/70 text-sm">= {{ (loyaltyAccount()?.points || 0) / 100 | number:'1.2-2' }} TND value</p>
-                            <div class="mt-6 pt-4 border-t border-white/20">
-                                <p class="text-xs text-white/70 mb-2">Progress to {{ loyaltyAccount()?.level === 'SILVER' ? 'GOLD' : loyaltyAccount()?.level === 'GOLD' ? 'PLATINUM' : 'SILVER' }}</p>
-                                <div class="w-full bg-white/20 rounded-full h-2">
-                                    <div class="bg-accent h-2 rounded-full transition-all" [style.width.%]="loyaltyProgress()"></div>
-                                </div>
-                                <p class="text-xs text-white/70 mt-1">{{ loyaltyAccount()?.pointsToNextLevel || 0 }} points to go</p>
-                            </div>
-                        </div>
-
-                        <!-- Level Benefits -->
-                        <div class="premium-card p-6">
-                            <h4 class="font-bold text-dark mb-4">Your {{ loyaltyAccount()?.level || 'BRONZE' }} Benefits</h4>
-                            <ul class="space-y-3">
-                                @if (loyaltyAccount()?.level === 'SILVER' || loyaltyAccount()?.level === 'GOLD' || loyaltyAccount()?.level === 'PLATINUM') {
-                                    <li class="flex items-center gap-3 text-sm text-gray-600">
-                                        <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                                        </svg>
-                                        2% cashback on purchases
-                                    </li>
-                                    <li class="flex items-center gap-3 text-sm text-gray-600">
-                                        <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                                        </svg>
-                                        Priority support
-                                    </li>
-                                    <li class="flex items-center gap-3 text-sm text-gray-600">
-                                        <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                                        </svg>
-                                        Exclusive deals access
-                                    </li>
-                                }
-                                @if (loyaltyAccount()?.level === 'GOLD' || loyaltyAccount()?.level === 'PLATINUM') {
-                                    <li class="flex items-center gap-3 text-sm text-gray-600">
-                                        <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                                        </svg>
-                                        Free delivery on all orders
-                                    </li>
-                                }
-                                @if (loyaltyAccount()?.level === 'PLATINUM') {
-                                    <li class="flex items-center gap-3 text-sm text-gray-600">
-                                        <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                                        </svg>
-                                        VIP event invitations
-                                    </li>
-                                }
-                            </ul>
-                        </div>
-                    </div>
-
-                    <!-- Points History -->
-                    <h4 class="font-bold text-dark mb-4">Points History</h4>
-                    <div class="space-y-3">
-                        @for (transaction of pointsHistory(); track transaction.id) {
-                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                                <div class="flex items-center gap-4">
-                                    <div class="w-10 h-10 rounded-full flex items-center justify-center"
-                                        [ngClass]="transaction.type === 'EARNED' || transaction.type === 'BONUS' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'">
-                                        @if (transaction.type === 'EARNED' || transaction.type === 'BONUS') {
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                                            </svg>
-                                        } @else {
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
-                                            </svg>
-                                        }
-                                    </div>
-                                    <div>
-                                        <p class="font-semibold text-dark">{{ transaction.description }}</p>
-                                        <p class="text-xs text-gray-400">{{ transaction.createdAt | date:'medium' }}</p>
-                                    </div>
-                                </div>
-                                <span class="font-black" [ngClass]="getTransactionClass(transaction.type)">
-                                    {{ transaction.points > 0 ? '+' : '' }}{{ transaction.points }} pts
-                                </span>
-                            </div>
-                        }
-                    </div>
-                </div>
-            }
-
-            <!-- PREFERENCES TAB -->
-            @if (activeTab() === 'preferences') {
-                <div class="p-6 space-y-8">
-                    <!-- Academic Interests -->
-                    <div>
-                        <h4 class="font-bold text-dark mb-2">Academic Interests</h4>
-                        <p class="text-sm text-gray-500 mb-4">Select your interests to get personalized recommendations</p>
-                        <div class="flex flex-wrap gap-2">
-                            @for (interest of availableInterests; track interest) {
-                                <button 
-                                    (click)="toggleInterest(interest)"
-                                    class="px-4 py-2 rounded-full text-sm font-semibold transition-colors"
-                                    [ngClass]="preferences().academicInterests.includes(interest) ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'">
-                                    {{ interest }}
-                                </button>
-                            }
-                        </div>
-                    </div>
-
-                    <!-- Preferred Categories -->
-                    <div>
-                        <h4 class="font-bold text-dark mb-2">Preferred Shopping Categories</h4>
-                        <p class="text-sm text-gray-500 mb-4">We'll prioritize these in your recommendations</p>
-                        <div class="flex flex-wrap gap-2">
-                            @for (category of availableCategories; track category) {
-                                <button 
-                                    (click)="toggleCategory(category)"
-                                    class="px-4 py-2 rounded-full text-sm font-semibold transition-colors"
-                                    [ngClass]="preferences().preferredCategories.includes(category) ? 'bg-accent text-dark' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'">
-                                    {{ category }}
-                                </button>
-                            }
-                        </div>
-                    </div>
-
-                    <!-- Notifications -->
-                    <div>
-                        <h4 class="font-bold text-dark mb-4">Notification Preferences</h4>
-                        <form [formGroup]="preferencesForm" class="space-y-4">
-                            <label class="flex items-center justify-between p-4 bg-gray-50 rounded-xl cursor-pointer">
-                                <div>
-                                    <span class="font-semibold text-dark">Email Notifications</span>
-                                    <p class="text-xs text-gray-500">Receive updates via email</p>
-                                </div>
-                                <input type="checkbox" formControlName="emailNotifications" class="w-5 h-5 text-primary rounded focus:ring-primary">
-                            </label>
-                            <label class="flex items-center justify-between p-4 bg-gray-50 rounded-xl cursor-pointer">
-                                <div>
-                                    <span class="font-semibold text-dark">Push Notifications</span>
-                                    <p class="text-xs text-gray-500">Browser push notifications</p>
-                                </div>
-                                <input type="checkbox" formControlName="pushNotifications" class="w-5 h-5 text-primary rounded focus:ring-primary">
-                            </label>
-                            <label class="flex items-center justify-between p-4 bg-gray-50 rounded-xl cursor-pointer">
-                                <div>
-                                    <span class="font-semibold text-dark">SMS Notifications</span>
-                                    <p class="text-xs text-gray-500">Text message alerts</p>
-                                </div>
-                                <input type="checkbox" formControlName="smsNotifications" class="w-5 h-5 text-primary rounded focus:ring-primary">
-                            </label>
-                        </form>
-                    </div>
-
-                    <!-- AI Recommendation Info -->
-                    <div class="p-6 bg-gradient-to-br from-primary/5 to-accent/5 rounded-xl border border-primary/10">
-                        <div class="flex items-center gap-3 mb-3">
-                            <div class="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
-                                <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                                </svg>
-                            </div>
-                            <div>
-                                <h4 class="font-bold text-dark">AI Recommendations</h4>
-                                <span class="text-xs text-gray-500">Powered by machine learning</span>
-                            </div>
-                        </div>
-                        <p class="text-sm text-gray-600">
-                            Based on your preferences and activity, we'll show personalized product, forum, and carpooling recommendations across the platform.
-                        </p>
-                    </div>
-
-                    <button (click)="savePreferences()" class="btn-primary">Save Preferences</button>
-                </div>
-            }
-
-            <!-- SETTINGS TAB -->
-            @if (activeTab() === 'settings') {
-                <div class="p-6">
-                    @if (isEditing()) {
-                        <form [formGroup]="profileForm" (ngSubmit)="saveProfile()" class="space-y-6">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label class="block text-xs font-black text-dark uppercase tracking-widest mb-2">First Name</label>
-                                    <input 
-                                        formControlName="firstName"
-                                        type="text"
-                                        [class]="isFieldInvalid('firstName') 
-                                            ? 'w-full h-12 px-4 bg-white border-2 border-red-400 rounded-xl focus:ring-2 focus:ring-red-400 text-sm font-bold'
-                                            : 'w-full h-12 px-4 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-sm font-bold'">
-                                    @if (isFieldInvalid('firstName')) {
-                                        <p class="text-red-500 text-xs mt-1">{{ getFieldError('firstName') }}</p>
-                                    }
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-black text-dark uppercase tracking-widest mb-2">Last Name</label>
-                                    <input 
-                                        formControlName="lastName"
-                                        type="text"
-                                        [class]="isFieldInvalid('lastName') 
-                                            ? 'w-full h-12 px-4 bg-white border-2 border-red-400 rounded-xl focus:ring-2 focus:ring-red-400 text-sm font-bold'
-                                            : 'w-full h-12 px-4 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-sm font-bold'">
-                                </div>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-black text-dark uppercase tracking-widest mb-2">Email</label>
-                                <input 
-                                    formControlName="email"
-                                    type="email"
-                                    class="w-full h-12 px-4 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-sm font-bold">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-black text-dark uppercase tracking-widest mb-2">Phone</label>
-                                <input 
-                                    formControlName="phone"
-                                    type="tel"
-                                    class="w-full h-12 px-4 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-sm font-bold">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-black text-dark uppercase tracking-widest mb-2">Address</label>
-                                <input 
-                                    formControlName="address"
-                                    type="text"
-                                    class="w-full h-12 px-4 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-sm font-bold">
-                            </div>
-                            <div class="flex items-center gap-4 pt-4">
-                                <button 
-                                    type="submit"
-                                    [disabled]="isSaving()"
-                                    class="btn-primary flex items-center gap-2">
-                                    @if (isSaving()) {
-                                        <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                                        </svg>
-                                        Saving...
-                                    } @else {
-                                        Save Changes
-                                    }
-                                </button>
-                                <button type="button" (click)="cancelEditing()" class="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-colors">
-                                    Cancel
-                                </button>
-                            </div>
-                        </form>
-                    } @else {
-                        <div class="space-y-6">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2">First Name</label>
-                                    <p class="text-dark font-bold">{{ user().firstName }}</p>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Last Name</label>
-                                    <p class="text-dark font-bold">{{ user().lastName }}</p>
-                                </div>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Email</label>
-                                <p class="text-dark font-bold">{{ user().email }}</p>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Phone</label>
-                                <p class="text-dark font-bold">{{ user().phone }}</p>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Address</label>
-                                <p class="text-dark font-bold">{{ user().address || 'Not set' }}</p>
-                            </div>
-                            <div class="pt-4">
-                                <button (click)="startEditing()" class="btn-primary">Edit Settings</button>
-                            </div>
-                        </div>
-
-                        <!-- Danger Zone -->
-                        <div class="mt-12 pt-8 border-t border-gray-100">
-                            <h4 class="text-lg font-bold text-red-600 mb-4">Danger Zone</h4>
-                            <div class="flex flex-col sm:flex-row gap-4">
-                                <button (click)="openPasswordChange()" class="px-6 py-3 bg-red-50 text-red-600 rounded-xl font-bold hover:bg-red-100 transition-colors">
-                                    🔐 Change Password
-                                </button>
-                                <button class="px-6 py-3 bg-red-50 text-red-600 rounded-xl font-bold hover:bg-red-100 transition-colors">
-                                    🗑️ Delete Account
-                                </button>
-                            </div>
-                        </div>
-                    }
-                </div>
-            }
-        </div>
-
+      </div>
     </div>
-</div>
 
-<!-- MODALS -->
+    <!-- STICKY TABS -->
+    <div class="flex overflow-x-auto gap-0.5 sticky top-0 z-20 py-1" style="background-color:var(--bg-color)">
+      @for (tab of tabs; track tab.id) {
+        <button (click)="setActiveTab(tab.id)"
+          class="px-4 py-3 text-sm font-bold whitespace-nowrap rounded-xl transition-all shrink-0"
+          [class.bg-primary]="activeTab()===tab.id" [class.text-white]="activeTab()===tab.id"
+          [style.color]="activeTab()!==tab.id?'var(--muted)':''"
+          [style.background-color]="activeTab()!==tab.id?'transparent':''">{{ tab.label }}</button>
+      }
+    </div>
 
-<!-- Edit Profile Modal -->
-@if (showEditModal()) {
-    <app-profile-edit-modal 
-        [onClose]="onEditProfileClose.bind(this)"
-        [onSave]="onProfileSave.bind(this)">
-    </app-profile-edit-modal>
-}
+    <!-- TWO-COLUMN -->
+    <div class="flex flex-col lg:flex-row gap-5 py-5">
 
-<!-- Avatar Upload Modal -->
-@if (showAvatarModal()) {
-    <app-avatar-upload-modal 
-        [onClose]="onAvatarUploadClose.bind(this)"
-        [onUploadComplete]="onAvatarUploadComplete.bind(this)">
-    </app-avatar-upload-modal>
-}
+      <!-- LEFT SIDEBAR -->
+      <div class="lg:w-72 shrink-0 space-y-4">
 
-<!-- Password Change Modal -->
-@if (showPasswordModal()) {
-    <app-password-change-modal 
-        [onClose]="onPasswordChangeClose.bind(this)"
-        [onChangeComplete]="onPasswordChangeComplete.bind(this)">
-    </app-password-change-modal>
-}
+        <div class="rounded-2xl p-5" style="background-color:var(--card-bg);border:1px solid var(--border)">
+          <h3 class="font-black text-sm mb-4" style="color:var(--text-color)">About</h3>
+          <div class="space-y-3 text-sm" style="color:var(--muted)">
+            <div class="flex items-center gap-3"><span class="text-base">📧</span><span class="truncate">{{ user().email }}</span></div>
+            <div class="flex items-center gap-3"><span class="text-base">🎭</span><span class="font-semibold" style="color:var(--text-color)">{{ user().role }}</span></div>
+            <div class="flex items-center gap-3"><span class="text-base">🏆</span><span>{{ loyaltyAccount()?.points||0 }} loyalty pts</span></div>
+            <div class="flex items-center gap-3"><span class="text-base">❤️</span><span>{{ favoriteCount() }} saved items</span></div>
+            <div class="flex items-center gap-3"><span class="text-base">🔔</span><span>{{ unreadNotifCount() }} unread notifications</span></div>
+          </div>
+        </div>
+
+        <div class="rounded-2xl p-5" style="background-color:var(--card-bg);border:1px solid var(--border)">
+          <h3 class="font-black text-sm mb-4" style="color:var(--text-color)">Stats</h3>
+          <div class="grid grid-cols-2 gap-2">
+            <div class="rounded-xl p-3 text-center" style="background-color:var(--subtle)">
+              <p class="text-xl font-black text-primary">{{ realOrders().length }}</p>
+              <p class="text-[9px] font-black uppercase tracking-widest mt-0.5" style="color:var(--muted)">Orders</p>
+            </div>
+            <div class="rounded-xl p-3 text-center" style="background-color:var(--subtle)">
+              <p class="text-xl font-black text-red-500">{{ favoriteCount() }}</p>
+              <p class="text-[9px] font-black uppercase tracking-widest mt-0.5" style="color:var(--muted)">Favorites</p>
+            </div>
+            @if (isDriver()) {
+              <div class="rounded-xl p-3 text-center" style="background-color:var(--subtle)">
+                <p class="text-xl font-black text-green-500">{{ myRides().length }}</p>
+                <p class="text-[9px] font-black uppercase tracking-widest mt-0.5" style="color:var(--muted)">Rides</p>
+              </div>
+              <div class="rounded-xl p-3 text-center" style="background-color:var(--subtle)">
+                <p class="text-xl font-black text-blue-500">{{ driverStats()?.averageRating||0|number:'1.1-1' }}⭐</p>
+                <p class="text-[9px] font-black uppercase tracking-widest mt-0.5" style="color:var(--muted)">Rating</p>
+              </div>
+            }
+            @if (isProvider()) {
+              <div class="rounded-xl p-3 text-center" style="background-color:var(--subtle)">
+                <p class="text-xl font-black text-purple-500">{{ myNegotiations().length }}</p>
+                <p class="text-[9px] font-black uppercase tracking-widest mt-0.5" style="color:var(--muted)">Negotiations</p>
+              </div>
+              <div class="rounded-xl p-3 text-center" style="background-color:var(--subtle)">
+                <p class="text-xl font-black text-blue-500">{{ shopOrders().length }}</p>
+                <p class="text-[9px] font-black uppercase tracking-widest mt-0.5" style="color:var(--muted)">Shop Orders</p>
+              </div>
+            }
+            @if (isDelivery()) {
+              <div class="rounded-xl p-3 text-center" style="background-color:var(--subtle)">
+                <p class="text-xl font-black text-blue-500">{{ myDeliveries().filter(d=>d.status==='IN_TRANSIT').length }}</p>
+                <p class="text-[9px] font-black uppercase tracking-widest mt-0.5" style="color:var(--muted)">In Transit</p>
+              </div>
+              <div class="rounded-xl p-3 text-center" style="background-color:var(--subtle)">
+                <p class="text-xl font-black text-green-500">{{ myDeliveries().filter(d=>d.status==='DELIVERED').length }}</p>
+                <p class="text-[9px] font-black uppercase tracking-widest mt-0.5" style="color:var(--muted)">Delivered</p>
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="rounded-2xl p-5" style="background-color:var(--card-bg);border:1px solid var(--border)">
+          <h3 class="font-black text-sm mb-3" style="color:var(--text-color)">Quick Links</h3>
+          <div class="space-y-0.5">
+            <a routerLink="/products" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors hover:bg-primary/5" style="color:var(--text-color)">🛍️ Browse Products</a>
+            <a routerLink="/favorites" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors hover:bg-primary/5" style="color:var(--text-color)">❤️ My Favorites</a>
+            <a routerLink="/notifications" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors hover:bg-primary/5" style="color:var(--text-color)">🔔 Notifications</a>
+            @if (isDriver()||isPassenger()) {
+              <a routerLink="/carpooling" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors hover:bg-primary/5" style="color:var(--text-color)">🚗 Carpooling</a>
+            }
+            @if (isDelivery()) {
+              <a routerLink="/driver/deliveries" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors hover:bg-primary/5" style="color:var(--text-color)">📦 My Deliveries</a>
+            }
+            @if (isProvider()) {
+              <a routerLink="/provider/dashboard" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors hover:bg-primary/5" style="color:var(--text-color)">📊 Provider Dashboard</a>
+            }
+            <a routerLink="/sav" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors hover:bg-primary/5" style="color:var(--text-color)">🎧 Support & SAV</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT MAIN CONTENT -->
+      <div class="flex-1 min-w-0 space-y-4">

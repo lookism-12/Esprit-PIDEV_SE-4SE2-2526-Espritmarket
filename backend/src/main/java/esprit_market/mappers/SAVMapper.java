@@ -13,9 +13,7 @@ import org.springframework.stereotype.Component;
 public class SAVMapper {
 
     public Delivery toDeliveryEntity(DeliveryRequestDTO dto) {
-        if (dto == null) {
-            return null;
-        }
+        if (dto == null) return null;
         return Delivery.builder()
                 .address(dto.getAddress())
                 .deliveryDate(dto.getDeliveryDate())
@@ -26,9 +24,7 @@ public class SAVMapper {
     }
 
     public DeliveryResponseDTO toDeliveryResponse(Delivery entity) {
-        if (entity == null) {
-            return null;
-        }
+        if (entity == null) return null;
         return DeliveryResponseDTO.builder()
                 .id(entity.getId() != null ? entity.getId().toHexString() : null)
                 .address(entity.getAddress())
@@ -40,23 +36,26 @@ public class SAVMapper {
     }
 
     public SavFeedback toSavFeedbackEntity(SavFeedbackRequestDTO dto) {
-        if (dto == null) {
-            return null;
-        }
+        if (dto == null) return null;
         return SavFeedback.builder()
                 .type(dto.getType())
                 .message(dto.getMessage())
                 .rating(dto.getRating())
                 .reason(dto.getReason())
                 .status(dto.getStatus() != null ? dto.getStatus() : "PENDING")
+                .problemNature(dto.getProblemNature())
+                .priority(dto.getPriority())
+                .desiredSolution(dto.getDesiredSolution())
+                .positiveTags(dto.getPositiveTags())
+                .recommendsProduct(dto.getRecommendsProduct())
+                .adminResponse(dto.getAdminResponse())
+                .readByAdmin(dto.getReadByAdmin() != null ? dto.getReadByAdmin() : false)
                 .cartItemId(new ObjectId(dto.getCartItemId()))
                 .build();
     }
 
     public SavFeedbackResponseDTO toSavFeedbackResponse(SavFeedback entity) {
-        if (entity == null) {
-            return null;
-        }
+        if (entity == null) return null;
         return SavFeedbackResponseDTO.builder()
                 .id(entity.getId() != null ? entity.getId().toHexString() : null)
                 .type(entity.getType())
@@ -64,6 +63,13 @@ public class SAVMapper {
                 .rating(entity.getRating())
                 .reason(entity.getReason())
                 .status(entity.getStatus())
+                .problemNature(entity.getProblemNature())
+                .priority(entity.getPriority())
+                .desiredSolution(entity.getDesiredSolution())
+                .positiveTags(entity.getPositiveTags())
+                .recommendsProduct(entity.getRecommendsProduct())
+                .adminResponse(entity.getAdminResponse())
+                .readByAdmin(entity.getReadByAdmin())
                 .creationDate(entity.getCreationDate())
                 .cartItemId(entity.getCartItemId() != null ? entity.getCartItemId().toHexString() : null)
                 .build();

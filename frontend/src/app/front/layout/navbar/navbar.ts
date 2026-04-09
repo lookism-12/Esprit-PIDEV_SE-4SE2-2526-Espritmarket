@@ -1,4 +1,4 @@
-import { Component, signal, computed, inject, HostListener, OnDestroy } from '@angular/core';
+import { Component, signal, computed, inject, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule, DOCUMENT } from '@angular/common';
 import { RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -6,6 +6,9 @@ import { AuthService } from '../../core/auth.service';
 import { UserRole } from '../../models/user.model';
 import { CartService } from '../../core/cart.service';
 import { NotificationType, NotificationPriority } from '../../models/notification.model';
+import { NotificationService } from '../../core/notification.service';
+import { ThemeService } from '../../core/theme.service';
+import { FavoriteService } from '../../core/favorite.service';
 import { filter, Subscription } from 'rxjs';
 
 interface NavNotification {
@@ -37,11 +40,14 @@ interface MenuItem {
   templateUrl: './navbar.html',
   styleUrl: './navbar.scss',
 })
-export class Navbar implements OnDestroy {
+export class Navbar implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private cartService = inject(CartService);
   private router = inject(Router);
   private document = inject(DOCUMENT);
+  private notificationService = inject(NotificationService);
+  readonly themeService = inject(ThemeService);
+  private favoriteService = inject(FavoriteService);
   private routerSubscription: Subscription;
 
   // Dropdowns state
@@ -65,43 +71,33 @@ export class Navbar implements OnDestroy {
   isAdmin = computed(() => this.authService.userRole() === UserRole.ADMIN);
   isProvider = computed(() => this.authService.userRole() === UserRole.PROVIDER);
 
-  // Menu sections for the drawer
-  menuSections: MenuSection[] = [
+  // Menu sections for the drawer — public sections always visible, protected only when authenticated
+  readonly publicMenuSections: MenuSection[] = [
     {
       title: 'Marketplace',
       icon: '🛒',
       items: [
         { label: 'Browse Products', route: '/products', icon: '📦' },
         { label: 'Services', route: '/services', icon: '🔧' },
-        { label: 'Promotions', route: '/promotions', icon: '🏷️' },
-        { label: 'Favorites', route: '/favorites', icon: '❤️' }
+        { label: 'Shop', route: '/shop', icon: '🏪' }
       ]
-    },
+    }
+  ];
+
+  readonly protectedMenuSections: MenuSection[] = [
     {
       title: 'Carpooling',
       icon: '🚗',
       items: [
-        { label: 'Find a Ride', route: '/carpooling/find', icon: '🔍' },
-        { label: 'Offer a Ride', route: '/carpooling/offer', icon: '🚙' },
-        { label: 'My Bookings', route: '/carpooling/bookings', icon: '📋' },
-        { label: 'My Rides', route: '/carpooling/rides', icon: '🛣️' }
+        { label: 'Find a Ride', route: '/carpooling', icon: '🔍' },
+        { label: 'My Rides', route: '/carpooling', icon: '🛣️' }
       ]
     },
     {
       title: 'Community',
       icon: '💬',
       items: [
-        { label: 'Forum', route: '/forum', icon: '📝' },
-        { label: 'Study Groups', route: '/groups', icon: '👥' },
-        { label: 'Chat', route: '/chat', icon: '💭' }
-      ]
-    },
-    {
-      title: 'Loyalty & Offers',
-      icon: '🎁',
-      items: [
-        { label: 'My Points', route: '/loyalty/points', icon: '⭐' },
-        { label: 'Coupons', route: '/coupons', icon: '🎟️' }
+        { label: 'Forum', route: '/forum', icon: '📝' }
       ]
     },
     {
@@ -109,20 +105,26 @@ export class Navbar implements OnDestroy {
       icon: '📦',
       items: [
         { label: 'My Orders', route: '/orders', icon: '🛍️' },
-        { label: 'Track Deliveries', route: '/tracking', icon: '📍' },
-        { label: 'My Claims', route: '/claims', icon: '📄' }
+        { label: 'Track Deliveries', route: '/sav', icon: '📍' },
+        { label: 'My Claims', route: '/sav', icon: '📄' }
       ]
     },
     {
       title: 'Profile & Settings',
       icon: '⚙️',
       items: [
-        { label: 'My Profile', route: '/profile', icon: '👤' },
-        { label: 'Settings', route: '/settings', icon: '🔧' }
-        // ✅ REMOVED: Logout is now a click handler, not a route
+        { label: 'My Profile', route: '/profile', icon: '👤' }
       ]
     }
   ];
+
+  menuSections: MenuSection[] = [...this.publicMenuSections, ...this.protectedMenuSections];
+
+  visibleMenuSections = computed(() =>
+    this.isUserAuthenticated()
+      ? [...this.publicMenuSections, ...this.protectedMenuSections]
+      : this.publicMenuSections
+  );
 
   constructor() {
     // Close menu on navigation
@@ -139,43 +141,50 @@ export class Navbar implements OnDestroy {
 
   // Mock cart count
   cartCount = computed(() => this.cartService.itemCount());
+  favoriteCount = computed(() => this.favoriteService.favoriteCount());
 
   // ✅ REACTIVE AUTHENTICATION STATE - This makes the navbar dynamic!
   // When user logs in/out, this signal changes and template automatically updates
   isUserAuthenticated = computed(() => this.authService.isAuthenticated());
 
-  // Mock notifications
-  notifications = signal<NavNotification[]>([
-    {
-      id: '1',
-      type: NotificationType.ORDER_SHIPPED,
-      title: 'Order Shipped',
-      message: 'Your order #EM-2024-001 is on its way!',
-      priority: NotificationPriority.HIGH,
-      isRead: false,
-      createdAt: new Date()
-    },
-    {
-      id: '2',
-      type: NotificationType.NEW_MESSAGE,
-      title: 'New Message',
-      message: 'Sarra M. sent you a message',
-      priority: NotificationPriority.MEDIUM,
-      isRead: false,
-      createdAt: new Date(Date.now() - 3600000)
-    },
-    {
-      id: '3',
-      type: NotificationType.NEW_COUPON,
-      title: 'New Coupon!',
-      message: 'Use SPRING20 for 20% off',
-      priority: NotificationPriority.LOW,
-      isRead: true,
-      createdAt: new Date(Date.now() - 86400000)
-    }
-  ]);
-
+  // Real notifications from backend
+  notifications = signal<NavNotification[]>([]);
   unreadCount = computed(() => this.notifications().filter(n => !n.isRead).length);
+
+  ngOnInit(): void {
+    if (this.authService.isAuthenticated()) {
+      this.loadNotifications();
+      this.favoriteService.loadMyFavorites();
+    }
+  }
+
+  private loadNotifications(): void {
+    this.notificationService.getMy().subscribe({
+      next: (items) => {
+        const mapped: NavNotification[] = items.slice(0, 10).map(n => ({
+          id: n.id,
+          type: this.mapBackendType(n.type),
+          title: n.title,
+          message: (n as any).description || n.message || '',
+          priority: NotificationPriority.MEDIUM,
+          isRead: n.read,
+          createdAt: new Date(n.createdAt)
+        }));
+        this.notifications.set(mapped);
+      },
+      error: () => {} // silently fail — navbar should never break
+    });
+  }
+
+  private mapBackendType(type: string): NotificationType {
+    const map: Record<string, NotificationType> = {
+      INTERNAL_NOTIFICATION: NotificationType.ACCOUNT_UPDATE,
+      EXTERNAL_NOTIFICATION: NotificationType.NEW_COUPON,
+      RIDE_UPDATE: NotificationType.ORDER_SHIPPED,
+      NEGOTIATION_UPDATE: NotificationType.NEW_MESSAGE,
+    };
+    return map[type] ?? NotificationType.ACCOUNT_UPDATE;
+  }
 
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: Event) {
@@ -197,8 +206,12 @@ export class Navbar implements OnDestroy {
   }
 
   toggleNotifications(): void {
-    this.showNotifications.update(v => !v);
+    const opening = !this.showNotifications();
+    this.showNotifications.set(opening);
     this.showUserMenu.set(false);
+    if (opening && this.authService.isAuthenticated()) {
+      this.loadNotifications();
+    }
   }
 
   toggleUserMenu(): void {
@@ -211,15 +224,17 @@ export class Navbar implements OnDestroy {
   }
 
   markAsRead(id: string): void {
-    this.notifications.update(notifications =>
-      notifications.map(n => n.id === id ? { ...n, isRead: true } : n)
-    );
+    this.notificationService.markAsRead(id).subscribe({
+      next: () => this.notifications.update(list => list.map(n => n.id === id ? { ...n, isRead: true } : n)),
+      error: () => this.notifications.update(list => list.map(n => n.id === id ? { ...n, isRead: true } : n))
+    });
   }
 
   markAllAsRead(): void {
-    this.notifications.update(notifications =>
-      notifications.map(n => ({ ...n, isRead: true }))
-    );
+    this.notificationService.markAllAsRead().subscribe({
+      next: () => this.notifications.update(list => list.map(n => ({ ...n, isRead: true }))),
+      error: () => this.notifications.update(list => list.map(n => ({ ...n, isRead: true })))
+    });
   }
 
   getNotificationIcon(type: NotificationType): string {
@@ -229,7 +244,12 @@ export class Navbar implements OnDestroy {
       [NotificationType.NEW_MESSAGE]: '💬',
       [NotificationType.NEW_COUPON]: '🎁',
       [NotificationType.PAYMENT_RECEIVED]: '💰',
-      [NotificationType.NEW_REVIEW]: '⭐'
+      [NotificationType.NEW_REVIEW]: '⭐',
+      [NotificationType.INTERNAL_NOTIFICATION]: '🔔',
+      [NotificationType.EXTERNAL_NOTIFICATION]: '📣',
+      [NotificationType.RIDE_UPDATE]: '🚗',
+      [NotificationType.NEGOTIATION_UPDATE]: '🤝',
+      [NotificationType.ACCOUNT_UPDATE]: '👤',
     };
     return icons[type] || '🔔';
   }

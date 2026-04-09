@@ -1,0 +1,55 @@
+<div class="dm-page min-h-screen py-8 px-4">
+  <div class="max-w-3xl mx-auto">
+
+    <div class="mb-6">
+      <h1 class="text-2xl font-extrabold dm-title">My Assigned Deliveries</h1>
+      <p class="text-sm dm-muted mt-1">Manage and update the status of your deliveries.</p>
+    </div>
+
+    @if (errorMsg()) {
+      <div class="dm-alert-red p-3 rounded-xl text-sm mb-4">{{ errorMsg() }}</div>
+    }
+
+    @if (isLoading()) {
+      <div class="flex justify-center py-12">
+        <div class="animate-spin rounded-full h-8 w-8 border-4 border-primary border-t-transparent"></div>
+      </div>
+    } @else if (deliveries().length === 0) {
+      <div class="text-center py-12 dm-card border-dashed">
+        <span class="text-4xl block mb-3">📭</span>
+        <p class="font-semibold dm-title">No assigned deliveries</p>
+        <p class="text-sm dm-muted mt-1">Deliveries will appear here once assigned by an admin.</p>
+      </div>
+    } @else {
+      <div class="space-y-3">
+        @for (delivery of deliveries(); track delivery.id) {
+          <div class="dm-card p-5 shadow-sm hover:shadow-md transition-shadow">
+            <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+              <div class="flex-1 min-w-0">
+                <span [class]="'inline-block mb-2 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border ' + getStatusInfo(delivery.status).color">
+                  {{ getStatusInfo(delivery.status).label }}
+                </span>
+                <p class="font-bold dm-title truncate">{{ delivery.address }}</p>
+                @if (delivery.deliveryDate) {
+                  <p class="text-xs dm-muted mt-1">📅 {{ formatDate(delivery.deliveryDate) }}</p>
+                }
+                <p class="text-[10px] dm-muted mt-1 font-mono truncate">Cart: {{ delivery.cartId }}</p>
+              </div>
+              <div class="shrink-0">
+                @if (getStatusInfo(delivery.status).next) {
+                  <button (click)="updateStatus(delivery)"
+                    class="px-4 py-2 bg-primary hover:bg-primary-dark text-white font-semibold rounded-xl transition-all active:scale-95 text-sm shadow-sm whitespace-nowrap">
+                    → {{ getStatusInfo(getStatusInfo(delivery.status).next!).label }}
+                  </button>
+                } @else {
+                  <span class="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 font-semibold rounded-xl text-sm cursor-default">Done</span>
+                }
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+  </div>
+</div>

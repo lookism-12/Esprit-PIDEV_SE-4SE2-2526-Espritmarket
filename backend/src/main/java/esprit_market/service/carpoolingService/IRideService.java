@@ -46,4 +46,8 @@ public interface IRideService {
         List<RideResponseDTO> findByDriverUserId(String email);
 
         void processStatusTransitions();
+
+        long countActiveRides();
+
+        void rateRide(String rideId, Integer rating, String comment, boolean isDriverRating);
 }

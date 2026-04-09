@@ -9,4 +9,5 @@ import esprit_market.entity.marketplace.Shop;
 @Repository
 public interface ShopRepository extends MongoRepository<Shop, ObjectId> {
     java.util.Optional<Shop> findByOwnerId(ObjectId ownerId);
+    java.util.List<Shop> findAllByOwnerId(ObjectId ownerId);
 }

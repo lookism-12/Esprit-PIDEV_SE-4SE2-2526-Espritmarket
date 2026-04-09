@@ -1,244 +1,279 @@
-<!-- Enhanced Creative Admin Dashboard -->
-<div class="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 p-6">
-  
-  <!-- Enhanced Metrics Cards Row -->
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-    <div *ngFor="let metric of metrics; let i = index" 
-         class="bg-white rounded-2xl p-6 shadow-lg border-l-4 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 group relative overflow-hidden"
-         [ngClass]="getMetricBorderColor(metric.color)">
-      
-      <!-- Background Gradient -->
-      <div class="absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity"
-           [ngClass]="getMetricBgGradient(metric.color)"></div>
-      
+<div class="min-h-screen p-6" style="background-color: var(--bg-color)">
+
+  <!-- ══ ROW 1: Welcome + Calendar ══════════════════════════════════════════ -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5">
+
+    <!-- Welcome banner (spans 2 cols) -->
+    <div class="lg:col-span-2 rounded-3xl p-8 relative overflow-hidden bg-gradient-to-br from-[#7D0408] via-[#8B0000] to-[#5a0000] text-white shadow-xl min-h-[180px]">
+      <div class="absolute inset-0 opacity-10" style="background-image:radial-gradient(circle at 2px 2px,white 1px,transparent 0);background-size:28px 28px"></div>
+      <div class="absolute right-0 bottom-0 w-48 h-48 opacity-10">
+        <svg viewBox="0 0 200 200" fill="white"><circle cx="150" cy="150" r="80"/><circle cx="180" cy="60" r="40"/></svg>
+      </div>
       <div class="relative z-10">
-        <!-- Header with Icon and Trend -->
-        <div class="flex items-center justify-between mb-4">
-          <div class="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shadow-lg border-2" 
-               [ngClass]="getMetricIconBg(metric.color)">
-            {{ metric.icon }}
-          </div>
-          <div class="text-right">
-            <div class="flex items-center gap-1 text-sm font-bold" 
-                 [ngClass]="metric.trend === 'up' ? 'text-green-600' : 'text-red-500'">
-              <span class="text-lg">{{ metric.trend === 'up' ? '↗️' : '↘️' }}</span>
-              {{ metric.change }}
+        <p class="text-white/60 text-xs font-semibold uppercase tracking-widest mb-2">{{ getCurrentDate() }}</p>
+        <h1 class="text-3xl font-black mb-2">{{ getGreeting() }}, {{ adminName() }}! 👋</h1>
+        @if (isLoading()) {
+          <p class="text-white/70 text-sm">Loading your dashboard...</p>
+        } @else {
+          <p class="text-white/80 text-sm max-w-sm">
+            You have <strong class="text-white">{{ pendingProducts() }} products</strong> and
+            <strong class="text-white">{{ pendingPostsCount() }} posts</strong> awaiting review. Let's get started!
+          </p>
+          <a routerLink="/admin/moderation" class="inline-flex items-center gap-2 mt-4 text-sm font-black text-white/80 hover:text-white underline underline-offset-4 transition-colors">
+            review it →
+          </a>
+        }
+      </div>
+    </div>
+
+    <!-- Calendar (1 col) -->
+    <div class="rounded-3xl overflow-hidden shadow-sm" style="background-color:var(--card-bg);border:1px solid var(--border)">
+      <div class="px-5 pt-5 pb-3 flex items-center justify-between">
+        <div>
+          <h3 class="font-black text-sm" style="color:var(--text-color)">Calendar</h3>
+          <p class="text-[10px] mt-0.5" style="color:var(--muted)">{{ pendingProducts() + pendingPostsCount() }} tasks today</p>
+        </div>
+        <div class="flex items-center gap-1">
+          <button (click)="prevMonth()" class="w-7 h-7 rounded-lg flex items-center justify-center text-xs transition-colors hover:bg-primary/10" style="color:var(--muted)">←</button>
+          <span class="text-xs font-bold px-2" style="color:var(--text-color)">{{ calendarMonthYear() }}</span>
+          <button (click)="nextMonth()" class="w-7 h-7 rounded-lg flex items-center justify-center text-xs transition-colors hover:bg-primary/10" style="color:var(--muted)">→</button>
+        </div>
+      </div>
+      <div class="px-4 pb-4">
+        <div class="grid grid-cols-7 gap-0.5 text-center mb-1">
+          <div *ngFor="let d of ['S','M','T','W','T','F','S']" class="text-[9px] font-black py-1" style="color:var(--muted)">{{d}}</div>
+        </div>
+        <div class="grid grid-cols-7 gap-0.5">
+          <div *ngFor="let day of calendarDays()"
+            class="w-7 h-7 mx-auto flex items-center justify-center text-[11px] font-medium rounded-lg cursor-pointer transition-all"
+            [ngClass]="{'opacity-25':!day.currentMonth,'bg-primary text-white font-black shadow-md':day.isToday,'hover:bg-primary/10':!day.isToday&&day.currentMonth}"
+            [style.color]="!day.isToday?'var(--text-color)':''">{{ day.day }}</div>
+        </div>
+      </div>
+      <!-- Upcoming tasks -->
+      <div class="border-t px-4 pb-4 pt-3 space-y-2" style="border-color:var(--border)">
+        <p class="text-[10px] font-black uppercase tracking-widest mb-2" style="color:var(--muted)">Upcoming tasks</p>
+        @if (isLoading()) {
+          @for (i of [1,2]; track i) {
+            <div class="h-10 rounded-xl animate-pulse" style="background-color:var(--border)"></div>
+          }
+        } @else {
+          <a routerLink="/admin/marketplace/products" class="flex items-center gap-3 p-2.5 rounded-xl bg-primary text-white hover:bg-primary-dark transition-colors">
+            <span class="w-2 h-2 rounded-full bg-white shrink-0"></span>
+            <div class="min-w-0">
+              <p class="text-xs font-bold truncate">Review Products</p>
+              <p class="text-[10px] opacity-70">{{ pendingProducts() }} pending</p>
             </div>
-            <div class="text-xs text-gray-500 font-medium">{{ metric.subtitle }}</div>
+          </a>
+          <a routerLink="/admin/moderation" class="flex items-center gap-3 p-2.5 rounded-xl transition-colors hover:bg-primary/5" style="background-color:var(--subtle)">
+            <span class="w-2 h-2 rounded-full bg-amber-400 shrink-0"></span>
+            <div class="min-w-0">
+              <p class="text-xs font-bold truncate" style="color:var(--text-color)">Moderate Posts</p>
+              <p class="text-[10px]" style="color:var(--muted)">{{ pendingPostsCount() }} to review</p>
+            </div>
+          </a>
+          <a routerLink="/admin/users" class="flex items-center gap-3 p-2.5 rounded-xl transition-colors hover:bg-primary/5" style="background-color:var(--subtle)">
+            <span class="w-2 h-2 rounded-full bg-blue-400 shrink-0"></span>
+            <div class="min-w-0">
+              <p class="text-xs font-bold truncate" style="color:var(--text-color)">Manage Users</p>
+              <p class="text-[10px]" style="color:var(--muted)">{{ totalUsers() }} total</p>
+            </div>
+          </a>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ ROW 2: Performance chart + Donut stats ══════════════════════════════ -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5">
+
+    <!-- Performance bar chart (2 cols) -->
+    <div class="lg:col-span-2 rounded-3xl p-6 shadow-sm" style="background-color:var(--card-bg);border:1px solid var(--border)">
+      <div class="flex items-center justify-between mb-6">
+        <div>
+          <h3 class="font-black text-base" style="color:var(--text-color)">Platform Performance</h3>
+          <p class="text-xs mt-0.5" style="color:var(--muted)">Product & content overview</p>
+        </div>
+        <div class="flex items-center gap-3 text-[10px] font-bold" style="color:var(--muted)">
+          <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-primary inline-block"></span>Approved</span>
+          <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-amber-400 inline-block"></span>Pending</span>
+          <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-blue-400 inline-block"></span>Other</span>
+        </div>
+      </div>
+
+      @if (isLoading()) {
+        <div class="flex items-end gap-4 h-36 px-4">
+          @for (w of [70,85,50,90,60,75]; track w) {
+            <div class="flex-1 rounded-t-xl animate-pulse" [style.height.%]="w" style="background-color:var(--border)"></div>
+          }
+        </div>
+      } @else {
+        <!-- Best metric highlight -->
+        <div class="flex items-end gap-2 mb-4">
+          <div>
+            <p class="text-xs font-bold" style="color:var(--muted)">Top metric:</p>
+            <p class="text-4xl font-black" style="color:var(--text-color)">{{ getApprovalRate() }}<span class="text-lg">%</span></p>
+            <p class="text-xs" style="color:var(--muted)">approval rate</p>
           </div>
+          <a routerLink="/admin/marketplace/products" class="ml-4 px-3 py-1.5 rounded-full text-xs font-black border border-primary text-primary hover:bg-primary/5 transition-colors">All products</a>
         </div>
-        
-        <!-- Value and Label -->
-        <div class="mb-4">
-          <div class="text-3xl font-bold text-gray-900 mb-1">{{ metric.value }}</div>
-          <div class="text-sm font-semibold text-gray-600 uppercase tracking-wide">{{ metric.label }}</div>
+        <!-- Bars -->
+        <div class="flex items-end gap-3 h-28">
+          @for (bar of [
+            {label:'Approved',  value:approvedProducts(),  max:totalProducts(),  color:'bg-primary'},
+            {label:'Pending',   value:pendingProducts(),   max:totalProducts(),  color:'bg-amber-400'},
+            {label:'Rejected',  value:rejectedProducts(),  max:totalProducts(),  color:'bg-red-400'},
+            {label:'Users',     value:totalUsers(),        max:totalUsers()+5,   color:'bg-blue-400'},
+            {label:'Posts',     value:totalPosts(),        max:totalPosts()+5,   color:'bg-purple-400'},
+            {label:'Shops',     value:totalShops(),        max:totalShops()+2,   color:'bg-teal-400'}
+          ]; track bar.label) {
+            <div class="flex-1 flex flex-col items-center gap-1">
+              <span class="text-[10px] font-black" style="color:var(--muted)">{{ bar.value }}</span>
+              <div class="w-full rounded-t-xl transition-all duration-1000" [ngClass]="bar.color"
+                [style.height.px]="getBarHeight(bar.value, bar.max)"></div>
+              <span class="text-[9px] font-bold text-center leading-tight" style="color:var(--muted)">{{ bar.label }}</span>
+            </div>
+          }
         </div>
-        
-        <!-- Enhanced Progress Bar -->
-        <div class="relative">
-          <div class="w-full bg-gray-100 rounded-full h-3 overflow-hidden shadow-inner">
-            <div class="h-full rounded-full transition-all duration-1000 ease-out relative" 
-                 [ngClass]="getMetricProgressColor(metric.color)"
-                 [style.width.%]="metric.progress">
-              <div class="absolute inset-0 bg-white/30 rounded-full animate-pulse"></div>
+      }
+    </div>
+
+    <!-- Donut stats "Platform Health" (1 col) -->
+    <div class="rounded-3xl p-6 shadow-sm" style="background-color:var(--card-bg);border:1px solid var(--border)">
+      <div class="flex items-center justify-between mb-5">
+        <h3 class="font-black text-base" style="color:var(--text-color)">Platform Health</h3>
+      </div>
+      @if (isLoading()) {
+        <div class="grid grid-cols-2 gap-4">
+          @for (i of [1,2,3,4]; track i) {
+            <div class="flex flex-col items-center gap-2">
+              <div class="w-20 h-20 rounded-full animate-pulse" style="background-color:var(--border)"></div>
+              <div class="h-3 w-16 rounded animate-pulse" style="background-color:var(--border)"></div>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="grid grid-cols-2 gap-5">
+          @for (stat of [
+            {label:'Approved',   pct:getApprovalRate(),     color:'#8B0000',  sub:'products'},
+            {label:'Pending',    pct:getPendingRate(),      color:'#f59e0b',  sub:'products'},
+            {label:'Posts OK',   pct:getPostApprovalRate(), color:'#8b5cf6',  sub:'forum'},
+            {label:'Shops',      pct:getShopRate(),         color:'#3b82f6',  sub:'active'}
+          ]; track stat.label) {
+            <div class="flex flex-col items-center gap-1.5">
+              <div class="relative w-20 h-20">
+                <svg class="w-20 h-20 -rotate-90" viewBox="0 0 80 80">
+                  <circle cx="40" cy="40" r="32" fill="none" stroke="var(--border)" stroke-width="7"/>
+                  <circle cx="40" cy="40" r="32" fill="none" [attr.stroke]="stat.color" stroke-width="7"
+                    stroke-linecap="round" [attr.stroke-dasharray]="getCircleDash(stat.pct)"
+                    class="transition-all duration-1000"/>
+                </svg>
+                <div class="absolute inset-0 flex items-center justify-center">
+                  <span class="text-sm font-black" style="color:var(--text-color)">{{ stat.pct }}%</span>
+                </div>
+              </div>
+              <p class="text-[10px] font-black uppercase tracking-wide text-center" style="color:var(--text-color)">{{ stat.label }}</p>
+              <p class="text-[9px] text-center" style="color:var(--muted)">{{ stat.sub }}</p>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- ══ ROW 3: Recent Users + Recent Products ════════════════════════════════ -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+    <!-- Recent Users (2 cols) -->
+    <div class="lg:col-span-2 rounded-3xl p-6 shadow-sm" style="background-color:var(--card-bg);border:1px solid var(--border)">
+      <div class="flex items-center justify-between mb-5">
+        <h3 class="font-black text-base" style="color:var(--text-color)">Recent Users</h3>
+        <a routerLink="/admin/users" class="text-primary text-xs font-black hover:underline">See all</a>
+      </div>
+      @if (isLoading()) {
+        @for (i of [1,2,3,4]; track i) {
+          <div class="flex items-center gap-4 py-3 border-b" style="border-color:var(--border)">
+            <div class="w-11 h-11 rounded-full animate-pulse shrink-0" style="background-color:var(--border)"></div>
+            <div class="flex-1 space-y-2">
+              <div class="h-3 w-36 rounded animate-pulse" style="background-color:var(--border)"></div>
+              <div class="h-2.5 w-24 rounded animate-pulse" style="background-color:var(--border)"></div>
+            </div>
+            <div class="flex gap-2">
+              <div class="w-7 h-7 rounded-full animate-pulse" style="background-color:var(--border)"></div>
+              <div class="w-7 h-7 rounded-full animate-pulse" style="background-color:var(--border)"></div>
             </div>
           </div>
-          <div class="text-xs font-bold text-gray-500 mt-1 text-right">{{ metric.progress }}%</div>
+        }
+      } @else if (recentUsers().length === 0) {
+        <div class="text-center py-10">
+          <span class="text-4xl block mb-2">👥</span>
+          <p class="text-sm" style="color:var(--muted)">No users yet.</p>
         </div>
+      } @else {
+        <div class="divide-y" style="--tw-divide-opacity:1">
+          @for (u of recentUsers(); track u.id) {
+            <div class="flex items-center gap-4 py-3.5">
+              <!-- Avatar -->
+              <div class="w-11 h-11 rounded-full bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center text-white font-black text-sm shrink-0 shadow-sm">
+                {{ (u.firstName?.charAt(0)||'?').toUpperCase() }}{{ (u.lastName?.charAt(0)||'').toUpperCase() }}
+              </div>
+              <!-- Info -->
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-bold truncate" style="color:var(--text-color)">{{ u.firstName }} {{ u.lastName }}
+                  @if (u.roles?.includes('PROVIDER')) { <span class="text-[10px] text-blue-500 font-black ml-1">(provider)</span> }
+                </p>
+                <p class="text-xs truncate" style="color:var(--muted)">{{ u.email }}</p>
+              </div>
+              <!-- Role badge -->
+              <span class="text-[10px] font-black px-2.5 py-1 rounded-full shrink-0" style="background-color:var(--subtle);color:var(--muted)">{{ u.roles?.[0]||'USER' }}</span>
+              <!-- Action icons -->
+              <div class="flex gap-1.5 shrink-0">
+                <button class="w-8 h-8 rounded-full flex items-center justify-center text-sm transition-colors hover:bg-primary/10" style="background-color:var(--subtle)" title="Message">✉️</button>
+                <button class="w-8 h-8 rounded-full flex items-center justify-center text-sm transition-colors hover:bg-primary/10" style="background-color:var(--subtle)" title="Call">📞</button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Pending Products (1 col) -->
+    <div class="rounded-3xl p-6 shadow-sm" style="background-color:var(--card-bg);border:1px solid var(--border)">
+      <div class="flex items-center justify-between mb-5">
+        <h3 class="font-black text-base" style="color:var(--text-color)">Pending Products</h3>
+        <a routerLink="/admin/marketplace/products" class="text-primary text-xs font-black hover:underline">See all</a>
       </div>
+      @if (isLoading()) {
+        @for (i of [1,2,3,4]; track i) {
+          <div class="flex items-center gap-3 py-3 border-b" style="border-color:var(--border)">
+            <div class="w-10 h-10 rounded-xl animate-pulse shrink-0" style="background-color:var(--border)"></div>
+            <div class="flex-1 space-y-1.5">
+              <div class="h-3 w-28 rounded animate-pulse" style="background-color:var(--border)"></div>
+              <div class="h-2.5 w-20 rounded animate-pulse" style="background-color:var(--border)"></div>
+            </div>
+          </div>
+        }
+      } @else if (recentProducts().length === 0) {
+        <div class="text-center py-10">
+          <span class="text-4xl block mb-2">✅</span>
+          <p class="text-sm font-bold" style="color:var(--text-color)">All caught up!</p>
+          <p class="text-xs mt-1" style="color:var(--muted)">No pending products.</p>
+        </div>
+      } @else {
+        <div class="divide-y" style="--tw-divide-opacity:1">
+          @for (p of recentProducts(); track p.id) {
+            <div class="flex items-center gap-3 py-3.5">
+              <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-lg shrink-0">📦</div>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-bold truncate" style="color:var(--text-color)">{{ p.name }}</p>
+                <p class="text-xs" style="color:var(--muted)">{{ p.price }} TND · {{ p.shopName||'Unknown' }}</p>
+              </div>
+              <span class="text-[10px] font-black px-2 py-0.5 rounded-full shrink-0" [ngClass]="getStatusClass(p.status)">{{ p.status }}</span>
+            </div>
+          }
+        </div>
+      }
     </div>
   </div>
 
-  <!-- Main Dashboard Grid -->
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-    
-    <!-- Calendar & Attendance Section -->
-    <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-      <!-- Header -->
-      <div class="p-4 bg-gradient-to-r from-[#7D0408] to-[#8B0000] text-white flex justify-between items-center">
-        <h3 class="text-lg font-bold">Calendar & Attendance</h3>
-        <div class="flex gap-2">
-          <button (click)="prevMonth()" class="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-sm transition-colors">
-            ←
-          </button>
-          <button (click)="nextMonth()" class="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-sm transition-colors">
-            →
-          </button>
-        </div>
-      </div>
-      
-      <!-- Calendar Content -->
-      <div class="p-6">
-        <div class="text-center mb-6">
-          <h4 class="text-xl font-bold text-gray-900">{{ calendarMonthYear() }}</h4>
-        </div>
-        
-        <!-- Calendar Grid -->
-        <div class="grid grid-cols-7 gap-2 text-center mb-4">
-          <div *ngFor="let day of ['S', 'M', 'T', 'W', 'T', 'F', 'S']" 
-               class="text-xs font-bold text-gray-500 py-2">{{day}}</div>
-        </div>
-        
-        <div class="grid grid-cols-7 gap-2">
-          <div *ngFor="let dayObj of calendarDays()" 
-               class="w-10 h-10 mx-auto flex items-center justify-center text-sm font-medium rounded-xl cursor-pointer transition-all hover:scale-110"
-               [ngClass]="{
-                 'text-gray-300': !dayObj.currentMonth,
-                 'bg-[#7D0408] text-white shadow-lg font-bold transform scale-110': dayObj.isToday,
-                 'hover:bg-gray-100 text-gray-700': !dayObj.isToday && dayObj.currentMonth,
-                 'text-gray-400': !dayObj.isToday && !dayObj.currentMonth
-               }">
-            {{ dayObj.day }}
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Market Performance Chart -->
-    <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-      <!-- Header -->
-      <div class="p-4 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200 flex justify-between items-center">
-        <h3 class="text-lg font-bold text-gray-900">Market Performance</h3>
-        <span class="text-xs text-gray-500 font-medium bg-gray-200 px-3 py-1 rounded-full">Data in %</span>
-      </div>
-      
-      <!-- Chart Content -->
-      <div class="p-6">
-        <!-- Legend -->
-        <div class="flex justify-between items-center mb-6 text-xs font-bold gap-4">
-          <div class="flex items-center gap-2">
-            <span class="w-3 h-3 rounded-full bg-[#7D0408] shadow-sm"></span>
-            <span class="text-[#7D0408]">Listings</span>
-          </div>
-          <div class="flex items-center gap-2">
-            <span class="w-3 h-3 rounded-full bg-[#C5A023] shadow-sm"></span>
-            <span class="text-[#C5A023]">Sales</span>
-          </div>
-          <div class="flex items-center gap-2">
-            <span class="w-3 h-3 rounded-full bg-[#508D96] shadow-sm"></span>
-            <span class="text-[#508D96]">Conversion</span>
-          </div>
-        </div>
-        
-        <!-- Chart Bars -->
-        <div class="flex items-end justify-around gap-3 h-32 relative">
-          <!-- Grid Lines -->
-          <div class="absolute inset-0 flex flex-col justify-between opacity-10 pointer-events-none">
-            <div class="w-full h-px bg-gray-400"></div>
-            <div class="w-full h-px bg-gray-400"></div>
-            <div class="w-full h-px bg-gray-400"></div>
-            <div class="w-full h-px bg-gray-400"></div>
-          </div>
-          
-          <!-- Bars -->
-          <div class="w-8 bg-[#7D0408] rounded-t-lg relative group shadow-lg transition-all hover:shadow-xl" style="height: 75%;">
-            <div class="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-[#7D0408] text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">75%</div>
-          </div>
-          <div class="w-8 bg-[#C5A023] rounded-t-lg relative group shadow-lg transition-all hover:shadow-xl" style="height: 55%;">
-            <div class="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-[#C5A023] text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">55%</div>
-          </div>
-          <div class="w-8 bg-[#508D96] rounded-t-lg relative group shadow-lg transition-all hover:shadow-xl" style="height: 65%;">
-            <div class="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-[#508D96] text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">65%</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Recent Logs -->
-    <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-      <!-- Header -->
-      <div class="p-4 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200 flex justify-between items-center">
-        <h3 class="text-lg font-bold text-gray-900">Recent Logs</h3>
-        <button class="px-4 py-2 text-xs font-bold text-[#508D96] border-2 border-[#508D96] rounded-full hover:bg-[#508D96] hover:text-white transition-colors">
-          View All
-        </button>
-      </div>
-      
-      <!-- Logs Content -->
-      <div class="p-4 space-y-4 max-h-80 overflow-y-auto">
-        <div *ngFor="let activity of recentActivities.slice(0,4)" class="border-b border-gray-100 pb-4 last:border-b-0">
-          <div class="flex justify-between items-start mb-2">
-            <h4 class="text-sm font-bold text-gray-900 leading-tight">{{activity.title}}</h4>
-            <span class="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded-full shrink-0 ml-2">{{activity.time}}</span>
-          </div>
-          <p class="text-xs text-gray-600 leading-relaxed">{{activity.description || 'System activity logged successfully'}}</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Enhanced Action Cards -->
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-    <!-- Pending KYC Card -->
-    <div class="bg-gradient-to-br from-[#7D0408] to-[#8B0000] rounded-2xl p-8 text-white relative overflow-hidden shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105 cursor-pointer group"
-         routerLink="/admin/users">
-      <!-- Background Elements -->
-      <div class="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full group-hover:scale-150 transition-transform duration-500"></div>
-      <div class="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full -translate-x-12 translate-y-12"></div>
-      
-      <div class="relative z-10">
-        <div class="flex items-center justify-between mb-6">
-          <div class="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center text-3xl backdrop-blur-sm border border-white/30">
-            🆔
-          </div>
-          <div class="text-white/60 group-hover:text-white transition-colors text-2xl">→</div>
-        </div>
-        
-        <div class="mb-4">
-          <div class="text-4xl font-black mb-2">12</div>
-          <div class="text-lg font-bold text-white/90 uppercase tracking-wide">PENDING KYC</div>
-        </div>
-        
-        <div class="text-sm text-white/80 font-medium">Awaiting Verification</div>
-      </div>
-    </div>
-
-    <!-- Flagged Content Card -->
-    <div class="bg-gradient-to-br from-[#C5A023] to-[#B8941F] rounded-2xl p-8 text-white relative overflow-hidden shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105 cursor-pointer group"
-         routerLink="/admin/moderation">
-      <!-- Background Elements -->
-      <div class="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full group-hover:scale-150 transition-transform duration-500"></div>
-      <div class="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full -translate-x-12 translate-y-12"></div>
-      
-      <div class="relative z-10">
-        <div class="flex items-center justify-between mb-6">
-          <div class="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center text-3xl backdrop-blur-sm border border-white/30">
-            ▶️
-          </div>
-          <div class="text-white/60 group-hover:text-white transition-colors text-2xl">→</div>
-        </div>
-        
-        <div class="mb-4">
-          <div class="text-4xl font-black mb-2">5</div>
-          <div class="text-lg font-bold text-white/90 uppercase tracking-wide">FLAGGED CONTENT</div>
-        </div>
-        
-        <div class="text-sm text-white/80 font-medium">Requires Review</div>
-      </div>
-    </div>
-
-    <!-- Open Tickets Card -->
-    <div class="bg-gradient-to-br from-[#508D96] to-[#457A85] rounded-2xl p-8 text-white relative overflow-hidden shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105 cursor-pointer group"
-         routerLink="/admin/support">
-      <!-- Background Elements -->
-      <div class="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full group-hover:scale-150 transition-transform duration-500"></div>
-      <div class="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full -translate-x-12 translate-y-12"></div>
-      
-      <div class="relative z-10">
-        <div class="flex items-center justify-between mb-6">
-          <div class="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center text-3xl backdrop-blur-sm border border-white/30">
-            🔓
-          </div>
-          <div class="text-white/60 group-hover:text-white transition-colors text-2xl">→</div>
-        </div>
-        
-        <div class="mb-4">
-          <div class="text-4xl font-black mb-2">8</div>
-          <div class="text-lg font-bold text-white/90 uppercase tracking-wide">OPEN TICKETS</div>
-        </div>
-        
-        <div class="text-sm text-white/80 font-medium">Support Required</div>
-      </div>
-    </div>
-  </div>
 </div>

@@ -134,18 +134,26 @@ export class SidebarComponent {
     isMarketplaceOpen = signal(false);
     isProviderOpen = signal(false);
     isForumOpen = signal(false);
+    isCarpoolingOpen = signal(false);
     
     menuItems: MenuItem[] = [
         { label: 'Dashboard', icon: '🏠', route: '/admin/dashboard' },
         { label: 'User Management', icon: '👥', route: '/admin/users' },
-        { label: 'Content Moderation', icon: '🛡️', route: '/admin/moderation' },
-        { label: 'Smart Mobility', icon: '🚗', route: '/admin/mobility' },
         { label: 'Orders & Transactions', icon: '💳', route: '/admin/orders' },
         { label: 'Support Center', icon: '🎧', route: '/admin/support' },
-        { label: 'Community Oversight', icon: '👁️', route: '/admin/community' },
         { label: 'Notification Center', icon: '🔔', route: '/admin/notifications', badge: 5 },
-        { label: 'Analytics & Reports', icon: '📊', route: '/admin/analytics' },
+        { label: 'Negotiations', icon: '🤝', route: '/admin/negotiations' },
+        { label: 'SAV & Deliveries', icon: '📦', route: '/admin/sav' },
         { label: 'System Settings', icon: '⚙️', route: '/admin/settings' }
+    ];
+
+    carpoolingItems = [
+        { label: 'Overview', icon: '📊', route: '/admin/carpooling' },
+        { label: 'All Rides', icon: '🚗', route: '/admin/carpooling/rides' },
+        { label: 'Ride Requests', icon: '📋', route: '/admin/carpooling/requests' },
+        { label: 'Drivers', icon: '🧑‍✈️', route: '/admin/carpooling/drivers' },
+        { label: 'Passengers', icon: '👤', route: '/admin/carpooling/passengers' },
+        { label: 'Payments', icon: '💰', route: '/admin/carpooling/payments' },
     ];
 
     marketplaceItems = [
@@ -169,7 +177,7 @@ export class SidebarComponent {
         { label: 'Categories', icon: '📂', route: '/admin/forum/categories' },
         { label: 'Posts', icon: '📝', route: '/admin/forum/posts' },
         { label: 'Comments', icon: '💬', route: '/admin/forum/comments' },
-        { label: 'Moderation', icon: '🛡️', route: '/admin/forum/moderation' },
+        { label: 'Content Moderation', icon: '🛡️', route: '/admin/moderation' },
         { label: 'Reports', icon: '⚠️', route: '/admin/forum/reports' }
     ];
 
@@ -189,5 +197,9 @@ export class SidebarComponent {
 
     toggleForum(): void {
         this.isForumOpen.update(open => !open);
+    }
+
+    toggleCarpooling(): void {
+        this.isCarpoolingOpen.update(open => !open);
     }
 }

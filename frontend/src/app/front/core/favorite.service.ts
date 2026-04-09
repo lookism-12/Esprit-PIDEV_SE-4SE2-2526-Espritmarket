@@ -1,54 +1,96 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
-import { Favorite, FavoriteListResponse, AddFavoriteRequest } from '../models/favorite.model';
+import { Observable, tap, catchError, of } from 'rxjs';
+import { environment } from '../../../environment';
 
-@Injectable({
-  providedIn: 'root'
-})
+export interface FavorisResponse {
+  id: string;
+  userId: string;
+  productId?: string;
+  serviceId?: string;
+  createdAt: string;
+}
+
+@Injectable({ providedIn: 'root' })
 export class FavoriteService {
-  private readonly apiUrl = '/api/favorites';
+  private readonly apiUrl = `${environment.apiUrl}/favoris`;
+  private http = inject(HttpClient);
 
-  readonly favorites = signal<Favorite[]>([]);
+  // State
+  readonly favorites = signal<FavorisResponse[]>([]);
   readonly isLoading = signal<boolean>(false);
-  readonly error = signal<string | null>(null);
 
+  // Derived
   readonly favoriteCount = computed(() => this.favorites().length);
-  readonly favoriteIds = computed(() => this.favorites().map(f => f.productId));
+  readonly favoriteProductIds = computed(() =>
+    new Set(this.favorites().filter(f => f.productId).map(f => f.productId!))
+  );
+  readonly favoriteServiceIds = computed(() =>
+    new Set(this.favorites().filter(f => f.serviceId).map(f => f.serviceId!))
+  );
 
-  constructor(private http: HttpClient) {}
-
-  getAll(page = 1, limit = 20): Observable<FavoriteListResponse> {
-    // TODO: Implement HTTP call
-    console.log('FavoriteService.getAll() called');
-    return of({ favorites: [], total: 0, page: 1, totalPages: 0 });
+  /** Load current user's favorites from backend */
+  loadMyFavorites(): void {
+    this.isLoading.set(true);
+    this.http.get<FavorisResponse[]>(`${this.apiUrl}/my`).pipe(
+      catchError(() => of([]))
+    ).subscribe(data => {
+      this.favorites.set(data ?? []);
+      this.isLoading.set(false);
+    });
   }
 
-  add(request: AddFavoriteRequest): Observable<Favorite> {
-    // TODO: Implement HTTP call
-    console.log('FavoriteService.add() called with:', request);
-    return of({} as Favorite);
+  /** Toggle product favorite — returns true if now favorited */
+  toggleProduct(productId: string): Observable<FavorisResponse | null> {
+    return this.http.post<FavorisResponse | null>(
+      `${this.apiUrl}/toggle/product/${productId}`, {}
+    ).pipe(
+      tap(result => {
+        if (result) {
+          // Added
+          this.favorites.update(list => [...list, result]);
+        } else {
+          // Removed
+          this.favorites.update(list => list.filter(f => f.productId !== productId));
+        }
+      }),
+      catchError(err => { console.error('Toggle favorite failed', err); return of(null); })
+    );
   }
 
-  remove(productId: string): Observable<void> {
-    // TODO: Implement HTTP call
-    console.log('FavoriteService.remove() called with:', productId);
-    return of(void 0);
+  /** Toggle service favorite */
+  toggleService(serviceId: string): Observable<FavorisResponse | null> {
+    return this.http.post<FavorisResponse | null>(
+      `${this.apiUrl}/toggle/service/${serviceId}`, {}
+    ).pipe(
+      tap(result => {
+        if (result) {
+          this.favorites.update(list => [...list, result]);
+        } else {
+          this.favorites.update(list => list.filter(f => f.serviceId !== serviceId));
+        }
+      }),
+      catchError(err => { console.error('Toggle service favorite failed', err); return of(null); })
+    );
   }
 
-  toggle(productId: string): Observable<{ isFavorite: boolean }> {
-    // TODO: Implement HTTP call
-    console.log('FavoriteService.toggle() called with:', productId);
-    return of({ isFavorite: false });
+  /** Remove by favorite ID */
+  removeById(favoriteId: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${favoriteId}`).pipe(
+      tap(() => this.favorites.update(list => list.filter(f => f.id !== favoriteId))),
+      catchError(err => { console.error('Remove favorite failed', err); return of(undefined); })
+    );
   }
 
-  isFavorite(productId: string): boolean {
-    return this.favoriteIds().includes(productId);
+  isProductFavorited(productId: string): boolean {
+    return this.favoriteProductIds().has(productId);
   }
 
-  checkPriceChanges(): Observable<Favorite[]> {
-    // TODO: Implement HTTP call
-    console.log('FavoriteService.checkPriceChanges() called');
-    return of([]);
+  isServiceFavorited(serviceId: string): boolean {
+    return this.favoriteServiceIds().has(serviceId);
+  }
+
+  getFavoriteIdForProduct(productId: string): string | undefined {
+    return this.favorites().find(f => f.productId === productId)?.id;
   }
 }

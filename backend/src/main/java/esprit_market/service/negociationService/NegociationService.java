@@ -2,6 +2,7 @@ package esprit_market.service.negociationService;
 
 import esprit_market.Enum.negociationEnum.NegociationStatuts;
 import esprit_market.Enum.negociationEnum.ProposalStatuts;
+import esprit_market.Enum.negociationEnum.ProposalType;
 import esprit_market.Enum.notificationEnum.NotificationType;
 import esprit_market.config.Exceptions.AccessDeniedException;
 import esprit_market.config.Exceptions.BadRequestException;
@@ -9,12 +10,14 @@ import esprit_market.config.Exceptions.ResourceNotFoundException;
 import esprit_market.dto.negociation.NegociationRequest;
 import esprit_market.dto.negociation.NegociationResponse;
 import esprit_market.dto.negociation.ProposalRequest;
+import esprit_market.entity.marketplace.Product;
 import esprit_market.entity.marketplace.ServiceEntity;
 import esprit_market.entity.marketplace.Shop;
 import esprit_market.entity.negociation.Negociation;
 import esprit_market.entity.negociation.Proposal;
 import esprit_market.entity.user.User;
 import esprit_market.mappers.negociationMapper.NegociationMapper;
+import esprit_market.repository.marketplaceRepository.ProductRepository;
 import esprit_market.repository.marketplaceRepository.ServiceRepository;
 import esprit_market.repository.marketplaceRepository.ShopRepository;
 import esprit_market.repository.negociationRepository.NegociationRepository;
@@ -43,6 +46,7 @@ public class NegociationService implements INegociationService {
     private final NegociationMapper negociationMapper;
     private final UserRepository userRepository;
     private final ServiceRepository serviceRepository;
+    private final ProductRepository productRepository;
     private final ShopRepository shopRepository;
     private final INotificationService notificationService;
 
@@ -52,50 +56,90 @@ public class NegociationService implements INegociationService {
     }
 
     private ServiceEntity getService(String id) {
-        return serviceRepository.findById(new ObjectId(id))
-                .orElseThrow(() -> new ResourceNotFoundException("Service", "id", id));
+        return serviceRepository.findById(new ObjectId(id)).orElse(null);
     }
 
-    private User getShopOwner(ServiceEntity service) {
-        if (service == null || service.getShopId() == null) {
-            return null;
+    private Product getProduct(String id) {
+        return productRepository.findById(new ObjectId(id)).orElse(null);
+    }
+
+    private User getShopOwner(ServiceEntity service, Product product) {
+        ObjectId shopId = null;
+        if (service != null) {
+            shopId = service.getShopId();
+        } else if (product != null) {
+            shopId = product.getShopId();
         }
-        Shop shop = shopRepository.findById(service.getShopId()).orElse(null);
-        if (shop == null || shop.getOwnerId() == null) {
-            return null;
-        }
+        if (shopId == null) return null;
+        Shop shop = shopRepository.findById(shopId).orElse(null);
+        if (shop == null || shop.getOwnerId() == null) return null;
         return userRepository.findById(shop.getOwnerId()).orElse(null);
+    }
+
+    private String getItemName(Negociation negociation) {
+        if (negociation.getService() != null) return negociation.getService().getName();
+        if (negociation.getProduct() != null) return negociation.getProduct().getName();
+        return "Unknown Item";
     }
 
     @Override
     @Transactional
     public NegociationResponse createNegociation(NegociationRequest request, String clientId) {
-        log.info("Creating negociation for service: {} by client: {}", request.getServiceId(), clientId);
+        log.info("Creating negociation for item: {} by client: {}", request.getServiceId(), clientId);
 
         User client = getUser(clientId);
         ServiceEntity service = getService(request.getServiceId());
+        Product product = null;
 
-        if (negociationRepository.existsByClientAndServiceAndStatuts(client, service, NegociationStatuts.PENDING) ||
-                negociationRepository.existsByClientAndServiceAndStatuts(client, service, NegociationStatuts.IN_PROGRESS)) {
-            throw new BadRequestException("A negociation is already in progress for this service");
+        if (service == null) {
+            product = getProduct(request.getServiceId());
+            if (product == null) {
+                throw new ResourceNotFoundException("Item", "id", request.getServiceId());
+            }
+        }
+
+        if (service != null) {
+            if (negociationRepository.existsByClientAndServiceAndStatuts(client, service, NegociationStatuts.PENDING) ||
+                    negociationRepository.existsByClientAndServiceAndStatuts(client, service, NegociationStatuts.IN_PROGRESS)) {
+                throw new BadRequestException("A negociation is already in progress for this service");
+            }
+        } else {
+            if (negociationRepository.existsByClientAndProductAndStatuts(client, product, NegociationStatuts.PENDING) ||
+                    negociationRepository.existsByClientAndProductAndStatuts(client, product, NegociationStatuts.IN_PROGRESS)) {
+                throw new BadRequestException("A negociation is already in progress for this product");
+            }
         }
 
         Negociation negociation = Negociation.builder()
                 .client(client)
                 .service(service)
-                .statuts(NegociationStatuts.PENDING)
+                .product(product)
+                .statuts(request.getAmount() != null ? NegociationStatuts.IN_PROGRESS : NegociationStatuts.PENDING)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
 
+        if (request.getAmount() != null) {
+            Proposal initialProposal = Proposal.builder()
+                    .amount(request.getAmount())
+                    .message(request.getMessage())
+                    .sender(client)
+                    .statuts(ProposalStatuts.PENDING)
+                    .type(ProposalType.PROPOSAL)
+                    .createdAt(LocalDateTime.now())
+                    .build();
+            negociation.getProposals().add(initialProposal);
+        }
+
         Negociation saved = negociationRepository.save(negociation);
         log.info("Negociation created with id: {}", saved.getId());
 
-        User provider = getShopOwner(service);
+        User provider = getShopOwner(service, product);
+        String itemName = getItemName(saved);
         if (provider != null) {
             notificationService.sendNotification(provider,
                     "New Negociation",
-                    "Client " + client.getFirstName() + " wants to negotiate for " + service.getName(),
+                    "Client " + client.getFirstName() + " wants to negotiate for " + itemName,
                     NotificationType.INTERNAL_NOTIFICATION,
                     saved.getId().toHexString());
         }
@@ -106,16 +150,84 @@ public class NegociationService implements INegociationService {
     @Override
     public NegociationResponse getNegociationById(String id) {
         log.debug("Fetching negociation by id: {}", id);
-        Negociation negociation = negociationRepository.findById(new ObjectId(id))
-                .orElseThrow(() -> new ResourceNotFoundException("Negociation", "id", id));
-        return negociationMapper.toResponse(negociation);
+        return negociationMapper.toResponse(
+                negociationRepository.findById(new ObjectId(id))
+                        .orElseThrow(() -> new ResourceNotFoundException("Negociation", "id", id)));
     }
 
     @Override
     public Page<NegociationResponse> getAllNegociations(Pageable pageable) {
         log.debug("Fetching all negociations with pagination");
-        return negociationRepository.findAll(pageable)
-                .map(negociationMapper::toResponse);
+        return negociationRepository.findAll(pageable).map(negociationMapper::toResponse);
+    }
+
+    @Override
+    public List<NegociationResponse> getAllNegociationsList() {
+        return negociationRepository.findAll().stream()
+                .map(negociationMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public NegociationResponse updateStatusDirect(String id, NegociationStatuts status) {
+        log.info("Direct status update for negociation: {} to {}", id, status);
+        Negociation negociation = negociationRepository.findById(new ObjectId(id))
+                .orElseThrow(() -> new ResourceNotFoundException("Negociation", "id", id));
+
+        negociation.setStatuts(status);
+        negociation.setUpdatedAt(LocalDateTime.now());
+        Negociation saved = negociationRepository.save(negociation);
+
+        User client = saved.getClient();
+        String itemName = getItemName(saved);
+        String statusLabel = status.name().charAt(0) + status.name().substring(1).toLowerCase();
+        String message = status == NegociationStatuts.ACCEPTED
+                ? "Your offer for \"" + itemName + "\" has been accepted 🎉"
+                : "Your offer for \"" + itemName + "\" has been rejected.";
+
+        notificationService.sendNotification(client,
+                "Negotiation " + statusLabel,
+                message,
+                NotificationType.INTERNAL_NOTIFICATION,
+                saved.getId().toHexString());
+
+        return negociationMapper.toResponse(saved);
+    }
+
+    @Override
+    @Transactional
+    public NegociationResponse addProposalDirect(String negociationId, ProposalRequest request, String senderId) {
+        log.info("Direct proposal on negociation: {} by sender: {}", negociationId, senderId);
+        Negociation negociation = negociationRepository.findById(new ObjectId(negociationId))
+                .orElseThrow(() -> new ResourceNotFoundException("Negociation", "id", negociationId));
+
+        if (negociation.getStatuts() == NegociationStatuts.ACCEPTED ||
+                negociation.getStatuts() == NegociationStatuts.REJECTED ||
+                negociation.getStatuts() == NegociationStatuts.CANCELLED) {
+            throw new BadRequestException("Cannot add proposal: negociation is already closed");
+        }
+
+        User sender = getUser(senderId);
+        Proposal proposal = negociationMapper.toProposalEntity(request);
+        proposal.setSender(sender);
+        proposal.setStatuts(ProposalStatuts.PENDING);
+        proposal.setCreatedAt(LocalDateTime.now());
+
+        negociation.getProposals().add(proposal);
+        negociation.setStatuts(NegociationStatuts.IN_PROGRESS);
+        negociation.setUpdatedAt(LocalDateTime.now());
+        Negociation saved = negociationRepository.save(negociation);
+
+        User client = saved.getClient();
+        String itemName = getItemName(saved);
+        notificationService.sendNotification(client,
+                "Counter Offer Received",
+                "The provider sent a counter offer of " + proposal.getAmount() + " TND for \"" + itemName + "\"",
+                NotificationType.INTERNAL_NOTIFICATION,
+                saved.getId().toHexString());
+
+        return negociationMapper.toResponse(saved);
     }
 
     @Override
@@ -123,6 +235,28 @@ public class NegociationService implements INegociationService {
         log.debug("Fetching negociations for client: {}", clientId);
         User client = getUser(clientId);
         return negociationRepository.findByClient(client).stream()
+                .map(negociationMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<NegociationResponse> getIncomingNegociations(String userId) {
+        log.info("Fetching incoming negociations for user: {}", userId);
+        User provider = getUser(userId);
+
+        List<Shop> shops = shopRepository.findAllByOwnerId(provider.getId());
+        if (shops.isEmpty()) return List.of();
+
+        List<ObjectId> shopIds = shops.stream().map(Shop::getId).collect(Collectors.toList());
+        List<Product> products = productRepository.findByShopIdIn(shopIds);
+        List<ServiceEntity> services = serviceRepository.findByShopIdIn(shopIds);
+
+        return java.util.stream.Stream
+                .concat(
+                        products.isEmpty() ? java.util.stream.Stream.empty() : negociationRepository.findByProductIn(products).stream(),
+                        services.isEmpty() ? java.util.stream.Stream.empty() : negociationRepository.findByServiceIn(services).stream()
+                )
+                .distinct()
                 .map(negociationMapper::toResponse)
                 .collect(Collectors.toList());
     }
@@ -148,11 +282,10 @@ public class NegociationService implements INegociationService {
     @Transactional
     public NegociationResponse updateStatus(String id, NegociationStatuts status, String userId) {
         log.info("Updating negociation status: {} to {}", id, status);
-
         Negociation negociation = negociationRepository.findById(new ObjectId(id))
                 .orElseThrow(() -> new ResourceNotFoundException("Negociation", "id", id));
 
-        User provider = getShopOwner(negociation.getService());
+        User provider = getShopOwner(negociation.getService(), negociation.getProduct());
         boolean isClient = negociation.getClient().getId().toHexString().equals(userId);
         boolean isProvider = provider != null && provider.getId().toHexString().equals(userId);
 
@@ -165,10 +298,11 @@ public class NegociationService implements INegociationService {
         Negociation saved = negociationRepository.save(negociation);
 
         User recipient = isClient ? provider : negociation.getClient();
+        String itemName = getItemName(negociation);
         if (recipient != null) {
             notificationService.sendNotification(recipient,
                     "Negociation Status Updated",
-                    "Negociation for " + negociation.getService().getName() + " is now: " + status,
+                    "Negociation for " + itemName + " is now: " + status,
                     NotificationType.INTERNAL_NOTIFICATION,
                     saved.getId().toHexString());
         }
@@ -181,7 +315,6 @@ public class NegociationService implements INegociationService {
     @Transactional
     public NegociationResponse addProposal(String negociationId, ProposalRequest request, String senderId) {
         log.info("Adding proposal to negociation: {}", negociationId);
-
         Negociation negociation = negociationRepository.findById(new ObjectId(negociationId))
                 .orElseThrow(() -> new ResourceNotFoundException("Negociation", "id", negociationId));
 
@@ -192,7 +325,7 @@ public class NegociationService implements INegociationService {
         }
 
         User sender = getUser(senderId);
-        User provider = getShopOwner(negociation.getService());
+        User provider = getShopOwner(negociation.getService(), negociation.getProduct());
         boolean isClient = negociation.getClient().getId().toHexString().equals(senderId);
         boolean isProvider = provider != null && provider.getId().toHexString().equals(senderId);
 
@@ -208,14 +341,14 @@ public class NegociationService implements INegociationService {
         negociation.getProposals().add(proposal);
         negociation.setStatuts(NegociationStatuts.IN_PROGRESS);
         negociation.setUpdatedAt(LocalDateTime.now());
-
         Negociation saved = negociationRepository.save(negociation);
 
         User recipient = isClient ? provider : negociation.getClient();
+        String itemName = getItemName(negociation);
         if (recipient != null) {
             notificationService.sendNotification(recipient,
                     "New Proposal",
-                    "You received an offer of " + proposal.getAmount() + " TND for " + negociation.getService().getName(),
+                    "You received an offer of " + proposal.getAmount() + " TND for " + itemName,
                     NotificationType.INTERNAL_NOTIFICATION,
                     saved.getId().toHexString());
         }
@@ -228,7 +361,6 @@ public class NegociationService implements INegociationService {
     @Transactional
     public void deleteNegociation(String id, String clientId) {
         log.info("Deleting negociation: {} by client: {}", id, clientId);
-
         Negociation negociation = negociationRepository.findById(new ObjectId(id))
                 .orElseThrow(() -> new ResourceNotFoundException("Negociation", "id", id));
 

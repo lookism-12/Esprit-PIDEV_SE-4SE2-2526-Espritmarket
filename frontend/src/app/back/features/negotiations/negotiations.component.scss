@@ -1,0 +1,76 @@
+.admin-container { padding: 2rem; background: var(--bg-color); min-height: 100vh; }
+
+.admin-header {
+  display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem;
+  h1 { font-size: 1.6rem; color: var(--text-color); margin: 0 0 0.25rem; font-weight: 800; }
+  p { color: var(--muted); margin: 0; font-size: 0.9rem; }
+}
+
+.btn-refresh {
+  padding: 0.5rem 1.2rem; background: #7D0408; color: white; border: none;
+  border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.85rem;
+  &:hover { background: #5a0306; }
+}
+
+.stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+
+.stat-card {
+  background: var(--card-bg); border-radius: 12px; padding: 1rem 1.25rem;
+  display: flex; flex-direction: column; gap: 0.25rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15); border-left: 4px solid var(--border);
+  .stat-value { font-size: 1.8rem; font-weight: 900; color: var(--text-color); }
+  .stat-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+  &.pending   { border-left-color: #0284c7; .stat-value { color: #0284c7; } }
+  &.inprogress { border-left-color: #d97706; .stat-value { color: #d97706; } }
+  &.accepted  { border-left-color: #16a34a; .stat-value { color: #16a34a; } }
+  &.rejected  { border-left-color: #dc2626; .stat-value { color: #dc2626; } }
+}
+
+.filters-bar { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
+
+.search-input {
+  flex: 1; min-width: 220px; padding: 0.6rem 1rem;
+  border: 1.5px solid var(--border); border-radius: 8px; font-size: 0.875rem; outline: none;
+  background: var(--input-bg); color: var(--text-color);
+  &:focus { border-color: #7D0408; }
+}
+
+.status-filters { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+
+.filter-btn {
+  padding: 0.4rem 0.9rem; border-radius: 999px; border: 1.5px solid var(--border);
+  background: var(--card-bg); font-size: 0.75rem; font-weight: 700; cursor: pointer; color: var(--muted);
+  &:hover { border-color: #7D0408; color: #7D0408; }
+  &.active { background: #7D0408; color: white; border-color: #7D0408; }
+}
+
+.table-container { background: var(--card-bg); border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.15); overflow: hidden; }
+
+.admin-table {
+  width: 100%; border-collapse: collapse;
+  th, td { padding: 0.875rem 1rem; text-align: left; border-bottom: 1px solid var(--border); font-size: 0.875rem; }
+  th { background: var(--subtle); font-weight: 700; color: var(--muted); text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.06em; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--subtle); }
+  .id-col { font-family: monospace; color: var(--muted); font-size: 0.8rem; }
+  .client-col { font-weight: 600; color: var(--text-color); }
+  .price { font-family: monospace; color: var(--text-color); }
+  .fw-bold { font-weight: 800; color: #7D0408; }
+  .center { text-align: center; }
+  .date { color: var(--muted); font-size: 0.8rem; }
+}
+
+.badge {
+  display: inline-block; padding: 0.2rem 0.65rem; border-radius: 999px;
+  font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+  &.status-pending    { background: #e0f2fe; color: #0284c7; }
+  &.status-inprogress { background: #fef3c7; color: #d97706; }
+  &.status-accepted   { background: #dcfce7; color: #16a34a; }
+  &.status-rejected   { background: #fee2e2; color: #dc2626; }
+  &.status-cancelled  { background: var(--subtle); color: var(--muted); }
+  &.status-default    { background: var(--subtle); color: var(--muted); }
+}
+
+.results-count { margin-top: 0.75rem; font-size: 0.8rem; color: var(--muted); text-align: right; }
+.loading-state, .empty-state, .error-state { text-align: center; padding: 4rem 2rem; background: var(--card-bg); border-radius: 12px; color: var(--muted); }
+.error-state { color: #dc2626; }

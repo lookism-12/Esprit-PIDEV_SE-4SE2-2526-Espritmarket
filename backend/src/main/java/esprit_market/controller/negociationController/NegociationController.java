@@ -44,8 +44,8 @@ public class NegociationController {
             Authentication authentication) {
         log.info("Creating negociation for service: {}", request.getServiceId());
         String clientId = resolveUserId(authentication);
-        NegociationResponse response = negociationService.createNegociation(request, clientId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(negociationService.createNegociation(request, clientId));
     }
 
     @GetMapping("/{id}")
@@ -56,26 +56,33 @@ public class NegociationController {
 
     @GetMapping
     @Operation(summary = "Get all negociations with pagination (ADMIN)")
-    public ResponseEntity<Page<NegociationResponse>> getAll(
-            @PageableDefault(size = 20) Pageable pageable) {
+    public ResponseEntity<Page<NegociationResponse>> getAll(@PageableDefault(size = 20) Pageable pageable) {
         return ResponseEntity.ok(negociationService.getAllNegociations(pageable));
+    }
+
+    @GetMapping("/all")
+    @Operation(summary = "Get all negociations as a flat list (no pagination)")
+    public ResponseEntity<List<NegociationResponse>> getAllList() {
+        return ResponseEntity.ok(negociationService.getAllNegociationsList());
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete my negociation", description = "Client ID is extracted from JWT")
-    public ResponseEntity<Void> delete(
-            @PathVariable String id,
-            Authentication authentication) {
-        String clientId = resolveUserId(authentication);
-        negociationService.deleteNegociation(id, clientId);
+    public ResponseEntity<Void> delete(@PathVariable String id, Authentication authentication) {
+        negociationService.deleteNegociation(id, resolveUserId(authentication));
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/my")
     @Operation(summary = "Get my negociations (based on JWT)")
     public ResponseEntity<List<NegociationResponse>> getMy(Authentication authentication) {
-        String clientId = resolveUserId(authentication);
-        return ResponseEntity.ok(negociationService.getMyNegociations(clientId));
+        return ResponseEntity.ok(negociationService.getMyNegociations(resolveUserId(authentication)));
+    }
+
+    @GetMapping("/incoming")
+    @Operation(summary = "Get incoming negociations (received offers) (based on JWT)")
+    public ResponseEntity<List<NegociationResponse>> getIncoming(Authentication authentication) {
+        return ResponseEntity.ok(negociationService.getIncomingNegociations(resolveUserId(authentication)));
     }
 
     @GetMapping("/service/{serviceId}")
@@ -96,8 +103,15 @@ public class NegociationController {
             @PathVariable String id,
             @RequestParam NegociationStatuts status,
             Authentication authentication) {
-        String userId = resolveUserId(authentication);
-        return ResponseEntity.ok(negociationService.updateStatus(id, status, userId));
+        return ResponseEntity.ok(negociationService.updateStatus(id, status, resolveUserId(authentication)));
+    }
+
+    @PatchMapping("/{id}/status/direct")
+    @Operation(summary = "Update negociation status directly (no ownership check)")
+    public ResponseEntity<NegociationResponse> updateStatusDirect(
+            @PathVariable String id,
+            @RequestParam NegociationStatuts status) {
+        return ResponseEntity.ok(negociationService.updateStatusDirect(id, status));
     }
 
     @PostMapping("/{id}/proposals")
@@ -106,8 +120,17 @@ public class NegociationController {
             @PathVariable String id,
             @Valid @RequestBody ProposalRequest request,
             Authentication authentication) {
-        String senderId = resolveUserId(authentication);
-        NegociationResponse response = negociationService.addProposal(id, request, senderId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(negociationService.addProposal(id, request, resolveUserId(authentication)));
+    }
+
+    @PostMapping("/{id}/proposals/direct")
+    @Operation(summary = "Add a counter-proposal directly (no ownership check)")
+    public ResponseEntity<NegociationResponse> addProposalDirect(
+            @PathVariable String id,
+            @Valid @RequestBody ProposalRequest request,
+            Authentication authentication) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(negociationService.addProposalDirect(id, request, resolveUserId(authentication)));
     }
 }

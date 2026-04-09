@@ -1,0 +1,55 @@
+﻿<div class="p-6 max-w-7xl mx-auto space-y-5" style="background-color: var(--bg-color)">
+  <div class="rounded-2xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-4" style="background-color: var(--card-bg); border: 1px solid var(--border)">
+    <div>
+      <h1 class="text-2xl font-black" style="color: var(--text-color)">After-Sales Service</h1>
+      <p class="text-sm mt-0.5" style="color: var(--muted)">Manage customer feedbacks, claims and deliveries</p>
+    </div>
+    <button (click)="loadAll()" class="flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-primary-dark text-white font-bold rounded-xl transition-all active:scale-95 text-sm">Refresh</button>
+  </div>
+  @if (successMsg()) { <div class="p-3 bg-green-50 border border-green-200 rounded-xl text-green-800 text-sm font-semibold">{{ successMsg() }}</div> }
+  @if (errorMsg()) { <div class="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm font-semibold">{{ errorMsg() }}</div> }
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="rounded-xl p-4 border-l-4 border-amber-500" style="background-color: var(--card-bg); border-top: 1px solid var(--border); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border)">
+      <p class="text-xs font-black uppercase tracking-widest" style="color: var(--muted)">Pending Feedbacks</p>
+      <p class="text-3xl font-black text-amber-500 mt-1">{{ pendingFeedbacks() }}</p>
+    </div>
+    <div class="rounded-xl p-4 border-l-4 border-red-500" style="background-color: var(--card-bg); border-top: 1px solid var(--border); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border)">
+      <p class="text-xs font-black uppercase tracking-widest" style="color: var(--muted)">Unreplied</p>
+      <p class="text-3xl font-black text-red-500 mt-1">{{ unrepliedFeedbacks() }}</p>
+    </div>
+    <div class="rounded-xl p-4 border-l-4 border-blue-500" style="background-color: var(--card-bg); border-top: 1px solid var(--border); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border)">
+      <p class="text-xs font-black uppercase tracking-widest" style="color: var(--muted)">Active Deliveries</p>
+      <p class="text-3xl font-black text-blue-500 mt-1">{{ activeDeliveries() }}</p>
+    </div>
+    <div class="rounded-xl p-4 border-l-4 border-green-500" style="background-color: var(--card-bg); border-top: 1px solid var(--border); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border)">
+      <p class="text-xs font-black uppercase tracking-widest" style="color: var(--muted)">Delivered</p>
+      <p class="text-3xl font-black text-green-500 mt-1">{{ deliveredCount() }}</p>
+    </div>
+  </div>
+  <div class="flex gap-1 p-1 rounded-xl w-fit" style="background-color: var(--card-bg); border: 1px solid var(--border)">
+    <button (click)="activeTab.set('feedbacks')" class="px-5 py-2 rounded-lg font-bold text-sm transition-all" [class.bg-primary]="activeTab() === 'feedbacks'" [class.text-white]="activeTab() === 'feedbacks'" [style.color]="activeTab() !== 'feedbacks' ? 'var(--muted)' : ''">
+      Feedbacks &amp; Claims @if (pendingFeedbacks() > 0) { <span class="ml-1.5 text-xs bg-amber-500 text-white px-1.5 py-0.5 rounded-full">{{ pendingFeedbacks() }}</span> }
+    </button>
+    <button (click)="activeTab.set('deliveries')" class="px-5 py-2 rounded-lg font-bold text-sm transition-all" [class.bg-primary]="activeTab() === 'deliveries'" [class.text-white]="activeTab() === 'deliveries'" [style.color]="activeTab() !== 'deliveries' ? 'var(--muted)' : ''">
+      Deliveries @if (activeDeliveries() > 0) { <span class="ml-1.5 text-xs bg-blue-500 text-white px-1.5 py-0.5 rounded-full">{{ activeDeliveries() }}</span> }
+    </button>
+  </div>
+  <div class="flex flex-col sm:flex-row gap-3 p-4 rounded-xl" style="background-color: var(--card-bg); border: 1px solid var(--border)">
+    <div class="relative flex-1">
+      <input [ngModel]="search()" (ngModelChange)="search.set($event)" type="text" placeholder="Search..." class="w-full pl-4 pr-4 py-2.5 text-sm rounded-xl border outline-none" style="background-color: var(--input-bg); border-color: var(--input-border); color: var(--text-color)">
+    </div>
+    @if (activeTab() === 'feedbacks') {
+      <div class="flex gap-2 flex-wrap">
+        @for (s of feedbackStatuses; track s) {
+          <button (click)="feedbackFilter.set(s)" class="px-3 py-2 rounded-full text-xs font-bold border transition-all" [class.bg-primary]="feedbackFilter() === s" [class.text-white]="feedbackFilter() === s" [class.border-primary]="feedbackFilter() === s" [style.background-color]="feedbackFilter() !== s ? 'var(--card-bg)' : ''" [style.border-color]="feedbackFilter() !== s ? 'var(--border)' : ''" [style.color]="feedbackFilter() !== s ? 'var(--muted)' : ''">{{ s === 'ALL' ? 'All' : s }}</button>
+        }
+      </div>
+    }
+    @if (activeTab() === 'deliveries') {
+      <div class="flex gap-2 flex-wrap">
+        @for (s of deliveryStatuses; track s) {
+          <button (click)="deliveryFilter.set(s)" class="px-3 py-2 rounded-full text-xs font-bold border transition-all" [class.bg-primary]="deliveryFilter() === s" [class.text-white]="deliveryFilter() === s" [class.border-primary]="deliveryFilter() === s" [style.background-color]="deliveryFilter() !== s ? 'var(--card-bg)' : ''" [style.border-color]="deliveryFilter() !== s ? 'var(--border)' : ''" [style.color]="deliveryFilter() !== s ? 'var(--muted)' : ''">{{ s === 'ALL' ? 'All' : s }}</button>
+        }
+      </div>
+    }
+  </div>
