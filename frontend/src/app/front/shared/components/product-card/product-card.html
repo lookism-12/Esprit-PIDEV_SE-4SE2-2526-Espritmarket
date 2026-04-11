@@ -1,21 +1,32 @@
 <div
-    class="product-card bg-white rounded-2xl border border-secondary/20 overflow-hidden group hover:shadow-2xl transition-all duration-500 hover:-translate-y-1"
+    class="product-card premium-card overflow-hidden group"
+    [class.featured-accent]="isFeatured()"
     [class.opacity-75]="isOutOfStock()">
-    <!-- Image -->
-    <div class="relative aspect-[4/5] bg-secondary-light/30 overflow-hidden">
+    
+    <!-- Image Section -->
+    <div class="relative aspect-[4/5] bg-bg-subtle overflow-hidden">
         <a [routerLink]="['/product', product().id]">
             <img [src]="product().imageUrl" [alt]="product().name"
-                class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                 [class.grayscale]="isOutOfStock()">
         </a>
         
         <!-- Out of Stock Overlay -->
         @if (isOutOfStock()) {
-            <div class="absolute inset-0 bg-gray-900/40 flex items-center justify-center pointer-events-none">
-                <div class="bg-white/95 backdrop-blur-sm px-6 py-3 rounded-xl shadow-2xl transform -rotate-12">
-                    <p class="text-red-600 font-black text-lg uppercase tracking-wider">Out of Stock</p>
+            <div class="absolute inset-0 bg-slate-900/40 flex items-center justify-center pointer-events-none">
+                <div class="bg-surface/95 backdrop-blur-sm px-6 py-3 rounded-xl shadow-2xl transform -rotate-12 border border-surface-border">
+                    <p class="text-primary font-black text-lg uppercase tracking-wider">Out of Stock</p>
                 </div>
             </div>
+        }
+        
+        <!-- Luxury Badge Overlay -->
+        @if (isFeatured()) {
+          <div class="absolute top-0 right-0 z-20">
+            <div class="bg-accent-gold text-white text-[9px] font-black px-3 py-1 uppercase tracking-widest shadow-xl rounded-bl-xl">
+              Featured
+            </div>
+          </div>
         }
         
         <!-- Favorite Button -->
@@ -24,9 +35,9 @@
                 (click)="toggleFavorite($event)"
                 [disabled]="isTogglingFavorite()"
                 aria-label="Toggle favorite"
-                class="w-12 h-12 bg-white dark:bg-gray-800 rounded-full flex items-center justify-center shadow-xl transition-all disabled:opacity-50"
+                class="w-12 h-12 bg-surface rounded-full flex items-center justify-center shadow-xl transition-all disabled:opacity-50 border border-surface-border"
                 [class.text-primary]="isFavorited()"
-                [class.text-gray-400]="!isFavorited()"
+                [class.text-text-muted]="!isFavorited()"
                 [class.hover:bg-primary]="!isFavorited()"
                 [class.hover:text-white]="!isFavorited()">
                 <svg class="h-6 w-6" [attr.fill]="isFavorited() ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24">
@@ -120,17 +131,17 @@
         </div>
     </div>
 
-    <!-- Product Info -->
-    <div class="p-6">
-        <div class="flex justify-between items-start mb-3">
+    <!-- Product Info Panel -->
+    <div class="p-5">
+        <div class="flex justify-between items-start mb-2">
             <div class="flex-1">
-                <p class="text-[10px] font-black text-secondary uppercase tracking-widest mb-1">{{ product().category }}</p>
+                <p class="text-[10px] font-black text-primary/80 uppercase tracking-widest mb-1">{{ product().category }}</p>
                 <a [routerLink]="['/product', product().id]">
-                    <h3 class="font-black text-dark text-xl group-hover:text-primary transition-colors leading-tight line-clamp-2">
+                    <h3 class="font-bold text-text-color text-lg group-hover:text-primary transition-colors leading-tight line-clamp-2">
                         {{ product().name }}
                     </h3>
                 </a>
-                <p class="text-xs text-gray-500 mt-1">by {{ product().sellerName }}</p>
+                <p class="text-[11px] text-text-muted mt-1">by <span class="font-semibold">{{ product().sellerName }}</span></p>
             </div>
         </div>
 

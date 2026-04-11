@@ -1,25 +1,19 @@
 <div class="about-page">
 
   <!-- ── HERO ── -->
-  <section class="about-hero">
-    <div class="about-hero-bg">
-      <video autoplay loop muted playsinline class="about-hero-video">
-        <source src="assets/about us.mp4" type="video/mp4">
-      </video>
-      <div class="about-hero-overlay"></div>
-    </div>
-    <div class="about-hero-content">
+  <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
       <div class="about-hero-left">
         <p class="about-eyebrow">ESPRIT Market Platform</p>
-        <h1 class="about-hero-title">
-          <span class="about-title-red">DISCOVER</span><br>
+        <h1 class="about-hero-title text-text-color">
+          <span class="about-title-red">DISCOVER</span>
           ESPRIT MARKET
         </h1>
         <div class="about-hero-cols">
-          <p class="about-hero-desc">
+          <p class="about-hero-desc text-text-muted">
             ESPRIT Market is the student-built marketplace of ESPRIT School of Engineering — connecting buyers, sellers, drivers and providers in one unified platform.
           </p>
-          <p class="about-hero-desc">
+          <p class="about-hero-desc text-text-muted">
             Across our incredible community, you can find everything from marketplace deals to carpooling rides. There's more to find in ESPRIT Market every day.
           </p>
         </div>
@@ -32,14 +26,42 @@
           </nav>
         </div>
       </div>
-    </div>
-    <div class="about-recommended-badge">
-      <span>Recommended<br>Features to Try</span>
+
+      <div class="relative rounded-3xl overflow-hidden shadow-2xl premium-card aspect-[4/3] lg:aspect-square border border-surface-border group bg-bg-subtle">
+        <video #aboutVideo [muted]="isVideoMuted" playsinline class="w-full h-full object-cover">
+          <source src="assets/about us.mp4" type="video/mp4">
+          Your browser does not support the video tag.
+        </video>
+        
+        <!-- Video Controls Overlay -->
+        <div class="absolute inset-0 bg-black/30 flex flex-col items-center justify-center transition-opacity duration-300" [class.opacity-0]="isVideoPlaying" [class.group-hover:opacity-100]="isVideoPlaying">
+          <button (click)="toggleVideoPlay()" class="w-20 h-20 rounded-full bg-primary/90 text-white flex items-center justify-center hover:scale-110 transition-transform shadow-lg backdrop-blur-md">
+            @if (isVideoPlaying) {
+              <svg class="w-10 h-10" fill="currentColor" viewBox="0 0 24 24"><path d="M6 4h4v16H6zm8 0h4v16h-4z"/></svg>
+            } @else {
+              <svg class="w-10 h-10 translate-x-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            }
+          </button>
+        </div>
+        
+        <!-- Mute/Unmute independent toggle -->
+        <button (click)="toggleMute($event)" class="absolute bottom-4 right-4 w-12 h-12 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80 transition-colors backdrop-blur-sm z-10 shadow-lg border border-white/10">
+          @if (isVideoMuted) {
+            <!-- Muted Icon -->
+            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z m4.414 0l4-4m0 0l4-4m-4 4l4 4m-4-4l-4-4"/></svg>
+          } @else {
+            <!-- Volume Icon -->
+            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M17.657 6.343a8 8 0 010 11.314M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/></svg>
+          }
+        </button>
+      </div>
     </div>
   </section>
 
   <!-- ── DIVIDER LINE ── -->
-  <div class="about-divider-line"></div>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="h-px bg-gradient-to-r from-transparent via-surface-border to-transparent"></div>
+  </div>
 
   <!-- ── PHOTO GRID ── -->
   <section class="about-grid-section">

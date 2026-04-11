@@ -2,10 +2,37 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>EspritMarketFront</title>
+  <title>ESPRIT Market</title>
+  <meta name="description" content="Your trusted student marketplace at ESPRIT — buy, sell and connect.">
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
+
+  <!--
+    ╔══════════════════════════════════════════════════════════════╗
+    ║  ANTI-FLICKER THEME SCRIPT                                   ║
+    ║  Runs SYNCHRONOUSLY before the page renders a single pixel.  ║
+    ║                                                              ║
+    ║  Rules (must match ThemeService exactly):                    ║
+    ║  1. No authToken  → light mode (remove 'dark' class)         ║
+    ║  2. authToken present → restore saved preference             ║
+    ║     (safely defaults to light if nothing saved)              ║
+    ╚══════════════════════════════════════════════════════════════╝
+  -->
+  <script>
+    (function () {
+      try {
+        var saved = localStorage.getItem('theme');
+        if (saved === 'dark') {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      } catch (e) {
+        document.documentElement.classList.remove('dark');
+      }
+    })();
+  </script>
 </head>
 <body>
   <app-root></app-root>

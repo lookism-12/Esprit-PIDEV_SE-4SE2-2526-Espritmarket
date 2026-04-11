@@ -5,32 +5,56 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 :root {
-  --bg-color: #ffffff;
-  --text-color: #212121;
-  --surface: #f9fafb;
-  --border: #e5e7eb;
-  /* SAV component tokens */
-  --card-bg: #ffffff;
-  --card-border: #f3f4f6;
-  --input-bg: #f9fafb;
-  --input-border: #e5e7eb;
-  --muted: #6b7280;
-  --subtle: #f3f4f6;
-  --logo-filter: none;
+  /* Brand Colors */
+  --primary-color: #8B0000;
+  --primary-dark: #6b0000;
+  /* Authentic Graphic Charter Accent */
+  --accent-gold: #E0B84A;
+  --accent-gold-soft: rgba(224, 184, 74, 0.3);
+  --success-green: #10b981;
+
+  /* Surface Colors (Warm Light Mode) */
+  --bg-color: #FFF9F2;       /* Very soft tint of #FFDDBB */
+  --bg-subtle: #FFDDBB;      /* Richer beige for sidebars/filters */
+  --text-color: #111827;
+  --text-muted: #5c4e40;     /* Warmer muted text */
+  --surface: #ffffff;        /* Pure white cards to pop over beige bg */
+  --surface-border: #BD9C7C; /* Graphic Charter Sage/Greige */
+  
+  /* Aliases for components */
+  --card-bg: var(--surface);
+  --border: var(--surface-border);
+  --input-bg: var(--bg-subtle);
+  
+  /* Layout Colors - Richer Red/Black Combo */
+  --header-bg: linear-gradient(135deg, #000000 0%, #2a0000 35%, #8B0000 100%);
+  --header-text: #ffffff;
+  --footer-bg: linear-gradient(180deg, #111827 0%, #300000 50%, #8B0000 100%);
+  
+  /* Shadow depth */
+  --shadow-sm: 0 1px 2px 0 rgb(139 0 0 / 0.05); /* Warmer shadow */
+  --shadow-md: 0 4px 6px -1px rgb(139 0 0 / 0.08), 0 2px 4px -2px rgb(139 0 0 / 0.08);
+  --shadow-lg: 0 10px 15px -3px rgb(139 0 0 / 0.1), 0 4px 6px -4px rgb(139 0 0 / 0.1);
 }
 
 .dark {
-  --bg-color: #141414;
-  --text-color: #f0f0f0;
-  --surface: #1e1e1e;
-  --border: #2e2e2e;
-  /* SAV component tokens */
-  --card-bg: #1e1e1e;
-  --card-border: #2e2e2e;
-  --input-bg: #141414;
-  --input-border: #2e2e2e;
-  --muted: #a0a0a0;
-  --subtle: #1e1e1e;
+  /* Surface Colors - Professional Layered Dark Mode (Softer Grays) */
+  --bg-color: #1a1816;       /* Soft dark background (not full black) */
+  --bg-subtle: #24201d;      /* Slightly lighter for distinct sections */
+  --surface: #2d2825;        /* Highest layer for cards, avoiding heavy gray */
+  --text-color: #FFF9F2;     /* Warm white for high readability */
+  --text-muted: #a89f91;     /* Warm gray for muted elements */
+  --surface-border: rgba(189, 156, 124, 0.4); /* #BD9C7C sage/greige border for subtle life */
+  
+  /* Aliases for components */
+  --card-bg: var(--surface);
+  --border: var(--surface-border);
+  --input-bg: var(--bg-subtle);
+  
+  /* Layout Colors - Dark Mode Header & Footer (Elegant, not flat black) */
+  --header-bg: linear-gradient(180deg, #181512 0%, #3a0b0b 100%);
+  --footer-bg: linear-gradient(180deg, #181512 0%, #2a0505 100%);
+  
   --logo-filter: brightness(0) invert(1);
 }
 
@@ -246,11 +270,51 @@ input[type="number"]:invalid {
 
 /* Base Styles */
 .premium-card {
-  @apply bg-white rounded-xl shadow-md border border-gray-100 transition-all duration-300 hover:shadow-xl hover:-translate-y-1;
+  background-color: var(--surface);
+  border: 1.5px solid var(--surface-border);
+  border-radius: 1.25rem; /* Smoother, larger rounded corners */
+  @apply shadow-md transition-all duration-300 hover:shadow-xl hover:-translate-y-1;
+}
+
+/* Elegant Rich Gold Accent Card */
+.premium-card-gold {
+  background-color: var(--surface);
+  border: 2px solid var(--accent-gold-soft);
+  border-left: 4px solid var(--accent-gold);
+  border-radius: 1.25rem;
+  @apply shadow-md transition-all duration-300 hover:shadow-xl hover:-translate-y-1;
+}
+
+.premium-card-gold:hover {
+  border-color: var(--accent-gold);
+}
+
+/* Feature/Gold accents (Applied to specific featured content) */
+.featured-accent {
+  position: relative;
+  border-top: 3px solid var(--accent-gold) !important;
+}
+
+.featured-accent::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 30px 30px 0;
+  border-color: transparent var(--accent-gold) transparent transparent;
+  opacity: 0.2;
+}
+
+.featured-accent-border {
+  border-bottom: 2px solid var(--accent-gold) !important;
 }
 
 .btn-primary {
-  @apply bg-primary hover:bg-primary-dark text-white font-semibold py-2 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center shadow-lg;
+  background: var(--primary-color);
+  @apply hover:bg-red-800 text-white font-semibold py-2 px-6 rounded-lg transition-all duration-200 flex items-center justify-center shadow-lg active:scale-95;
 }
 
 .btn-accent {
@@ -315,11 +379,15 @@ input[type="number"]:invalid {
   @apply bg-white/40 backdrop-blur-md border border-white/20 shadow-2xl;
 }
 
-/* ===== DARK LUXURY GRADIENT SYSTEM ===== */
+/* ===== DYNAMIC BRAND GRADIENT SYSTEM ===== */
 
-/* Main Dark Luxury Gradient - Black to Crimson */
-.dark-luxury-gradient {
-  background: linear-gradient(180deg, #000000 0%, #4a0000 70%, #8B0000 100%);
+/* Shifts between Red-dominant (Light) and Dark Indigo (Dark) */
+.brand-dynamic-gradient {
+  background: var(--header-bg);
+}
+
+.brand-footer-bg {
+  background: var(--footer-bg);
 }
 
 .dark-luxury-footer {
@@ -329,25 +397,21 @@ input[type="number"]:invalid {
 
 /* Atmospheric Bleed - Soft transition variant */
 .atmospheric-bleed {
-  background: linear-gradient(180deg,
-      #000000 0%,
-      #1a0000 40%,
-      #4a0000 70%,
-      #8B0000 100%);
+  background: var(--header-bg);
+  opacity: 0.95;
 }
 
 /* Lustrous Midtones - Enhanced middle gradient */
 .lustrous-gradient {
   background: linear-gradient(180deg,
-      #000000 0%,
-      #2d0000 50%,
-      #5a0000 75%,
-      #8B0000 100%);
+      rgba(0,0,0,0.1) 0%,
+      var(--primary-color) 50%,
+      var(--primary-dark) 100%);
 }
 
 /* Underlight Glow - Bottom-up illumination */
 .underlight-glow {
-  background: radial-gradient(ellipse at bottom, #8B0000 0%, #4a0000 50%, #000000 100%);
+  background: radial-gradient(ellipse at bottom, var(--primary-color) 0%, transparent 70%);
 }
 
 /* Dark Mode Luxury Card */
@@ -502,18 +566,21 @@ body.overflow-hidden {
   overflow: hidden;
 }
 
-/* ===== PROFESSIONAL NAVBAR STYLES ===== */
-
-/* Navbar Header */
+/* Professional Navbar Styles */
 .navbar-header {
   position: relative;
 }
 
 .navbar-gradient {
   position: relative;
-  background: linear-gradient(180deg, #000000 0%, #1a0000 50%, #2d0000 100%);
-  border-bottom: 1px solid rgba(139, 0, 0, 0.4);
-  box-shadow: 0 4px 30px rgba(139, 0, 0, 0.2);
+  background: var(--header-bg);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.dark .navbar-gradient {
+  border-bottom: 1px solid rgba(139, 0, 0, 0.3);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
 }
 
 /* Logo Styles */

@@ -1,9 +1,10 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { AuthService, RegisterRequest } from '../../core/auth.service';
 import { UserRole, RoleGroup } from '../../models/user.model';
+import { ThemeService } from '../../core/theme.service';
 
 interface RoleCard {
   id: RoleGroup;
@@ -20,7 +21,7 @@ interface RoleCard {
   templateUrl: './register.html',
   styleUrl: './register.scss',
 })
-export class Register {
+export class Register implements OnInit {
   // Step management
   currentStep = signal<1 | 2>(1);
   
@@ -34,6 +35,8 @@ export class Register {
   showConfirmPassword = signal(false);
   isSubmitting = signal(false);
   errorMessage = signal<string | null>(null);
+
+  private themeService = inject(ThemeService);
 
   // Role cards configuration
   readonly roleCards: RoleCard[] = [
@@ -102,6 +105,9 @@ export class Register {
     private router: Router
   ) {
     this.registerForm = this.createBaseForm();
+  }
+
+  ngOnInit(): void {
   }
 
   private createBaseForm(): FormGroup {

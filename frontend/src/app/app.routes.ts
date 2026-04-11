@@ -58,17 +58,15 @@ export const routes: Routes = [
         loadComponent: () => import('./front/pages/cart/cart').then(m => m.Cart),
         canActivate: [authGuard]
     },
-    // Forum — requires account
+    // Forum — public
     {
         path: 'forum',
-        loadComponent: () => import('./front/pages/forum/forum').then(m => m.Forum),
-        canActivate: [authGuard]
+        loadComponent: () => import('./front/pages/forum/forum').then(m => m.Forum)
     },
-    // Carpooling — requires account
+    // Carpooling — public
     {
         path: 'carpooling',
-        loadComponent: () => import('./front/pages/carpooling/carpooling').then(m => m.Carpooling),
-        canActivate: [authGuard]
+        loadComponent: () => import('./front/pages/carpooling/carpooling').then(m => m.Carpooling)
     },
     // Favorites
     {

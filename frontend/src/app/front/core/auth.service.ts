@@ -5,6 +5,7 @@ import { Observable, tap, catchError, map, throwError, switchMap } from 'rxjs';
 import { User, UserRole } from '../models/user.model';
 import { environment } from '../../../environment';
 import { JwtUtil } from './jwt.util';
+import { ThemeService } from './theme.service';
 
 /**
  * Backend UserDTO - matches Spring Boot UserDTO
@@ -90,6 +91,7 @@ export interface BackendRegisterResponse {
 export class AuthService {
   private readonly apiUrl = `${environment.apiUrl}/users`;
   private router = inject(Router);
+  private themeService = inject(ThemeService);
 
   // Reactive state - Main signals
   readonly currentUser = signal<User | null>(null);
@@ -335,7 +337,7 @@ export class AuthService {
     // Step 1: Clear all localStorage items
     localStorage.removeItem('authToken');
     localStorage.removeItem('userId');
-    localStorage.removeItem('userRole');  // ← ADDED: Clear role
+    localStorage.removeItem('userRole');  // Clear role
     localStorage.removeItem('rememberMe');
     
     // Step 2: Reset all signals (must happen BEFORE navigation)
@@ -350,10 +352,10 @@ export class AuthService {
     this.userEmail.set(null);
     this.userAvatar.set(null);
     this.userRole.set(null);
-    
+
     console.log('✅ Logout: localStorage cleared, all signals reset');
     
-    // Step 3: Navigate to login page
+    // Step 4: Navigate to login page
     // Use setTimeout to ensure signals propagate before navigation
     setTimeout(() => {
       this.router.navigate(['/login'], {

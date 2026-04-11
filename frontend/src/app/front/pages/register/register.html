@@ -1,76 +1,72 @@
-<div class="auth-page">
-
-  <!-- RIGHT: Video panel -->
-  <div class="auth-video-panel">
-    <video autoplay loop muted playsinline class="auth-video">
-      <source src="assets/Video%20Publicitaire.mp4" type="video/mp4">
-    </video>
-    <div class="auth-video-overlay">
-      <div class="auth-video-brand">
-        <span class="auth-video-logo">🛍️</span>
-        <h2 class="auth-video-title">ESPRIT Market</h2>
-        <p class="auth-video-sub">Your trusted student marketplace</p>
+<div class="register-page">
+  
+  <!-- Background Video -->
+  <video autoplay loop muted playsinline class="register-bg-video">
+    <source src="assets/Video%20Publicitaire.mp4" type="video/mp4">
+  </video>
+  
+  <!-- Dark Overlay -->
+  <div class="register-overlay"></div>
+  
+  <!-- Right-Aligned Register Card -->
+  <div class="register-container">
+    <div class="register-card">
+      
+      <!-- Logo -->
+      <div class="register-logo">
+        <img src="assets/logo.png" alt="ESPRIT Market" class="logo-img" />
+        <h2 class="logo-text">ESPRIT<span class="logo-accent">Market</span></h2>
       </div>
-    </div>
-  </div>
-
-  <!-- LEFT: Form panel -->
-  <div class="auth-form-panel">
-    <div class="auth-form-inner">
-
-      <!-- Logo & Back Link -->
-      <div class="auth-header">
-        <a routerLink="/" class="auth-logo-link">
-          <div class="auth-logo">
-            <span class="auth-logo-icon">🛍️</span>
-            <span class="auth-logo-text">ESPRIT<span class="auth-logo-accent">Market</span></span>
-          </div>
-        </a>
-        <a routerLink="/" class="auth-back-home">Back to home</a>
-      </div>
-
+      
       <!-- Step Indicator -->
-      <div class="auth-steps">
-        <div class="auth-step" [class.active]="currentStep() === 1" [class.done]="currentStep() > 1">
-          <span class="auth-step-num">1</span>
-          <span>Role</span>
+      <div class="step-indicator">
+        <div class="step-item" [class.active]="currentStep() === 1" [class.done]="currentStep() > 1">
+          <span class="step-number">1</span>
+          <span class="step-label">Role</span>
         </div>
-        <div class="auth-step-line" [class.active]="currentStep() > 1"></div>
-        <div class="auth-step" [class.active]="currentStep() === 2">
-          <span class="auth-step-num">2</span>
-          <span>Details</span>
+        <div class="step-line" [class.active]="currentStep() > 1"></div>
+        <div class="step-item" [class.active]="currentStep() === 2">
+          <span class="step-number">2</span>
+          <span class="step-label">Details</span>
         </div>
       </div>
-
+      
       <!-- Heading -->
       @if (currentStep() === 1) {
-        <h1 class="auth-heading">Join the market</h1>
-        <p class="auth-sub">Select your account type to get started</p>
+        <h1 class="register-title">Join the Market</h1>
+        <p class="register-subtitle">Sign up to continue your journey with <span class="text-red">ESPRIT</span> Market</p>
+        
+        <!-- Already member link -->
+        <p class="register-login-link">
+          Already a member? <a routerLink="/login" class="link-primary">Sign in instead</a>
+        </p>
       } @else {
-        <div class="flex items-center gap-3 mb-2">
-          <button (click)="goToStep1()" class="auth-back-btn">← Back</button>
-          <h1 class="auth-heading !mb-0 text-xl">Complete Profile</h1>
+        <div class="step2-header">
+          <button (click)="goToStep1()" class="btn-back">← Back</button>
+          <div>
+            <h1 class="register-title-small">Complete Profile</h1>
+            <p class="register-subtitle-small">Creating your {{ currentRoleCard()?.title }} account</p>
+          </div>
         </div>
-        <p class="auth-sub">Creating your {{ currentRoleCard()?.title }} account</p>
       }
-
-      <!-- Error -->
+      
+      <!-- Error Message -->
       @if (errorMessage()) {
-        <div class="auth-error">
+        <div class="alert-error">
           <span>⚠️</span>
           <span>{{ errorMessage() }}</span>
         </div>
       }
-
+      
       <!-- STEP 1: ROLE SELECTION -->
       @if (currentStep() === 1) {
         <div class="role-cards">
           @for (card of roleCards; track card.id) {
             <div class="role-card" [class.selected]="selectedRoleGroup() === card.id" (click)="selectRoleGroup(card.id)">
-              <span class="role-card-icon">{{ card.icon }}</span>
-              <div class="role-card-body">
-                <h3 class="role-card-title">{{ card.title }}</h3>
-                <p class="role-card-desc">{{ card.description }}</p>
+              <span class="role-icon">{{ card.icon }}</span>
+              <div class="role-content">
+                <h3 class="role-title">{{ card.title }}</h3>
+                <p class="role-desc">{{ card.description }}</p>
                 
                 @if (selectedRoleGroup() === card.id && card.subRoles) {
                   <div class="sub-roles" (click)="$event.stopPropagation()">
@@ -85,76 +81,81 @@
                 }
               </div>
               @if (selectedRoleGroup() === card.id) {
-                <div class="role-card-check">✓</div>
+                <div class="role-check">✓</div>
               }
             </div>
           }
         </div>
 
-        <button (click)="goToStep2()" [disabled]="!selectedRoleGroup()" class="auth-btn mt-6">
-          Continue →
+        <button (click)="goToStep2()" [disabled]="!selectedRoleGroup()" class="btn-submit">
+          Continue
         </button>
       }
 
       <!-- STEP 2: REGISTRATION FORM -->
       @if (currentStep() === 2) {
-        <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="auth-form">
-          <div class="auth-grid-2">
-            <div class="auth-field">
-              <label class="auth-label">First Name</label>
-              <input formControlName="firstName" class="auth-input" [class.auth-input-error]="isFieldInvalid('firstName')" placeholder="John">
-              @if (isFieldInvalid('firstName')) { <p class="auth-field-error">{{ getFieldError('firstName') }}</p> }
+        <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="register-form">
+          
+          <!-- Name Fields -->
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">FIRST NAME</label>
+              <input formControlName="firstName" class="form-input" [class.input-error]="isFieldInvalid('firstName')" placeholder="John">
+              @if (isFieldInvalid('firstName')) { <span class="error-text">{{ getFieldError('firstName') }}</span> }
             </div>
-            <div class="auth-field">
-              <label class="auth-label">Last Name</label>
-              <input formControlName="lastName" class="auth-input" [class.auth-input-error]="isFieldInvalid('lastName')" placeholder="Doe">
-              @if (isFieldInvalid('lastName')) { <p class="auth-field-error">{{ getFieldError('lastName') }}</p> }
+            <div class="form-group">
+              <label class="form-label">LAST NAME</label>
+              <input formControlName="lastName" class="form-input" [class.input-error]="isFieldInvalid('lastName')" placeholder="Doe">
+              @if (isFieldInvalid('lastName')) { <span class="error-text">{{ getFieldError('lastName') }}</span> }
             </div>
           </div>
 
-          <div class="auth-field">
-            <label class="auth-label">Email address</label>
-            <input formControlName="email" type="email" class="auth-input" [class.auth-input-error]="isFieldInvalid('email')" placeholder="john@esprit.tn">
-            @if (isFieldInvalid('email')) { <p class="auth-field-error">{{ getFieldError('email') }}</p> }
+          <!-- Email -->
+          <div class="form-group">
+            <label class="form-label">EMAIL ADDRESS</label>
+            <input formControlName="email" type="email" class="form-input" [class.input-error]="isFieldInvalid('email')" placeholder="john@esprit.tn">
+            @if (isFieldInvalid('email')) { <span class="error-text">{{ getFieldError('email') }}</span> }
           </div>
 
-          <div class="auth-field">
-            <label class="auth-label">Phone Number</label>
-            <div class="flex gap-2">
-              <div class="auth-prefix">+216</div>
-              <input formControlName="phone" class="auth-input flex-1" [class.auth-input-error]="isFieldInvalid('phone')" placeholder="22 123 456">
+          <!-- Phone -->
+          <div class="form-group">
+            <label class="form-label">PHONE NUMBER</label>
+            <div class="phone-input-wrapper">
+              <div class="phone-prefix">+216</div>
+              <input formControlName="phone" class="form-input phone-input" [class.input-error]="isFieldInvalid('phone')" placeholder="22 123 456">
             </div>
-            @if (isFieldInvalid('phone')) { <p class="auth-field-error">{{ getFieldError('phone') }}</p> }
+            @if (isFieldInvalid('phone')) { <span class="error-text">{{ getFieldError('phone') }}</span> }
           </div>
 
-          <div class="auth-grid-2">
-            <div class="auth-field">
-              <label class="auth-label">Password</label>
-              <div class="auth-input-wrap">
-                <input formControlName="password" [type]="showPassword() ? 'text' : 'password'" class="auth-input" [class.auth-input-error]="isFieldInvalid('password')" placeholder="••••••••">
-                <button type="button" (click)="togglePassword()" class="auth-eye">{{ showPassword() ? '🙈' : '👁️' }}</button>
+          <!-- Password Fields -->
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">PASSWORD</label>
+              <div class="input-wrapper">
+                <input formControlName="password" [type]="showPassword() ? 'text' : 'password'" class="form-input" [class.input-error]="isFieldInvalid('password')" placeholder="••••••••">
+                <button type="button" (click)="togglePassword()" class="toggle-password">{{ showPassword() ? '🙈' : '👁️' }}</button>
               </div>
             </div>
-            <div class="auth-field">
-              <label class="auth-label">Confirm</label>
-              <div class="auth-input-wrap">
-                <input formControlName="confirmPassword" [type]="showConfirmPassword() ? 'text' : 'password'" class="auth-input" [class.auth-input-error]="isFieldInvalid('confirmPassword')" placeholder="••••••••">
-                <button type="button" (click)="toggleConfirmPassword()" class="auth-eye">{{ showConfirmPassword() ? '🙈' : '👁️' }}</button>
+            <div class="form-group">
+              <label class="form-label">CONFIRM PASSWORD</label>
+              <div class="input-wrapper">
+                <input formControlName="confirmPassword" [type]="showConfirmPassword() ? 'text' : 'password'" class="form-input" [class.input-error]="isFieldInvalid('confirmPassword')" placeholder="••••••••">
+                <button type="button" (click)="toggleConfirmPassword()" class="toggle-password">{{ showConfirmPassword() ? '🙈' : '👁️' }}</button>
               </div>
             </div>
           </div>
 
           <!-- ROLE SPECIFIC FIELDS -->
           @if (selectedRoleGroup() === 'provider') {
-            <div class="auth-divider"><span>Business Details</span></div>
-            <div class="auth-grid-2">
-              <div class="auth-field">
-                <label class="auth-label">Business Name</label>
-                <input formControlName="businessName" class="auth-input" placeholder="Shopify Esprit">
+            <div class="section-divider"><span>Business Details</span></div>
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label class="form-label">BUSINESS NAME</label>
+                <input formControlName="businessName" class="form-input" placeholder="Shopify Esprit">
               </div>
-              <div class="auth-field">
-                <label class="auth-label">Type</label>
-                <select formControlName="businessType" class="auth-input auth-select">
+              <div class="form-group">
+                <label class="form-label">BUSINESS TYPE</label>
+                <select formControlName="businessType" class="form-input form-select">
                   <option value="">Select...</option>
                   @for (t of businessTypes; track t) { <option [value]="t">{{ t }}</option> }
                 </select>
@@ -163,45 +164,41 @@
           }
 
           @if (selectedRoleGroup() === 'logistics') {
-            <div class="auth-divider"><span>Vehicle Details</span></div>
-            <div class="auth-grid-2">
-              <div class="auth-field">
-                <label class="auth-label">Vehicle Type</label>
-                <select formControlName="vehicleType" class="auth-input auth-select">
+            <div class="section-divider"><span>Vehicle Details</span></div>
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label class="form-label">VEHICLE TYPE</label>
+                <select formControlName="vehicleType" class="form-input form-select">
                   <option value="">Select...</option>
                   @for (v of vehicleTypes; track v) { <option [value]="v">{{ v }}</option> }
                 </select>
               </div>
               @if (selectedSubRole() === 'DRIVER') {
-                <div class="auth-field">
-                  <label class="auth-label">License Number</label>
-                  <input formControlName="drivingLicenseNumber" class="auth-input" placeholder="ABC12345">
+                <div class="form-group">
+                  <label class="form-label">LICENSE NUMBER</label>
+                  <input formControlName="drivingLicenseNumber" class="form-input" placeholder="ABC12345">
                 </div>
               }
               @if (selectedSubRole() === 'DELIVERY') {
-                <div class="auth-field">
-                  <label class="auth-label">Delivery Zone</label>
-                  <input formControlName="deliveryZone" class="auth-input" placeholder="Ariana, Tunis...">
+                <div class="form-group">
+                  <label class="form-label">DELIVERY ZONE</label>
+                  <input formControlName="deliveryZone" class="form-input" placeholder="Ariana, Tunis...">
                 </div>
               }
             </div>
           }
 
-          <button type="submit" [disabled]="isSubmitting()" class="auth-btn mt-6">
-            @if (isSubmitting()) { <span class="auth-spinner"></span> Creating account... } 
-            @else { Create Account ✓ }
+          <button type="submit" [disabled]="isSubmitting()" class="btn-submit">
+            @if (isSubmitting()) { <span class="spinner"></span> Creating account... } 
+            @else { Create Account }
           </button>
         </form>
       }
 
-      <div class="auth-divider"><span>already a member?</span></div>
+      <!-- Back to Home -->
+      <a routerLink="/" class="back-home">← Back to home</a>
       
-      <p class="auth-footer !mt-0">
-        Found your way here by mistake?
-        <a routerLink="/login" class="auth-link font-black">Sign in instead</a>
-      </p>
-
     </div>
   </div>
-
+  
 </div>

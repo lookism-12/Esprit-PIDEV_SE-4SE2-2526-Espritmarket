@@ -78,6 +78,13 @@ export class ProductCard implements OnInit, OnDestroy {
     return !this.isAuthenticated();
   });
 
+  readonly isFeatured = computed(() => {
+    // Logic: Rated highly (4.5+) or on sale significantly
+    const rating = this.product().rating;
+    const isBigSale = this.product().originalPrice && (this.product().originalPrice! - this.product().price) > 50;
+    return rating >= 4.5 || isBigSale;
+  });
+
   readonly stockStatusInfo = computed(() => {
     const product = this.product();
     if (product.stock <= 0) {

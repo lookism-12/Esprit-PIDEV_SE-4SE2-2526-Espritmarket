@@ -1,0 +1,393 @@
+// ═══════════════════════════════════════════════════════════════
+//  SHARED AUTH STYLES - Login & Register
+//  Consistent animations, layout, and styling
+// ═══════════════════════════════════════════════════════════════
+
+// ─── Shared Page Container ────────────────────────────────────
+.auth-page {
+  position: relative;
+  width: 100vw;
+  min-height: 100vh;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  overflow-x: hidden;
+  overflow-y: auto;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  padding: 40px 80px 40px 20px;
+}
+
+// ─── Shared Background Video ──────────────────────────────────
+.auth-bg-video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+}
+
+// ─── Shared Dark Overlay ──────────────────────────────────────
+.auth-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 1;
+}
+
+// ─── Shared Container ─────────────────────────────────────────
+.auth-container {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+// ─── Shared Form Card (CONSISTENT ANIMATION) ──────────────────
+.auth-card {
+  width: 100%;
+  padding: 40px;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 18px;
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  
+  /* CONSISTENT ANIMATION - Same for both login & register */
+  animation: authFadeIn 0.4s ease-in-out;
+  
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+// ─── Shared Animation Keyframes ───────────────────────────────
+@keyframes authFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// ─── Shared Logo Section ──────────────────────────────────────
+.auth-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 30px;
+}
+
+.auth-logo-img {
+  height: 42px;
+  width: auto;
+}
+
+.auth-logo-text {
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.auth-logo-accent {
+  color: #8B0000;
+}
+
+// ─── Shared Heading & Subtitle ────────────────────────────────
+.auth-title {
+  font-size: 2rem;
+  font-weight: 900;
+  color: #ffffff;
+  text-align: center;
+  margin: 0 0 10px;
+  letter-spacing: -0.02em;
+}
+
+.auth-subtitle {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.9);
+  text-align: center;
+  margin: 0 0 18px;
+  line-height: 1.5;
+  
+  .text-red {
+    color: #c41e3a;
+    font-weight: 700;
+  }
+}
+
+// ─── Shared Link Styles ───────────────────────────────────────
+.auth-link-section {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.8);
+  text-align: center;
+  margin: 0 0 25px;
+  
+  .link-primary {
+    color: #c41e3a;
+    font-weight: 700;
+    text-decoration: none;
+    
+    &:hover {
+      color: #e02444;
+      text-decoration: underline;
+    }
+  }
+}
+
+// ─── Shared Alert Messages ────────────────────────────────────
+.auth-alert-info,
+.auth-alert-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  margin-bottom: 18px;
+}
+
+.auth-alert-info {
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  color: #93c5fd;
+}
+
+.auth-alert-error {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+}
+
+// ─── Shared Form ──────────────────────────────────────────────
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+// ─── Shared Form Group ────────────────────────────────────────
+.auth-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+// ─── Shared Form Label ────────────────────────────────────────
+.auth-form-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.95);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+// ─── Shared Form Input ────────────────────────────────────────
+.auth-form-input {
+  width: 100%;
+  height: 50px;
+  padding: 0 15px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  border-radius: 10px;
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-family: inherit;
+  outline: none;
+  box-sizing: border-box;
+  
+  &::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+  }
+  
+  &:focus {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: #8B0000;
+    box-shadow: 0 0 0 3px rgba(139, 0, 0, 0.25);
+  }
+  
+  &.input-error {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+  }
+  
+  // Chrome autofill override
+  &:-webkit-autofill,
+  &:-webkit-autofill:hover,
+  &:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0 50px rgba(255, 255, 255, 0.08) inset !important;
+    -webkit-text-fill-color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.25) !important;
+  }
+}
+
+// ─── Shared Input Wrapper ─────────────────────────────────────
+.auth-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  
+  .auth-form-input {
+    padding-right: 50px;
+  }
+}
+
+.auth-toggle-password {
+  position: absolute;
+  right: 14px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.7);
+  padding: 0;
+  line-height: 1;
+  
+  &:hover {
+    color: #8B0000;
+  }
+}
+
+// ─── Shared Error Text ────────────────────────────────────────
+.auth-error-text {
+  font-size: 0.75rem;
+  color: #fca5a5;
+  margin-top: 4px;
+}
+
+// ─── Shared Submit Button ─────────────────────────────────────
+.auth-btn-submit {
+  width: 100%;
+  height: 50px;
+  margin-top: 12px;
+  background: linear-gradient(135deg, #8B0000 0%, #b70000 100%);
+  color: #ffffff;
+  font-size: 1.05rem;
+  font-weight: 700;
+  font-family: inherit;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 15px rgba(139, 0, 0, 0.4);
+  
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, #a00000 0%, #d00000 100%);
+    box-shadow: 0 6px 20px rgba(139, 0, 0, 0.5);
+  }
+  
+  &:active:not(:disabled) {
+    opacity: 0.9;
+  }
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+// ─── Shared Spinner ───────────────────────────────────────────
+.auth-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// ─── Shared Back to Home Link ─────────────────────────────────
+.auth-back-home {
+  display: block;
+  text-align: center;
+  margin-top: 22px;
+  font-size: 0.88rem;
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  
+  &:hover {
+    color: #ffffff;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Shared Responsive Design
+// ═══════════════════════════════════════════════════════════════
+
+@media (max-width: 1024px) {
+  .auth-page {
+    padding: 40px 60px 40px 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .auth-page {
+    justify-content: center;
+    padding: 40px 20px;
+  }
+  
+  .auth-card {
+    max-width: 90%;
+    padding: 35px 30px;
+    border-radius: 15px;
+  }
+  
+  .auth-title {
+    font-size: 1.7rem;
+  }
+  
+  .auth-subtitle {
+    font-size: 0.88rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .auth-page {
+    padding: 30px 15px;
+  }
+  
+  .auth-card {
+    max-width: 100%;
+    padding: 30px 25px;
+  }
+  
+  .auth-title {
+    font-size: 1.5rem;
+  }
+  
+  .auth-form-input,
+  .auth-btn-submit {
+    height: 48px;
+  }
+  
+  .auth-logo-img {
+    height: 36px;
+  }
+  
+  .auth-logo-text {
+    font-size: 1.2rem;
+  }
+}
