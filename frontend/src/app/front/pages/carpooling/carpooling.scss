@@ -8,6 +8,89 @@
   transition: background-color 0.3s ease;
 }
 
+// Hero Section with Video Background
+.hero-section {
+  position: relative;
+  overflow: hidden;
+  min-height: 600px; // Ensure minimum height for the hero section
+  background-color: #8B0000; // Fallback background color (original red)
+  background-image: linear-gradient(135deg, #8B0000 0%, #A52A2A 50%, #8B0000 100%);
+}
+
+.hero-video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 1;
+  opacity: 0;
+  animation: fadeInVideo 1.5s ease-in-out 0.3s forwards;
+  
+  // Improve video rendering performance
+  will-change: opacity;
+  transform: translateZ(0); // Force hardware acceleration
+  
+  // Ensure video covers the entire area properly
+  min-width: 100%;
+  min-height: 100%;
+  
+  // Fallback background color while video loads
+  background-color: #8B0000; // Match the original red background
+  
+  // Handle video loading states
+  &:not([src]) {
+    background-color: #8B0000;
+  }
+}
+
+.hero-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 2;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 3;
+}
+
+// Fade-in animation for video
+@keyframes fadeInVideo {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+// Dark mode compatibility
+@media (prefers-color-scheme: dark) {
+  .hero-overlay {
+    background: rgba(0, 0, 0, 0.6); // Slightly darker overlay for dark mode
+  }
+}
+
+// Performance optimizations
+.hero-video {
+  // Improve video rendering performance
+  will-change: opacity;
+  transform: translateZ(0); // Force hardware acceleration
+  
+  // Ensure video covers the entire area properly
+  min-width: 100%;
+  min-height: 100%;
+  
+  // Fallback background color while video loads
+  background-color: #8B0000; // Match the original red background
+}
+
 .floating-card {
   background: var(--card-bg);
   border-radius: 24px;

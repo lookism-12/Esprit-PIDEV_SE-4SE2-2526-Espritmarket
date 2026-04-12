@@ -13,6 +13,20 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Cart entity represents a temporary shopping basket.
+ * 
+ * Status: DRAFT (active shopping cart) only
+ * 
+ * This entity is ONLY for shopping cart functionality.
+ * When user completes checkout, Cart data is converted to Order entity.
+ * 
+ * Cart should NEVER have order statuses (PAID, SHIPPED, etc.)
+ * 
+ * ⚠️ BACKWARD COMPATIBILITY NOTE:
+ * Some fields are kept for backward compatibility with existing data.
+ * New code should use Order entity for completed purchases.
+ */
 @Document(collection = "carts")
 @Data
 @Builder

@@ -61,7 +61,7 @@ export { adminAuthGuard } from './front/core/admin-auth.guard';
 export type { User, AcademicInfo, ReputationInfo, Badge, UserPreferences, NotificationPreferences, UserRole, RoleGroup, ClientSubRole, LogisticsSubRole, ReputationLevel } from './front/models/user.model';
 export type { Product } from './front/models/product';
 export type { Cart, CartItem } from './front/models/cart.model';
-export type { Order, OrderStatus, OrderItem } from './front/models/order.model';
+export type { OrderResponse, OrderItemResponse, OrderStatus, OrderItemStatus, PaymentMethod, PaymentStatus, CreateOrderRequest, ConfirmPaymentRequest, CancelOrderRequest, RefundSummaryDTO } from './front/models/order.model';
 export type { Invoice } from './front/models/invoice.model';
 export type { AppNotification, NotificationResponse, NotificationPriority } from './front/models/notification.model';
 export { NotificationType } from './front/models/notification.model';

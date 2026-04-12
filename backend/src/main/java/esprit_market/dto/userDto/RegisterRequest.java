@@ -41,7 +41,7 @@ public class RegisterRequest {
     // Provider fields
     private String businessName;
     private String businessType;
-    private String taxId;
+    private String taxId; // ✅ OPTIONAL: No validation for student project
     private String description;
 
     // Driver fields

@@ -73,11 +73,12 @@ public class ProductController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN') or (hasRole('PROVIDER') and @marketplaceSecurity.isShopOwner(authentication, #dto.shopId))")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('PROVIDER')")
     @Operation(summary = "Create a new product (PROVIDER/ADMIN)")
     public ProductResponseDTO create(@RequestBody ProductRequestDTO dto) {
         log.info("POST /api/products - Creating product: name={}, shopId={}, categoryIds={}", 
                  dto.getName(), dto.getShopId(), dto.getCategoryIds());
+        
         ProductResponseDTO result = service.create(dto);
         log.info("POST /api/products - Product created successfully with ID: {}", result.getId());
         return result;

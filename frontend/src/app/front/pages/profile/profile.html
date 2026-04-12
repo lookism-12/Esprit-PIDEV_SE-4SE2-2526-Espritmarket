@@ -42,11 +42,10 @@
     <!-- STICKY TABS -->
     <div class="flex overflow-x-auto gap-0.5 sticky top-0 z-20 py-1" style="background-color:var(--bg-color)">
       @for (tab of tabs; track tab.id) {
-        <button (click)="setActiveTab(tab.id)"
+        <a [routerLink]="tab.route" routerLinkActive="bg-primary text-white"
           class="px-4 py-3 text-sm font-bold whitespace-nowrap rounded-xl transition-all shrink-0"
-          [class.bg-primary]="activeTab()===tab.id" [class.text-white]="activeTab()===tab.id"
-          [style.color]="activeTab()!==tab.id?'var(--muted)':''"
-          [style.background-color]="activeTab()!==tab.id?'transparent':''">{{ tab.label }}</button>
+          [style.color]="'var(--muted)'"
+          style="background-color:transparent">{{ tab.label }}</a>
       }
     </div>
 
@@ -78,36 +77,6 @@
               <p class="text-xl font-black text-red-500">{{ favoriteCount() }}</p>
               <p class="text-[9px] font-black uppercase tracking-widest mt-0.5" style="color:var(--muted)">Favorites</p>
             </div>
-            @if (isDriver()) {
-              <div class="rounded-xl p-3 text-center" style="background-color:var(--subtle)">
-                <p class="text-xl font-black text-green-500">{{ myRides().length }}</p>
-                <p class="text-[9px] font-black uppercase tracking-widest mt-0.5" style="color:var(--muted)">Rides</p>
-              </div>
-              <div class="rounded-xl p-3 text-center" style="background-color:var(--subtle)">
-                <p class="text-xl font-black text-blue-500">{{ driverStats()?.averageRating||0|number:'1.1-1' }}⭐</p>
-                <p class="text-[9px] font-black uppercase tracking-widest mt-0.5" style="color:var(--muted)">Rating</p>
-              </div>
-            }
-            @if (isProvider()) {
-              <div class="rounded-xl p-3 text-center" style="background-color:var(--subtle)">
-                <p class="text-xl font-black text-purple-500">{{ myNegotiations().length }}</p>
-                <p class="text-[9px] font-black uppercase tracking-widest mt-0.5" style="color:var(--muted)">Negotiations</p>
-              </div>
-              <div class="rounded-xl p-3 text-center" style="background-color:var(--subtle)">
-                <p class="text-xl font-black text-blue-500">{{ shopOrders().length }}</p>
-                <p class="text-[9px] font-black uppercase tracking-widest mt-0.5" style="color:var(--muted)">Shop Orders</p>
-              </div>
-            }
-            @if (isDelivery()) {
-              <div class="rounded-xl p-3 text-center" style="background-color:var(--subtle)">
-                <p class="text-xl font-black text-blue-500">{{ myDeliveries().filter(d=>d.status==='IN_TRANSIT').length }}</p>
-                <p class="text-[9px] font-black uppercase tracking-widest mt-0.5" style="color:var(--muted)">In Transit</p>
-              </div>
-              <div class="rounded-xl p-3 text-center" style="background-color:var(--subtle)">
-                <p class="text-xl font-black text-green-500">{{ myDeliveries().filter(d=>d.status==='DELIVERED').length }}</p>
-                <p class="text-[9px] font-black uppercase tracking-widest mt-0.5" style="color:var(--muted)">Delivered</p>
-              </div>
-            }
           </div>
         </div>
 
@@ -116,20 +85,16 @@
           <div class="space-y-0.5">
             <a routerLink="/products" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors hover:bg-primary/5" style="color:var(--text-color)">🛍️ Browse Products</a>
             <a routerLink="/favorites" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors hover:bg-primary/5" style="color:var(--text-color)">❤️ My Favorites</a>
-            <a routerLink="/notifications" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors hover:bg-primary/5" style="color:var(--text-color)">🔔 Notifications</a>
-            @if (isDriver()||isPassenger()) {
-              <a routerLink="/carpooling" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors hover:bg-primary/5" style="color:var(--text-color)">🚗 Carpooling</a>
-            }
-            @if (isDelivery()) {
-              <a routerLink="/driver/deliveries" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors hover:bg-primary/5" style="color:var(--text-color)">📦 My Deliveries</a>
-            }
-            @if (isProvider()) {
-              <a routerLink="/provider/dashboard" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors hover:bg-primary/5" style="color:var(--text-color)">📊 Provider Dashboard</a>
-            }
-            <a routerLink="/sav" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors hover:bg-primary/5" style="color:var(--text-color)">🎧 Support & SAV</a>
           </div>
         </div>
       </div>
 
       <!-- RIGHT MAIN CONTENT -->
-      <div class="flex-1 min-w-0 space-y-4">
+      <div class="flex-1 min-w-0">
+        <!-- Child routes render here -->
+        <router-outlet></router-outlet>
+      </div>
+
+    </div>
+  </div>
+</div>

@@ -134,14 +134,25 @@ export class LoyaltyService {
 
   /**
    * Calculate points for purchase amount
+   * 
+   * ⚠️ IMPORTANT: This is for DISPLAY ONLY (estimates)
+   * Actual points are calculated by backend using:
+   * - Product-level formula: sum(price * quantity * 0.01) [1% instead of 10%]
+   * - Tier multiplier (1.0x to 1.5x instead of 1.0x to 2.0x)
+   * - Quantity bonus (>= 10 items → +5% instead of >= 5 items → +10%)
+   * - Price bonus (> $500 → +5 flat points instead of > $200 → +20 points)
+   * 
+   * Frontend should NEVER calculate actual points to award.
+   * Always use backend-calculated values from API responses.
    */
   calculatePointsForPurchase(amount: number): number {
     const account = this.account();
     const level = account?.level ?? LoyaltyLevel.BRONZE;
     const levelInfo = LOYALTY_LEVELS.find(l => l.level === level);
     const multiplier = levelInfo?.multiplier ?? 1;
-    // Base: 10 points per 1 TND (matches backend POINTS_PER_CURRENCY_UNIT), multiplied by level
-    return Math.floor(amount * 10 * multiplier);
+    
+    // Realistic estimate: amount * 0.01 * multiplier (1% base rate)
+    return Math.floor(amount * 0.01 * multiplier);
   }
 
   /**
@@ -190,11 +201,11 @@ export class LoyaltyService {
    * Calculate points needed for next level
    */
   private calculateNextLevelPoints(totalPoints: number): number {
-    // Backend thresholds: BRONZE=0-999, SILVER=1000-4999, GOLD=5000-9999, PLATINUM=10000+
-    if (totalPoints < 1000) return 1000;
+    // Realistic thresholds: BRONZE=0-4999, SILVER=5000-19999, GOLD=20000-49999, PLATINUM=50000+
     if (totalPoints < 5000) return 5000;
-    if (totalPoints < 10000) return 10000;
-    return 10000; // Already at max level
+    if (totalPoints < 20000) return 20000;
+    if (totalPoints < 50000) return 50000;
+    return 50000; // Already at max level
   }
 
   /**

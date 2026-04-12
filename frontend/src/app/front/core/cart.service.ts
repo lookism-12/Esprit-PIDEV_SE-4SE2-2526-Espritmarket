@@ -2,6 +2,7 @@ import { Injectable, signal, computed, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap, catchError, throwError, BehaviorSubject } from 'rxjs';
 import { CartResponse, CartItemResponse, AddToCartRequest, UpdateCartItemRequest } from '../models/cart.model';
+import { OrderResponse, CreateOrderRequest } from '../models/order.model';
 import { environment } from '../../../environment';
 
 @Injectable({
@@ -297,14 +298,17 @@ export class CartService {
 
   /**
    * Checkout (convert cart to order)
+   * ✅ FIXED: Now returns OrderResponse from new Order entity
    */
-  checkout(checkoutData: any): Observable<CartResponse> {
+  checkout(checkoutData: CreateOrderRequest): Observable<OrderResponse> {
     this.isLoading.set(true);
     this.error.set(null);
 
-    return this.http.post<CartResponse>(`${this.apiUrl}/checkout`, checkoutData).pipe(
+    return this.http.post<OrderResponse>(`${this.apiUrl}/checkout`, checkoutData).pipe(
       tap((order) => {
         console.log('✅ Order created:', order);
+        console.log('📦 Order number:', order.orderNumber);
+        console.log('💰 Final amount:', order.finalAmount);
         // Clear cart state after successful checkout
         this.cart.set(null);
         this.cartItems.set([]);

@@ -151,15 +151,27 @@
             <div class="form-grid-2">
               <div class="form-group">
                 <label class="form-label">BUSINESS NAME</label>
-                <input formControlName="businessName" class="form-input" placeholder="Shopify Esprit">
+                <input formControlName="businessName" class="form-input" [class.input-error]="isFieldInvalid('businessName')" placeholder="My Business">
+                @if (isFieldInvalid('businessName')) { <span class="error-text">{{ getFieldError('businessName') }}</span> }
               </div>
               <div class="form-group">
                 <label class="form-label">BUSINESS TYPE</label>
-                <select formControlName="businessType" class="form-input form-select">
+                <select formControlName="businessType" class="form-input form-select" [class.input-error]="isFieldInvalid('businessType')">
                   <option value="">Select...</option>
                   @for (t of businessTypes; track t) { <option [value]="t">{{ t }}</option> }
                 </select>
+                @if (isFieldInvalid('businessType')) { <span class="error-text">{{ getFieldError('businessType') }}</span> }
               </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">TAX ID / BUSINESS REGISTRATION (Optional)</label>
+              <input formControlName="taxId" class="form-input" [class.input-error]="isFieldInvalid('taxId')" placeholder="123456789 (Optional for students)">
+              @if (isFieldInvalid('taxId')) { <span class="error-text">{{ getFieldError('taxId') }}</span> }
+              <small class="text-gray-500 text-xs mt-1">This field is optional for student/demo accounts</small>
+            </div>
+            <div class="form-group">
+              <label class="form-label">BUSINESS DESCRIPTION (Optional)</label>
+              <textarea formControlName="description" class="form-input" rows="3" placeholder="Describe your business..."></textarea>
             </div>
           }
 
@@ -188,7 +200,7 @@
             </div>
           }
 
-          <button type="submit" [disabled]="isSubmitting()" class="btn-submit">
+          <button type="submit" [disabled]="isSubmitting()" class="btn-submit" (click)="onSubmit()">
             @if (isSubmitting()) { <span class="spinner"></span> Creating account... } 
             @else { Create Account }
           </button>

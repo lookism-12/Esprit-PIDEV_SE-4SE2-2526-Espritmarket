@@ -1,11 +1,11 @@
-import { Order } from './order.model';
+import { OrderResponse } from './order.model';
 import { User } from './user.model';
 
 export interface Invoice {
   id: string;
   invoiceNumber: string;
   orderId: string;
-  order: Order;
+  order: OrderResponse;
   sellerId: string;
   seller: InvoiceParty;
   buyerId: string;

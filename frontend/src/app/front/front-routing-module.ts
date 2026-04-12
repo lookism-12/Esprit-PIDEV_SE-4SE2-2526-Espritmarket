@@ -32,10 +32,6 @@ export const FRONT_ROUTES: Routes = [
         loadComponent: () => import('./pages/favorites/favorites').then(m => m.Favorites)
     },
     {
-        path: 'profile',
-        loadComponent: () => import('./pages/profile/profile').then(m => m.Profile)
-    },
-    {
         path: 'provider/dashboard',
         canActivate: [providerGuard],
         loadComponent: () => import('./pages/provider-dashboard/provider-dashboard').then(m => m.ProviderDashboard)

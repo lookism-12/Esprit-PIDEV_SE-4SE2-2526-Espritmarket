@@ -56,7 +56,7 @@
         <div class="premium-card p-6 hover:shadow-xl transition-all duration-300">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-xs text-gray-500 font-bold uppercase tracking-widest mb-2">Cancelled Orders</p>
+              <p class="text-xs text-gray-500 font-bold uppercase tracking-widest mb-2">Declined Orders</p>
               <p class="text-3xl font-black text-dark">{{ cancelledCount() }}</p>
             </div>
             <div class="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center text-xl">❌</div>
@@ -94,7 +94,8 @@
             <option value="ALL">All Orders</option>
             <option value="PENDING">Pending</option>
             <option value="CONFIRMED">Confirmed</option>
-            <option value="CANCELLED">Cancelled</option>
+            <option value="PAID">Paid</option>
+            <option value="DECLINED">Declined</option>
           </select>
         </div>
       </div>
@@ -198,16 +199,16 @@
                     >
                       ✅ Confirm
                     </button>
-                  } @else if (order.orderStatus !== 'CANCELLED') {
+                  } @else if (order.orderStatus !== 'DECLINED' && order.orderStatus !== 'CANCELLED') {
                     <button
                       (click)="cancelOrder(order)"
                       class="px-3 py-2 text-xs font-bold rounded-lg bg-red-100 text-red-700 hover:bg-red-200 transition-colors"
-                      title="Cancel order"
+                      title="Decline order"
                     >
-                      ❌ Cancel
+                      ❌ Decline
                     </button>
                   } @else {
-                    <span class="text-xs text-gray-400 font-semibold">Cancelled</span>
+                    <span class="text-xs text-gray-400 font-semibold">{{ order.orderStatus === 'DECLINED' ? 'Declined' : 'Cancelled' }}</span>
                   }
                 </div>
               </div>
@@ -243,12 +244,12 @@
                       >
                         ✅ Confirm
                       </button>
-                    } @else if (order.orderStatus !== 'CANCELLED') {
+                    } @else if (order.orderStatus !== 'DECLINED' && order.orderStatus !== 'CANCELLED') {
                       <button
                         (click)="cancelOrder(order)"
                         class="px-3 py-2 text-xs font-bold rounded-lg bg-red-100 text-red-700 hover:bg-red-200 transition-colors"
                       >
-                        ❌ Cancel
+                        ❌ Decline
                       </button>
                     }
                   </div>
@@ -269,7 +270,10 @@
     @if (activeTab() === 'products') {
       <div class="space-y-6">
         <div class="flex items-center justify-between">
-          <h2 class="text-2xl font-bold text-dark">Product Management</h2>
+          <div>
+            <h2 class="text-2xl font-bold text-dark">My Products</h2>
+            <p class="text-sm text-gray-500 mt-1">Products in your shop only</p>
+          </div>
           <a routerLink="/add-product" class="btn-primary inline-flex items-center gap-2">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -336,8 +340,8 @@
               <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <span class="text-4xl">📦</span>
               </div>
-              <h3 class="text-xl font-bold text-dark mb-2">No Products Yet</h3>
-              <p class="text-gray-500 mb-6">Start by adding your first product to the marketplace.</p>
+              <h3 class="text-xl font-bold text-dark mb-2">No Products in Your Shop Yet</h3>
+              <p class="text-gray-500 mb-6">Start by adding your first product to your shop. Products from other shops are not shown here.</p>
               <a routerLink="/add-product" class="btn-primary inline-flex items-center gap-2">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />

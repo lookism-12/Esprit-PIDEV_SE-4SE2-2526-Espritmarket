@@ -68,12 +68,29 @@ public class UserService implements IUserService {
             (user.getRoles().contains(Role.PROVIDER) || user.getRoles().contains(Role.SELLER))) {
             // Check if shop already exists for this user
             if (shopRepository.findByOwnerId(savedUser.getId()).isEmpty()) {
+                // Generate shop name from business name or user name
+                String shopName = user.getBusinessName() != null && !user.getBusinessName().trim().isEmpty()
+                        ? user.getBusinessName()
+                        : (user.getFirstName() != null ? user.getFirstName() : "Provider") + "'s Shop";
+                
+                String shopDescription = user.getDescription() != null && !user.getDescription().trim().isEmpty()
+                        ? user.getDescription()
+                        : "Welcome to " + shopName;
+                
                 Shop shop = Shop.builder()
                         .ownerId(savedUser.getId())
+                        .name(shopName)
+                        .description(shopDescription)
+                        .email(savedUser.getEmail())
+                        .phone(savedUser.getPhone())
+                        .isActive(true)
+                        .createdAt(java.time.LocalDateTime.now())
+                        .updatedAt(java.time.LocalDateTime.now())
+                        .productIds(new java.util.ArrayList<>())
                         .build();
                 Shop savedShop = shopRepository.save(shop);
-                log.info("✅ Shop created automatically for provider: {} with shop ID: {}", 
-                        savedUser.getEmail(), savedShop.getId());
+                log.info("✅ Shop '{}' created automatically for provider: {} with shop ID: {}", 
+                        savedShop.getName(), savedUser.getEmail(), savedShop.getId());
             }
         }
         

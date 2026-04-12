@@ -25,7 +25,8 @@ export interface ProviderOrder {
 export interface ProviderStats {
   pendingOrders: number;
   confirmedOrders: number;
-  cancelledOrders: number;
+  paidOrders: number;
+  declinedOrders: number;
   totalOrders: number;
   totalRevenue: number;
 }
@@ -88,12 +89,12 @@ export class ProviderDashboard implements OnInit {
   );
 
   readonly cancelledCount = computed(() =>
-    this.orders().filter(o => o.orderStatus === 'CANCELLED').length
+    this.orders().filter(o => o.orderStatus === 'DECLINED').length
   );
 
   readonly totalRevenue = computed(() => {
     return this.orders()
-      .filter(o => o.orderStatus === 'CONFIRMED')
+      .filter(o => o.orderStatus === 'PAID')
       .reduce((sum, order) => sum + (order.subTotal || 0), 0)
       .toFixed(2);
   });
@@ -107,15 +108,15 @@ export class ProviderDashboard implements OnInit {
 
   loadProducts() {
     console.log('📦 Loading provider products...');
-    // Load all products for now - in production, filter by shop
-    this.productService.getAll().subscribe({
+    // ✅ FIXED: Load only products for the authenticated provider's shop
+    this.productService.getMyProducts().subscribe({
       next: (products) => {
-        console.log('✅ Products loaded:', products);
+        console.log('✅ Provider products loaded:', products.length, 'products');
         this.products.set(products);
       },
       error: (err) => {
-        console.error('❌ Failed to load products:', err);
-        this.toastService.error('Failed to load products');
+        console.error('❌ Failed to load provider products:', err);
+        this.toastService.error('Failed to load your products');
       }
     });
   }
@@ -181,27 +182,27 @@ export class ProviderDashboard implements OnInit {
   }
 
   cancelOrder(order: ProviderOrder) {
-    if (!confirm(`Cancel order from ${order.clientName}? Stock will be restored.`)) return;
+    if (!confirm(`Decline order from ${order.clientName}? Stock will be restored.`)) return;
 
     // Use the new product-specific endpoint if cartItemId is available
     const updateCall = order.cartItemId 
-      ? this.providerService.updateProductStatus(order.orderId, order.cartItemId, 'CANCELLED')
-      : this.providerService.updateOrderStatus(order.orderId, 'CANCELLED');
+      ? this.providerService.updateProductStatus(order.orderId, order.cartItemId, 'DECLINED')
+      : this.providerService.updateOrderStatus(order.orderId, 'DECLINED');
 
     updateCall.subscribe({
       next: () => {
-        this.toastService.success('Order cancelled. Stock restored.');
+        this.toastService.success('Order declined. Stock restored.');
         this.loadOrders();
         this.loadStatistics();
       },
       error: (err) => {
-        console.error('Failed to cancel order:', err);
+        console.error('Failed to decline order:', err);
         if (err.status === 404) {
           this.toastService.error('Order not found');
         } else if (err.status === 403) {
           this.toastService.error('You are not authorized to update this order');
         } else {
-          this.toastService.error('Failed to cancel order');
+          this.toastService.error('Failed to decline order');
         }
       }
     });
@@ -213,6 +214,9 @@ export class ProviderDashboard implements OnInit {
         return 'badge-yellow';
       case 'CONFIRMED':
         return 'badge-green';
+      case 'PAID':
+        return 'badge-blue';
+      case 'DECLINED':
       case 'CANCELLED':
         return 'badge-red';
       default:
@@ -226,6 +230,9 @@ export class ProviderDashboard implements OnInit {
         return '⏳';
       case 'CONFIRMED':
         return '✅';
+      case 'PAID':
+        return '💰';
+      case 'DECLINED':
       case 'CANCELLED':
         return '❌';
       default:

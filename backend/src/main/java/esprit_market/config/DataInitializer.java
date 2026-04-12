@@ -49,6 +49,9 @@ public class DataInitializer implements CommandLineRunner {
 
         // Fix legacy roles in the database
         migrateLegacyRoles();
+        
+        // ✅ Ensure all providers have shops
+        ensureProvidersHaveShops();
 
         // Initialize Admin User
         String adminEmail = "admin@espritmarket.tn";
@@ -413,6 +416,64 @@ public class DataInitializer implements CommandLineRunner {
             });
         } catch (Exception e) {
             log.error("Migration failed: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * ✅ Migration: Ensure all PROVIDER users have shops
+     * This fixes providers created before the automatic shop creation feature
+     */
+    private void ensureProvidersHaveShops() {
+        log.info("🔍 Checking if all providers have shops...");
+        try {
+            List<User> providers = userRepository.findAll().stream()
+                    .filter(user -> user.getRoles() != null && 
+                           (user.getRoles().contains(Role.PROVIDER) || user.getRoles().contains(Role.SELLER)))
+                    .collect(Collectors.toList());
+            
+            log.info("Found {} provider(s) in database", providers.size());
+            
+            int shopsCreated = 0;
+            for (User provider : providers) {
+                // Check if shop already exists
+                if (shopRepository.findByOwnerId(provider.getId()).isEmpty()) {
+                    // Generate shop name from business name or user name
+                    String shopName = provider.getBusinessName() != null && !provider.getBusinessName().trim().isEmpty()
+                            ? provider.getBusinessName()
+                            : (provider.getFirstName() != null ? provider.getFirstName() : "Provider") + "'s Shop";
+                    
+                    String shopDescription = provider.getDescription() != null && !provider.getDescription().trim().isEmpty()
+                            ? provider.getDescription()
+                            : "Welcome to " + shopName;
+                    
+                    Shop shop = Shop.builder()
+                            .ownerId(provider.getId())
+                            .name(shopName)
+                            .description(shopDescription)
+                            .email(provider.getEmail())
+                            .phone(provider.getPhone())
+                            .isActive(true)
+                            .createdAt(java.time.LocalDateTime.now())
+                            .updatedAt(java.time.LocalDateTime.now())
+                            .productIds(new java.util.ArrayList<>())
+                            .build();
+                    
+                    Shop savedShop = shopRepository.save(shop);
+                    shopsCreated++;
+                    log.info("✅ Created shop '{}' for provider: {} (ID: {})", 
+                            savedShop.getName(), provider.getEmail(), savedShop.getId());
+                } else {
+                    log.info("✅ Provider {} already has a shop", provider.getEmail());
+                }
+            }
+            
+            if (shopsCreated > 0) {
+                log.info("✅ Migration complete: Created {} shop(s) for existing providers", shopsCreated);
+            } else {
+                log.info("✅ All providers already have shops - no migration needed");
+            }
+        } catch (Exception e) {
+            log.error("❌ Shop migration failed: {}", e.getMessage(), e);
         }
     }
 }

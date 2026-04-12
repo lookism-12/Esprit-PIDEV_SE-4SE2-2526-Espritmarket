@@ -13,9 +13,26 @@
 </div>}
 
 <!-- HERO -->
-<div class="pt-28 pb-16 relative overflow-hidden" style="background: linear-gradient(135deg, #8B0000 0%, #4A0000 100%);">
-  <div class="absolute inset-0 opacity-10" style="background-image:radial-gradient(circle at 2px 2px,white 1px,transparent 0);background-size:28px 28px"></div>
-  <div class="max-w-5xl mx-auto px-4 relative z-10 text-center">
+<div class="hero-section pt-28 pb-16 relative overflow-hidden">
+  <!-- Background Video -->
+  <video autoplay muted loop playsinline class="hero-video" 
+         (loadstart)="onVideoLoadStart()" 
+         (canplay)="onVideoCanPlay()" 
+         (error)="onVideoError($event)"
+         preload="auto">
+    <source src="assets/carpoolingVdo.mp4" type="video/mp4">
+    <!-- Fallback for browsers that don't support video -->
+    Your browser does not support the video tag.
+  </video>
+  
+  <!-- Dark Overlay -->
+  <div class="hero-overlay"></div>
+  
+  <!-- Original Pattern Overlay (kept for design consistency) -->
+  <div class="absolute inset-0 opacity-5 z-[2]" style="background-image:radial-gradient(circle at 2px 2px,white 1px,transparent 0);background-size:28px 28px"></div>
+  
+  <!-- Hero Content -->
+  <div class="hero-content max-w-5xl mx-auto px-4 relative z-10 text-center">
     <h1 class="text-5xl md:text-6xl font-black text-white tracking-tight mb-3">Find your next ride</h1>
     <p class="text-lg text-white/70 font-semibold mb-10">Save money. Travel smarter. Meet fellow students.</p>
     <div class="bg-[#3a0b0b]/60 backdrop-blur-lg border border-[#E0B84A]/40 p-4 rounded-3xl max-w-4xl mx-auto shadow-2xl">

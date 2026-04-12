@@ -35,9 +35,19 @@ export class ShopService {
   }
 
   getMyShop(): Observable<Shop> {
-    // TODO: Implement HTTP call
-    console.log('ShopService.getMyShop() called');
-    return of({} as Shop);
+    console.log('ShopService.getMyShop() called - fetching from backend');
+    return this.http.get<Shop>(`${this.apiUrl}/me`).pipe(
+      tap({
+        next: (shop) => {
+          console.log('✅ My shop loaded:', shop);
+          this.currentShop.set(shop);
+        },
+        error: (err) => {
+          console.error('❌ Failed to load my shop:', err);
+          this.error.set(err.message || 'Failed to load shop');
+        }
+      })
+    );
   }
 
   updateShop(data: Partial<Shop>): Observable<Shop> {

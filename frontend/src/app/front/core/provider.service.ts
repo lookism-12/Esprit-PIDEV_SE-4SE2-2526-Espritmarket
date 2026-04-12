@@ -15,24 +15,27 @@ export class ProviderService {
    * Get all orders for the current provider's products
    */
   getProviderOrders(): Observable<ProviderOrder[]> {
-    return this.http.get<ProviderOrder[]>(`${this.apiUrl}/orders`);
+    // ✅ FIXED: Use the correct dashboard endpoint
+    return this.http.get<ProviderOrder[]>(`${this.apiUrl}/dashboard/orders`);
   }
 
   /**
    * Get detailed information about a specific order
    */
   getOrderDetails(orderId: string): Observable<any> {
-    return this.http.get(`${this.apiUrl}/orders/${orderId}`);
+    // ✅ FIXED: Use the correct dashboard endpoint
+    return this.http.get(`${this.apiUrl}/dashboard/orders/${orderId}`);
   }
 
   /**
    * Update order status (CONFIRM or CANCEL)
    */
   updateOrderStatus(orderId: string, status: string): Observable<ProviderOrder> {
+    // ✅ FIXED: Use the correct orders endpoint for updates
     return this.http.put<ProviderOrder>(
       `${this.apiUrl}/orders/${orderId}/status`,
       {},
-      { params: { newStatus: status } }
+      { params: { status: status } }
     );
   }
 
@@ -40,8 +43,9 @@ export class ProviderService {
    * Update individual product status within an order
    */
   updateProductStatus(orderId: string, cartItemId: string, status: string): Observable<ProviderOrder> {
+    // ✅ FIXED: Use the correct dashboard endpoint (deprecated but still works)
     return this.http.put<ProviderOrder>(
-      `${this.apiUrl}/orders/${orderId}/items/${cartItemId}/status`,
+      `${this.apiUrl}/dashboard/orders/${orderId}/items/${cartItemId}/status`,
       {},
       { params: { newStatus: status } }
     );
@@ -51,7 +55,8 @@ export class ProviderService {
    * Get provider dashboard statistics
    */
   getStatistics(): Observable<ProviderStats> {
-    return this.http.get<ProviderStats>(`${this.apiUrl}/statistics`);
+    // ✅ FIXED: Use the correct dashboard endpoint
+    return this.http.get<ProviderStats>(`${this.apiUrl}/dashboard/statistics`);
   }
 
   /**

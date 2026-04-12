@@ -384,4 +384,22 @@ export class Carpooling implements OnInit {
       error: e => this.error.set(e.error?.message || 'Counter failed')
     });
   }
+
+  // Video event handlers
+  onVideoLoadStart(): void {
+    console.log('🎬 Video loading started');
+  }
+
+  onVideoCanPlay(): void {
+    console.log('🎬 Video can play - loaded successfully');
+  }
+
+  onVideoError(event: Event): void {
+    console.error('🎬 Video failed to load:', event);
+    // Fallback: ensure the hero section still has the red background
+    const heroSection = document.querySelector('.hero-section') as HTMLElement;
+    if (heroSection) {
+      heroSection.style.backgroundColor = '#8B0000';
+    }
+  }
 }

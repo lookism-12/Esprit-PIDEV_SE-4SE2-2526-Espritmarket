@@ -106,34 +106,21 @@ export class AddProduct implements OnInit {
       next: (shop) => {
         if (shop && shop.id) {
           this.shopId.set(shop.id);
-          console.log('✅ Using user shop:', shop.id);
+          console.log('✅ Using user shop:', shop.id, shop);
         } else {
-          // Fallback: get any available shop
-          this.loadAnyShop();
-        }
-      },
-      error: () => {
-        // Fallback: get any available shop
-        this.loadAnyShop();
-      }
-    });
-  }
-
-  private loadAnyShop(): void {
-    // Get any available shop for testing
-    this.http.get<any[]>(`${environment.apiUrl}/shops`).subscribe({
-      next: (shops) => {
-        if (shops && shops.length > 0) {
-          this.shopId.set(shops[0].id);
-          console.log('✅ Using available shop:', shops[0].id);
-        } else {
-          console.error('❌ No shops available');
-          this.errorMessage.set('No shops available. Please create a shop first.');
+          console.error('❌ Shop response is empty or missing ID');
+          this.errorMessage.set('Your provider account does not have a shop. Please contact support or try logging out and back in.');
         }
       },
       error: (error) => {
-        console.error('❌ Failed to load shops:', error);
-        this.errorMessage.set('Failed to load shop information.');
+        console.error('❌ Failed to load user shop:', error);
+        if (error.status === 404) {
+          this.errorMessage.set('No shop found for your account. Your shop may not have been created during registration. Please contact support.');
+        } else if (error.status === 403) {
+          this.errorMessage.set('Access denied. Please ensure you are logged in as a PROVIDER.');
+        } else {
+          this.errorMessage.set('Failed to load shop information: ' + (error.error?.message || error.message));
+        }
       }
     });
   }
@@ -397,10 +384,35 @@ export class AddProduct implements OnInit {
       },
       error: (err) => {
         console.error('❌ Failed to create product:', err);
-        this.errorMessage.set(
-          err.error?.message || 
-          'Failed to create product. Make sure you have PROVIDER role and all fields are valid.'
-        );
+        console.error('❌ Error details:', {
+          status: err.status,
+          statusText: err.statusText,
+          message: err.message,
+          error: err.error
+        });
+        
+        let errorMsg = 'Failed to create product. ';
+        
+        if (err.status === 400) {
+          // Bad Request - validation error
+          if (err.error?.message) {
+            errorMsg = err.error.message;
+          } else if (typeof err.error === 'string') {
+            errorMsg = err.error;
+          } else {
+            errorMsg += 'Please check all fields are valid.';
+          }
+        } else if (err.status === 403) {
+          errorMsg = 'Access denied. Please ensure you are logged in as a PROVIDER.';
+        } else if (err.status === 404) {
+          errorMsg = 'Shop or category not found. Please contact support.';
+        } else if (err.status === 0) {
+          errorMsg = 'Cannot connect to server. Please check if the backend is running.';
+        } else {
+          errorMsg += err.error?.message || err.message || 'Unknown error occurred.';
+        }
+        
+        this.errorMessage.set(errorMsg);
         this.isSubmitting.set(false);
       }
     });

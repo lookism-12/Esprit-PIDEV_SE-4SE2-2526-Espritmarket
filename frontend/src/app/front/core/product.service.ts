@@ -169,6 +169,24 @@ export class ProductService {
    * @param filter - Optional filter parameters (currently ignored by backend)
    * @returns Observable with products list
    */
+  /**
+   * Get products for the current authenticated provider's shop
+   * This endpoint is secured and only returns products belonging to the provider's shop
+   */
+  getMyProducts(): Observable<Product[]> {
+    console.log('📦 ProductService: Fetching provider\'s own products from /api/products/mine');
+    return this.http.get<ProductResponseDTO[]>(`${this.apiUrl}/mine`).pipe(
+      map((dtos: ProductResponseDTO[]) => {
+        console.log(`✅ ProductService: Received ${dtos.length} products for provider's shop`);
+        return this.mapToFrontendProducts(dtos);
+      }),
+      catchError((error) => {
+        console.error('❌ ProductService: Failed to fetch provider products:', error);
+        throw error;
+      })
+    );
+  }
+
   getAll(filter?: ProductFilter): Observable<Product[]> {
     this.isLoading.set(true);
     // NOTE: Removing query parameters since backend doesn't support filtering yet

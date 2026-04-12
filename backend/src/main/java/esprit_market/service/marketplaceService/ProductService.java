@@ -115,54 +115,79 @@ public class ProductService implements IProductService {
 
     @Override
     public ProductResponseDTO create(ProductRequestDTO dto) {
-        log.info("create product: name={}, shopId={}, categoryIds={}",
-                dto.getName(), dto.getShopId(), dto.getCategoryIds());
-        if (dto.getShopId() == null) {
-            throw new IllegalArgumentException("Shop ID is mandatory");
-        }
-        ObjectId shopObjectId = new ObjectId(dto.getShopId());
-
-        // 1️⃣ ALWAYS fetch linked entity via findById().orElseThrow()
-        Shop shop = shopRepository.findById(shopObjectId)
-                .orElseThrow(() -> new ResourceNotFoundException("Shop not found with id: " + dto.getShopId()));
-
-        List<Category> categories = new ArrayList<>();
-        if (dto.getCategoryIds() != null) {
-            for (String catId : dto.getCategoryIds()) {
-                ObjectId oid = new ObjectId(catId);
-                // 1️⃣ ALWAYS fetch linked entity via findById().orElseThrow()
-                Category category = categoryRepository.findById(oid)
-                        .orElseThrow(() -> new ResourceNotFoundException("Category not found with id: " + catId));
-                categories.add(category);
+        try {
+            log.info("create product: name={}, shopId={}, categoryIds={}",
+                    dto.getName(), dto.getShopId(), dto.getCategoryIds());
+            
+            if (dto.getShopId() == null || dto.getShopId().isEmpty()) {
+                throw new IllegalArgumentException("Shop ID is mandatory");
             }
-        }
-
-        Product product = mapper.toEntity(dto);
-        product.setStatus(ProductStatus.PENDING);
-        log.info("Saving product to MongoDB: {}", product.getName());
-        Product savedProduct = repository.save(product);
-        log.info("Product saved successfully with ID: {}", savedProduct.getId());
-
-        // Maintain bidirectionality: update Category.productIds + create
-        // ProductCategory links
-        for (Category category : categories) {
-            if (category.getProductIds() == null) {
-                category.setProductIds(new ArrayList<>());
+            
+            if (dto.getName() == null || dto.getName().trim().isEmpty()) {
+                throw new IllegalArgumentException("Product name is mandatory");
             }
-            if (!category.getProductIds().contains(savedProduct.getId())) {
-                category.getProductIds().add(savedProduct.getId());
-                categoryRepository.save(category);
+            
+            if (dto.getPrice() <= 0) {
+                throw new IllegalArgumentException("Product price must be greater than 0");
+            }
+            
+            if (dto.getStock() < 0) {
+                throw new IllegalArgumentException("Product stock cannot be negative");
+            }
+            
+            ObjectId shopObjectId = new ObjectId(dto.getShopId());
+
+            // 1️⃣ ALWAYS fetch linked entity via findById().orElseThrow()
+            Shop shop = shopRepository.findById(shopObjectId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Shop not found with id: " + dto.getShopId()));
+
+            List<Category> categories = new ArrayList<>();
+            if (dto.getCategoryIds() != null) {
+                for (String catId : dto.getCategoryIds()) {
+                    ObjectId oid = new ObjectId(catId);
+                    // 1️⃣ ALWAYS fetch linked entity via findById().orElseThrow()
+                    Category category = categoryRepository.findById(oid)
+                            .orElseThrow(() -> new ResourceNotFoundException("Category not found with id: " + catId));
+                    categories.add(category);
+                }
             }
 
-            productCategoryRepository.save(ProductCategory.builder()
-                    .productId(savedProduct.getId())
-                    .categoryId(category.getId())
-                    .build());
-        }
+            Product product = mapper.toEntity(dto);
+            product.setStatus(ProductStatus.PENDING);
+            log.info("Saving product to MongoDB: {}", product.getName());
+            Product savedProduct = repository.save(product);
+            log.info("Product saved successfully with ID: {}", savedProduct.getId());
 
-        ProductResponseDTO result = mapper.toDTO(savedProduct);
-        log.info("Returning ProductResponseDTO with ID: {}", result.getId());
-        return result;
+            // Maintain bidirectionality: update Category.productIds + create
+            // ProductCategory links
+            for (Category category : categories) {
+                if (category.getProductIds() == null) {
+                    category.setProductIds(new ArrayList<>());
+                }
+                if (!category.getProductIds().contains(savedProduct.getId())) {
+                    category.getProductIds().add(savedProduct.getId());
+                    categoryRepository.save(category);
+                }
+
+                productCategoryRepository.save(ProductCategory.builder()
+                        .productId(savedProduct.getId())
+                        .categoryId(category.getId())
+                        .build());
+            }
+
+            ProductResponseDTO result = mapper.toDTO(savedProduct);
+            log.info("Returning ProductResponseDTO with ID: {}", result.getId());
+            return result;
+        } catch (IllegalArgumentException e) {
+            log.error("❌ Validation error creating product: {}", e.getMessage());
+            throw e;
+        } catch (ResourceNotFoundException e) {
+            log.error("❌ Resource not found creating product: {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("❌ Unexpected error creating product: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to create product: " + e.getMessage(), e);
+        }
     }
 
     @Override

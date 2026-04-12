@@ -379,8 +379,7 @@ export class Cart implements OnInit {
 
     const checkoutData = {
       shippingAddress: 'Default Address', // TODO: Get from user
-      billingAddress: 'Default Address',
-      notes: ''
+      paymentMethod: 'CREDIT_CARD' // Default payment method
     };
 
     this.cartService.checkout(checkoutData).subscribe({

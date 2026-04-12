@@ -3,7 +3,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 // Import shared auth styles
-@import '../auth-shared.scss';
+@use '../auth-shared.scss';
 
 // ─── Login-Specific Overrides ─────────────────────────────────
 .login-page {

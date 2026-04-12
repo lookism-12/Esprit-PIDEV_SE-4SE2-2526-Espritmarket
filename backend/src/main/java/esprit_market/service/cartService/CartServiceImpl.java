@@ -658,8 +658,22 @@ public class CartServiceImpl implements ICartService {
      * - Add loyalty points
      * - All operations are atomic via @Transactional
      */
+    /**
+     * @deprecated This method is DEPRECATED and creates architectural problems.
+     * 
+     * ❌ PROBLEM: This method only updates Cart status (DRAFT → PENDING)
+     * ❌ PROBLEM: Does NOT create Order entities in MongoDB
+     * ❌ PROBLEM: MongoDB orders collection remains empty
+     * ❌ PROBLEM: Provider dashboard cannot find orders
+     * 
+     * ✅ SOLUTION: Use IOrderService.createOrderFromCart() instead
+     * 
+     * This method is kept for backward compatibility only but should NOT be used.
+     * CartController.checkout() has been updated to use OrderService instead.
+     */
     @Override
     @Transactional
+    @Deprecated
     public CartResponse checkout(ObjectId userId, CheckoutRequest request) {
 
         Cart cart = getUserCart(userId, CartStatus.DRAFT);
@@ -701,19 +715,17 @@ public class CartServiceImpl implements ICartService {
             }
         }
 
-        // ⚠️ CRITICAL: STOCK RESERVATION SYSTEM
-        // Stock MUST be reduced immediately at checkout (DRAFT → PENDING)
-        // This prevents other users from buying unavailable stock
+        // ⚠️ WARNING: This method does NOT create Order entities
+        // Stock reduction happens here but Order is never created
+        // This causes provider dashboard to show empty results
         java.util.Map<ObjectId, Integer> stockReductions = new java.util.HashMap<>();
         for (CartItem item : items) {
             stockReductions.put(item.getProductId(), item.getQuantity());
         }
         
-        // This will validate and reduce stock atomically
-        // Stock is RESERVED immediately, even if order is not yet confirmed/paid
         stockManagementService.batchReduceStock(stockReductions);
 
-        // Increment coupon usageCount ONLY at checkout success (DRAFT → PENDING)
+        // Increment coupon usageCount
         if (couponToIncrement != null) {
             int currentUsage = couponToIncrement.getUsageCount() != null ? couponToIncrement.getUsageCount() : 0;
             couponToIncrement.setUsageCount(currentUsage + 1);
@@ -727,8 +739,7 @@ public class CartServiceImpl implements ICartService {
             couponRepository.save(couponToIncrement);
         }
 
-        // RESERVATION: Set order to PENDING (checkout done but not paid)
-        // Stock is ALREADY reduced at this point
+        // ❌ PROBLEM: Only changes Cart status, does NOT create Order
         cart.setStatus(CartStatus.PENDING);
         cart.setShippingAddress(request.getShippingAddress());
         cart.setBillingAddress(request.getBillingAddress());

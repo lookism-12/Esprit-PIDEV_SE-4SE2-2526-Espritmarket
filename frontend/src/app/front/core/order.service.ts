@@ -2,7 +2,7 @@ import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of, tap, catchError, throwError } from 'rxjs';
 import { environment } from '../../../environment';
-import { CartResponse } from '../models/cart.model';
+import { OrderResponse, OrderStatus, ConfirmPaymentRequest, CancelOrderRequest, RefundSummaryDTO } from '../models/order.model';
 
 export interface OrderFilter {
   status?: string;
@@ -13,7 +13,7 @@ export interface OrderFilter {
 }
 
 export interface OrderListResponse {
-  orders: CartResponse[];
+  orders: OrderResponse[];
   total: number;
   page: number;
   totalPages: number;
@@ -23,34 +23,9 @@ export interface UpdateOrderStatusRequest {
   status: string;
 }
 
-export interface CancelOrderRequest {
-  reason: string;
-}
-
-export interface RefundSummaryDTO {
-  orderId: string;
-  orderStatus: string;
-  originalTotal: number;
-  refundedAmount: number;
-  remainingTotal: number;
-  refundedItems: any[];
-  refundDate: string;
-  loyaltyPointsDeducted: number;
-}
-
-export interface Order {
-  id: string;
-  userId: string;
-  status: string;
-  total: number;
-  items: any[];
-  createdAt: string;
-  statusHistory?: any[];
-}
-
 /**
- * Service for managing orders in the stock reservation system.
- * Handles order status transitions: PENDING → CONFIRMED → PROCESSING → SHIPPED → DELIVERED
+ * Service for managing orders in the e-commerce system.
+ * Handles order lifecycle: PENDING → PAID → PROCESSING → SHIPPED → DELIVERED
  * Also handles cancellations which restore stock.
  */
 @Injectable({
@@ -60,8 +35,8 @@ export class OrderService {
   private readonly apiUrl = `${environment.apiUrl}/orders`;
 
   // Reactive state
-  readonly orders = signal<CartResponse[]>([]);
-  readonly selectedOrder = signal<CartResponse | null>(null);
+  readonly orders = signal<OrderResponse[]>([]);
+  readonly selectedOrder = signal<OrderResponse | null>(null);
   readonly isLoading = signal<boolean>(false);
   readonly error = signal<string | null>(null);
 
@@ -70,18 +45,20 @@ export class OrderService {
   /**
    * Get all orders for the current user
    */
-  getMyOrders(): Observable<CartResponse[]> {
+  getMyOrders(): Observable<OrderResponse[]> {
     this.isLoading.set(true);
     this.error.set(null);
 
-    return this.http.get<CartResponse[]>(this.apiUrl).pipe(
+    return this.http.get<OrderResponse[]>(this.apiUrl).pipe(
       tap(orders => {
         this.orders.set(orders);
         this.isLoading.set(false);
+        console.log('✅ Orders loaded:', orders.length);
       }),
       catchError(error => {
         this.error.set('Failed to load orders');
         this.isLoading.set(false);
+        console.error('❌ Failed to load orders:', error);
         return throwError(() => error);
       })
     );
@@ -90,10 +67,10 @@ export class OrderService {
   /**
    * Get orders by status
    */
-  getOrdersByStatus(status: string): Observable<CartResponse[]> {
+  getOrdersByStatus(status: string): Observable<OrderResponse[]> {
     this.isLoading.set(true);
     
-    return this.http.get<CartResponse[]>(`${this.apiUrl}/status/${status}`).pipe(
+    return this.http.get<OrderResponse[]>(`${this.apiUrl}/status/${status}`).pipe(
       tap(orders => {
         this.orders.set(orders);
         this.isLoading.set(false);
@@ -109,10 +86,10 @@ export class OrderService {
   /**
    * Get specific order by ID
    */
-  getOrderById(orderId: string): Observable<CartResponse> {
+  getOrderById(orderId: string): Observable<OrderResponse> {
     this.isLoading.set(true);
     
-    return this.http.get<CartResponse>(`${this.apiUrl}/${orderId}`).pipe(
+    return this.http.get<OrderResponse>(`${this.apiUrl}/${orderId}`).pipe(
       tap(order => {
         this.selectedOrder.set(order);
         this.isLoading.set(false);
@@ -126,16 +103,19 @@ export class OrderService {
   }
 
   /**
-   * Mark order as paid (PENDING → CONFIRMED)
+   * Confirm payment for order (PENDING → PAID)
+   * This triggers stock reduction and loyalty points addition
    */
-  markOrderAsPaid(orderId: string): Observable<CartResponse> {
+  confirmPayment(orderId: string, paymentId: string): Observable<OrderResponse> {
     this.isLoading.set(true);
     
-    return this.http.put<CartResponse>(`${this.apiUrl}/${orderId}/pay`, {}).pipe(
+    const request: ConfirmPaymentRequest = { paymentId };
+    
+    return this.http.post<OrderResponse>(`${this.apiUrl}/${orderId}/confirm-payment`, request).pipe(
       tap(order => {
         this.selectedOrder.set(order);
         this.isLoading.set(false);
-        console.log('✅ Order marked as paid:', order);
+        console.log('✅ Payment confirmed:', order);
       }),
       catchError(error => {
         this.error.set('Failed to confirm payment');
@@ -148,12 +128,12 @@ export class OrderService {
   /**
    * Update order status (for sellers/admins)
    */
-  updateOrderStatus(orderId: string, status: string): Observable<CartResponse> {
+  updateOrderStatus(orderId: string, status: string): Observable<OrderResponse> {
     this.isLoading.set(true);
     
     const request: UpdateOrderStatusRequest = { status };
     
-    return this.http.put<CartResponse>(`${this.apiUrl}/${orderId}/status`, request).pipe(
+    return this.http.put<OrderResponse>(`${this.apiUrl}/${orderId}/status`, request).pipe(
       tap(order => {
         this.selectedOrder.set(order);
         this.isLoading.set(false);
@@ -168,7 +148,51 @@ export class OrderService {
   }
 
   /**
-   * Cancel entire order - RESTORES stock to available inventory
+   * Confirm order (PENDING → CONFIRMED)
+   * Locks the order, no more changes allowed
+   */
+  confirmOrder(orderId: string): Observable<OrderResponse> {
+    this.isLoading.set(true);
+    
+    return this.http.post<OrderResponse>(`${this.apiUrl}/${orderId}/confirm`, {}).pipe(
+      tap(order => {
+        this.selectedOrder.set(order);
+        this.isLoading.set(false);
+        console.log('✅ Order confirmed:', order);
+      }),
+      catchError(error => {
+        this.error.set('Failed to confirm order');
+        this.isLoading.set(false);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * Decline order (PENDING → DECLINED)
+   * Restores product stock
+   */
+  declineOrder(orderId: string, reason: string): Observable<RefundSummaryDTO> {
+    this.isLoading.set(true);
+    
+    const request: CancelOrderRequest = { reason };
+    
+    return this.http.post<RefundSummaryDTO>(`${this.apiUrl}/${orderId}/decline`, request).pipe(
+      tap(refundSummary => {
+        this.isLoading.set(false);
+        console.log('✅ Order declined, stock restored:', refundSummary);
+      }),
+      catchError(error => {
+        this.error.set('Failed to decline order');
+        this.isLoading.set(false);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * Cancel entire order - ONLY if status = PENDING
+   * Backend will set status to CANCELLED and restore stock
    */
   cancelOrder(orderId: string, reason: string): Observable<RefundSummaryDTO> {
     this.isLoading.set(true);
@@ -191,54 +215,22 @@ export class OrderService {
   /**
    * Process order (start preparation)
    */
-  processOrder(orderId: string): Observable<CartResponse> {
+  processOrder(orderId: string): Observable<OrderResponse> {
     return this.updateOrderStatus(orderId, 'PROCESSING');
   }
 
   /**
    * Ship order
    */
-  shipOrder(orderId: string): Observable<CartResponse> {
+  shipOrder(orderId: string): Observable<OrderResponse> {
     return this.updateOrderStatus(orderId, 'SHIPPED');
   }
 
   /**
    * Deliver order
    */
-  deliverOrder(orderId: string): Observable<CartResponse> {
+  deliverOrder(orderId: string): Observable<OrderResponse> {
     return this.updateOrderStatus(orderId, 'DELIVERED');
-  }
-
-  /**
-   * Get orders with filter
-   */
-  getOrders(filter?: OrderFilter): Observable<OrderListResponse> {
-    console.log('OrderService.getOrders() called with filter:', filter);
-    return of({ orders: [], total: 0, page: 1, totalPages: 0 });
-  }
-
-  /**
-   * Get order tracking information
-   */
-  getOrderTracking(orderId: string): Observable<{ statusHistory: any[] }> {
-    console.log('OrderService.getOrderTracking() called with:', orderId);
-    return of({ statusHistory: [] });
-  }
-
-  /**
-   * Get seller orders
-   */
-  getSellerOrders(sellerId: string, filter?: OrderFilter): Observable<OrderListResponse> {
-    console.log('OrderService.getSellerOrders() called with:', sellerId, filter);
-    return of({ orders: [], total: 0, page: 1, totalPages: 0 });
-  }
-
-  /**
-   * Update status - for backward compatibility
-   */
-  updateStatus(request: UpdateOrderStatusRequest): Observable<Order> {
-    console.log('OrderService.updateStatus() called with:', request);
-    return of({} as Order);
   }
 
   /**
@@ -248,7 +240,6 @@ export class OrderService {
     const statusMap: { [key: string]: string } = {
       'DRAFT': 'Draft',
       'PENDING': 'Pending Payment',
-      'CONFIRMED': 'Confirmed',
       'PAID': 'Paid',
       'PROCESSING': 'Processing',
       'SHIPPED': 'Shipped',
@@ -266,32 +257,37 @@ export class OrderService {
    */
   getOrderStatusClass(status: string): string {
     const statusClasses: { [key: string]: string } = {
-      'DRAFT': 'bg-gray-100 text-gray-700',
       'PENDING': 'bg-yellow-100 text-yellow-800',
-      'CONFIRMED': 'bg-blue-100 text-blue-800', 
+      'CONFIRMED': 'bg-blue-100 text-blue-800',
       'PAID': 'bg-green-100 text-green-800',
-      'PROCESSING': 'bg-purple-100 text-purple-800',
-      'SHIPPED': 'bg-indigo-100 text-indigo-800',
-      'DELIVERED': 'bg-green-100 text-green-800',
-      'CANCELLED': 'bg-red-100 text-red-800',
-      'PARTIALLY_CANCELLED': 'bg-orange-100 text-orange-800',
-      'PARTIALLY_REFUNDED': 'bg-orange-100 text-orange-800',
-      'REFUNDED': 'bg-gray-100 text-gray-800'
+      'DECLINED': 'bg-red-100 text-red-800'
     };
     return statusClasses[status] || 'bg-gray-100 text-gray-700';
   }
 
   /**
-   * Check if order can be cancelled
+   * Check if client can cancel order (within 7 days and PENDING status)
    */
-  canCancelOrder(order: CartResponse): boolean {
-    return ['PENDING', 'CONFIRMED', 'PAID'].includes(order.status);
+  canClientCancelOrder(orderId: string): Observable<boolean> {
+    return this.http.get<boolean>(`${this.apiUrl}/${orderId}/can-cancel`).pipe(
+      catchError(error => {
+        console.error('❌ Failed to check cancel permission:', error);
+        return of(false);
+      })
+    );
+  }
+
+  /**
+   * Check if order can be cancelled (ONLY PENDING status)
+   */
+  canCancelOrder(order: OrderResponse): boolean {
+    return order.status === OrderStatus.PENDING;
   }
 
   /**
    * Check if order can be modified
    */
-  canModifyOrder(order: CartResponse): boolean {
-    return ['PENDING', 'CONFIRMED'].includes(order.status);
+  canModifyOrder(order: OrderResponse): boolean {
+    return order.status === OrderStatus.PENDING;
   }
 }

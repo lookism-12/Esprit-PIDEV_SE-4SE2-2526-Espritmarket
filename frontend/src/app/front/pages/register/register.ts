@@ -193,7 +193,7 @@ export class Register implements OnInit {
       case 'provider':
         this.registerForm.get('businessName')?.setValidators([Validators.required, Validators.minLength(2)]);
         this.registerForm.get('businessType')?.setValidators([Validators.required]);
-        this.registerForm.get('taxId')?.setValidators([Validators.required, Validators.minLength(5)]);
+        // ✅ Tax ID is optional for student project - no validation required
         break;
         
       case 'logistics':
@@ -267,7 +267,7 @@ export class Register implements OnInit {
     // Build payload based on role
     const payload: RegisterRequest = this.buildPayload(formValue, backendRole);
     
-    console.log('Registration payload:', payload);
+    console.log('📤 Registration payload:', payload);
     
     this.authService.register(payload).subscribe({
       next: (response) => {

@@ -1,6 +1,6 @@
 import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, ActivatedRoute } from '@angular/router';
+import { RouterLink, RouterLinkActive, RouterOutlet, ActivatedRoute } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
@@ -15,14 +15,14 @@ import { SavService } from '../../../back/core/services/sav.service';
 import { FavoriteService } from '../../core/favorite.service';
 import { UserRole } from '../../models/user.model';
 import { LoyaltyLevel, LoyaltyAccount, PointsTransaction, PointsTransactionType, LOYALTY_LEVELS } from '../../models/loyalty.model';
-import { CartResponse } from '../../models/cart.model';
+import { OrderResponse } from '../../models/order.model';
 
-type ProfileTab = 'dashboard' | 'orders' | 'loyalty' | 'preferences' | 'settings';
+type ProfileTab = 'orders' | 'loyalty' | 'preferences' | 'settings';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, RouterLink, ReactiveFormsModule],
+  imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet, ReactiveFormsModule],
   templateUrl: './profile.html',
   styleUrl: './profile.scss',
 })
@@ -69,7 +69,7 @@ export class Profile implements OnInit {
   isDelivery  = computed(() => this.role() === UserRole.DELIVERY);
 
   // ── Tabs ──────────────────────────────────────────────────────────────────
-  activeTab = signal<ProfileTab>('dashboard');
+  // Removed activeTab signal - using router instead
 
   // ── Modals ────────────────────────────────────────────────────────────────
   showEditModal     = signal(false);
@@ -81,7 +81,7 @@ export class Profile implements OnInit {
   preferencesForm!: FormGroup;
 
   // ── Common data ───────────────────────────────────────────────────────────
-  realOrders      = signal<CartResponse[]>([]);
+  realOrders      = signal<OrderResponse[]>([]);
   notifications   = signal<any[]>([]);
   loyaltyAccount  = signal<LoyaltyAccount | null>(null);
   pointsHistory   = signal<PointsTransaction[]>([]);
@@ -101,7 +101,7 @@ export class Profile implements OnInit {
 
   // ── PROVIDER specific ─────────────────────────────────────────────────────
   myNegotiations  = signal<any[]>([]);
-  shopOrders      = signal<CartResponse[]>([]);
+  shopOrders      = signal<OrderResponse[]>([]);
 
   // ── DELIVERY specific ─────────────────────────────────────────────────────
   myDeliveries    = signal<any[]>([]);
@@ -129,7 +129,7 @@ export class Profile implements OnInit {
     this.initForms();
     this.loadCommon();
     this.loadRoleSpecific();
-    this.route.queryParams.subscribe(p => { if (p['tab']) this.activeTab.set(p['tab'] as ProfileTab); });
+    // Removed activeTab query param handling - using router instead
   }
 
   private initForms(): void {
@@ -154,7 +154,7 @@ export class Profile implements OnInit {
       notifs:  this.notificationService.getMy().pipe(catchError(() => of([]))),
       loyalty: this.loyaltyService.getAccount().pipe(catchError(() => of(null)))
     }).subscribe(({ orders, notifs, loyalty }) => {
-      this.realOrders.set(orders as CartResponse[]);
+      this.realOrders.set(orders as OrderResponse[]);
       this.notifications.set(notifs as any[]);
       if (loyalty) this.loyaltyAccount.set(loyalty as LoyaltyAccount);
       this.isLoading.set(false);
@@ -190,7 +190,7 @@ export class Profile implements OnInit {
         orders: this.orderService.getMyOrders().pipe(catchError(() => of([])))
       }).subscribe(({ negs, orders }) => {
         this.myNegotiations.set(negs as any[]);
-        this.shopOrders.set(orders as CartResponse[]);
+        this.shopOrders.set(orders as OrderResponse[]);
       });
     } else if (role === UserRole.DELIVERY) {
       const userId = this.authService.getUserId();
@@ -203,20 +203,13 @@ export class Profile implements OnInit {
   }
 
   // ── Tab helpers ───────────────────────────────────────────────────────────
-  setActiveTab(tab: ProfileTab): void { this.activeTab.set(tab); }
-
   get tabs() {
-    const dashLabel =
-      this.isDriver()    ? '🚗 My Rides'    :
-      this.isPassenger() ? '🚌 Carpooling'  :
-      this.isProvider()  ? '🏪 My Shop'     :
-      this.isDelivery()  ? '📦 Deliveries'  : '📊 Dashboard';
+    // Remove Dashboard tab for clients
     return [
-      { id: 'dashboard'   as ProfileTab, label: dashLabel },
-      { id: 'orders'      as ProfileTab, label: '🛍️ Orders' },
-      { id: 'loyalty'     as ProfileTab, label: '🏆 Loyalty' },
-      { id: 'preferences' as ProfileTab, label: '⚙️ Preferences' },
-      { id: 'settings'    as ProfileTab, label: '👤 Settings' }
+      { id: 'orders'      as ProfileTab, label: '🛍️ Orders', route: '/profile/orders' },
+      { id: 'loyalty'     as ProfileTab, label: '🏆 Loyalty', route: '/profile/loyalty' },
+      { id: 'preferences' as ProfileTab, label: '⚙️ Preferences', route: '/profile/preferences' },
+      { id: 'settings'    as ProfileTab, label: '👤 Settings', route: '/profile/settings' }
     ];
   }
 
@@ -249,6 +242,48 @@ export class Profile implements OnInit {
 
   toggleInterest(i: string): void { this.preferences.update(p => ({ ...p, academicInterests: p.academicInterests.includes(i) ? p.academicInterests.filter(x => x !== i) : [...p.academicInterests, i] })); }
   toggleCategory(c: string): void { this.preferences.update(p => ({ ...p, preferredCategories: p.preferredCategories.includes(c) ? p.preferredCategories.filter(x => x !== c) : [...p.preferredCategories, c] })); }
+
+  // ── Order actions ─────────────────────────────────────────────────────────
+  /**
+   * Cancel order - ONLY if status = PENDING
+   * Backend will set status to CANCELLED and restore stock
+   */
+  cancelOrder(orderId: string): void {
+    const order = this.realOrders().find(o => o.id === orderId);
+    if (!order) {
+      alert('Order not found');
+      return;
+    }
+    
+    // ✅ CRITICAL: Check if order can be cancelled (ONLY PENDING)
+    if (order.status !== 'PENDING') {
+      alert(`Cannot cancel order with status: ${order.status}. Only PENDING orders can be cancelled.`);
+      return;
+    }
+    
+    const reason = prompt('Please provide a reason for cancellation:');
+    if (!reason || reason.trim() === '') {
+      return;
+    }
+    
+    if (!confirm(`Cancel order ${order.orderNumber}?\n\nThis will:\n• Set order status to CANCELLED\n• Restore product stock\n• Deduct loyalty points if applicable\n\nThis action cannot be undone.`)) {
+      return;
+    }
+    
+    this.orderService.cancelOrder(orderId, reason).subscribe({
+      next: (refundSummary) => {
+        console.log('✅ Order cancelled:', refundSummary);
+        // Refresh orders list
+        this.loadCommon();
+        alert(`Order cancelled successfully!\n\nOrder: ${order.orderNumber}\nRefund Amount: $${refundSummary.refundedAmount.toFixed(2)}\nStock has been restored.`);
+      },
+      error: (error) => {
+        console.error('❌ Failed to cancel order:', error);
+        const errorMsg = error.error?.message || 'Failed to cancel order. Please try again.';
+        alert(`Error: ${errorMsg}`);
+      }
+    });
+  }
 
   // ── Driver actions ────────────────────────────────────────────────────────
   cancelRide(rideId: string): void {

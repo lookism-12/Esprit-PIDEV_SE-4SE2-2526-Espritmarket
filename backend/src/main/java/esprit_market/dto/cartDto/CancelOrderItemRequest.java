@@ -17,4 +17,13 @@ public class CancelOrderItemRequest {
     private Integer quantityToCancel;
     
     private String reason;
+    
+    // Explicit getter for quantityToCancel (in case Lombok has issues)
+    public Integer getQuantityToCancel() {
+        return quantityToCancel;
+    }
+    
+    public void setQuantityToCancel(Integer quantityToCancel) {
+        this.quantityToCancel = quantityToCancel;
+    }
 }

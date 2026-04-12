@@ -98,28 +98,33 @@ export const routes: Routes = [
         loadComponent: () => import('./front/pages/driver-deliveries/driver-deliveries.component').then(m => m.DriverDeliveriesComponent),
         canActivate: [authGuard]
     },
-    // User Profile
+    // User Profile with nested routes
     {
         path: 'profile',
         loadComponent: () => import('./front/pages/profile/profile').then(m => m.Profile),
-        canActivate: [authGuard]
-    },
-    // Orders
-    {
-        path: 'orders',
         canActivate: [authGuard],
         children: [
-            { path: '', loadComponent: () => import('./front/pages/profile/profile').then(m => m.Profile) },
-            { path: ':id', loadComponent: () => import('./front/pages/profile/profile').then(m => m.Profile) }
-        ]
-    },
-    // Invoices
-    {
-        path: 'invoices',
-        canActivate: [authGuard],
-        children: [
-            { path: '', loadComponent: () => import('./front/pages/profile/profile').then(m => m.Profile) },
-            { path: ':id', loadComponent: () => import('./front/pages/profile/profile').then(m => m.Profile) }
+            {
+                path: '',
+                redirectTo: 'orders',
+                pathMatch: 'full'
+            },
+            {
+                path: 'orders',
+                loadComponent: () => import('./front/pages/profile/orders/profile-orders.component').then(m => m.ProfileOrdersComponent)
+            },
+            {
+                path: 'loyalty',
+                loadComponent: () => import('./front/pages/profile/loyalty/profile-loyalty.component').then(m => m.ProfileLoyaltyComponent)
+            },
+            {
+                path: 'preferences',
+                loadComponent: () => import('./front/pages/profile/preferences/profile-preferences.component').then(m => m.ProfilePreferencesComponent)
+            },
+            {
+                path: 'settings',
+                loadComponent: () => import('./front/pages/profile/settings/profile-settings.component').then(m => m.ProfileSettingsComponent)
+            }
         ]
     },
 

@@ -1,95 +1,70 @@
-import { CartItem } from './cart.model';
-import { User } from './user.model';
+/**
+ * Order Models - Aligned with Backend Order Entity
+ * 
+ * These models match the backend OrderResponse and OrderItemResponse DTOs.
+ * Order lifecycle: PENDING → PAID → PROCESSING → SHIPPED → DELIVERED
+ */
 
-export interface Order {
+export interface OrderResponse {
   id: string;
+  user: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+  status: OrderStatus;
+  totalAmount: number;
+  discountAmount: number;
+  finalAmount: number;
+  couponCode?: string;
+  discountId?: string;
+  shippingAddress: string;
+  paymentMethod: string;
+  paymentId?: string;
   orderNumber: string;
-  userId: string;
-  buyer: Pick<User, 'id' | 'firstName' | 'lastName' | 'email' | 'phone'>;
-  sellerId: string;
-  seller: Pick<User, 'id' | 'firstName' | 'lastName' | 'email'>;
-  items: OrderItem[];
-  status: OrderStatus;
-  statusHistory: OrderStatusHistory[];
-  subtotal: number;
-  tax: number;
-  discount: number;
-  shippingCost: number;
-  total: number;
-  payment: PaymentInfo;
-  shipping: ShippingInfo;
-  notes?: string;
-  createdAt: Date;
-  updatedAt: Date;
-  completedAt?: Date;
+  createdAt: string;
+  paidAt?: string;
+  lastUpdated: string;
+  cancellationReason?: string;
+  cancelledAt?: string;
+  items: OrderItemResponse[];
 }
 
-export interface OrderItem extends Omit<CartItem, 'addedAt'> {
+export interface OrderItemResponse {
+  id: string;
   orderId: string;
+  productId: string;
+  productName: string;
+  productPrice: number;
+  quantity: number;
+  subtotal: number;
   status: OrderItemStatus;
-}
-
-export interface OrderStatusHistory {
-  status: OrderStatus;
-  timestamp: Date;
-  note?: string;
-  updatedBy?: string;
-}
-
-export interface PaymentInfo {
-  method: PaymentMethod;
-  status: PaymentStatus;
-  transactionId?: string;
-  paidAt?: Date;
-  amount: number;
-}
-
-export interface ShippingInfo {
-  method: ShippingMethod;
-  address: ShippingAddress;
-  estimatedDelivery?: Date;
-  trackingNumber?: string;
-  deliveredAt?: Date;
-}
-
-export interface ShippingAddress {
-  fullName: string;
-  phone: string;
-  address: string;
-  city: string;
-  postalCode?: string;
-  notes?: string;
-  isOnCampus: boolean;
-  campusLocation?: string;
+  cancelledQuantity?: number;
+  refundedAmount?: number;
 }
 
 export enum OrderStatus {
   PENDING = 'PENDING',
   CONFIRMED = 'CONFIRMED',
-  PROCESSING = 'PROCESSING',
-  SHIPPED = 'SHIPPED',
-  OUT_FOR_DELIVERY = 'OUT_FOR_DELIVERY',
-  DELIVERED = 'DELIVERED',
-  COMPLETED = 'COMPLETED',
-  CANCELLED = 'CANCELLED',
-  REFUNDED = 'REFUNDED'
+  PAID = 'PAID',
+  DECLINED = 'DECLINED'
 }
 
 export enum OrderItemStatus {
-  PENDING = 'PENDING',
-  CONFIRMED = 'CONFIRMED',
-  SHIPPED = 'SHIPPED',
-  DELIVERED = 'DELIVERED',
-  RETURNED = 'RETURNED',
+  ACTIVE = 'ACTIVE',
+  CANCELLED = 'CANCELLED',
+  PARTIALLY_CANCELLED = 'PARTIALLY_CANCELLED',
   REFUNDED = 'REFUNDED'
 }
 
 export enum PaymentMethod {
+  CREDIT_CARD = 'CREDIT_CARD',
+  DEBIT_CARD = 'DEBIT_CARD',
+  PAYPAL = 'PAYPAL',
   CASH_ON_DELIVERY = 'CASH_ON_DELIVERY',
-  FLOUCI = 'FLOUCI',
-  D17 = 'D17',
   BANK_TRANSFER = 'BANK_TRANSFER',
-  LOYALTY_POINTS = 'LOYALTY_POINTS'
+  MOBILE_PAYMENT = 'MOBILE_PAYMENT'
 }
 
 export enum PaymentStatus {
@@ -97,20 +72,44 @@ export enum PaymentStatus {
   PROCESSING = 'PROCESSING',
   COMPLETED = 'COMPLETED',
   FAILED = 'FAILED',
-  REFUNDED = 'REFUNDED'
-}
-
-export enum ShippingMethod {
-  CAMPUS_PICKUP = 'CAMPUS_PICKUP',
-  CAMPUS_DELIVERY = 'CAMPUS_DELIVERY',
-  HOME_DELIVERY = 'HOME_DELIVERY'
+  REFUNDED = 'REFUNDED',
+  CANCELLED = 'CANCELLED'
 }
 
 export interface CreateOrderRequest {
-  cartId: string;
-  shippingAddress: ShippingAddress;
-  paymentMethod: PaymentMethod;
-  shippingMethod: ShippingMethod;
-  notes?: string;
-  couponCode?: string;
+  shippingAddress: string;
+  paymentMethod: string;
+}
+
+export interface ConfirmPaymentRequest {
+  paymentId: string;
+}
+
+export interface CancelOrderRequest {
+  reason: string;
+}
+
+export interface CancelOrderItemRequest {
+  cartItemId: string; // Note: Backend still uses "cartItemId" for backward compatibility
+  quantityToCancel?: number;
+  reason?: string;
+}
+
+export interface RefundSummaryDTO {
+  orderId: string;
+  orderStatus: string;
+  originalTotal: number;
+  refundedAmount: number;
+  remainingTotal: number;
+  refundedItems?: RefundedItemDTO[];
+  refundDate?: string;
+  loyaltyPointsDeducted?: number;
+}
+
+export interface RefundedItemDTO {
+  cartItemId: string;
+  productName: string;
+  cancelledQuantity: number;
+  refundAmount: number;
+  status: string;
 }
