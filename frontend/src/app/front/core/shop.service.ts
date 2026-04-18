@@ -8,13 +8,36 @@ import { environment } from '../../../environment';
   providedIn: 'root'
 })
 export class ShopService {
-  private readonly apiUrl = `${environment.apiUrl}/shops`;
+  private readonly apiUrl = `${environment.apiUrl}/shops`;  // ✅ This is correct: http://localhost:8090/api/shops
 
   readonly currentShop = signal<Shop | null>(null);
   readonly isLoading = signal<boolean>(false);
   readonly error = signal<string | null>(null);
 
   constructor(private http: HttpClient) {}
+
+  /**
+   * Get all shops
+   * @returns Observable with shop list
+   */
+  getAllShops(): Observable<Shop[]> {
+    this.isLoading.set(true);
+    this.error.set(null);
+    console.log('🏪 Fetching all shops from backend...');
+    return this.http.get<Shop[]>(this.apiUrl).pipe(
+      tap({
+        next: (shops) => {
+          console.log('✅ Shops loaded:', shops.length, shops);
+          this.isLoading.set(false);
+        },
+        error: (err) => {
+          console.error('❌ Failed to load shops:', err);
+          this.error.set(err.message || 'Failed to load shops');
+          this.isLoading.set(false);
+        }
+      })
+    );
+  }
 
   getShopById(id: string): Observable<Shop> {
     // TODO: Implement HTTP call

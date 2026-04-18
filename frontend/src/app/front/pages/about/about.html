@@ -1,175 +1,211 @@
-<div class="about-page">
+<div class="ab-page">
 
   <!-- ── HERO ── -->
-  <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-      <div class="about-hero-left">
-        <p class="about-eyebrow">ESPRIT Market Platform</p>
-        <h1 class="about-hero-title text-text-color">
-          <span class="about-title-red">DISCOVER</span>
-          ESPRIT MARKET
-        </h1>
-        <div class="about-hero-cols">
-          <p class="about-hero-desc text-text-muted">
-            ESPRIT Market is the student-built marketplace of ESPRIT School of Engineering — connecting buyers, sellers, drivers and providers in one unified platform.
-          </p>
-          <p class="about-hero-desc text-text-muted">
-            Across our incredible community, you can find everything from marketplace deals to carpooling rides. There's more to find in ESPRIT Market every day.
-          </p>
-        </div>
-        <div class="about-hero-actions">
-          <a href="/register" class="about-btn-primary">Start Exploring</a>
-          <nav class="about-hero-nav">
-            <a href="/products" class="about-nav-link active">Marketplace</a>
-            <a href="/carpooling" class="about-nav-link">Carpooling</a>
-            <a href="/register" class="about-nav-link">Join Us</a>
-          </nav>
-        </div>
+  <section class="ab-hero">
+    <div class="ab-hero-bg">
+      <img src="https://images.unsplash.com/photo-1498243691581-b145c3f54a5a?w=1600&q=80" alt="ESPRIT campus" class="ab-hero-campus-img">
+      <div class="ab-hero-campus-overlay"></div>
+    </div>
+    <div class="ab-hero-left">
+      <p class="ab-tag">ESPRIT Market Platform</p>
+      <h1 class="ab-hero-title">
+        The Student<br>
+        <span class="ab-red">Marketplace</span><br>
+        Built for You
+      </h1>
+      <div class="ab-avatars">
+        <div class="ab-avatar" style="background:linear-gradient(135deg,#8B0000,#c0392b)">A</div>
+        <div class="ab-avatar" style="background:linear-gradient(135deg,#2d1b69,#11998e)">B</div>
+        <div class="ab-avatar" style="background:linear-gradient(135deg,#1a1a2e,#E0B84A)">C</div>
+        <div class="ab-avatar" style="background:linear-gradient(135deg,#0f3460,#533483)">D</div>
+        <div class="ab-avatar" style="background:linear-gradient(135deg,#8B0000,#E0B84A)">E</div>
+        <span class="ab-user-count"><strong>500+</strong> Active Students</span>
       </div>
-
-      <div class="relative rounded-3xl overflow-hidden shadow-2xl premium-card aspect-[4/3] lg:aspect-square border border-surface-border group bg-bg-subtle">
-        <video #aboutVideo [muted]="isVideoMuted" playsinline class="w-full h-full object-cover">
-          <source src="assets/about us.mp4" type="video/mp4">
-          Your browser does not support the video tag.
-        </video>
-        
-        <!-- Video Controls Overlay -->
-        <div class="absolute inset-0 bg-black/30 flex flex-col items-center justify-center transition-opacity duration-300" [class.opacity-0]="isVideoPlaying" [class.group-hover:opacity-100]="isVideoPlaying">
-          <button (click)="toggleVideoPlay()" class="w-20 h-20 rounded-full bg-primary/90 text-white flex items-center justify-center hover:scale-110 transition-transform shadow-lg backdrop-blur-md">
-            @if (isVideoPlaying) {
-              <svg class="w-10 h-10" fill="currentColor" viewBox="0 0 24 24"><path d="M6 4h4v16H6zm8 0h4v16h-4z"/></svg>
-            } @else {
-              <svg class="w-10 h-10 translate-x-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+      <a href="/register" class="ab-btn">Get Started &nbsp;→</a>
+    </div>
+    <div class="ab-hero-right">
+      <div class="ab-deck">
+        @for (photo of deckPhotos; track photo.src; let i = $index) {
+          <div class="ab-deck-card" [style.z-index]="deckPhotos.length - i"
+               [class]="'ab-deck-pos-' + (i + 1)"
+               (click)="openLightbox(photo.src)">
+            <img [src]="photo.src" [alt]="photo.alt" class="ab-deck-img">
+            @if (i === 0) {
+              <div class="ab-phone-badge">
+                <span class="ab-badge-num">800+</span>
+                <span class="ab-badge-label">Deals Closed</span>
+              </div>
             }
-          </button>
-        </div>
-        
-        <!-- Mute/Unmute independent toggle -->
-        <button (click)="toggleMute($event)" class="absolute bottom-4 right-4 w-12 h-12 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80 transition-colors backdrop-blur-sm z-10 shadow-lg border border-white/10">
-          @if (isVideoMuted) {
-            <!-- Muted Icon -->
-            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z m4.414 0l4-4m0 0l4-4m-4 4l4 4m-4-4l-4-4"/></svg>
-          } @else {
-            <!-- Volume Icon -->
-            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M17.657 6.343a8 8 0 010 11.314M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/></svg>
-          }
-        </button>
+          </div>
+        }
+      </div>
+    </div>
+
+  <!-- Lightbox -->
+  @if (lightboxSrc) {
+    <div class="ab-lightbox" (click)="closeLightbox()">
+      <div class="ab-lightbox-inner" (click)="$event.stopPropagation()">
+        <button class="ab-lightbox-close" (click)="closeLightbox()">✕</button>
+        <img [src]="lightboxSrc" alt="Preview" class="ab-lightbox-img">
+      </div>
+    </div>
+  }
+  </section>
+
+  <!-- ── INTEGRATIONS / STATS ── -->
+  <section class="ab-stats-section">
+    <p class="ab-section-label">Powerful Features</p>
+    <p class="ab-section-sub">Our platform pulls, connects and combines services from multiple sources — marketplace listings, carpooling rides, live negotiations, delivery tracking and more.</p>
+    <div class="ab-stats-row">
+      <div class="ab-stat-box">
+        <span class="ab-stat-num">3</span>
+        <span class="ab-stat-label">User Roles</span>
+      </div>
+      <div class="ab-stat-box ab-stat-highlight">
+        <span class="ab-stat-num">500+</span>
+        <span class="ab-stat-label">Active Users</span>
+      </div>
+      <div class="ab-stat-box">
+        <span class="ab-stat-num">1.2K</span>
+        <span class="ab-stat-label">Items Listed</span>
+      </div>
+      <div class="ab-stat-box">
+        <span class="ab-stat-num">99%</span>
+        <span class="ab-stat-label">Satisfaction</span>
       </div>
     </div>
   </section>
 
-  <!-- ── DIVIDER LINE ── -->
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="h-px bg-gradient-to-r from-transparent via-surface-border to-transparent"></div>
-  </div>
-
-  <!-- ── PHOTO GRID ── -->
-  <section class="about-grid-section">
-    <div class="about-photo-grid">
-      <div class="about-photo-item">
-        <span class="about-photo-rank red">1st</span>
-        <img src="assets/marketplace.jpg" alt="Marketplace" class="about-photo-img">
-        <p class="about-photo-label">Marketplace, ESPRIT</p>
-      </div>
-      <div class="about-photo-item">
-        <span class="about-photo-rank white">2nd</span>
-        <img src="assets/community.jpg" alt="Community" class="about-photo-img">
-        <p class="about-photo-label">Community Hub, ESPRIT</p>
-      </div>
-      <div class="about-photo-item">
-        <span class="about-photo-rank white">3rd</span>
-        <img src="assets/Carpooling.png" alt="Carpooling" class="about-photo-img">
-        <p class="about-photo-label">Carpooling, ESPRIT</p>
-      </div>
-      <div class="about-photo-item">
-        <span class="about-photo-rank white">4th</span>
-        <img src="assets/logo.png" alt="ESPRIT Market" class="about-photo-img logo-photo">
-        <p class="about-photo-label">ESPRIT Market App</p>
+  <!-- ── FEATURE 1: Marketplace ── -->
+  <section class="ab-feature ab-feature-video-bg">
+    <div class="ab-feature-bg-video">
+      <video #bgVideo autoplay loop muted playsinline class="ab-bg-video" [muted]="true">
+        <source src="assets/about us.mp4" type="video/mp4">
+      </video>
+      <div class="ab-bg-video-overlay"></div>
+    </div>
+    <div class="ab-feature-visual">
+      <div class="ab-feature-card ab-video-card">
+        <video controls class="ab-feature-video">
+          <source src="assets/about us.mp4" type="video/mp4">
+        </video>
+        <div class="ab-feature-glow ab-glow-red"></div>
       </div>
     </div>
-  </section>
-
-  <!-- ── WHY US ── -->
-  <section class="about-why">
-    <div class="about-why-left">
-      <p class="about-eyebrow-red">Why Must ESPRIT Market?</p>
-      <p class="about-why-desc">
-        ESPRIT Market has many interesting and spectacular features and services that can make your student life more valuable and unforgettable.
-      </p>
-      <p class="about-why-desc" style="margin-top:1rem">
-        It is a land of great contrasts and diversity. Active negotiations, smart carpooling, deep community ties, and seamless delivery — all in one place. The spectacular growth of our platform stands as testament to ESPRIT's innovative spirit.
-      </p>
-      <a href="/register" class="about-btn-primary" style="margin-top:2rem;display:inline-flex">Find Out</a>
-    </div>
-    <div class="about-why-right">
-      <h2 class="about-explore-title">
-        EXPLORE<br>
-        <span class="about-explore-red">IT SELF</span>
+    <div class="ab-feature-text">
+      <h2 class="ab-feature-title">
+        Buy &amp; Sell<br>
+        On Your Terms
       </h2>
-    </div>
-  </section>
-
-  <!-- ── GALLERY + SHOW MORE ── -->
-  <section class="about-gallery">
-    <div class="about-gallery-left">
-      <img src="assets/community.jpg" alt="community" class="about-gallery-img tall">
-    </div>
-    <div class="about-gallery-right">
-      <div class="about-gallery-grid">
-        <img src="assets/marketplace.jpg" alt="marketplace" class="about-gallery-img">
-        <img src="assets/Carpooling.png" alt="carpooling" class="about-gallery-img">
-        <img src="assets/logo.png" alt="logo" class="about-gallery-img logo-thumb">
-        <img src="assets/community.jpg" alt="community2" class="about-gallery-img">
+      <div class="ab-feature-items">
+        <div class="ab-feature-item">
+          <div class="ab-fi-icon">🛒</div>
+          <div>
+            <p class="ab-fi-title">Marketplace</p>
+            <p class="ab-fi-desc">Browse hundreds of student listings — electronics, books, services and more. Post your own in minutes.</p>
+          </div>
+        </div>
+        <div class="ab-feature-item">
+          <div class="ab-fi-icon">💬</div>
+          <div>
+            <p class="ab-fi-title">Negotiations</p>
+            <p class="ab-fi-desc">Built-in negotiation system so buyers and sellers agree on fair prices without leaving the platform.</p>
+          </div>
+        </div>
       </div>
-      <button class="about-show-more">Show More</button>
+      <a href="/products" class="ab-btn ab-btn-outline">Browse Market &nbsp;→</a>
     </div>
   </section>
 
-  <!-- ── STATS ── -->
-  <section class="about-stats">
-    <div class="about-stat-card">
-      <span class="about-stat-num">500<span class="about-stat-unit">+</span></span>
-      <p class="about-stat-label">Active Users</p>
-      <p class="about-stat-desc">Students buying and selling every day</p>
+  <!-- ── FEATURE 2: Carpooling ── -->
+  <section class="ab-feature ab-feature-reverse">
+    <div class="ab-feature-text">
+      <h2 class="ab-feature-title">
+        Ride Together,<br>
+        Save Together
+      </h2>
+      <div class="ab-feature-items">
+        <div class="ab-feature-item">
+          <div class="ab-fi-icon">🚗</div>
+          <div>
+            <p class="ab-fi-title">Carpooling</p>
+            <p class="ab-fi-desc">Find or offer rides with fellow ESPRIT students. Split costs, reduce traffic, build community.</p>
+          </div>
+        </div>
+        <div class="ab-feature-item">
+          <div class="ab-fi-icon">📍</div>
+          <div>
+            <p class="ab-fi-title">Live Tracking</p>
+            <p class="ab-fi-desc">Real-time map integration so passengers always know where their ride is.</p>
+          </div>
+        </div>
+      </div>
+      <a href="/carpooling" class="ab-btn ab-btn-outline">Find a Ride &nbsp;→</a>
     </div>
-    <div class="about-stat-card">
-      <span class="about-stat-num">1.2<span class="about-stat-unit">K</span></span>
-      <p class="about-stat-label">Items Listed</p>
-      <p class="about-stat-desc">Products and services across all categories</p>
+    <div class="ab-feature-visual">
+      <div class="ab-feature-card">
+        <img src="assets/Carpooling.png" alt="carpooling" class="ab-feature-img">
+        <div class="ab-feature-glow ab-glow-gold"></div>
+      </div>
     </div>
-    <div class="about-stat-card">
-      <span class="about-stat-num">99<span class="about-stat-unit">%</span></span>
-      <p class="about-stat-label">Satisfaction</p>
-      <p class="about-stat-desc">Based on community feedback</p>
+  </section>
+
+  <!-- ── FEATURE 3: Community ── -->
+  <section class="ab-feature">
+    <div class="ab-feature-visual">
+      <div class="ab-feature-card">
+        <img src="assets/community.jpg" alt="community" class="ab-feature-img">
+        <div class="ab-feature-glow ab-glow-red"></div>
+      </div>
+    </div>
+    <div class="ab-feature-text">
+      <h2 class="ab-feature-title">
+        Join the<br>
+        ESPRIT Community
+      </h2>
+      <div class="ab-feature-items">
+        <div class="ab-feature-item">
+          <div class="ab-fi-icon">🤝</div>
+          <div>
+            <p class="ab-fi-title">Trusted Network</p>
+            <p class="ab-fi-desc">Every user is a verified ESPRIT student. Trade with confidence inside a trusted community.</p>
+          </div>
+        </div>
+        <div class="ab-feature-item">
+          <div class="ab-fi-icon">🔔</div>
+          <div>
+            <p class="ab-fi-title">Smart Notifications</p>
+            <p class="ab-fi-desc">Stay updated on your orders, rides, negotiations and messages in real time.</p>
+          </div>
+        </div>
+      </div>
+      <a href="/register" class="ab-btn">Join Now &nbsp;→</a>
     </div>
   </section>
 
   <!-- ── VALUES ── -->
-  <section class="about-values">
-    <div class="about-values-header">
-      <p class="about-eyebrow">Our Values</p>
-      <h2 class="about-section-title">What Drives Us</h2>
-    </div>
-    <div class="about-values-grid">
+  <section class="ab-values">
+    <p class="ab-section-label">Our Values</p>
+    <h2 class="ab-values-title">What Drives Us</h2>
+    <div class="ab-values-grid">
       @for (v of values; track v.title) {
-        <div class="about-value-card">
-          <div class="about-value-icon">{{ v.icon }}</div>
-          <h3 class="about-value-title">{{ v.title }}</h3>
-          <p class="about-value-desc">{{ v.desc }}</p>
+        <div class="ab-value-card">
+          <span class="ab-value-icon">{{ v.icon }}</span>
+          <h3 class="ab-value-title">{{ v.title }}</h3>
+          <p class="ab-value-desc">{{ v.desc }}</p>
         </div>
       }
     </div>
   </section>
 
   <!-- ── CTA ── -->
-  <section class="about-cta">
-    <div class="about-cta-inner">
-      <h2 class="about-cta-title">Ready to join the community?</h2>
-      <p class="about-cta-sub">Start buying and selling with fellow ESPRIT students today.</p>
-      <div class="about-cta-actions">
-        <a href="/register" class="about-btn-primary">Create Account</a>
-        <a href="/products" class="about-btn-ghost">Browse Products</a>
-      </div>
+  <section class="ab-cta">
+    <div class="ab-cta-glow"></div>
+    <h2 class="ab-cta-title">Ready to join?</h2>
+    <p class="ab-cta-sub">Start buying, selling and riding with fellow ESPRIT students today.</p>
+    <div class="ab-cta-actions">
+      <a href="/register" class="ab-btn">Create Account &nbsp;→</a>
+      <a href="/products" class="ab-btn ab-btn-outline">Browse Products</a>
     </div>
   </section>
 

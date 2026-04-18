@@ -15,6 +15,10 @@ import esprit_market.service.marketplaceService.IProductService;
 import esprit_market.config.Exceptions.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -584,5 +588,40 @@ public class OrderServiceImpl implements IOrderService {
         String datePart = now.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
         long count = orderRepository.count() + 1;
         return String.format("ORD-%s-%04d", datePart, count);
+    }
+
+    @Autowired
+    private MongoTemplate mongoTemplate;
+
+    public List<CancelledOrderStatsDTO> getCancelledOrdersStats() {
+
+        Aggregation aggregation = Aggregation.newAggregation(
+
+                // join order_items
+                Aggregation.lookup("orderItem", "_id", "orderId", "items"),
+
+                // join user
+                Aggregation.lookup("user", "user.$id", "_id", "userDetails"),
+
+                Aggregation.unwind("items"),
+                Aggregation.unwind("userDetails"),
+
+                // filter cancelled orders
+                Aggregation.match(
+                        Criteria.where("status").is("DECLINED")
+                ),
+
+                Aggregation.project()
+                        .and("_id").as("orderId")
+                        .and("orderNumber").as("orderNumber")
+                        .and("userDetails.email").as("userEmail")
+                        .and("items.productName").as("productName")
+                        .and("items.quantity").as("quantity")
+                        .and("items.shopId").as("shopId")
+                        .and("finalAmount").as("totalAmount")
+        );
+
+        return mongoTemplate.aggregate(aggregation, "order", CancelledOrderStatsDTO.class)
+                .getMappedResults();
     }
 }

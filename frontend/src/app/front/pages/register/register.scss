@@ -1,386 +1,209 @@
-// ═══════════════════════════════════════════════════════════════
-//  Register Page - Uses Shared Auth Styles
-// ═══════════════════════════════════════════════════════════════
-
-// Import shared auth styles
-@use '../auth-shared.scss';
-
-// ─── Register-Specific Overrides ──────────────────────────────
-.register-page {
-  @extend .auth-page;
+.rp-page {
+  position: relative;
+  min-height: calc(100vh - 80px);
+  display: flex;
+  align-items: stretch;
+  font-family: 'Inter', sans-serif;
+  overflow: hidden;
 }
 
-.register-bg-video {
-  @extend .auth-bg-video;
+.rp-bg-video {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover; z-index: 0;
 }
 
-.register-overlay {
-  @extend .auth-overlay;
+.rp-bg-overlay {
+  position: absolute; inset: 0; z-index: 1;
+  background: linear-gradient(to right, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.04) 100%);
 }
 
-.register-container {
-  @extend .auth-container;
-}
-
-.register-card {
-  @extend .auth-card;
-  max-width: 520px;
-}
-
-.register-logo {
-  @extend .auth-logo;
-}
-
-.logo-img {
-  @extend .auth-logo-img;
-}
-
-.logo-text {
-  @extend .auth-logo-text;
-}
-
-.logo-accent {
-  @extend .auth-logo-accent;
-}
-
-.register-title {
-  @extend .auth-title;
-}
-
-.register-subtitle {
-  @extend .auth-subtitle;
-}
-
-.register-login-link {
-  @extend .auth-link-section;
-}
-
-.link-primary {
-  // Inherits from .auth-link-section .link-primary
-}
-
-.alert-error {
-  @extend .auth-alert-error;
-}
-
-.register-form {
-  @extend .auth-form;
-}
-
-.form-group {
-  @extend .auth-form-group;
-}
-
-.form-label {
-  @extend .auth-form-label;
-}
-
-.form-input {
-  @extend .auth-form-input;
-}
-
-.input-wrapper {
-  @extend .auth-input-wrapper;
-}
-
-.toggle-password {
-  @extend .auth-toggle-password;
-}
-
-.error-text {
-  @extend .auth-error-text;
-}
-
-.btn-submit {
-  @extend .auth-btn-submit;
-}
-
-.spinner {
-  @extend .auth-spinner;
-}
-
-.back-home {
-  @extend .auth-back-home;
-}
-
-// ─── Register-Specific Styles ─────────────────────────────────
-
-// Step Indicator
-.step-indicator {
+.rp-layout {
+  position: relative; z-index: 2;
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 25px;
+  width: 100%;
+  padding: 2rem 3rem;
+
+  @media (max-width: 768px) { padding: 1.5rem; justify-content: center; }
 }
 
-.step-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.5);
-  
-  &.active {
-    color: #8B0000;
-    
-    .step-number {
-      background: #8B0000;
-      border-color: #8B0000;
-      color: #ffffff;
-    }
-  }
-  
-  &.done {
-    color: rgba(255, 255, 255, 0.7);
-    
-    .step-number {
-      background: rgba(139, 0, 0, 0.6);
-      border-color: rgba(139, 0, 0, 0.6);
-      color: #ffffff;
-    }
-  }
-}
-
-.step-number {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.8rem;
-  font-weight: 700;
-}
-
-.step-label {
-  font-weight: 600;
-}
-
-.step-line {
-  flex: 1;
-  height: 2px;
-  background: rgba(255, 255, 255, 0.2);
-  
-  &.active {
-    background: #8B0000;
-  }
-}
-
-// Step 2 Header
-.step2-header {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  margin-bottom: 20px;
-}
-
-.btn-back {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
-  color: rgba(255, 255, 255, 0.85);
-  font-size: 0.85rem;
-  font-weight: 600;
-  padding: 8px 12px;
-  cursor: pointer;
-  white-space: nowrap;
-  
-  &:hover {
-    background: rgba(255, 255, 255, 0.15);
-    color: #ffffff;
-  }
-}
-
-.register-title-small {
-  font-size: 1.5rem;
-  font-weight: 900;
-  color: #ffffff;
-  margin: 0 0 5px;
-}
-
-.register-subtitle-small {
-  font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.75);
-  margin: 0;
-}
-
-// Role Cards
-.role-cards {
+.rp-left {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-bottom: 20px;
-}
-
-.role-card {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  padding: 16px 18px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 12px;
-  cursor: pointer;
-  
-  &:hover {
-    background: rgba(255, 255, 255, 0.12);
-    border-color: rgba(139, 0, 0, 0.4);
-  }
-  
-  &.selected {
-    background: rgba(139, 0, 0, 0.2);
-    border-color: #8B0000;
-    box-shadow: 0 0 0 2px rgba(139, 0, 0, 0.2);
-  }
-}
-
-.role-icon {
-  font-size: 1.8rem;
+  gap: 0;
+  width: 720px; /* ✅ INCREASED from 650px to 720px */
   flex-shrink: 0;
+
+  @media (max-width: 768px) { width: 100%; max-width: 720px; }
 }
 
-.role-content {
-  flex: 1;
+/* ── Frosted card ── */
+.rp-card {
+  background: rgba(255,255,255,0.32);
+  backdrop-filter: blur(28px) saturate(2);
+  -webkit-backdrop-filter: blur(28px) saturate(2);
+  border-radius: 24px 24px 0 0;
+  padding: 3.5rem 3.5rem 3.5rem; /* ✅ INCREASED padding from 3rem to 3.5rem */
+  border: 1px solid rgba(255,255,255,0.55);
+  border-bottom: none;
+  min-height: 700px; /* ✅ INCREASED minimum height from 650px to 700px */
 }
 
-.role-title {
-  font-size: 1rem;
-  font-weight: 700;
-  color: #ffffff;
-  margin: 0 0 4px;
+.rp-card-top {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.1rem;
 }
 
-.role-desc {
-  font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.65);
-  margin: 0;
+.rp-brand { display: flex; align-items: center; gap: 0.5rem; }
+.rp-brand-svg { width: 30px; height: 30px; }
+.rp-brand-name { font-size: 1.1rem; font-weight: 900; color: #1a1a1a; letter-spacing: 0.04em; text-transform: uppercase; }
+.rp-brand-accent { color: #8B0000; }
+
+.rp-switch-link {
+  font-size: 0.85rem; font-weight: 600; color: rgba(0,0,0,0.45); text-decoration: none; transition: color 0.2s;
+  &:hover { color: #8B0000; }
 }
 
-.role-check {
-  width: 24px;
-  height: 24px;
-  background: #8B0000;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.75rem;
-  color: #ffffff;
-  font-weight: 700;
-  flex-shrink: 0;
+.rp-title {
+  font-size: 2.1rem; font-weight: 900; color: #1a1a1a;
+  letter-spacing: -0.02em; margin: 0 0 1.25rem;
 }
 
-// Sub Roles
-.sub-roles {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 10px;
+/* Error */
+.rp-error {
+  padding: 0.55rem 0.85rem; background: rgba(139,0,0,0.1);
+  border: 1px solid rgba(139,0,0,0.25); border-radius: 10px;
+  color: #8B0000; font-size: 0.78rem; margin-bottom: 0.85rem;
 }
 
-.sub-role-btn {
-  padding: 6px 14px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 20px;
-  color: rgba(255, 255, 255, 0.75);
-  font-size: 0.8rem;
-  font-weight: 600;
-  cursor: pointer;
-  
-  &:hover {
-    background: rgba(255, 255, 255, 0.15);
-    color: #ffffff;
-  }
-  
-  &.selected {
-    background: rgba(139, 0, 0, 0.3);
-    border-color: #8B0000;
-    color: #ffffff;
-  }
+/* Role cards */
+.rp-roles { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 0.85rem; }
+
+.rp-role {
+  display: flex; align-items: center; gap: 0.85rem;
+  padding: 0.9rem 1.1rem;
+  background: rgba(255,255,255,0.65); border: 1px solid rgba(255,255,255,0.8);
+  border-radius: 14px; cursor: pointer; text-align: left; transition: all 0.2s; color: #1a1a1a; width: 100%;
+  &:hover { background: rgba(255,255,255,0.85); }
+  &.selected { background: rgba(255,255,255,0.92); border-color: #8B0000; }
 }
 
-// Form Grid
-.form-grid-2 {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
+.rp-role-icon { font-size: 1.6rem; flex-shrink: 0; }
+.rp-role-title { font-size: 1.2rem; font-weight: 800; margin: 0 0 0.2rem; color: #1a1a1a; }
+.rp-role-desc  { font-size: 0.92rem; color: rgba(0,0,0,0.55); margin: 0; line-height: 1.4; }
+
+.rp-check-mark {
+  margin-left: auto; width: 18px; height: 18px; background: #8B0000; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; font-size: 0.6rem; color: #fff; font-weight: 700;
 }
 
-// Form Select
-.form-select {
-  appearance: none;
-  cursor: pointer;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ffffff' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 15px center;
-  padding-right: 40px;
-  
-  option {
-    background: #1a1a1a;
-    color: #ffffff;
-  }
+.rp-subroles { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.65rem; }
+
+.rp-subrole {
+  padding: 0.28rem 0.75rem;
+  background: rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.7);
+  border-radius: 20px; color: rgba(0,0,0,0.5); font-size: 0.72rem; cursor: pointer; transition: all 0.2s;
+  &:hover { background: rgba(255,255,255,0.8); }
+  &.selected { background: rgba(255,255,255,0.9); border-color: #8B0000; color: #8B0000; font-weight: 600; }
 }
 
-// Phone Input
-.phone-input-wrapper {
-  display: flex;
-  gap: 10px;
+/* Form */
+.rp-form { display: flex; flex-direction: column; gap: 1.2rem; } /* ✅ INCREASED gap from 1rem to 1.2rem */
+.rp-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; } /* ✅ INCREASED gap from 0.55rem to 0.75rem */
+
+.rp-input-row {
+  display: flex; align-items: center; gap: 0.55rem;
+  background: rgba(210,195,180,0.55); border-radius: 50px;
+  padding: 5px 5px 5px 0.9rem; border: 1px solid rgba(255,255,255,0.7); transition: all 0.2s;
+  &:focus-within { border-color: rgba(139,0,0,0.35); }
 }
 
-.phone-prefix {
-  display: flex;
-  align-items: center;
-  padding: 0 15px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 10px;
-  color: rgba(255, 255, 255, 0.85);
-  font-size: 0.95rem;
-  font-weight: 600;
-  white-space: nowrap;
+.rp-icon { font-size: 0.9rem; flex-shrink: 0; opacity: 0.6; }
+.rp-prefix { font-size: 0.85rem; color: rgba(0,0,0,0.5); white-space: nowrap; flex-shrink: 0; }
+
+.rp-input {
+  flex: 1; background: #ffffff;
+  border: none; outline: none;
+  color: #1a1a1a; font-size: 0.95rem; font-family: 'Inter', sans-serif; min-width: 0;
+  padding: 0.55rem 0.7rem; border-radius: 40px;
+  &::placeholder { color: rgba(0,0,0,0.35); }
+  &.rp-input-err { color: #8B0000; }
 }
 
-.phone-input {
-  flex: 1;
+.rp-select { appearance: none; cursor: pointer; option { background: #fff; color: #1a1a1a; } }
+
+.rp-eye {
+  background: rgba(240,235,228,0.8); border: none; cursor: pointer;
+  font-size: 0.82rem; color: rgba(0,0,0,0.4); padding: 0.3rem 0.5rem;
+  border-radius: 20px; flex-shrink: 0; transition: all 0.2s;
+  &:hover { color: rgba(0,0,0,0.7); background: rgba(240,235,228,1); }
 }
 
-// Section Divider
-.section-divider {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 10px 0;
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 0.8rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  
-  &::before,
-  &::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: rgba(255, 255, 255, 0.2);
-  }
+/* Password strength */
+.rp-pwd-bars { display: flex; gap: 3px; }
+.rp-pwd-bar {
+  flex: 1; height: 3px; border-radius: 2px; background: rgba(0,0,0,0.1); transition: background 0.3s;
+  &.weak   { background: #ef4444; }
+  &.fair   { background: #f97316; }
+  &.good   { background: #eab308; }
+  &.strong { background: #22c55e; }
 }
 
-// ─── Register-Specific Responsive ─────────────────────────────
-@media (max-width: 768px) {
-  .form-grid-2 {
-    grid-template-columns: 1fr;
-  }
+/* Action row */
+.rp-action-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 0.85rem; margin-top: 1rem; /* ✅ INCREASED margin-top from 0.35rem to 1rem */
+}
+
+.rp-hint { font-size: 0.82rem; color: #1a1a1a; line-height: 1.5; margin: 0; flex: 1; }
+
+.rp-back {
+  background: none; border: none; cursor: pointer;
+  font-size: 0.75rem; color: rgba(0,0,0,0.4); padding: 0; transition: color 0.2s;
+  &:hover { color: #8B0000; }
+}
+
+.rp-go-btn {
+  width: 46px; height: 46px; flex-shrink: 0;
+  background: #1a1a1a; color: #fff; border: none; border-radius: 50%;
+  font-size: 1.3rem; font-weight: 700; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.22s; box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+  &:hover:not(:disabled) { background: #8B0000; transform: scale(1.06); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.rp-spinner {
+  width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff;
+  border-radius: 50%; animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.rp-info-link { text-align: center; font-size: 0.85rem; color: #1a1a1a; margin: 1rem 0 0; }
+.rp-link { color: #8B0000; font-weight: 700; text-decoration: none; &:hover { text-decoration: underline; } }
+
+/* ── Dark social card ── */
+.rp-social-card {
+  background: #1a1a1a; border-radius: 0 0 24px 24px;
+  padding: 2.5rem 3.5rem; /* ✅ INCREASED padding to match card padding */
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+}
+
+.rp-social-title { font-size: 1.05rem; font-weight: 800; color: #fff; margin: 0 0 0.2rem; }
+.rp-social-sub   { font-size: 0.8rem; color: rgba(255,255,255,0.5); margin: 0; }
+
+.rp-social-btns { display: flex; gap: 0.55rem; flex-shrink: 0; }
+
+.rp-social-btn {
+  width: 40px; height: 40px;
+  background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.2s;
+  &:hover { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.25); transform: translateY(-2px); }
 }
 
 @media (max-width: 480px) {
-  .step-indicator {
-    font-size: 0.75rem;
-  }
-  
-  .step-number {
-    width: 24px;
-    height: 24px;
-    font-size: 0.7rem;
-  }
+  .rp-card { padding: 1.5rem 1.25rem 1.25rem; }
+  .rp-row2 { grid-template-columns: 1fr; }
+  .rp-social-card { flex-direction: column; align-items: flex-start; }
 }

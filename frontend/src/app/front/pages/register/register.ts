@@ -1,10 +1,9 @@
-import { Component, signal, computed, inject, OnInit } from '@angular/core';
+import { Component, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { AuthService, RegisterRequest } from '../../core/auth.service';
 import { UserRole, RoleGroup } from '../../models/user.model';
-import { ThemeService } from '../../core/theme.service';
 
 interface RoleCard {
   id: RoleGroup;
@@ -19,9 +18,9 @@ interface RoleCard {
   standalone: true,
   imports: [CommonModule, RouterLink, ReactiveFormsModule],
   templateUrl: './register.html',
-  styleUrl: './register.scss',
+  styleUrl: './register.scss', // v2 dark design
 })
-export class Register implements OnInit {
+export class Register {
   // Step management
   currentStep = signal<1 | 2>(1);
   
@@ -35,8 +34,6 @@ export class Register implements OnInit {
   showConfirmPassword = signal(false);
   isSubmitting = signal(false);
   errorMessage = signal<string | null>(null);
-
-  private themeService = inject(ThemeService);
 
   // Role cards configuration
   readonly roleCards: RoleCard[] = [
@@ -105,9 +102,6 @@ export class Register implements OnInit {
     private router: Router
   ) {
     this.registerForm = this.createBaseForm();
-  }
-
-  ngOnInit(): void {
   }
 
   private createBaseForm(): FormGroup {
@@ -193,7 +187,7 @@ export class Register implements OnInit {
       case 'provider':
         this.registerForm.get('businessName')?.setValidators([Validators.required, Validators.minLength(2)]);
         this.registerForm.get('businessType')?.setValidators([Validators.required]);
-        // ✅ Tax ID is optional for student project - no validation required
+        this.registerForm.get('taxId')?.setValidators([Validators.required, Validators.minLength(5)]);
         break;
         
       case 'logistics':
@@ -267,7 +261,7 @@ export class Register implements OnInit {
     // Build payload based on role
     const payload: RegisterRequest = this.buildPayload(formValue, backendRole);
     
-    console.log('📤 Registration payload:', payload);
+    console.log('Registration payload:', payload);
     
     this.authService.register(payload).subscribe({
       next: (response) => {

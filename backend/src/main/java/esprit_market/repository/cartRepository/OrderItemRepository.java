@@ -21,4 +21,10 @@ public interface OrderItemRepository extends MongoRepository<OrderItem, ObjectId
     
     // ✅ CRITICAL: Find all order items for a specific shop (provider filtering)
     List<OrderItem> findByShopId(ObjectId shopId);
+
+    /**
+     * Fallback for legacy data where shopId was not persisted on OrderItem.
+     * Allows provider filtering via Product.shopId.
+     */
+    List<OrderItem> findByProductIdIn(List<ObjectId> productIds);
 }

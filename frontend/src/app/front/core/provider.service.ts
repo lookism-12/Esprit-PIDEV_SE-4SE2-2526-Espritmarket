@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, tap, catchError, throwError } from 'rxjs';
 import { ProviderOrder, ProviderStats } from '../pages/provider-dashboard/provider-dashboard';
 import { environment } from '../../../environment';
 
@@ -15,8 +15,28 @@ export class ProviderService {
    * Get all orders for the current provider's products
    */
   getProviderOrders(): Observable<ProviderOrder[]> {
+    console.log('========================================');
+    console.log('🔍 ProviderService.getProviderOrders() called');
+    console.log('📍 URL:', `${this.apiUrl}/dashboard/orders`);
+    console.log('========================================');
+    
     // ✅ FIXED: Use the correct dashboard endpoint
-    return this.http.get<ProviderOrder[]>(`${this.apiUrl}/dashboard/orders`);
+    return this.http.get<ProviderOrder[]>(`${this.apiUrl}/dashboard/orders`).pipe(
+      tap((orders) => {
+        console.log('========================================');
+        console.log('✅ ProviderService: Orders received from backend');
+        console.log('📊 Orders count:', orders.length);
+        console.log('📦 Orders:', orders);
+        console.log('========================================');
+      }),
+      catchError((error) => {
+        console.log('========================================');
+        console.error('❌ ProviderService: Failed to get orders');
+        console.error('🔍 Error:', error);
+        console.log('========================================');
+        throw error;
+      })
+    );
   }
 
   /**
@@ -41,9 +61,11 @@ export class ProviderService {
 
   /**
    * Update individual product status within an order
+   * @deprecated Use updateOrderStatus() instead. This endpoint returns 410 GONE.
    */
   updateProductStatus(orderId: string, cartItemId: string, status: string): Observable<ProviderOrder> {
-    // ✅ FIXED: Use the correct dashboard endpoint (deprecated but still works)
+    console.warn('⚠️ DEPRECATED: updateProductStatus() is deprecated. Use updateOrderStatus() instead.');
+    // This endpoint is deprecated and returns 410 GONE
     return this.http.put<ProviderOrder>(
       `${this.apiUrl}/dashboard/orders/${orderId}/items/${cartItemId}/status`,
       {},
@@ -55,8 +77,27 @@ export class ProviderService {
    * Get provider dashboard statistics
    */
   getStatistics(): Observable<ProviderStats> {
+    console.log('========================================');
+    console.log('🔍 ProviderService.getStatistics() called');
+    console.log('📍 URL:', `${this.apiUrl}/dashboard/statistics`);
+    console.log('========================================');
+    
     // ✅ FIXED: Use the correct dashboard endpoint
-    return this.http.get<ProviderStats>(`${this.apiUrl}/dashboard/statistics`);
+    return this.http.get<ProviderStats>(`${this.apiUrl}/dashboard/statistics`).pipe(
+      tap((stats) => {
+        console.log('========================================');
+        console.log('✅ ProviderService: Statistics received from backend');
+        console.log('📊 Stats:', stats);
+        console.log('========================================');
+      }),
+      catchError((error) => {
+        console.log('========================================');
+        console.error('❌ ProviderService: Failed to get statistics');
+        console.error('🔍 Error:', error);
+        console.log('========================================');
+        throw error;
+      })
+    );
   }
 
   /**

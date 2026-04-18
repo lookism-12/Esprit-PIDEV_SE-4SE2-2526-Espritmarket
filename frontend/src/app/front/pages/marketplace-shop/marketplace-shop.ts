@@ -1,13 +1,8 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
-import { environment } from '../../../../environment';
-
-export interface ShopListItemDto {
-  id: string;
-  ownerId?: string;
-}
+import { ShopService } from '../../core/shop.service';
+import { Shop } from '../../models/product';
 
 @Component({
   selector: 'app-marketplace-shop',
@@ -31,21 +26,59 @@ export interface ShopListItemDto {
         </p>
 
         @if (isLoading()) {
-          <p class="text-secondary font-bold">Loading…</p>
+          <div class="flex items-center justify-center py-20">
+            <div class="text-center">
+              <svg class="animate-spin h-12 w-12 text-primary mx-auto mb-4" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <p class="text-secondary font-bold">Loading shops...</p>
+            </div>
+          </div>
         } @else if (error()) {
-          <p class="text-red-600 font-bold">{{ error() }}</p>
+          <div class="bg-red-50 border border-red-200 rounded-2xl p-6">
+            <p class="text-red-600 font-bold">{{ error() }}</p>
+          </div>
         } @else {
-          <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             @for (shop of shops(); track shop.id) {
               <a
                 [routerLink]="['/products']"
                 [queryParams]="{ shop: shop.id }"
-                class="block bg-white rounded-3xl border border-secondary/10 p-6 shadow-sm hover:border-primary/30 transition-colors">
-                <h2 class="text-lg font-black text-dark tracking-tight">Shop</h2>
-                <p class="text-xs font-mono text-secondary mt-2 break-all">{{ shop.id }}</p>
+                class="block bg-white rounded-3xl border border-secondary/10 p-8 shadow-sm hover:shadow-xl hover:border-primary/30 transition-all duration-300 group">
+                <div class="flex items-center gap-4 mb-4">
+                  <div class="w-16 h-16 bg-gradient-to-br from-primary/10 to-primary/5 rounded-2xl flex items-center justify-center text-3xl group-hover:scale-110 transition-transform">
+                    🏪
+                  </div>
+                  <div class="flex-1">
+                    <h2 class="text-xl font-black text-dark tracking-tight group-hover:text-primary transition-colors">
+                      {{ shop.name || 'Shop' }}
+                    </h2>
+                    @if (shop.isActive) {
+                      <span class="inline-block px-2 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full mt-1">
+                        ✅ Active
+                      </span>
+                    }
+                  </div>
+                </div>
+                
+                @if (shop.description) {
+                  <p class="text-sm text-secondary mb-4 line-clamp-2">{{ shop.description }}</p>
+                }
+                
+                <div class="flex items-center justify-between text-xs text-secondary">
+                  <span class="font-bold">{{ shop.totalProducts || 0 }} Products</span>
+                  <span class="text-primary font-black group-hover:translate-x-1 transition-transform inline-block">→</span>
+                </div>
               </a>
             } @empty {
-              <p class="text-secondary font-bold col-span-full">No shops yet.</p>
+              <div class="col-span-full text-center py-20">
+                <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span class="text-4xl">🏪</span>
+                </div>
+                <h3 class="text-xl font-bold text-dark mb-2">No Shops Yet</h3>
+                <p class="text-secondary font-bold">Check back later for new shops!</p>
+              </div>
             }
           </div>
         }
@@ -54,14 +87,14 @@ export interface ShopListItemDto {
   `,
 })
 export class MarketplaceShop implements OnInit {
-  private http = inject(HttpClient);
+  private shopService = inject(ShopService);
 
-  shops = signal<ShopListItemDto[]>([]);
+  shops = signal<Shop[]>([]);
   isLoading = signal(true);
   error = signal<string | null>(null);
 
   ngOnInit(): void {
-    this.http.get<ShopListItemDto[]>(`${environment.apiUrl}/shops`).subscribe({
+    this.shopService.getAllShops().subscribe({
       next: (data) => {
         this.shops.set(data ?? []);
         this.isLoading.set(false);

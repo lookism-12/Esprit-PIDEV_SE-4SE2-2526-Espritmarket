@@ -31,4 +31,5 @@ public interface OrderRepository extends MongoRepository<Order, ObjectId> {
     long countByStatus(OrderStatus status);
     
     long countByUser(User user);
+    List<Order> findByStatusAndCreatedAtBefore(OrderStatus status, LocalDateTime time);
 }

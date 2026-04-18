@@ -17,6 +17,7 @@ public class ProviderOrderDTO {
     private String cartItemId;
     private String clientName;
     private String clientEmail;
+    private String clientAvatar;  // ✅ Added for UI display
     private String productName;
     private Integer quantity;
     private Double unitPrice;

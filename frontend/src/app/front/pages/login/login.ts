@@ -1,47 +1,55 @@
-import { Component, signal, inject, OnInit } from '@angular/core';
+import { Component, signal, inject, OnInit, AfterViewInit, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AuthService } from '../../core/auth.service';
 import { ToastService } from '../../core/toast.service';
-import { ThemeService } from '../../core/theme.service';
 
 @Component({
   selector: 'app-login',
   standalone: true,
   imports: [CommonModule, RouterLink, ReactiveFormsModule],
   templateUrl: './login.html',
-  styleUrl: './login.scss',
+  styleUrl: './login.scss', // v2 dark design
 })
-export class Login implements OnInit {
-  private fb           = inject(FormBuilder);
-  private router       = inject(Router);
-  private route        = inject(ActivatedRoute);
-  private authService  = inject(AuthService);
+export class Login implements OnInit, AfterViewInit {
+  @ViewChild('bgVideo') bgVideoRef!: ElementRef<HTMLVideoElement>;
+
+  private fb = inject(FormBuilder);
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
+  private authService = inject(AuthService);
   private toastService = inject(ToastService);
-  private themeService = inject(ThemeService);
 
   loginForm: FormGroup;
-  showPassword      = signal(false);
-  isLoading         = signal(false);
-  errorMessage      = signal<string | null>(null);
+  showPassword = signal(false);
+  isLoading = signal(false);
+  errorMessage = signal<string | null>(null);
   loginPromptMessage = signal<string | null>(null);
 
   constructor() {
     this.loginForm = this.fb.group({
-      email:      ['', [Validators.required, Validators.email]],
-      password:   ['', [Validators.required]],
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', [Validators.required]], // No minLength for login
       rememberMe: [false]
     });
   }
 
   ngOnInit(): void {
-    // ── Query-param messages ──────────────────────────────────────────────
+    // Check for login prompt messages
     this.route.queryParams.subscribe(params => {
       if (params['message'] === 'login-to-purchase') {
         this.loginPromptMessage.set('Please log in to continue with your purchase');
       }
     });
+  }
+
+  ngAfterViewInit(): void {
+    if (this.bgVideoRef?.nativeElement) {
+      const v = this.bgVideoRef.nativeElement;
+      v.muted = true;
+      v.volume = 0;
+    }
   }
 
   togglePassword(): void {
@@ -56,18 +64,19 @@ export class Login implements OnInit {
   getFieldError(fieldName: string): string {
     const field = this.loginForm.get(fieldName);
     if (!field?.errors) return '';
-
-    if (field.errors['required'])  return 'This field is required';
-    if (field.errors['email'])     return 'Please enter a valid email';
+    
+    if (field.errors['required']) return 'This field is required';
+    if (field.errors['email']) return 'Please enter a valid email';
     if (field.errors['minlength']) return `Minimum ${field.errors['minlength'].requiredLength} characters`;
-
+    
     return 'Invalid input';
   }
 
   onSubmit(): void {
     console.log('🚀 Login form submitted');
     console.log('📝 Form valid:', this.loginForm.valid);
-
+    console.log('📝 Form value:', this.loginForm.value);
+    
     if (this.loginForm.invalid) {
       console.warn('⚠️ Form is invalid, marking all fields as touched');
       this.loginForm.markAllAsTouched();
@@ -78,23 +87,28 @@ export class Login implements OnInit {
     this.errorMessage.set(null);
 
     const { email, password, rememberMe } = this.loginForm.value;
-
+    
     console.log('📧 Logging in with email:', email);
+    console.log('🔒 Password length:', password?.length || 0);
 
     this.authService.login({ email, password }).subscribe({
       next: (response) => {
         console.log('✅ Login successful:', response);
         this.isLoading.set(false);
-
+        
+        // Store remember me preference if needed
         if (rememberMe) {
           localStorage.setItem('rememberMe', 'true');
         }
-
+        
         // Handle pending purchase after successful login
         this.handlePostLoginActions();
-
+        
+        // Show success message
         this.toastService.success('Welcome back! Login successful');
+        
         // ✅ AuthService handles role-based redirection
+        // No need to navigate here unless we have specific post-login actions
       },
       error: (error) => {
         console.error('❌ Login failed:', error);
@@ -106,26 +120,34 @@ export class Login implements OnInit {
   }
 
   /**
-   * Handle actions after successful login.
-   * Checks for a pending purchase or a returnUrl query param.
+   * Handle actions after successful login
    */
   private handlePostLoginActions(): void {
+    // Check for pending purchase
     const pendingPurchase = sessionStorage.getItem('pendingPurchase');
     if (pendingPurchase) {
       try {
         const purchaseData = JSON.parse(pendingPurchase);
         console.log('📦 Found pending purchase:', purchaseData);
+        
+        // Clear the pending purchase
         sessionStorage.removeItem('pendingPurchase');
+        
+        // Show message and redirect to product page
         this.toastService.info(`Redirecting you to ${purchaseData.productName}...`, 3000);
+        
+        // Navigate to the product page
         setTimeout(() => {
           this.router.navigate(['/product', purchaseData.productId]);
         }, 1000);
-        return;
+        
+        return; // Don't do default redirect
       } catch (error) {
         console.error('Error parsing pending purchase:', error);
       }
     }
 
+    // Check for return URL
     this.route.queryParams.subscribe(params => {
       const returnUrl = params['returnUrl'];
       if (returnUrl) {

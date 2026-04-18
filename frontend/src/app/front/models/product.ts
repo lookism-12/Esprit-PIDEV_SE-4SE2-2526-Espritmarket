@@ -80,8 +80,10 @@ export interface Shop {
     rating: number;
     reviewsCount: number;
     productCount: number;
+    totalProducts?: number;  // ✅ Added for backend compatibility
     totalSales: number;
     isVerified: boolean;
+    isActive?: boolean;  // ✅ Added for backend compatibility
     joinedAt: Date;
     responseTime?: string;
     responseRate?: number;

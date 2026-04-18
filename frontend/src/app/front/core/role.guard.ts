@@ -166,20 +166,40 @@ export const providerGuard: CanActivateFn = (
   const authService = inject(AuthService);
   const router = inject(Router);
 
+  console.log('========================================');
+  console.log('🔐 PROVIDER GUARD CHECK');
+  console.log('========================================');
+
   if (!authService.isAuthenticated()) {
+    console.log('❌ User not authenticated');
     return router.createUrlTree(['/login'], {
       queryParams: { returnUrl: state.url }
     });
   }
 
   const currentUser = authService.currentUser();
-  const allowedRoles: UserRole[] = [UserRole.PROVIDER, UserRole.ADMIN];
+  console.log('👤 Current User:', currentUser);
+  console.log('🎭 User Role (singular):', currentUser?.role);
+  console.log('🎭 User Roles (array):', currentUser?.roles);
   
-  if (currentUser && allowedRoles.includes(currentUser.role)) {
+  const allowedRoles: UserRole[] = [UserRole.PROVIDER, UserRole.ADMIN];
+  console.log('✅ Allowed Roles:', allowedRoles);
+  
+  // Check both role (singular) and roles (array)
+  const hasRoleInSingular = currentUser && allowedRoles.includes(currentUser.role);
+  const hasRoleInArray = currentUser && currentUser.roles && currentUser.roles.some(r => allowedRoles.includes(r));
+  
+  console.log('🔍 Has role in singular field:', hasRoleInSingular);
+  console.log('🔍 Has role in array field:', hasRoleInArray);
+  
+  if (hasRoleInSingular || hasRoleInArray) {
+    console.log('✅ PROVIDER ACCESS GRANTED');
+    console.log('========================================');
     return true;
   }
 
-  console.log('ProviderGuard: User is not a provider, access denied');
+  console.log('❌ PROVIDER ACCESS DENIED');
+  console.log('========================================');
   return router.createUrlTree(['/']);
 };
 

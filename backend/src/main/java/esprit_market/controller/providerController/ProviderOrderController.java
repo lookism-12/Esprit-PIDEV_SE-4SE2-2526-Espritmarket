@@ -5,10 +5,12 @@ import esprit_market.dto.cartDto.OrderResponse;
 import esprit_market.dto.cartDto.ProviderOrderDTO;
 import esprit_market.entity.cart.Order;
 import esprit_market.entity.cart.OrderItem;
+import esprit_market.entity.marketplace.Product;
 import esprit_market.entity.marketplace.Shop;
 import esprit_market.entity.user.User;
 import esprit_market.repository.cartRepository.OrderItemRepository;
 import esprit_market.repository.cartRepository.OrderRepository;
+import esprit_market.repository.marketplaceRepository.ProductRepository;
 import esprit_market.repository.marketplaceRepository.ShopRepository;
 import esprit_market.repository.userRepository.UserRepository;
 import esprit_market.service.cartService.IOrderService;
@@ -42,6 +44,7 @@ public class ProviderOrderController {
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
     private final ShopRepository shopRepository;
+    private final ProductRepository productRepository;
     
     private User getAuthenticatedProvider(Authentication authentication) {
         String email = authentication.getName();
@@ -92,6 +95,18 @@ public class ProviderOrderController {
                     .stream()
                     .filter(item -> item.getOrderId().equals(order.getId()))
                     .toList();
+
+            // Fallback for legacy OrderItems without shopId
+            if (providerItems.isEmpty()) {
+                List<ObjectId> productIds = productRepository.findByShopId(shop.getId())
+                        .stream().map(Product::getId).toList();
+                if (!productIds.isEmpty()) {
+                    providerItems = orderItemRepository.findByProductIdIn(productIds)
+                            .stream()
+                            .filter(item -> item.getOrderId().equals(order.getId()))
+                            .toList();
+                }
+            }
             
             if (providerItems.isEmpty()) {
                 throw new RuntimeException("This order does not contain your products");
@@ -141,6 +156,13 @@ public class ProviderOrderController {
             
             // Get provider's order items
             List<OrderItem> providerOrderItems = orderItemRepository.findByShopId(shop.getId());
+            if (providerOrderItems.isEmpty()) {
+                List<ObjectId> productIds = productRepository.findByShopId(shop.getId())
+                        .stream().map(Product::getId).toList();
+                if (!productIds.isEmpty()) {
+                    providerOrderItems = orderItemRepository.findByProductIdIn(productIds);
+                }
+            }
             
             // Group by order and calculate analytics
             long totalOrders = providerOrderItems.stream()

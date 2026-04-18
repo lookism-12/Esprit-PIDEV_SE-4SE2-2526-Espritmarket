@@ -299,12 +299,16 @@ export class CartService {
   /**
    * Checkout (convert cart to order)
    * ✅ FIXED: Now returns OrderResponse from new Order entity
+   * ✅ FIXED: Use proper /api/orders endpoint instead of deprecated /api/cart/checkout
    */
   checkout(checkoutData: CreateOrderRequest): Observable<OrderResponse> {
     this.isLoading.set(true);
     this.error.set(null);
 
-    return this.http.post<OrderResponse>(`${this.apiUrl}/checkout`, checkoutData).pipe(
+    // ✅ CRITICAL FIX: Use proper orders endpoint
+    const ordersUrl = `${environment.apiUrl}/orders`;
+
+    return this.http.post<OrderResponse>(ordersUrl, checkoutData).pipe(
       tap((order) => {
         console.log('✅ Order created:', order);
         console.log('📦 Order number:', order.orderNumber);
