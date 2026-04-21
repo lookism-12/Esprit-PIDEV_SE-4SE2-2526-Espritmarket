@@ -52,7 +52,7 @@ import { ToastComponent } from '../../shared/components/toast/toast.component';
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
               </svg>
             </button>
-            <h1 class="text-lg font-bold text-gray-900">Admin Panel</h1>
+            <h1 class="text-lg font-bold text-gray-900">Admin</h1>
             <div class="w-9"></div> <!-- Spacer for centering -->
           </div>
           

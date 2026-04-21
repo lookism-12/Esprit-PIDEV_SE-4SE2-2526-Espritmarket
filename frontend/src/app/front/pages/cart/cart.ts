@@ -8,6 +8,7 @@ import { CartResponse, CartItemResponse } from '../../models/cart.model';
 import { CouponService } from '../../core/coupon.service';
 import { LoyaltyService } from '../../core/loyalty.service';
 import { ToastService } from '../../core/toast.service';
+import { ImageUrlHelper } from '../../../shared/utils/image-url.helper';
 import { LoyaltyLevel } from '../../models/loyalty.model';
 
 // Enhanced cart item interface for display
@@ -191,7 +192,7 @@ export class Cart implements OnInit {
         product: {
           id: item.productId,
           name: item.productName,
-          imageUrl: item.imageUrl || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?q=80&w=400',
+          imageUrl: ImageUrlHelper.toAbsoluteUrl(item.imageUrl),
           price: item.unitPrice,
           category: item.category || 'General',
           sellerName: item.sellerName || 'Unknown Seller',

@@ -6,6 +6,7 @@ import { Product, StockStatus, ProductCondition, ProductStatus } from '../../mod
 import { ProductService } from '../../../core/services/product.service';
 import { CartService } from '../../core/cart.service';
 import { NegotiationStatus, ProposalStatus } from '../../models/negotiation.model';
+import { ImageUrlHelper } from '../../../shared/utils/image-url.helper';
 
 interface NegotiationProposal {
   id: string;
@@ -98,8 +99,8 @@ export class ProductDetails implements OnInit {
           price: data.price,
           categoryIds: (data as any).categoryIds,
           category: data.category || 'Others',
-          imageUrl: ((data as any).images && (data as any).images.length > 0) ? (data as any).images[0].url || (data as any).images[0] : 'assets/placeholder.png',
-          images: (data as any).images?.map((img: any) => img.url || img) || [],
+          imageUrl: ImageUrlHelper.toAbsoluteUrl(((data as any).images && (data as any).images.length > 0) ? (data as any).images[0].url || (data as any).images[0] : null),
+          images: (data as any).images?.map((img: any) => ImageUrlHelper.toAbsoluteUrl(img.url || img)) || [],
           sellerId: (data as any).shopId || 'Unknown',
           sellerName: 'Marketplace Seller',
           rating: 4.5,
@@ -147,7 +148,7 @@ export class ProductDetails implements OnInit {
             price: p.price,
             categoryIds: p.categoryIds,
             category: p.category || category,
-            imageUrl: (p.images && p.images.length > 0) ? (p.images[0].url || p.images[0]) : 'assets/placeholder.png',
+            imageUrl: ImageUrlHelper.toAbsoluteUrl((p.images && p.images.length > 0) ? (p.images[0].url || p.images[0]) : null),
             sellerId: p.shopId || 'Unknown',
             sellerName: 'Marketplace Seller',
             rating: 4.5,

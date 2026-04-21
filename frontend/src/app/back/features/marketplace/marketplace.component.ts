@@ -2,6 +2,7 @@ import { Component, signal, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ProductService as SharedProductService, ProductDto } from '../../../core/services/product.service';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { ImageUrlHelper } from '../../../shared/utils/image-url.helper';
 
 @Component({
   selector: 'app-back-marketplace',
@@ -147,9 +148,9 @@ export class MarketplaceComponent implements OnInit {
 
   getProductImage(product: ProductDto): string {
     if (product.images && product.images.length > 0) {
-      return product.images[0].url || 'assets/placeholder.png';
+      return ImageUrlHelper.toAbsoluteUrl(product.images[0].url);
     }
-    return 'assets/placeholder.png';
+    return ImageUrlHelper.toAbsoluteUrl(null);
   }
 
   delete(id: string): void {

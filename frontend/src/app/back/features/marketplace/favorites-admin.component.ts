@@ -2,6 +2,7 @@ import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { MarketplaceAdminService, FavorisDto, ProductAdminDto, ServiceAdminDto } from '../../core/services/marketplace-admin.service';
+import { ImageUrlHelper } from '../../../shared/utils/image-url.helper';
 
 interface ProductWithFavorites {
   product: ProductAdminDto;
@@ -115,7 +116,7 @@ interface ServiceWithFavorites {
                   <div class="flex items-start justify-between mb-3">
                     <div class="w-16 h-16 bg-white rounded-2xl overflow-hidden flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
                       @if (item.product.imageUrl || item.product.images[0]?.url) {
-                        <img [src]="item.product.imageUrl || item.product.images[0]?.url" 
+                        <img [src]="getProductImage(item.product)" 
                              [alt]="item.product.name"
                              class="w-full h-full object-cover">
                       } @else {
@@ -370,5 +371,10 @@ export class FavoritesAdminComponent implements OnInit {
 
   setActiveTab(tab: 'products' | 'services'): void {
     this.activeTab.set(tab);
+  }
+
+  getProductImage(product: ProductAdminDto): string {
+    const imageUrl = product.imageUrl || product.images?.[0]?.url;
+    return ImageUrlHelper.toAbsoluteUrl(imageUrl);
   }
 }

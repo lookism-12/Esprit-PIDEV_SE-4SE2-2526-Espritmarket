@@ -7,6 +7,7 @@ import { Product, StockStatus, ProductCondition, ProductStatus } from '../../mod
 import { ProductService } from '../../../core/services/product.service';
 import { CategoryService, Category } from '../../../core/services/category.service';
 import { AuthService } from '../../core/auth.service';
+import { ImageUrlHelper } from '../../../shared/utils/image-url.helper';
 
 @Component({
   selector: 'app-products',
@@ -249,7 +250,7 @@ export class Products implements OnInit {
       price: product.price,
       categoryIds: catIds,
       category: categoryName,
-      imageUrl: (product.images && product.images.length > 0) ? product.images[0].url || product.images[0] : 'assets/placeholder.png',
+      imageUrl: ImageUrlHelper.toAbsoluteUrl((product.images && product.images.length > 0) ? product.images[0].url || product.images[0] : null),
       sellerId: product.shopId || 'Unknown',
       shopId: product.shopId || 'Unknown',
       sellerName: product.shopName || 'Marketplace Seller', // ✅ Use shop name from backend

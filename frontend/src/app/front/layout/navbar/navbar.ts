@@ -90,7 +90,7 @@ export class Navbar implements OnInit, OnDestroy {
       icon: '🚗',
       items: [
         { label: 'Find a Ride', route: '/carpooling', icon: '🔍' },
-        { label: 'My Rides', route: '/carpooling', icon: '🛣️' }
+        { label: 'My Rides', route: '/driver/rides', icon: '🛣️' }
       ]
     },
     {
@@ -105,7 +105,7 @@ export class Navbar implements OnInit, OnDestroy {
       icon: '📦',
       items: [
         { label: 'My Orders', route: '/orders', icon: '🛍️' },
-        { label: 'Track Deliveries', route: '/sav', icon: '📍' },
+        { label: 'Track Deliveries', route: '/sav/deliveries', icon: '📍' },
         { label: 'My Claims', route: '/sav', icon: '📄' }
       ]
     },

@@ -1,9 +1,10 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { AuthService, RegisterRequest } from '../../core/auth.service';
 import { UserRole, RoleGroup } from '../../models/user.model';
+import { ThemeService } from '../../core/theme.service';
 
 interface RoleCard {
   id: RoleGroup;
@@ -18,9 +19,15 @@ interface RoleCard {
   standalone: true,
   imports: [CommonModule, RouterLink, ReactiveFormsModule],
   templateUrl: './register.html',
-  styleUrl: './register.scss', // v2 dark design
+  styleUrl: './register.scss',
 })
-export class Register {
+export class Register implements OnInit {
+  // Services
+  private fb = inject(FormBuilder);
+  private authService = inject(AuthService);
+  private router = inject(Router);
+  private themeService = inject(ThemeService);
+
   // Step management
   currentStep = signal<1 | 2>(1);
   
@@ -41,11 +48,8 @@ export class Register {
       id: 'client',
       title: 'Client',
       description: 'Buy products, book rides, and manage your marketplace activities.',
-      icon: '🛒',
-      subRoles: [
-        { value: 'CLIENT', label: 'Marketplace Buyer' },
-        { value: 'PASSENGER', label: 'Ride Passenger' }
-      ]
+      icon: '🛒'
+      // No sub-roles - all clients have the same CLIENT role
     },
     {
       id: 'provider',
@@ -86,7 +90,8 @@ export class Register {
     
     switch (group) {
       case 'client':
-        return subRole ? UserRole[subRole as keyof typeof UserRole] : UserRole.CLIENT;
+        // All clients have the same CLIENT role
+        return UserRole.CLIENT;
       case 'provider':
         return UserRole.PROVIDER;
       case 'logistics':
@@ -96,14 +101,17 @@ export class Register {
     }
   });
 
-  constructor(
-    private fb: FormBuilder,
-    private authService: AuthService,
-    private router: Router
-  ) {
+  constructor() {
     this.registerForm = this.createBaseForm();
   }
 
+  ngOnInit(): void {
+    // Initialize theme if needed
+  }
+
+  /**
+   * Create the base form with all possible fields
+   */
   private createBaseForm(): FormGroup {
     return this.fb.group({
       // Common fields
@@ -123,216 +131,227 @@ export class Register {
       taxId: [''],
       description: [''],
       
-      // Driver fields
+      // Logistics fields
       drivingLicenseNumber: [''],
-      
-      // Logistics fields (shared)
-      vehicleType: [''],
-      
-      // Delivery fields
-      deliveryZone: ['']
-    }, { validators: this.passwordMatchValidator });
+      vehicleType: ['']
+    }, {
+      validators: this.passwordMatchValidator
+    });
   }
 
+  /**
+   * Custom validator to check if passwords match
+   */
   private passwordMatchValidator(control: AbstractControl): ValidationErrors | null {
     const password = control.get('password');
     const confirmPassword = control.get('confirmPassword');
     
-    if (password && confirmPassword && password.value !== confirmPassword.value) {
-      confirmPassword.setErrors({ passwordMismatch: true });
-      return { passwordMismatch: true };
+    if (!password || !confirmPassword) {
+      return null;
     }
-    return null;
+    
+    return password.value === confirmPassword.value ? null : { passwordMismatch: true };
   }
 
-  selectRoleGroup(roleGroup: RoleGroup): void {
-    this.selectedRoleGroup.set(roleGroup);
-    
-    // Set default sub-role if available
-    const card = this.roleCards.find(c => c.id === roleGroup);
-    if (card?.subRoles && card.subRoles.length > 0) {
-      this.selectedSubRole.set(card.subRoles[0].value);
-    } else {
-      this.selectedSubRole.set(null);
+  // ==================== STEP NAVIGATION ====================
+
+  /**
+   * Go back to step 1 (role selection)
+   */
+  goToStep1(): void {
+    this.currentStep.set(1);
+    this.errorMessage.set(null);
+  }
+
+  /**
+   * Go forward to step 2 (form details)
+   * Only allowed if a role group is selected
+   */
+  goToStep2(): void {
+    if (!this.selectedRoleGroup()) {
+      this.errorMessage.set('Please select a role to continue');
+      return;
     }
     
-    // Update form validators based on role
+    // Update form validators based on selected role
     this.updateFormValidators();
+    
+    this.currentStep.set(2);
+    this.errorMessage.set(null);
   }
 
+  // ==================== ROLE SELECTION ====================
+
+  /**
+   * Select a role group (client, provider, logistics)
+   */
+  selectRoleGroup(roleId: RoleGroup): void {
+    this.selectedRoleGroup.set(roleId);
+    
+    // Reset sub-role when changing role group
+    this.selectedSubRole.set(null);
+    
+    // Auto-select sub-role if only one option or no sub-roles
+    const card = this.roleCards.find(c => c.id === roleId);
+    if (card && !card.subRoles) {
+      // No sub-roles, use default based on role
+      if (roleId === 'client') {
+        this.selectedSubRole.set('CLIENT');
+      } else if (roleId === 'provider') {
+        this.selectedSubRole.set('PROVIDER');
+      }
+    } else if (card && card.subRoles && card.subRoles.length === 1) {
+      // Only one sub-role, auto-select it
+      this.selectedSubRole.set(card.subRoles[0].value);
+    }
+  }
+
+  /**
+   * Select a sub-role (CLIENT, PASSENGER, DRIVER, DELIVERY)
+   */
   selectSubRole(subRole: string): void {
     this.selectedSubRole.set(subRole);
-    this.updateFormValidators();
   }
 
+  // ==================== FORM VALIDATION ====================
+
+  /**
+   * Update form validators based on selected role
+   */
   private updateFormValidators(): void {
     const group = this.selectedRoleGroup();
-    const subRole = this.selectedSubRole();
     
-    // Reset all role-specific validators
-    this.registerForm.get('address')?.clearValidators();
+    // Reset all optional field validators
     this.registerForm.get('businessName')?.clearValidators();
     this.registerForm.get('businessType')?.clearValidators();
     this.registerForm.get('taxId')?.clearValidators();
     this.registerForm.get('drivingLicenseNumber')?.clearValidators();
     this.registerForm.get('vehicleType')?.clearValidators();
-    this.registerForm.get('deliveryZone')?.clearValidators();
     
-    // Apply validators based on role
-    switch (group) {
-      case 'client':
-        // Address is optional for clients
-        break;
-        
-      case 'provider':
-        this.registerForm.get('businessName')?.setValidators([Validators.required, Validators.minLength(2)]);
-        this.registerForm.get('businessType')?.setValidators([Validators.required]);
-        this.registerForm.get('taxId')?.setValidators([Validators.required, Validators.minLength(5)]);
-        break;
-        
-      case 'logistics':
-        this.registerForm.get('vehicleType')?.setValidators([Validators.required]);
-        if (subRole === 'DRIVER') {
-          this.registerForm.get('drivingLicenseNumber')?.setValidators([Validators.required, Validators.minLength(5)]);
-        } else if (subRole === 'DELIVERY') {
-          this.registerForm.get('deliveryZone')?.setValidators([Validators.required]);
-        }
-        break;
+    // Add validators based on role
+    if (group === 'provider') {
+      this.registerForm.get('businessName')?.setValidators([Validators.required, Validators.minLength(2)]);
+      this.registerForm.get('businessType')?.setValidators([Validators.required]);
+      this.registerForm.get('taxId')?.setValidators([Validators.required]);
+    }
+    
+    if (group === 'logistics') {
+      const subRole = this.selectedSubRole();
+      if (subRole === 'DRIVER') {
+        this.registerForm.get('drivingLicenseNumber')?.setValidators([Validators.required]);
+      }
+      this.registerForm.get('vehicleType')?.setValidators([Validators.required]);
     }
     
     // Update validity
-    this.registerForm.get('address')?.updateValueAndValidity();
-    this.registerForm.get('businessName')?.updateValueAndValidity();
-    this.registerForm.get('businessType')?.updateValueAndValidity();
-    this.registerForm.get('taxId')?.updateValueAndValidity();
-    this.registerForm.get('drivingLicenseNumber')?.updateValueAndValidity();
-    this.registerForm.get('vehicleType')?.updateValueAndValidity();
-    this.registerForm.get('deliveryZone')?.updateValueAndValidity();
+    Object.keys(this.registerForm.controls).forEach(key => {
+      this.registerForm.get(key)?.updateValueAndValidity();
+    });
   }
 
-  goToStep2(): void {
-    if (this.selectedRoleGroup()) {
-      this.currentStep.set(2);
-    }
-  }
-
-  goToStep1(): void {
-    this.currentStep.set(1);
-  }
-
-  togglePassword(): void {
-    this.showPassword.update(v => !v);
-  }
-
-  toggleConfirmPassword(): void {
-    this.showConfirmPassword.update(v => !v);
-  }
-
+  /**
+   * Check if a form field is invalid and touched
+   */
   isFieldInvalid(fieldName: string): boolean {
     const field = this.registerForm.get(fieldName);
     return !!(field && field.invalid && (field.dirty || field.touched));
   }
 
-  getFieldError(fieldName: string): string {
-    const field = this.registerForm.get(fieldName);
-    if (!field || !field.errors) return '';
-    
-    if (field.errors['required']) return 'This field is required';
-    if (field.errors['email']) return 'Please enter a valid email';
-    if (field.errors['minlength']) return `Minimum ${field.errors['minlength'].requiredLength} characters required`;
-    if (field.errors['pattern']) return 'Invalid format';
-    if (field.errors['passwordMismatch']) return 'Passwords do not match';
-    
-    return 'Invalid input';
+  // ==================== PASSWORD VISIBILITY ====================
+
+  /**
+   * Toggle password visibility
+   */
+  togglePassword(): void {
+    this.showPassword.update(v => !v);
   }
 
-  onSubmit(): void {
-    if (this.registerForm.invalid || !this.finalBackendRole()) {
-      this.registerForm.markAllAsTouched();
-      return;
-    }
+  /**
+   * Toggle confirm password visibility
+   */
+  toggleConfirmPassword(): void {
+    this.showConfirmPassword.update(v => !v);
+  }
 
-    this.isSubmitting.set(true);
+  // ==================== FORM SUBMISSION ====================
+
+  /**
+   * Handle form submission
+   */
+  onSubmit(): void {
+    // Clear previous error
     this.errorMessage.set(null);
     
+    // Mark all fields as touched to show validation errors
+    Object.keys(this.registerForm.controls).forEach(key => {
+      this.registerForm.get(key)?.markAsTouched();
+    });
+    
+    // Check if form is valid
+    if (this.registerForm.invalid) {
+      this.errorMessage.set('Please fill in all required fields correctly');
+      return;
+    }
+    
+    // Check if passwords match
+    if (this.registerForm.hasError('passwordMismatch')) {
+      this.errorMessage.set('Passwords do not match');
+      return;
+    }
+    
+    // Check if role is selected
+    const role = this.finalBackendRole();
+    if (!role) {
+      this.errorMessage.set('Please select a role');
+      return;
+    }
+    
+    // Prepare registration request
     const formValue = this.registerForm.value;
-    const backendRole = this.finalBackendRole()!;
+    const registerRequest: RegisterRequest = {
+      firstName: formValue.firstName,
+      lastName: formValue.lastName,
+      email: formValue.email,
+      password: formValue.password,
+      phone: formValue.phone,
+      role: role,
+      address: formValue.address || undefined,
+      businessName: formValue.businessName || undefined,
+      businessType: formValue.businessType || undefined,
+      taxId: formValue.taxId || undefined,
+      description: formValue.description || undefined,
+      drivingLicenseNumber: formValue.drivingLicenseNumber || undefined,
+      vehicleType: formValue.vehicleType || undefined
+    };
     
-    // Build payload based on role
-    const payload: RegisterRequest = this.buildPayload(formValue, backendRole);
+    // Submit registration
+    this.isSubmitting.set(true);
     
-    console.log('Registration payload:', payload);
-    
-    this.authService.register(payload).subscribe({
+    this.authService.register(registerRequest).subscribe({
       next: (response) => {
         console.log('✅ Registration successful:', response);
         this.isSubmitting.set(false);
-        this.errorMessage.set(null);
-        this.router.navigate(['/login']);
+        
+        // Redirect to login or dashboard
+        this.router.navigate(['/login'], {
+          queryParams: { registered: 'true' }
+        });
       },
       error: (error) => {
         console.error('❌ Registration failed:', error);
         this.isSubmitting.set(false);
         
-        // Extract error message from backend response
-        if (error.error?.message) {
-          this.errorMessage.set(error.error.message);
-        } else if (error.error?.fieldErrors) {
-          // Handle validation errors
-          const fieldErrors = error.error.fieldErrors;
-          const errorMsg = Object.values(fieldErrors).join(', ');
-          this.errorMessage.set(errorMsg as string);
-        } else if (error.status === 409) {
-          this.errorMessage.set('This email is already registered. Please use a different email or login.');
+        // Display error message
+        if (error.status === 409) {
+          this.errorMessage.set('Email already exists. Please use a different email.');
         } else if (error.status === 400) {
-          this.errorMessage.set('Invalid registration data. Please check your input.');
+          this.errorMessage.set(error.error?.message || 'Invalid registration data. Please check your inputs.');
+        } else if (error.status === 500) {
+          this.errorMessage.set('Server error. Please try again later.');
         } else {
           this.errorMessage.set('Registration failed. Please try again.');
         }
       }
     });
-  }
-
-  private buildPayload(formValue: any, role: UserRole): RegisterRequest {
-    const base = {
-      email: formValue.email,
-      password: formValue.password,
-      firstName: formValue.firstName,
-      lastName: formValue.lastName,
-      phone: formValue.phone,
-      role: role
-    };
-
-    switch (role) {
-      case UserRole.CLIENT:
-      case UserRole.PASSENGER:
-        return { ...base, address: formValue.address || undefined };
-        
-      case UserRole.PROVIDER:
-        return {
-          ...base,
-          businessName: formValue.businessName,
-          businessType: formValue.businessType,
-          taxId: formValue.taxId,
-          description: formValue.description || undefined
-        };
-        
-      case UserRole.DRIVER:
-        return {
-          ...base,
-          drivingLicenseNumber: formValue.drivingLicenseNumber,
-          vehicleType: formValue.vehicleType
-        };
-        
-      case UserRole.DELIVERY:
-        return {
-          ...base,
-          vehicleType: formValue.vehicleType,
-          deliveryZone: formValue.deliveryZone
-        };
-        
-      default:
-        return base as RegisterRequest;
-    }
   }
 }

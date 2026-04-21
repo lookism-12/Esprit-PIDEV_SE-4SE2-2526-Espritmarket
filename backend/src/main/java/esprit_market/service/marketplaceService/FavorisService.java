@@ -11,14 +11,17 @@ import esprit_market.repository.marketplaceRepository.ProductRepository;
 import esprit_market.repository.marketplaceRepository.ServiceRepository;
 import esprit_market.repository.userRepository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class FavorisService implements IFavorisService {
@@ -30,9 +33,47 @@ public class FavorisService implements IFavorisService {
 
     @Override
     public List<FavorisResponseDTO> findAll() {
-        return repository.findAll().stream()
-                .map(mapper::toDTO)
-                .collect(Collectors.toList());
+        try {
+            log.info("📋 Fetching all favorites from database");
+            
+            List<Favoris> allFavoris = repository.findAll();
+            
+            if (allFavoris == null) {
+                log.warn("⚠️ Repository returned null instead of empty list");
+                return Collections.emptyList();
+            }
+            
+            if (allFavoris.isEmpty()) {
+                log.info("✅ No favorites found in database");
+                return Collections.emptyList();
+            }
+            
+            log.info("✅ Found {} favorites, mapping to DTOs", allFavoris.size());
+            
+            List<FavorisResponseDTO> result = allFavoris.stream()
+                    .map(favoris -> {
+                        try {
+                            return mapper.toDTO(favoris);
+                        } catch (Exception e) {
+                            log.error("❌ Error mapping favoris to DTO: {}", favoris.getId(), e);
+                            return null; // Skip this item
+                        }
+                    })
+                    .filter(dto -> dto != null) // Remove null entries
+                    .collect(Collectors.toList());
+            
+            log.info("✅ Successfully mapped {} favorites to DTOs", result.size());
+            return result;
+            
+        } catch (Exception e) {
+            log.error("❌ Unexpected error in findAll()", e);
+            log.error("❌ Error type: {}", e.getClass().getSimpleName());
+            log.error("❌ Error message: {}", e.getMessage());
+            log.error("❌ Stack trace: ", e);
+            
+            // Return empty list instead of throwing exception
+            return Collections.emptyList();
+        }
     }
 
     @Override

@@ -51,7 +51,7 @@ export interface ShopCreateRequest {
 })
 export class ProviderShopService {
   private http = inject(HttpClient);
-  private apiUrl = `${environment.apiUrl}/api/provider/shop`;
+  private apiUrl = `${environment.apiUrl}/provider/shop`;
   
   // Shop state management
   private shopSubject = new BehaviorSubject<ShopDto | null>(null);

@@ -1,11 +1,12 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { Service } from '../../../../core/services/service.service';
 
 @Component({
   selector: 'app-service-card',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink],
   template: `
     <div class="bg-white rounded-2xl shadow-soft border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300 group">
       <!-- Service Icon -->
@@ -44,9 +45,10 @@ import { Service } from '../../../../core/services/service.service';
           <div class="text-2xl font-black text-primary">
             {{ service.price }} <span class="text-sm text-secondary">TND</span>
           </div>
-          <button class="px-4 py-2 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 transition-all text-sm">
+          <a [routerLink]="['/service', service.id]" 
+             class="px-4 py-2 bg-primary text-white font-bold rounded-xl hover:bg-primary-dark transition-all text-sm">
             View Details
-          </button>
+          </a>
         </div>
       </div>
     </div>

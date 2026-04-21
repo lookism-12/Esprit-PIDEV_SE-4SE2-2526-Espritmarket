@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, tap, catchError, throwError, map } from 'rxjs';
 import { Product } from '../models/product';
 import { environment } from '../../../environment';
+import { ImageUrlHelper } from '../../shared/utils/image-url.helper';
 
 export interface ProductFilter {
   category?: string;
@@ -80,29 +81,12 @@ export class ProductService {
   constructor(private http: HttpClient) {}
 
   /**
-   * Validate and fix image URL
+   * Validate and fix image URL using ImageUrlHelper
    * @param imageUrl - Original image URL
    * @returns Valid image URL or fallback
    */
   private getValidImageUrl(imageUrl: string | undefined): string {
-    if (!imageUrl) {
-      return 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=300&fit=crop';
-    }
-
-    // Check if it's a valid URL
-    try {
-      new URL(imageUrl);
-      return imageUrl;
-    } catch {
-      // If it's a relative path, make it absolute
-      if (imageUrl.startsWith('/uploads/') || imageUrl.startsWith('uploads/')) {
-        const backendHost = environment.apiUrl.replace('/api', '');
-        return backendHost + (imageUrl.startsWith('/') ? imageUrl : '/' + imageUrl);
-      }
-      
-      // If it's an invalid URL, return fallback
-      return 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=300&fit=crop';
-    }
+    return ImageUrlHelper.toAbsoluteUrl(imageUrl, '/assets/images/placeholder.png');
   }
 
   /**

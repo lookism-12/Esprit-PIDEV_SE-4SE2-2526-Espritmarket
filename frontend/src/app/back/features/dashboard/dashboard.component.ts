@@ -51,23 +51,30 @@ export class DashboardComponent implements OnInit {
   ];
   ngOnInit(): void {
     forkJoin({
-      users: this.http.get<any[]>('/api/users').pipe(catchError(() => of([]))),
-      products: this.http.get<any[]>('/api/products/all').pipe(catchError(() => of([]))),
-      posts: this.http.get<any[]>('/api/forum/posts').pipe(catchError(() => of([]))),
-      orders: this.http.get<any[]>('/api/orders').pipe(catchError(() => of([]))),
-      shops: this.http.get<any[]>('/api/shops').pipe(catchError(() => of([])))
+      users: this.http.get<any[]>('/api/users').pipe(catchError((err) => { console.error('❌ Failed to load users:', err); return of([]); })),
+      products: this.http.get<any[]>('/api/products/all').pipe(catchError((err) => { console.error('❌ Failed to load products:', err); return of([]); })),
+      posts: this.http.get<any[]>('/api/forum/posts').pipe(catchError((err) => { console.error('❌ Failed to load posts:', err); return of([]); })),
+      orders: this.http.get<any[]>('/api/orders').pipe(catchError((err) => { console.error('❌ Failed to load orders:', err); return of([]); })),
+      shops: this.http.get<any[]>('/api/shops').pipe(catchError((err) => { console.error('❌ Failed to load shops:', err); return of([]); }))
     }).subscribe(({ users, products, posts, orders, shops }) => {
-      this.totalUsers.set(users.length);
-      this.totalProducts.set(products.length);
-      this.pendingProducts.set(products.filter((p: any) => p.status === 'PENDING').length);
-      this.approvedProducts.set(products.filter((p: any) => p.status === 'APPROVED').length);
-      this.rejectedProducts.set(products.filter((p: any) => p.status === 'REJECTED').length);
-      this.totalPosts.set(posts.length);
-      this.pendingPostsCount.set(posts.filter((p: any) => !p.approved).length);
-      this.totalOrders.set(orders.length);
-      this.totalShops.set(shops.length);
-      this.recentUsers.set([...users].reverse().slice(0, 5));
-      this.recentProducts.set(products.filter((p: any) => p.status === 'PENDING').slice(0, 4));
+      // ✅ SAFETY: Ensure all responses are arrays
+      const safeUsers = Array.isArray(users) ? users : [];
+      const safeProducts = Array.isArray(products) ? products : [];
+      const safePosts = Array.isArray(posts) ? posts : [];
+      const safeOrders = Array.isArray(orders) ? orders : [];
+      const safeShops = Array.isArray(shops) ? shops : [];
+
+      this.totalUsers.set(safeUsers.length);
+      this.totalProducts.set(safeProducts.length);
+      this.pendingProducts.set(safeProducts.filter((p: any) => p.status === 'PENDING').length);
+      this.approvedProducts.set(safeProducts.filter((p: any) => p.status === 'APPROVED').length);
+      this.rejectedProducts.set(safeProducts.filter((p: any) => p.status === 'REJECTED').length);
+      this.totalPosts.set(safePosts.length);
+      this.pendingPostsCount.set(safePosts.filter((p: any) => !p.approved).length);
+      this.totalOrders.set(safeOrders.length);
+      this.totalShops.set(safeShops.length);
+      this.recentUsers.set([...safeUsers].reverse().slice(0, 5));
+      this.recentProducts.set(safeProducts.filter((p: any) => p.status === 'PENDING').slice(0, 4));
       this.isLoading.set(false);
     });
   }

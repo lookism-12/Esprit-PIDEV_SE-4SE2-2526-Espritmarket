@@ -140,8 +140,10 @@ export class CartService {
     console.log('🔍 Request validation:', {
       productIdType: typeof backendRequest.productId,
       productIdLength: backendRequest.productId.length,
+      productIdValue: backendRequest.productId,
       quantityType: typeof backendRequest.quantity,
-      quantityValue: backendRequest.quantity
+      quantityValue: backendRequest.quantity,
+      isValidObjectId: /^[0-9a-fA-F]{24}$/.test(backendRequest.productId)
     });
 
     return this.http.post<CartItemResponse>(`${this.apiUrl}/items`, backendRequest).pipe(
@@ -154,6 +156,13 @@ export class CartService {
       }),
       catchError((error) => {
         console.error('❌ Failed to add item to cart:', error);
+        console.error('❌ Error details:', {
+          status: error.status,
+          statusText: error.statusText,
+          message: error.error?.message,
+          fieldErrors: error.error?.fieldErrors,
+          fullError: error.error
+        });
         
         // ✅ ENHANCED ERROR HANDLING WITH FIELD DETAILS
         if (error.status === 400 && error.error?.fieldErrors) {

@@ -4,6 +4,7 @@ import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MarketplaceAdminService, ProductAdminDto, CategoryDto, ShopAdminDto } from '../../core/services/marketplace-admin.service';
 import { AdminAuthService } from '../../core/services/admin-auth.service';
+import { ImageUrlHelper } from '../../../shared/utils/image-url.helper';
 
 @Component({
   selector: 'app-admin-products',
@@ -111,7 +112,7 @@ import { AdminAuthService } from '../../core/services/admin-auth.service';
                     <td class="px-6 py-4">
                       <div class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded-xl bg-gray-100 overflow-hidden flex-shrink-0">
-                          <img [src]="p.imageUrl || p.images[0]?.url || 'https://placehold.co/40x40/f3f4f6/9ca3af?text=P'"
+                          <img [src]="getProductImage(p)"
                                class="w-full h-full object-cover" [alt]="p.name">
                         </div>
                         <div>
@@ -551,5 +552,10 @@ export class ProductsAdminComponent implements OnInit {
         alert(e.error?.message || 'Reject failed');
       }
     });
+  }
+
+  getProductImage(product: ProductAdminDto): string {
+    const imageUrl = product.imageUrl || product.images?.[0]?.url;
+    return ImageUrlHelper.toAbsoluteUrl(imageUrl);
   }
 }

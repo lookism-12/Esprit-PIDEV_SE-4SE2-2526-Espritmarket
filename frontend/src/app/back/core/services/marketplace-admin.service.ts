@@ -150,23 +150,23 @@ export class MarketplaceAdminService {
 
   // Shops Admin
   getShops(): Observable<ShopAdminDto[]> {
-    return this.http.get<ShopAdminDto[]>(`${this.apiUrl}/api/shops`);
+    return this.http.get<ShopAdminDto[]>(`${this.apiUrl}/shops`);
   }
 
   getMyShop(): Observable<ShopAdminDto> {
-    return this.http.get<ShopAdminDto>(`${this.apiUrl}/api/shops/me`);
+    return this.http.get<ShopAdminDto>(`${this.apiUrl}/shops/me`);
   }
 
   createShop(shop: Partial<ShopAdminDto>): Observable<ShopAdminDto> {
-    return this.http.post<ShopAdminDto>(`${this.apiUrl}/api/shops`, shop);
+    return this.http.post<ShopAdminDto>(`${this.apiUrl}/shops`, shop);
   }
 
   updateShop(id: string, shop: Partial<ShopAdminDto>): Observable<ShopAdminDto> {
-    return this.http.put<ShopAdminDto>(`${this.apiUrl}/api/shops/${id}`, shop);
+    return this.http.put<ShopAdminDto>(`${this.apiUrl}/shops/${id}`, shop);
   }
 
   deleteShop(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/api/shops/${id}`);
+    return this.http.delete<void>(`${this.apiUrl}/shops/${id}`);
   }
 
   // Favoris Admin
