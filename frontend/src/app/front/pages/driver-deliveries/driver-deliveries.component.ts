@@ -1,61 +1,156 @@
-import { Component, OnInit, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, OnDestroy, signal, computed, inject } from '@angular/core';
+import { CommonModule, DatePipe } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { SavService } from '../../../back/core/services/sav.service';
 import { AuthService } from '../../core/auth.service';
-import { Delivery, DeliveryStatus } from '../../../back/core/models/sav.models';
+import { ToastService } from '../../../back/core/services/toast.service';
+import { Delivery } from '../../../back/core/models/sav.models';
 
 @Component({
   selector: 'app-driver-deliveries',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
+  providers: [DatePipe],
   templateUrl: './driver-deliveries.component.html'
 })
-export class DriverDeliveriesComponent implements OnInit {
-  deliveries = signal<Delivery[]>([]);
-  isLoading = signal<boolean>(true);
-  errorMsg = signal<string | null>(null);
+export class DriverDeliveriesComponent implements OnInit, OnDestroy {
+  private savService = inject(SavService);
+  private authService = inject(AuthService);
+  private toastService = inject(ToastService);
 
-  statusMap: Record<DeliveryStatus, { label: string; color: string; next: DeliveryStatus | null }> = {
-    PREPARING: { label: 'Preparing', color: 'bg-yellow-100 text-yellow-800 border-yellow-200', next: 'IN_TRANSIT' },
-    IN_TRANSIT: { label: 'In Transit', color: 'bg-blue-100 text-blue-800 border-blue-200', next: 'DELIVERED' },
-    DELIVERED: { label: 'Delivered', color: 'bg-green-100 text-green-800 border-green-200', next: null },
-    RETURNED: { label: 'Returned', color: 'bg-red-100 text-red-800 border-red-200', next: null }
-  };
+  readonly myUserId = signal<string>('');
+  readonly isLoading = signal<boolean>(true);
+  
+  // Data lists
+  readonly pendingDeliveries = signal<Delivery[]>([]);
+  readonly activeDeliveries = signal<Delivery[]>([]);
+  readonly historyDeliveries = signal<Delivery[]>([]);
 
-  constructor(private savService: SavService, private authService: AuthService) {}
+  // Computed counters
+  readonly notifCount = computed(() => this.pendingDeliveries().length);
+  readonly activeCount = computed(() => this.activeDeliveries().length);
+
+  // Modals state
+  readonly isDeclineModalOpen = signal<boolean>(false);
+  readonly isDeliverModalOpen = signal<boolean>(false);
+  readonly selectedDelivery = signal<Delivery | null>(null);
+  readonly selectedDeclineReason = signal<string>('');
+
+  private pollingInterval: any;
 
   ngOnInit() {
-    const userId: string | null = this.authService.getUserId();
+    const userId = this.authService.getUserId();
     if (!userId) {
-      this.errorMsg.set('User not logged in.');
+      this.toastService.error('User not logged in.');
       this.isLoading.set(false);
       return;
     }
-    this.savService.getDeliveriesByUser(userId).subscribe({
-      next: (data) => { this.deliveries.set(data); this.isLoading.set(false); },
-      error: () => { this.errorMsg.set('Unable to load your assigned deliveries.'); this.isLoading.set(false); }
-    });
+    this.myUserId.set(userId);
+    this.loadAllData();
+    
+    // Poll every 15 seconds to check for new assignments
+    this.pollingInterval = setInterval(() => {
+      this.loadAllData(false);
+    }, 15000);
   }
 
-  updateStatus(delivery: Delivery) {
-    const info = this.statusMap[delivery.status];
-    if (!info.next) return;
-    const newStatus = info.next;
-    const prev = this.deliveries();
-    this.deliveries.update(list => list.map(d => d.id === delivery.id ? { ...d, status: newStatus } : d));
-    this.savService.updateDeliveryStatus(delivery.id, newStatus).subscribe({
+  ngOnDestroy() {
+    if (this.pollingInterval) clearInterval(this.pollingInterval);
+  }
+
+  loadAllData(showLoader = true) {
+    if (showLoader) this.isLoading.set(true);
+    
+    // 1. Get Pending assignments
+    this.savService.getPendingForDriver(this.myUserId()).subscribe({
+      next: (data) => this.pendingDeliveries.set(data),
+      error: () => console.error('Failed to load pending deliveries')
+    });
+
+    // 2. Get All User deliveries to filter Active vs History
+    this.savService.getDeliveriesByUser(this.myUserId()).subscribe({
+      next: (data) => {
+        this.activeDeliveries.set(data.filter(d => d.status === 'IN_TRANSIT'));
+        this.historyDeliveries.set(data.filter(d => d.status === 'DELIVERED' || d.status === 'RETURNED').sort((a,b) => {
+          return new Date(b.deliveryDate || 0).getTime() - new Date(a.deliveryDate || 0).getTime();
+        }));
+        if (showLoader) this.isLoading.set(false);
+      },
       error: () => {
-        this.deliveries.set(prev);
-        this.errorMsg.set('An error occurred while updating the status.');
-        setTimeout(() => this.errorMsg.set(null), 3000);
+        if (showLoader) this.isLoading.set(false);
       }
     });
   }
 
-  getStatusInfo(status: DeliveryStatus) { return this.statusMap[status]; }
+  formatOrderNumber(cartId: string, date?: string): string {
+    if (!cartId) return 'ORD-UNKNOWN';
+    const year = date ? new Date(date).getFullYear() : new Date().getFullYear();
+    const shortHex = cartId.replace(/[^a-zA-Z0-9]/g, '').substring(0, 5).toUpperCase();
+    return `ORD-${year}-${shortHex.padStart(5, '0')}`;
+  }
 
-  formatDate(date: string): string {
-    if (!date) return '-';
-    return new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  // ─── Workflow Actions ──────────────────────────────────────────────────
+
+  acceptDelivery(delivery: Delivery) {
+    this.savService.respondToDelivery(delivery.id, this.myUserId(), true).subscribe({
+      next: () => {
+        this.toastService.success('Delivery Accepted! Added to your active list.');
+        this.loadAllData();
+      },
+      error: () => this.toastService.error('Failed to accept delivery.')
+    });
+  }
+
+  declineDelivery(delivery: Delivery) {
+    this.selectedDelivery.set(delivery);
+    this.selectedDeclineReason.set('');
+    this.isDeclineModalOpen.set(true);
+  }
+
+  closeDeclineModal() {
+    this.isDeclineModalOpen.set(false);
+    this.selectedDelivery.set(null);
+  }
+
+  confirmDecline() {
+    const delivery = this.selectedDelivery();
+    if (!delivery) return;
+    if (!this.selectedDeclineReason()) {
+      this.toastService.warning('Please select a reason.');
+      return;
+    }
+
+    this.savService.respondToDelivery(delivery.id, this.myUserId(), false, this.selectedDeclineReason()).subscribe({
+      next: () => {
+        this.toastService.success('Delivery Declined.');
+        this.closeDeclineModal();
+        this.loadAllData();
+      },
+      error: () => this.toastService.error('Failed to decline delivery.')
+    });
+  }
+
+  openMarkDeliveredModal(delivery: Delivery) {
+    this.selectedDelivery.set(delivery);
+    this.isDeliverModalOpen.set(true);
+  }
+
+  closeDeliverModal() {
+    this.isDeliverModalOpen.set(false);
+    this.selectedDelivery.set(null);
+  }
+
+  confirmMarkDelivered() {
+    const delivery = this.selectedDelivery();
+    if (!delivery) return;
+
+    this.savService.markAsDelivered(delivery.id, this.myUserId()).subscribe({
+      next: () => {
+        this.toastService.success('Great job! Delivery marked as completed.');
+        this.closeDeliverModal();
+        this.loadAllData();
+      },
+      error: () => this.toastService.error('Failed to mark delivery as completed.')
+    });
   }
 }

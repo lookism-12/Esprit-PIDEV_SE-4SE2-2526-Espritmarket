@@ -17,4 +17,10 @@ public interface IDeliveryService {
     DeliveryResponseDTO updateDeliveryStatus(String id, String status);
     // FR-DEL4
     void deleteDelivery(String id);
+    // FR-DEL5 — Driver assignment workflow
+    DeliveryResponseDTO assignDriver(String deliveryId, String driverId);
+    DeliveryResponseDTO respondToDelivery(String deliveryId, String driverId, boolean accepted, String declineReason);
+    DeliveryResponseDTO markAsDelivered(String deliveryId, String driverId);
+    List<DeliveryResponseDTO> getPendingForDriver(String driverId);
 }
+

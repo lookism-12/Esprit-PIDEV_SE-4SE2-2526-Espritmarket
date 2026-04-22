@@ -10,6 +10,7 @@ import { LoyaltyService } from '../../core/loyalty.service';
 import { ToastService } from '../../core/toast.service';
 import { ImageUrlHelper } from '../../../shared/utils/image-url.helper';
 import { LoyaltyLevel } from '../../models/loyalty.model';
+import { AuthService } from '../../core/auth.service';
 
 // Enhanced cart item interface for display
 interface DisplayCartItem extends CartItemResponse {
@@ -39,6 +40,29 @@ export class Cart implements OnInit {
   private couponService = inject(CouponService);
   private loyaltyService = inject(LoyaltyService);
   private toastService = inject(ToastService);
+  private authService = inject(AuthService);
+
+  // New Wizard Flow State
+  readonly currentStep = signal<'CART' | 'PLACE_ORDER' | 'PAY' | 'COMPLETE'>('CART');
+
+  // Place Order Form Signals
+  readonly shippingName = signal<string>('');
+  readonly shippingPhone = signal<string>('');
+  readonly shippingAddress = signal<string>('');
+  readonly shippingCity = signal<string>('');
+  readonly saveAsDefault = signal<boolean>(false);
+  readonly paymentMethod = signal<'CARD' | 'CASH'>('CARD');
+  readonly estimatedDelivery = signal<string>('');
+
+  // Pay Form Signals
+  readonly cardNumber = signal<string>('');
+  readonly cardExpiry = signal<string>('');
+  readonly cardCvv = signal<string>('');
+  readonly cardName = signal<string>('');
+  readonly isProcessingPayment = signal<boolean>(false);
+
+  // Complete Step Data
+  readonly orderNumber = signal<string | null>(null);
 
   // Backend-connected state
   readonly cart = this.cartService.cart;
@@ -82,7 +106,6 @@ export class Cart implements OnInit {
   });
 
   readonly earnedPoints = computed(() => {
-    // Base: 1 point per TND, multiplied by level
     const multipliers: Record<LoyaltyLevel, number> = {
       [LoyaltyLevel.BRONZE]: 1,
       [LoyaltyLevel.SILVER]: 1.5,
@@ -92,7 +115,6 @@ export class Cart implements OnInit {
     return Math.floor(this.subtotal() * (multipliers[this.loyaltyLevel()] || 1));
   });
 
-  // Additional computed properties for template compatibility
   readonly couponDiscount = computed(() => {
     const coupon = this.appliedCoupon();
     if (!coupon) return 0;
@@ -104,7 +126,6 @@ export class Cart implements OnInit {
 
   readonly pointsDiscount = computed(() => {
     if (!this.usePoints()) return 0;
-    // 100 points = 1 TND
     return Math.min(this.pointsToRedeem() / 100, this.subtotal() - this.couponDiscount());
   });
 
@@ -121,106 +142,190 @@ export class Cart implements OnInit {
   ngOnInit(): void {
     this.loadRealCartData();
     this.loadLoyaltyAccount();
+    this.initDeliveryEstimation();
+    this.prefillUserProfile();
     
-    // Subscribe to cart updates to refresh data automatically
+    // Subscribe to cart updates
     this.cartService.cartUpdated$.subscribe(() => {
-      console.log('🔄 Cart update detected in cart page, refreshing...');
       this.loadRealCartData();
     });
   }
 
-  /**
-   * Load loyalty account from backend
-   */
-  private loadLoyaltyAccount(): void {
-    console.log('🏆 Loading loyalty account...');
-    this.loyaltyService.getAccount().subscribe({
-      next: (account) => {
-        console.log('✅ Loyalty account loaded:', account);
+  private initDeliveryEstimation(): void {
+    const today = new Date();
+    const minDay = new Date(today);
+    minDay.setDate(today.getDate() + 3);
+    const maxDay = new Date(today);
+    maxDay.setDate(today.getDate() + 5);
+    
+    const options: Intl.DateTimeFormatOptions = { weekday: 'short', month: 'short', day: 'numeric' };
+    this.estimatedDelivery.set(`${minDay.toLocaleDateString('en-US', options)} - ${maxDay.toLocaleDateString('en-US', options)}`);
+  }
+
+  private prefillUserProfile(): void {
+    const user = this.authService.currentUser();
+    if (user) {
+      this.shippingName.set(`${user.firstName} ${user.lastName}`.trim());
+      this.shippingPhone.set(user.phone || '');
+      // Try to parse out City and Address if "Aouina, Tunis"
+      const addr = (user as any).address || '';
+      if (addr.includes(',')) {
+        const parts = addr.split(',');
+        this.shippingAddress.set(parts[0].trim());
+        this.shippingCity.set(parts[1].trim());
+      } else {
+        this.shippingAddress.set(addr);
+      }
+    }
+  }
+
+  // ============== WIZARD NAVIGATION ==============
+
+  goToStep(step: 'CART' | 'PLACE_ORDER' | 'PAY' | 'COMPLETE') {
+    if (step === 'PLACE_ORDER' && this.hasStockIssues()) return;
+    this.currentStep.set(step);
+    window.scrollTo(0, 0);
+  }
+
+  proceedToPlaceOrder() {
+    if (!this.validateCartStock()) return;
+    this.goToStep('PLACE_ORDER');
+  }
+
+  proceedToPaymentOrComplete() {
+    if (!this.shippingName() || !this.shippingAddress() || !this.shippingCity() || !this.shippingPhone()) {
+      this.toastService.warning('Please fill in all required delivery fields.');
+      return;
+    }
+
+    if (this.paymentMethod() === 'CASH') {
+      this.submitOrder();
+    } else {
+      this.goToStep('PAY');
+    }
+  }
+
+  processCardPayment() {
+    if (!this.cardNumber() || !this.cardExpiry() || !this.cardCvv() || !this.cardName()) {
+      this.toastService.warning('Please fill in all credit card details.');
+      return;
+    }
+
+    this.isProcessingPayment.set(true);
+    // Simulate secure 3D secure checking or payment gateway delay
+    setTimeout(() => {
+      this.submitOrder();
+    }, 1500);
+  }
+
+  submitOrder() {
+    this.toastService.info('Processing your order...', 2000);
+    
+    // Concat address & city
+    const fullAddress = `${this.shippingAddress()}, ${this.shippingCity()}`;
+    const mappedPayment = this.paymentMethod() === 'CARD' ? 'CREDIT_CARD' : 'CASH_ON_DELIVERY';
+
+    const checkoutData = {
+      shippingAddress: fullAddress,
+      paymentMethod: mappedPayment
+    };
+
+    this.cartService.checkout(checkoutData).subscribe({
+      next: (order) => {
+        this.isProcessingPayment.set(false);
+        // Sometimes backend returns orderNumber or id
+        this.orderNumber.set(order.orderNumber || order.id || `ORD-${Math.floor(Math.random() * 1000000)}`);
+        this.goToStep('COMPLETE');
+        this.toastService.success('🎉 Order placed successfully!', 4000);
+        this.triggerConfetti();
+        sessionStorage.removeItem('pendingPurchase');
       },
       error: (error) => {
-        console.warn('⚠️ Failed to load loyalty account, using fallback:', error);
+        this.isProcessingPayment.set(false);
+        console.error('❌ Checkout failed:', error);
+        this.toastService.error('Checkout failed. Please try again.');
       }
     });
   }
 
-  /**
-   * Load real cart data from backend - NO MOCK DATA
-   * Public method to allow retry from error state
-   */
+  triggerConfetti(): void {
+    // Inject a quick DOM-based confetti to celebrate without heavy libraries
+    const colors = ['#dc2626', '#fca5a5', '#ef4444', '#ffffff', '#fee2e2'];
+    for (let i = 0; i < 60; i++) {
+      const conf = document.createElement('div');
+      conf.style.position = 'fixed';
+      conf.style.zIndex = '9999';
+      conf.style.width = Math.random() * 10 + 5 + 'px';
+      conf.style.height = Math.random() * 10 + 5 + 'px';
+      conf.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+      conf.style.top = '-10px';
+      conf.style.left = Math.random() * 100 + 'vw';
+      conf.style.opacity = Math.random() + 0.5 + '';
+      conf.style.transform = `rotate(${Math.random() * 360}deg)`;
+      // Fast dropping animation
+      const duration = Math.random() * 2 + 2;
+      conf.style.transition = `top ${duration}s ease-in, opacity ${duration}s ease-in, transform ${duration}s ease-in`;
+      document.body.appendChild(conf);
+
+      // Trigger animation
+      setTimeout(() => {
+        conf.style.top = '100vh';
+        conf.style.opacity = '0';
+        conf.style.transform = `rotate(${Math.random() * 720}deg)`;
+      }, 10);
+
+      // Cleanup
+      setTimeout(() => document.body.removeChild(conf), duration * 1000 + 100);
+    }
+  }
+
+  // ============== EXISTING CART LOGIC ==============
+
+  private loadLoyaltyAccount(): void {
+    this.loyaltyService.getAccount().subscribe();
+  }
+
   loadRealCartData(): void {
-    console.log('🔄 Loading real cart data from backend...');
-    
-    // Load cart totals and items in parallel with better error handling
     const cart$ = this.cartService.getCart();
     const items$ = this.cartService.getCartItems();
 
-    // Subscribe to cart totals with graceful error handling
     cart$.subscribe({
-      next: (cart) => {
-        console.log('✅ Cart totals loaded:', cart);
-        // Direct backend integration - no mock mode
-      },
-      error: (error) => {
-        console.error('❌ Failed to load cart:', error);
-        this.toastService.error('Failed to load cart. Please refresh the page.');
-      }
+      error: (error) => this.toastService.error('Failed to load cart.')
     });
 
-    // Subscribe to cart items with graceful error handling
     items$.subscribe({
-      next: (items) => {
-        console.log('✅ Cart items loaded:', items.length, 'items');
-        this.processCartItems(items);
-      },
+      next: (items) => this.processCartItems(items),
       error: (error) => {
-        console.error('❌ Failed to load cart items:', error);
-        // The service handles fallback automatically
         this.cartItems.set([]);
-        this.toastService.error('Failed to load cart items. Please refresh the page.');
       }
     });
   }
 
-  /**
-   * Process backend cart items into display format
-   */
   private processCartItems(backendItems: CartItemResponse[]): void {
-    const displayItems: DisplayCartItem[] = backendItems.map(item => {
-      return {
-        ...item,
-        product: {
-          id: item.productId,
-          name: item.productName,
-          imageUrl: ImageUrlHelper.toAbsoluteUrl(item.imageUrl),
-          price: item.unitPrice,
-          category: item.category || 'General',
-          sellerName: item.sellerName || 'Unknown Seller',
-          stock: item.stock || 0,
-          stockStatus: item.stockStatus || 'UNKNOWN'
-        },
-        maxQuantity: item.stock || 100
-      };
-    });
-
+    const displayItems: DisplayCartItem[] = backendItems.map(item => ({
+      ...item,
+      product: {
+        id: item.productId,
+        name: item.productName,
+        imageUrl: ImageUrlHelper.toAbsoluteUrl(item.imageUrl),
+        price: item.unitPrice,
+        category: item.category || 'General',
+        sellerName: item.sellerName || 'Unknown Seller',
+        stock: item.stock || 0,
+        stockStatus: item.stockStatus || 'UNKNOWN'
+      },
+      maxQuantity: item.stock || 100
+    }));
     this.cartItems.set(displayItems);
-    console.log('✅ Cart items processed for display:', displayItems.length);
   }
 
-  /**
-   * Set error message using cart service
-   */
   private setError(message: string): void {
     this.cartService.error.set(message);
   }
 
   updateQuantity(itemId: string, change: number): void {
     const currentItem = this.cartItems().find(item => item.id === itemId);
-    if (!currentItem) {
-      console.error('❌ Item not found:', itemId);
-      this.toastService.error('Item not found in cart');
-      return;
-    }
+    if (!currentItem) return;
 
     const newQuantity = currentItem.quantity + change;
     if (newQuantity < 1) {
@@ -228,89 +333,52 @@ export class Cart implements OnInit {
       return;
     }
 
-    console.log('🔄 Updating quantity for item:', itemId, 'to:', newQuantity);
-
     this.cartService.updateItemQuantity(itemId, newQuantity).subscribe({
-      next: (updatedItem) => {
-        console.log('✅ Quantity updated successfully:', updatedItem);
+      next: () => {
         this.toastService.success('Quantity updated');
-        // Backend sync handled by service, UI will update via cart refresh
-        this.loadRealCartData(); // Refresh to ensure consistency
+        this.loadRealCartData();
       },
-      error: (error) => {
-        console.error('❌ Failed to update quantity:', error);
-        this.toastService.error('Failed to update quantity. Please try again.');
-        this.setError('Failed to update quantity. Please try again.');
-      }
+      error: () => this.toastService.error('Failed to update quantity.')
     });
   }
 
   removeItem(id: string): void {
     const item = this.cartItems().find(item => item.id === id);
     const productName = item?.product.name || 'this item';
-    
-    // Show confirmation toast with action
-    const confirmToastId = this.toastService.withAction(
-      `Remove ${productName} from cart?`,
-      'Remove',
-      () => this.confirmRemoveItem(id),
-      'warning'
-    );
+    this.toastService.withAction(`Remove ${productName}?`, 'Remove', () => this.confirmRemoveItem(id), 'warning');
   }
 
   private confirmRemoveItem(id: string): void {
-    console.log('🗑️ Removing item:', id);
-
     this.cartService.removeItem(id).subscribe({
       next: () => {
-        console.log('✅ Item removed successfully:', id);
-        this.toastService.success('Item removed from cart');
-        // Backend sync handled by service, UI will update via cart refresh
-        this.loadRealCartData(); // Refresh to ensure consistency
+        this.toastService.success('Item removed');
+        this.loadRealCartData();
       },
-      error: (error) => {
-        console.error('❌ Failed to remove item:', error);
-        this.toastService.error('Failed to remove item. Please try again.');
-        this.setError('Failed to remove item. Please try again.');
-      }
+      error: () => this.toastService.error('Failed to remove item.')
     });
   }
 
   clearCart(): void {
-    const confirmToastId = this.toastService.withAction(
-      `Remove all ${this.itemCount()} items from cart?`,
-      'Clear Cart',
-      () => this.confirmClearCart(),
-      'warning'
-    );
+    this.toastService.withAction(`Remove all ${this.itemCount()} items?`, 'Clear Cart', () => this.confirmClearCart(), 'warning');
   }
 
   private confirmClearCart(): void {
-    console.log('🗑️ Clearing entire cart');
-
     this.cartService.clearCart().subscribe({
       next: () => {
-        console.log('✅ Cart cleared successfully');
         this.cartItems.set([]);
         this.appliedCoupon.set(null);
         this.couponCode.set('');
-        this.couponError.set('');
         this.toastService.success('Cart cleared');
-        this.loadRealCartData(); // Refresh to ensure consistency
+        this.loadRealCartData();
       },
-      error: (error) => {
-        console.error('❌ Failed to clear cart:', error);
-        this.toastService.error('Failed to clear cart. Please try again.');
-        this.setError('Failed to clear cart. Please try again.');
-      }
+      error: () => this.toastService.error('Failed to clear cart.')
     });
   }
 
   applyCoupon(): void {
     const code = this.couponCode().trim();
     if (!code) {
-      this.couponError.set('Please enter a coupon code');
-      this.toastService.warning('Please enter a coupon code');
+      this.toastService.warning('Enter code');
       return;
     }
 
@@ -318,23 +386,18 @@ export class Cart implements OnInit {
     this.couponError.set('');
 
     this.cartService.applyCoupon(code).subscribe({
-      next: (cart) => {
-        console.log('✅ Coupon applied:', cart);
-        // Set mock coupon for display
+      next: () => {
         if (code.toUpperCase() === 'ESPRIT10') {
           this.appliedCoupon.set({ code: 'ESPRIT10', discount: 10, type: 'percentage' });
-          this.toastService.success('Coupon applied! 10% discount added');
         } else {
           this.appliedCoupon.set({ code: code.toUpperCase(), discount: 5, type: 'percentage' });
-          this.toastService.success('Coupon applied! 5% discount added');
         }
+        this.toastService.success('Coupon applied!');
         this.couponCode.set('');
         this.isApplyingCoupon.set(false);
       },
-      error: (error) => {
-        console.error('❌ Failed to apply coupon:', error);
-        this.couponError.set('Invalid or expired coupon code');
-        this.toastService.error('Invalid or expired coupon code');
+      error: () => {
+        this.couponError.set('Invalid coupon code');
         this.isApplyingCoupon.set(false);
       }
     });
@@ -342,17 +405,11 @@ export class Cart implements OnInit {
 
   removeCoupon(): void {
     this.cartService.removeCoupon().subscribe({
-      next: (cart) => {
-        console.log('✅ Coupon removed:', cart);
+      next: () => {
         this.appliedCoupon.set(null);
         this.toastService.info('Coupon removed');
       },
-      error: (error) => {
-        console.error('❌ Failed to remove coupon:', error);
-        this.toastService.error('Failed to remove coupon');
-        // Remove locally as fallback
-        this.appliedCoupon.set(null);
-      }
+      error: () => this.appliedCoupon.set(null)
     });
   }
 
@@ -369,42 +426,6 @@ export class Cart implements OnInit {
     this.pointsToRedeem.set(Math.min(points, this.maxRedeemablePoints()));
   }
 
-  proceedToCheckout(): void {
-    if (this.isEmpty()) {
-      this.toastService.warning('Your cart is empty');
-      return;
-    }
-
-    // Show loading state
-    this.toastService.info('Processing your order...', 2000);
-
-    const checkoutData = {
-      shippingAddress: 'Default Address', // TODO: Get from user
-      paymentMethod: 'CREDIT_CARD' // Default payment method
-    };
-
-    this.cartService.checkout(checkoutData).subscribe({
-      next: (order) => {
-        console.log('✅ Order created:', order);
-        this.toastService.success('🎉 Order placed successfully! Redirecting...', 4000);
-        
-        // Clear any pending purchase data
-        sessionStorage.removeItem('pendingPurchase');
-        
-        // Navigate to success page
-        setTimeout(() => {
-          this.router.navigate(['/checkout-success'], { 
-            queryParams: { orderId: order.id } 
-          });
-        }, 2000);
-      },
-      error: (error) => {
-        console.error('❌ Checkout failed:', error);
-        this.toastService.error('Checkout failed. Please try again.');
-      }
-    });
-  }
-
   getLevelBadgeClass(level: LoyaltyLevel): string {
     switch (level) {
       case LoyaltyLevel.BRONZE: return 'bg-amber-100 text-amber-700';
@@ -415,54 +436,29 @@ export class Cart implements OnInit {
     }
   }
 
-  // ==================== STOCK VALIDATION ====================
-
-  /**
-   * Check if any cart items have stock issues
-   */
   readonly hasStockIssues = computed(() => {
-    return this.cartItems().some(item => 
-      item.product.stock <= 0 || item.quantity > item.product.stock
-    );
+    return this.cartItems().some(item => item.product.stock <= 0 || item.quantity > item.product.stock);
   });
 
-  /**
-   * Get items with insufficient stock
-   */
   readonly stockIssueItems = computed(() => {
-    return this.cartItems().filter(item => 
-      item.product.stock <= 0 || item.quantity > item.product.stock
-    );
+    return this.cartItems().filter(item => item.product.stock <= 0 || item.quantity > item.product.stock);
   });
 
-  /**
-   * Check if checkout should be disabled due to stock issues
-   */
   readonly canCheckout = computed(() => {
     return !this.isEmpty() && !this.hasStockIssues() && !this.isLoading();
   });
 
-  /**
-   * Get stock warning message for cart
-   */
   getStockWarningMessage(): string {
     const issues = this.stockIssueItems();
     if (issues.length === 0) return '';
-    
     if (issues.length === 1) {
       const item = issues[0];
-      if (item.product.stock <= 0) {
-        return `"${item.product.name}" is out of stock`;
-      }
-      return `Only ${item.product.stock} "${item.product.name}" available (you requested ${item.quantity})`;
+      if (item.product.stock <= 0) return `"${item.product.name}" is out of stock`;
+      return `Only ${item.product.stock} available (you requested ${item.quantity})`;
     }
-    
     return `${issues.length} items have stock issues`;
   }
 
-  /**
-   * Validate stock before operations
-   */
   private validateCartStock(): boolean {
     if (this.hasStockIssues()) {
       this.toastService.error(this.getStockWarningMessage(), 5000);
@@ -470,20 +466,7 @@ export class Cart implements OnInit {
     }
     return true;
   }
-
-  /**
-   * Enhanced checkout with stock validation
-   */
-  checkoutWithStockValidation(): void {
-    console.log('🛒 Starting checkout with stock validation...');
-    
-    if (!this.validateCartStock()) {
-      return;
-    }
-
-    // Stock validation passed - proceed with normal checkout
-    this.proceedToCheckout();
-  }
 }
+
 
 

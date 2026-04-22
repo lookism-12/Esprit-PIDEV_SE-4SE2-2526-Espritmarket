@@ -143,7 +143,8 @@ export class SidebarComponent {
         { label: 'Support Center', icon: '🎧', route: '/admin/support' },
         { label: 'Notification Center', icon: '🔔', route: '/admin/notifications', badge: 5 },
         { label: 'Negotiations', icon: '🤝', route: '/admin/negotiations' },
-        { label: 'SAV & Deliveries', icon: '📦', route: '/admin/sav' },
+        { label: 'After Sales Service', icon: '🛠️', route: '/admin/sav' },
+        { label: 'Deliveries', icon: '🚚', route: '/admin/deliveries' },
         { label: 'System Settings', icon: '⚙️', route: '/admin/settings' }
     ];
 

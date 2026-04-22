@@ -13,4 +13,8 @@ public class DeliveryResponseDTO {
     private String status;
     private String userId;
     private String cartId;
+    // Driver workflow fields
+    private String pendingDriverId;
+    private String declineReason;
+    private String declinedByDriverId;
 }

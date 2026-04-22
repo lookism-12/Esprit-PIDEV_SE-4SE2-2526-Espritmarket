@@ -20,6 +20,8 @@ public class DeliveryController {
 
     private final IDeliveryService deliveryService;
 
+    // ─── Existing Endpoints ───────────────────────────────────────────────────
+
     @Operation(summary = "Create Delivery (FR-DEL1)", description = "Creates a delivery assigned to an admin/driver and a cart.")
     @PostMapping
     public ResponseEntity<DeliveryResponseDTO> createDelivery(@Valid @RequestBody DeliveryRequestDTO request) {
@@ -38,7 +40,7 @@ public class DeliveryController {
         return ResponseEntity.ok(deliveryService.getDeliveryById(id));
     }
 
-    @Operation(summary = "Get Deliveries By User/Admin (FR-DEL2)")
+    @Operation(summary = "Get Deliveries By User/Driver (FR-DEL2)")
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<DeliveryResponseDTO>> getDeliveriesByUser(@PathVariable String userId) {
         return ResponseEntity.ok(deliveryService.getDeliveriesByUser(userId));
@@ -69,5 +71,51 @@ public class DeliveryController {
     public ResponseEntity<Void> deleteDelivery(@PathVariable String id) {
         deliveryService.deleteDelivery(id);
         return ResponseEntity.noContent().build();
+    }
+
+    // ─── Driver Workflow Endpoints (FR-DEL5) ──────────────────────────────────
+
+    @Operation(
+        summary = "Admin assigns a driver (FR-DEL5)",
+        description = "Sets pendingDriverId and sends a notification to the driver with delivery details including cart total."
+    )
+    @PatchMapping("/{id}/assign")
+    public ResponseEntity<DeliveryResponseDTO> assignDriver(
+            @PathVariable String id,
+            @RequestParam String driverId) {
+        return ResponseEntity.ok(deliveryService.assignDriver(id, driverId));
+    }
+
+    @Operation(
+        summary = "Driver responds to delivery assignment (FR-DEL5)",
+        description = "Driver accepts (→ IN_TRANSIT) or declines (→ DRIVER_REFUSED). Admins are notified of the response."
+    )
+    @PatchMapping("/{id}/respond")
+    public ResponseEntity<DeliveryResponseDTO> respondToDelivery(
+            @PathVariable String id,
+            @RequestParam String driverId,
+            @RequestParam boolean accepted,
+            @RequestParam(required = false, defaultValue = "") String declineReason) {
+        return ResponseEntity.ok(deliveryService.respondToDelivery(id, driverId, accepted, declineReason));
+    }
+
+    @Operation(
+        summary = "Driver confirms delivery (FR-DEL5)",
+        description = "Sets status to DELIVERED and notifies all admins."
+    )
+    @PatchMapping("/{id}/mark-delivered")
+    public ResponseEntity<DeliveryResponseDTO> markAsDelivered(
+            @PathVariable String id,
+            @RequestParam String driverId) {
+        return ResponseEntity.ok(deliveryService.markAsDelivered(id, driverId));
+    }
+
+    @Operation(
+        summary = "Get pending deliveries for a driver (FR-DEL5)",
+        description = "Returns deliveries where pendingDriverId matches the given driverId."
+    )
+    @GetMapping("/pending-driver/{driverId}")
+    public ResponseEntity<List<DeliveryResponseDTO>> getPendingForDriver(@PathVariable String driverId) {
+        return ResponseEntity.ok(deliveryService.getPendingForDriver(driverId));
     }
 }

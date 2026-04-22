@@ -1,6 +1,6 @@
 import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, RouterLinkActive, RouterOutlet, ActivatedRoute } from '@angular/router';
+import { RouterLink, RouterLinkActive, RouterOutlet, ActivatedRoute, Router } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
@@ -17,7 +17,7 @@ import { UserRole } from '../../models/user.model';
 import { LoyaltyLevel, LoyaltyAccount, PointsTransaction, PointsTransactionType, LOYALTY_LEVELS } from '../../models/loyalty.model';
 import { OrderResponse } from '../../models/order.model';
 
-type ProfileTab = 'orders' | 'loyalty' | 'preferences' | 'settings';
+type ProfileTab = 'orders' | 'loyalty' | 'preferences' | 'settings' | 'deliveries';
 
 @Component({
   selector: 'app-profile',
@@ -29,6 +29,7 @@ type ProfileTab = 'orders' | 'loyalty' | 'preferences' | 'settings';
 export class Profile implements OnInit {
   private fb = inject(FormBuilder);
   private route = inject(ActivatedRoute);
+  private router = inject(Router);
   private authService = inject(AuthService);
   private orderService = inject(OrderService);
   private userService = inject(UserService);
@@ -126,10 +127,16 @@ export class Profile implements OnInit {
   });
 
   ngOnInit(): void {
+    // Check if driver and trying to access orders or root profile
+    setTimeout(() => {
+      if (this.isDelivery() && (this.router.url === '/profile' || this.router.url.includes('/profile/orders'))) {
+        this.router.navigate(['/profile/deliveries']);
+      }
+    }, 500);
+
     this.initForms();
     this.loadCommon();
     this.loadRoleSpecific();
-    // Removed activeTab query param handling - using router instead
   }
 
   private initForms(): void {
@@ -204,6 +211,14 @@ export class Profile implements OnInit {
 
   // ── Tab helpers ───────────────────────────────────────────────────────────
   get tabs() {
+    if (this.isDelivery()) {
+      return [
+        { id: 'deliveries'  as ProfileTab, label: '🚚 Driver Hub', route: '/profile/deliveries' },
+        { id: 'loyalty'     as ProfileTab, label: '🏆 Loyalty', route: '/profile/loyalty' },
+        { id: 'preferences' as ProfileTab, label: '⚙️ Preferences', route: '/profile/preferences' },
+        { id: 'settings'    as ProfileTab, label: '👤 Settings', route: '/profile/settings' }
+      ];
+    }
     // Remove Dashboard tab for clients
     return [
       { id: 'orders'      as ProfileTab, label: '🛍️ Orders', route: '/profile/orders' },

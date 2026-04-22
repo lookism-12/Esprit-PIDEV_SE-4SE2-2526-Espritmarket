@@ -19,7 +19,8 @@ export class ClientDeliveryComponent implements OnInit {
     PREPARING: { label: 'Preparing', color: 'bg-yellow-100 text-yellow-800 border-yellow-200', icon: '📦' },
     IN_TRANSIT: { label: 'In Transit', color: 'bg-blue-100 text-blue-800 border-blue-200', icon: '🚚' },
     DELIVERED: { label: 'Delivered', color: 'bg-green-100 text-green-800 border-green-200', icon: '✅' },
-    RETURNED: { label: 'Returned', color: 'bg-red-100 text-red-800 border-red-200', icon: '↩️' }
+    RETURNED: { label: 'Returned', color: 'bg-red-100 text-red-800 border-red-200', icon: '↩️' },
+    DRIVER_REFUSED: { label: 'Delayed', color: 'bg-red-100 text-red-800 border-red-200', icon: '⏳' }
   };
 
   constructor(private savService: SavService, private authService: AuthService) {}

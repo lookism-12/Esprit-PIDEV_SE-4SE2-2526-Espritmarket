@@ -165,6 +165,10 @@ export const BACK_ROUTES: Routes = [
                 loadComponent: () => import('./features/sav/sav-admin.component').then(m => m.SavAdminComponent)
             },
             {
+                path: 'deliveries',
+                loadComponent: () => import('./features/deliveries/deliveries-admin.component').then(m => m.DeliveriesAdminComponent)
+            },
+            {
                 path: 'analytics',
                 loadComponent: () => import('./features/placeholders').then(m => m.AnalyticsComponent)
             },

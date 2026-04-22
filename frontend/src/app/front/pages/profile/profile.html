@@ -1,11 +1,29 @@
-﻿<div class="min-h-screen" style="background-color: var(--bg-color)">
+<div class="min-h-screen" style="background-color: var(--bg-color)">
 
   <!-- COVER -->
-  <div class="relative h-52 md:h-64 bg-gradient-to-br from-[#7D0408] via-[#8B0000] to-[#3d0000] overflow-hidden">
-    <div class="absolute inset-0 opacity-10" style="background-image:radial-gradient(circle at 2px 2px,white 1px,transparent 0);background-size:32px 32px"></div>
-    <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
-    <button class="absolute bottom-3 right-4 flex items-center gap-2 px-3 py-1.5 bg-black/40 hover:bg-black/60 text-white text-xs font-bold rounded-lg backdrop-blur-sm transition-all">📷 Edit Cover</button>
-  </div>
+  @if (isDelivery()) {
+    <div class="relative h-52 md:h-64 bg-gradient-to-br from-gray-900 via-black to-gray-800 overflow-hidden">
+      <!-- High-tech grid pattern for driver -->
+      <div class="absolute inset-0 opacity-20" style="background-image:linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px); background-size: 20px 20px;"></div>
+      <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
+      <!-- Decorative geometric shapes -->
+      <div class="absolute top-10 right-10 w-32 h-32 border-4 border-amber-500 rounded-full opacity-10 blur-md"></div>
+      <div class="absolute -bottom-10 left-1/4 w-64 h-64 border-8 border-primary rounded-full opacity-10 blur-xl"></div>
+      
+      <div class="absolute top-4 left-4 flex items-center gap-2">
+        <span class="px-3 py-1 bg-amber-500/20 text-amber-400 border border-amber-500/50 rounded-lg text-xs font-black uppercase tracking-widest backdrop-blur-md">
+          🚚 Official EspritMarket Courier
+        </span>
+      </div>
+      <button class="absolute bottom-3 right-4 flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-lg backdrop-blur-sm transition-all border border-white/10">📷 Change Cover</button>
+    </div>
+  } @else {
+    <div class="relative h-52 md:h-64 bg-gradient-to-br from-[#7D0408] via-[#8B0000] to-[#3d0000] overflow-hidden">
+      <div class="absolute inset-0 opacity-10" style="background-image:radial-gradient(circle at 2px 2px,white 1px,transparent 0);background-size:32px 32px"></div>
+      <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+      <button class="absolute bottom-3 right-4 flex items-center gap-2 px-3 py-1.5 bg-black/40 hover:bg-black/60 text-white text-xs font-bold rounded-lg backdrop-blur-sm transition-all">📷 Edit Cover</button>
+    </div>
+  }
 
   <div class="max-w-5xl mx-auto px-4">
 
@@ -25,7 +43,11 @@
         <div>
           <h1 class="text-2xl font-extrabold" style="color:var(--text-color)">{{ user().firstName }} {{ user().lastName }}</h1>
           <div class="flex flex-wrap items-center gap-2 mt-1">
-            <span class="px-2.5 py-0.5 bg-primary/10 text-primary rounded-full text-[10px] font-black uppercase tracking-wide">{{ user().role }}</span>
+            @if (isDelivery()) {
+              <span class="px-3 py-0.5 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-md border border-amber-400">DELIVERY AGENT</span>
+            } @else {
+              <span class="px-2.5 py-0.5 bg-primary/10 text-primary rounded-full text-[10px] font-black uppercase tracking-wide">{{ user().role }}</span>
+            }
             @if (loyaltyAccount()) {
               <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold border" [ngClass]="getLevelBadgeClass(loyaltyAccount()!.level)">{{ getLevelIcon(loyaltyAccount()!.level) }} {{ loyaltyAccount()!.level }}</span>
             }
@@ -44,8 +66,16 @@
       @for (tab of tabs; track tab.id) {
         <a [routerLink]="tab.route" routerLinkActive="bg-primary text-white"
           class="px-4 py-3 text-sm font-bold whitespace-nowrap rounded-xl transition-all shrink-0"
-          [style.color]="'var(--muted)'"
-          style="background-color:transparent">{{ tab.label }}</a>
+          [style.color]="'var(--text-color)'"
+          style="background-color:transparent">
+          @if (isDelivery() && tab.id === 'deliveries') {
+            <span class="flex items-center gap-2 text-amber-600 group-hover:text-amber-700">
+              {{ tab.label }}
+            </span>
+          } @else {
+            {{ tab.label }}
+          }
+        </a>
       }
     </div>
 
@@ -60,8 +90,13 @@
           <div class="space-y-3 text-sm" style="color:var(--muted)">
             <div class="flex items-center gap-3"><span class="text-base">📧</span><span class="truncate">{{ user().email }}</span></div>
             <div class="flex items-center gap-3"><span class="text-base">🎭</span><span class="font-semibold" style="color:var(--text-color)">{{ user().role }}</span></div>
-            <div class="flex items-center gap-3"><span class="text-base">🏆</span><span>{{ loyaltyAccount()?.points||0 }} loyalty pts</span></div>
-            <div class="flex items-center gap-3"><span class="text-base">❤️</span><span>{{ favoriteCount() }} saved items</span></div>
+            @if (!isDelivery()) {
+              <div class="flex items-center gap-3"><span class="text-base">🏆</span><span>{{ loyaltyAccount()?.points||0 }} loyalty pts</span></div>
+              <div class="flex items-center gap-3"><span class="text-base">❤️</span><span>{{ favoriteCount() }} saved items</span></div>
+            } @else {
+              <div class="flex items-center gap-3"><span class="text-base">🚀</span><span class="text-amber-600 font-bold">Active Courier</span></div>
+              <div class="flex items-center gap-3"><span class="text-base">🛵</span><span>Zone: Grand Tunis</span></div>
+            }
             <div class="flex items-center gap-3"><span class="text-base">🔔</span><span>{{ unreadNotifCount() }} unread notifications</span></div>
           </div>
         </div>
@@ -69,22 +104,38 @@
         <div class="rounded-2xl p-5" style="background-color:var(--card-bg);border:1px solid var(--border)">
           <h3 class="font-black text-sm mb-4" style="color:var(--text-color)">Stats</h3>
           <div class="grid grid-cols-2 gap-2">
-            <div class="rounded-xl p-3 text-center" style="background-color:var(--subtle)">
-              <p class="text-xl font-black text-primary">{{ realOrders().length }}</p>
-              <p class="text-[9px] font-black uppercase tracking-widest mt-0.5" style="color:var(--muted)">Orders</p>
-            </div>
-            <div class="rounded-xl p-3 text-center" style="background-color:var(--subtle)">
-              <p class="text-xl font-black text-red-500">{{ favoriteCount() }}</p>
-              <p class="text-[9px] font-black uppercase tracking-widest mt-0.5" style="color:var(--muted)">Favorites</p>
-            </div>
+            @if (isDelivery()) {
+              <div class="rounded-xl p-3 text-center bg-amber-500/10 border border-amber-500/20">
+                <p class="text-xl font-black text-amber-600">{{ myDeliveries().length }}</p>
+                <p class="text-[9px] font-black uppercase tracking-widest mt-0.5" style="color:var(--muted)">Deliveries</p>
+              </div>
+              <div class="rounded-xl p-3 text-center bg-primary/10 border border-primary/20">
+                <p class="text-xl font-black text-primary">100%</p>
+                <p class="text-[9px] font-black uppercase tracking-widest mt-0.5" style="color:var(--muted)">Success</p>
+              </div>
+            } @else {
+              <div class="rounded-xl p-3 text-center" style="background-color:var(--subtle)">
+                <p class="text-xl font-black text-primary">{{ realOrders().length }}</p>
+                <p class="text-[9px] font-black uppercase tracking-widest mt-0.5" style="color:var(--muted)">Orders</p>
+              </div>
+              <div class="rounded-xl p-3 text-center" style="background-color:var(--subtle)">
+                <p class="text-xl font-black text-red-500">{{ favoriteCount() }}</p>
+                <p class="text-[9px] font-black uppercase tracking-widest mt-0.5" style="color:var(--muted)">Favorites</p>
+              </div>
+            }
           </div>
         </div>
 
         <div class="rounded-2xl p-5" style="background-color:var(--card-bg);border:1px solid var(--border)">
           <h3 class="font-black text-sm mb-3" style="color:var(--text-color)">Quick Links</h3>
           <div class="space-y-0.5">
-            <a routerLink="/products" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors hover:bg-primary/5" style="color:var(--text-color)">🛍️ Browse Products</a>
-            <a routerLink="/favorites" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors hover:bg-primary/5" style="color:var(--text-color)">❤️ My Favorites</a>
+            @if (isDelivery()) {
+              <a routerLink="/profile/deliveries" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors hover:bg-amber-500/10 text-amber-600">🚚 My Driver Hub</a>
+              <a routerLink="/profile/settings" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors hover:bg-primary/5" style="color:var(--text-color)">⚙️ Account Settings</a>
+            } @else {
+              <a routerLink="/products" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors hover:bg-primary/5" style="color:var(--text-color)">🛍️ Browse Products</a>
+              <a routerLink="/favorites" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors hover:bg-primary/5" style="color:var(--text-color)">❤️ My Favorites</a>
+            }
           </div>
         </div>
       </div>

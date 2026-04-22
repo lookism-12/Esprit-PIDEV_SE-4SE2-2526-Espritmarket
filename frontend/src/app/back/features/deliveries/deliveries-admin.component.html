@@ -1,0 +1,443 @@
+<div class="p-8 min-h-screen bg-gray-50/50">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <div>
+            <h1 class="text-3xl font-extrabold text-dark tracking-tight">Delivery Operations</h1>
+            <p class="text-gray-500 mt-1">Manage, assign, and track shipments in real-time.</p>
+        </div>
+        <div class="flex gap-3 relative">
+            <button (click)="toggleNotifPanel()" class="relative px-4 py-2.5 bg-white border border-gray-200 shadow-sm rounded-xl text-dark hover:bg-gray-50 transition flex items-center">
+                <svg class="w-6 h-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                @if (unreadCount() > 0) {
+                    <span class="absolute top-1 right-2 inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 border-2 border-white rounded-full">{{ unreadCount() }}</span>
+                }
+            </button>
+            <button (click)="exportData()" class="px-5 py-2.5 bg-white border border-gray-200 shadow-sm rounded-xl text-dark font-bold hover:bg-gray-50 transition flex items-center gap-2">
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                Export CSV
+            </button>
+            <button class="px-5 py-2.5 bg-primary shadow-lg shadow-primary/30 rounded-xl text-white font-bold hover:bg-red-700 hover:shadow-primary/50 transform hover:-translate-y-0.5 transition flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                Sync Platform
+            </button>
+        </div>
+    </div>
+
+    <!-- Admin Notifications Dropdown Panel -->
+    @if (isNotifPanelOpen()) {
+        <div class="absolute right-8 top-24 z-[100] w-96 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden animate-fade-in-up">
+            <div class="p-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+                <h3 class="font-bold text-dark">Live Driver Responses</h3>
+                <button (click)="toggleNotifPanel()" class="text-gray-400 hover:text-dark">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div class="max-h-[400px] overflow-y-auto p-2">
+                @if (adminNotifications().length === 0) {
+                    <p class="text-sm text-center text-gray-500 py-8">No recent activity.</p>
+                }
+                @for (notif of adminNotifications(); track notif.id) {
+                    <div (click)="markNotifAsRead(notif.id)" class="p-3 mb-1 rounded-xl cursor-pointer transition flex gap-3 items-start"
+                         [ngClass]="notif.read ? 'bg-transparent hover:bg-gray-50' : 'bg-blue-50/50 hover:bg-blue-50'">
+                        <div class="text-xl mt-1">{{ getNotifIcon(notif) }}</div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-bold truncate text-dark" [class.text-red-600]="notif.title && notif.title.includes('DECLINED')">{{ notif.title }}</p>
+                            <p class="text-xs text-gray-600 mt-1 line-clamp-2">{{ notif.description }}</p>
+                            <p class="text-[10px] text-gray-400 mt-2 font-mono">{{ notif.createdAt | date:'shortTime' }}</p>
+                        </div>
+                        @if (!notif.read) {
+                            <div class="w-2 h-2 rounded-full bg-primary shrink-0 mt-2"></div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- KPIs -->
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-center">
+            <p class="text-sm font-bold text-gray-500 uppercase tracking-widest mb-1">Total</p>
+            <p class="text-3xl font-black text-dark">{{ kpiTotal() }}</p>
+        </div>
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 border-l-4 border-l-amber-400 flex flex-col justify-center">
+            <p class="text-sm font-bold text-amber-600 uppercase tracking-widest mb-1">Preparing</p>
+            <p class="text-3xl font-black text-dark">{{ kpiPending() }}</p>
+        </div>
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 border-l-4 border-l-blue-400 flex flex-col justify-center">
+            <p class="text-sm font-bold text-blue-600 uppercase tracking-widest mb-1">In Transit</p>
+            <p class="text-3xl font-black text-dark">{{ kpiInProgress() }}</p>
+        </div>
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 border-l-4 border-l-green-400 flex flex-col justify-center">
+            <p class="text-sm font-bold text-green-600 uppercase tracking-widest mb-1">Delivered</p>
+            <p class="text-3xl font-black text-dark">{{ kpiDelivered() }}</p>
+        </div>
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 border-l-4 border-l-red-400 flex flex-col justify-center">
+            <p class="text-sm font-bold text-red-600 uppercase tracking-widest mb-1">Returned</p>
+            <p class="text-3xl font-black text-dark">{{ kpiCancelled() }}</p>
+        </div>
+    </div>
+
+    <div class="flex flex-col lg:flex-row gap-8 min-h-[600px]">
+        <!-- Main Content -->
+        <div class="flex-1 bg-white rounded-3xl shadow-sm border border-gray-100 p-6 flex flex-col">
+            
+            <!-- Controls Toolbar -->
+            <div class="flex flex-col md:flex-row justify-between mb-6 gap-4">
+                <div class="flex flex-1 gap-4 max-w-2xl">
+                    <div class="relative flex-1">
+                        <svg class="w-5 h-5 absolute left-4 top-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                        <input type="text" [value]="searchTerm()" (input)="searchTerm.set($any($event.target).value)" 
+                               placeholder="Search address, ID or reference..." 
+                               class="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:bg-white text-dark transition-all">
+                    </div>
+                    <select [value]="filterStatus()" (change)="filterStatus.set($any($event.target).value)" 
+                            class="px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary text-dark font-medium cursor-pointer">
+                        <option value="ALL">All Status</option>
+                        <option value="PREPARING">Preparing</option>
+                        <option value="IN_TRANSIT">In Transit</option>
+                        <option value="DELIVERED">Delivered</option>
+                        <option value="RETURNED">Returned</option>
+                    </select>
+                </div>
+                
+                <div class="flex bg-gray-100 rounded-xl p-1">
+                    <button (click)="toggleViewMode('LIST')" [ngClass]="viewMode() === 'LIST' ? 'bg-white shadow-sm text-dark font-bold' : 'text-gray-500 hover:text-dark'" class="px-5 py-2 rounded-lg flex items-center gap-2 transition">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>                    
+                        List
+                    </button>
+                    <button (click)="toggleViewMode('MAP')" [ngClass]="viewMode() === 'MAP' ? 'bg-white shadow-sm text-dark font-bold' : 'text-gray-500 hover:text-dark'" class="px-5 py-2 rounded-lg flex items-center gap-2 transition">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+                        Map
+                    </button>
+                </div>
+            </div>
+
+            <!-- List View -->
+            @if (viewMode() === 'LIST') {
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-widest border-b border-gray-100">
+                                <th class="p-4 font-bold rounded-tl-xl border-l-[3px] border-transparent">Order Number</th>
+                                <th class="p-4 font-bold">Driver Assigned</th>
+                                <th class="p-4 font-bold">Status</th>
+                                <th class="p-4 font-bold">Requested On</th>
+                                <th class="p-4 font-bold text-center rounded-tr-xl">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (isLoading()) {
+                                <tr>
+                                    <td colspan="5" class="p-10 text-center">
+                                        <div class="inline-flex items-center gap-3 text-gray-500">
+                                            <svg class="animate-spin h-6 w-6 text-primary" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                                            Loading Tracker...
+                                        </div>
+                                    </td>
+                                </tr>
+                            } @else if (filteredDeliveries().length === 0) {
+                                <tr>
+                                    <td colspan="5" class="p-20 text-center text-gray-400">
+                                        No deliveries found matching your criteria.
+                                    </td>
+                                </tr>
+                            } @else {
+                                @for (d of filteredDeliveries(); track d.id) {
+                                <tr class="border-b border-gray-50 hover:bg-gray-50 transition-colors group cursor-pointer" 
+                                    [class.animate-blink-refused]="isRefused(d)"
+                                    (click)="openDeliveryDetails(d)">
+                                    <td class="p-4 border-l-[3px]" [style.border-left-color]="getStatusColor(d.status)">
+                                        <div class="flex items-center gap-4">
+                                            <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-400"
+                                                 [class.text-red-500]="isRefused(d)" [class.bg-red-100]="isRefused(d)">
+                                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                                            </div>
+                                            <div>
+                                                <p class="font-bold text-dark font-mono text-sm">{{ formatOrderNumber(d.cartId, d.deliveryDate) }}</p>
+                                                <p class="text-xs text-gray-500 mt-1 max-w-[200px] truncate">{{ d.address }}</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="p-4">
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs uppercase" [class.bg-gray-100]="!d.userId || d.userId==='pending'" [class.text-gray-500]="!d.userId || d.userId==='pending'">
+                                                {{ d.userId && d.userId!=='pending' ? getDriverName(d.userId).charAt(0) : (d.pendingDriverId ? '⌛' : '?') }}
+                                            </div>
+                                            <span class="font-medium text-sm" [class.text-gray-400]="!d.userId || d.userId==='pending'">
+                                                {{ d.pendingDriverId ? '⌛ Waiting...' : getDriverName(d.userId) }}
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td class="p-4">
+                                        <div class="flex flex-col gap-1">
+                                            <span class="px-3 py-1 rounded-full text-xs font-bold inline-block w-max" [ngClass]="getStatusBadgeClass(d.status)">
+                                                {{ d.status.replace('_', ' ') }}
+                                            </span>
+                                            @if (isRefused(d) && d.declineReason) {
+                                                <span class="text-[10px] text-red-600 font-bold ml-1">Reason: {{ d.declineReason }}</span>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td class="p-4">
+                                        <span class="text-sm font-medium text-gray-600">{{ d.deliveryDate ? (d.deliveryDate | date:'MMM d, y, h:mm a') : 'N/A' }}</span>
+                                    </td>
+                                    <td class="p-4 text-center">
+                                        @if (isRefused(d)) {
+                                            <button (click)="reassignDelivery(d, $event)" class="px-3 py-1.5 bg-red-600 text-white text-xs font-bold rounded-lg shadow-sm hover:bg-red-700 transition">
+                                                Reassign Now
+                                            </button>
+                                        } @else {
+                                            <div class="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button (click)="openAssignModal(d, $event)" title="Assign Driver" class="p-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition" [disabled]="d.status === 'DELIVERED'">
+                                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                                </button>
+                                            <button (click)="openCancelModal(d, $event)" title="Archive or Cancel" class="p-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition">
+                                                <svg *ngIf="d.status!=='DELIVERED'" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                                <svg *ngIf="d.status==='DELIVERED'" class="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
+                                            </button>
+                                        </div>
+                                        }
+                                    </td>
+                                </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+
+            <!-- Map View -->
+            <div [class.hidden]="viewMode() !== 'MAP'" class="w-full h-[600px] relative rounded-2xl overflow-hidden shadow-inner border border-gray-200">
+                <div #map class="w-full h-full"></div>
+                <!-- Status Legend overlay -->
+                <div class="absolute bottom-6 right-6 bg-white/90 backdrop-blur p-4 rounded-xl shadow-xl z-[400] text-sm">
+                    <p class="font-bold text-dark mb-2">Legend</p>
+                    <div class="space-y-2">
+                        <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-amber-500"></div> Preparing</div>
+                        <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-blue-500"></div> In Transit</div>
+                        <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-green-500"></div> Delivered</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Right SidePanel: Leaderboard -->
+        <div class="w-full lg:w-[320px] flex flex-col gap-6">
+            <div class="bg-gradient-to-b from-dark to-black rounded-3xl p-6 shadow-xl text-white">
+                <h3 class="font-extrabold text-xl mb-6 flex items-center gap-2">
+                    <span>🏆</span> Top Drivers
+                </h3>
+                
+                <div class="space-y-4">
+                    @for (ldr of driverLeaderboard(); track ldr.id; let i = $index) {
+                        <div class="bg-white/10 p-3 rounded-xl flex items-center gap-3 backdrop-blur-sm border border-white/5">
+                            <div class="w-10 h-10 rounded-full overflow-hidden border border-white/20 shrink-0">
+                                <img [src]="ldr.avatar" class="w-full h-full object-cover">
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="font-bold text-sm truncate">
+                                    <span *ngIf="i === 0">🥇</span>
+                                    <span *ngIf="i === 1">🥈</span>
+                                    <span *ngIf="i === 2">🥉</span>
+                                    #{{ i + 1 }} — {{ ldr.name }}
+                                </p>
+                                <p class="text-xs text-white/50">{{ ldr.count }} deliveries</p>
+                            </div>
+                        </div>
+                    } @empty {
+                        <p class="text-white/50 text-sm text-center py-4">No data available.</p>
+                    }
+                </div>
+            </div>
+
+            <div class="bg-primary/5 rounded-3xl p-6 border border-primary/20">
+                <h3 class="font-bold text-primary mb-2 flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    Quick Actions
+                </h3>
+                <p class="text-sm text-gray-600 mb-4">Click a row to edit status and explore timeline tracking.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= MODALS ================= -->
+
+<!-- Deliveries Details Modal -->
+@if (isViewModalOpen() && selectedDelivery()) {
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-dark/60 backdrop-blur-sm" (click)="closeDeliveryDetails()"></div>
+    <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-fade-in-up">
+        
+        <!-- Header -->
+        <div class="bg-gray-50 border-b border-gray-100 p-6 flex justify-between items-center">
+            <div>
+                <h3 class="text-xl font-bold text-dark font-mono">{{ formatOrderNumber(selectedDelivery()!.cartId, selectedDelivery()!.deliveryDate) }}</h3>
+                <p class="text-sm text-gray-500 mt-1">Requested {{ selectedDelivery()!.deliveryDate | date:'medium' }}</p>
+            </div>
+            <button (click)="closeDeliveryDetails()" class="text-gray-400 hover:text-dark p-2 bg-white rounded-full shadow-sm hover:shadow transition">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+
+        <div class="p-8">
+            <!-- Delivery Visual Tracker -->
+            <div class="mb-10 relative">
+                <div class="absolute top-1/2 -translate-y-1/2 left-[10%] right-[10%] h-1 bg-gray-200"></div>
+                <!-- Progress Fill -->
+                <div class="absolute top-1/2 -translate-y-1/2 left-[10%] h-1 bg-primary transition-all duration-500"
+                     [style.width]="selectedDelivery()!.status === 'PREPARING' ? '0%' : (selectedDelivery()!.status === 'IN_TRANSIT' ? '40%' : (selectedDelivery()!.status === 'DELIVERED' ? '80%' : '100%'))"></div>
+                
+                <div class="flex justify-between relative z-10 mx-[-1rem]">
+                    
+                    <div class="flex flex-col items-center">
+                        <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold"
+                             [ngClass]="selectedDelivery()!.status === 'PREPARING' || selectedDelivery()!.status === 'IN_TRANSIT' || selectedDelivery()!.status === 'DELIVERED' ? 'bg-primary text-white shadow-lg shadow-primary/30' : 'bg-gray-200 text-gray-500'">1</div>
+                        <span class="mt-2 text-xs font-bold uppercase" [class.text-primary]="selectedDelivery()!.status === 'PREPARING'">Preparing</span>
+                    </div>
+
+                    <div class="flex flex-col items-center">
+                        <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold"
+                             [ngClass]="selectedDelivery()!.status === 'IN_TRANSIT' || selectedDelivery()!.status === 'DELIVERED' ? 'bg-primary text-white shadow-lg shadow-primary/30' : 'bg-gray-200 text-gray-500'">2</div>
+                        <span class="mt-2 text-xs font-bold uppercase" [class.text-primary]="selectedDelivery()!.status === 'IN_TRANSIT'">In Transit</span>
+                    </div>
+
+                    <div class="flex flex-col items-center">
+                        <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold"
+                             [ngClass]="selectedDelivery()!.status === 'DELIVERED' ? 'bg-primary text-white shadow-lg shadow-primary/30' : 'bg-gray-200 text-gray-500'">3</div>
+                        <span class="mt-2 text-xs font-bold uppercase" [class.text-primary]="selectedDelivery()!.status === 'DELIVERED'">Delivered</span>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Details Box -->
+            <div class="grid grid-cols-2 gap-6 p-6 bg-gray-50 rounded-2xl mb-8">
+                <div>
+                    <label class="text-xs font-bold text-gray-400 uppercase tracking-widest">Target Address</label>
+                    <p class="text-dark font-medium mt-1">{{ selectedDelivery()!.address }}</p>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-400 uppercase tracking-widest">Driver Assigned</label>
+                    <p class="text-dark font-medium mt-1">
+                        {{ getDriverName(selectedDelivery()!.userId || 'pending') }}
+                    </p>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="border-t border-gray-100 pt-6">
+                <label class="block text-sm font-bold text-dark mb-3">Force Status Change</label>
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <select class="flex-1 px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary text-dark font-medium"
+                            [disabled]="selectedDelivery()!.status === 'DELIVERED' || selectedDelivery()!.status === 'RETURNED'"
+                            [value]="selectedStatus()" (change)="selectedStatus.set($any($event.target).value)">
+                        <option value="PREPARING">Preparing</option>
+                        <option value="IN_TRANSIT">In Transit</option>
+                        <option value="DELIVERED">Delivered</option>
+                        <option value="RETURNED">Returned</option>
+                    </select>
+                    
+                    <button class="px-6 py-3 bg-dark text-white font-bold rounded-xl hover:bg-black transition-colors shadow-lg shadow-dark/20 disabled:opacity-50"
+                            [disabled]="selectedDelivery()!.status === 'DELIVERED' || selectedDelivery()!.status === 'RETURNED'"
+                            (click)="updateStatus(selectedStatus())">
+                        Apply Status
+                    </button>
+                </div>
+                <p class="text-xs text-gray-400 mt-3">* Delivered and Returned shipments are locked for historic integrity.</p>
+            </div>
+        </div>
+    </div>
+</div>
+}
+
+<!-- Assign Driver Modal -->
+@if (isAssignModalOpen() && selectedDelivery()) {
+<div class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-dark/60 backdrop-blur-sm" (click)="closeAssignModal()"></div>
+    <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-fade-in-up p-8">
+        <h3 class="text-xl font-bold text-dark mb-2">Assign Driver</h3>
+        <p class="text-sm text-gray-500 mb-6">Select a registered delivery agent for <strong>{{ formatOrderNumber(selectedDelivery()!.cartId, selectedDelivery()!.deliveryDate) }}</strong>.</p>
+        
+        <div class="relative mb-6">
+            <button type="button" (click)="toggleDropdown()" class="w-full flex items-center justify-between px-4 py-4 bg-gray-50 border border-gray-200 rounded-xl text-dark font-medium transition cursor-pointer hover:bg-gray-100">
+                @if (selectedDriverId()) {
+                    <div class="flex items-center gap-3">
+                        <img [src]="getDriverAvatar(selectedDriverId())" class="w-6 h-6 rounded-full object-cover">
+                        <span>{{ getDriverName(selectedDriverId()) }}</span>
+                    </div>
+                } @else {
+                    <span class="text-gray-500">-- Select a Delivery Agent --</span>
+                }
+                <svg class="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+            
+            @if (isDropdownOpen()) {
+                <ul class="absolute z-10 left-0 right-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-auto">
+                    @for (drv of deliveryDrivers(); track drv.id) {
+                        <li (click)="selectDriver(drv.id)" class="px-4 py-3 hover:bg-gray-50 cursor-pointer flex items-center gap-3 transition">
+                            <img [src]="drv.avatar || 'https://ui-avatars.com/api/?name='+drv.firstName+'+'+drv.lastName+'&background=fca5a5&color=fff'" class="w-8 h-8 rounded-full object-cover">
+                            <div>
+                                <p class="font-bold text-dark text-sm">{{ drv.firstName }} {{ drv.lastName }}</p>
+                            </div>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+
+        <div class="flex gap-3 mt-4">
+            <button (click)="closeAssignModal()" class="flex-1 py-3 text-gray-500 font-bold hover:bg-gray-50 rounded-xl transition">Cancel</button>
+            <button (click)="assignDriver()" [disabled]="!selectedDriverId()" class="flex-1 py-3 text-white font-bold rounded-xl transition"
+                    [ngClass]="selectedDriverId() ? 'bg-blue-600 shadow-lg shadow-blue-600/30 hover:bg-blue-700 hover:-translate-y-0.5 transform' : 'bg-gray-400 cursor-not-allowed opacity-50'">
+                Confirm
+            </button>
+        </div>
+    </div>
+</div>
+}
+
+<!-- Cancel/Archive Modal -->
+@if (isCancelModalOpen() && selectedDelivery()) {
+<div class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-dark/60 backdrop-blur-sm" (click)="closeCancelModal()"></div>
+    <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-fade-in-up p-8 text-center">
+        
+        @if (selectedDelivery()!.status === 'DELIVERED') {
+            <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400">
+                <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
+            </div>
+            <h3 class="text-xl font-bold text-dark mb-2">Archive Record</h3>
+            <p class="text-sm text-gray-500 mb-6">This delivery is already completed. Do you want to hide it from the active dashboard view?</p>
+            
+            <div class="flex gap-3 mt-4">
+                <button (click)="closeCancelModal()" class="flex-1 py-3 text-gray-500 font-bold hover:bg-gray-50 rounded-xl transition">Cancel</button>
+                <button (click)="cancelOrArchiveDelivery()" class="flex-1 py-3 bg-gray-800 text-white font-bold rounded-xl hover:bg-black transition">Archive</button>
+            </div>
+        } @else {
+            <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 text-red-500">
+                <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>
+            </div>
+            <h3 class="text-xl font-bold text-red-700 mb-2">Cancel Delivery</h3>
+            <p class="text-sm text-gray-500 mb-6">Mark this delivery as "Returned" and alert the client.</p>
+            
+            <label class="block text-left text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Reason</label>
+            <select class="w-full px-4 py-4 bg-gray-50 border border-gray-200 rounded-xl mb-6 text-dark font-medium text-left"
+                    [value]="cancelReason()" (change)="cancelReason.set($any($event.target).value)">
+                <option value="" disabled>-- Select Reason --</option>
+                <option value="Client Request">Client Request</option>
+                <option value="Item Damaged">Item Damaged before transit</option>
+                <option value="Address Error">Address Error/Unreachable</option>
+                <option value="Other">Other</option>
+            </select>
+            
+            <div class="flex gap-3 mt-4">
+                <button (click)="closeCancelModal()" class="flex-1 py-3 text-gray-500 font-bold hover:bg-gray-50 rounded-xl transition">Go Back</button>
+                <button (click)="cancelOrArchiveDelivery()" class="flex-1 py-3 bg-red-600 shadow-lg shadow-red-600/30 text-white font-bold rounded-xl hover:bg-red-700 transition transform hover:-translate-y-0.5">Confirm Cancel</button>
+            </div>
+        }
+    </div>
+</div>
+}

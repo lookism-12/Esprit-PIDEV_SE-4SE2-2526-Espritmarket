@@ -1,7 +1,7 @@
 export type FeedbackType = 'SAV' | 'FEEDBACK';
 export type FeedbackStatus = 'PENDING' | 'INVESTIGATING' | 'RESOLVED' | 'REJECTED' | 'ARCHIVED';
 export type FeedbackPriority = 'LOW' | 'MODERATE' | 'URGENT';
-export type DeliveryStatus = 'PREPARING' | 'IN_TRANSIT' | 'DELIVERED' | 'RETURNED';
+export type DeliveryStatus = 'PREPARING' | 'IN_TRANSIT' | 'DELIVERED' | 'RETURNED' | 'DRIVER_REFUSED';
 
 export interface SavFeedback {
   id: string;
@@ -44,6 +44,10 @@ export interface Delivery {
   status: DeliveryStatus;
   userId: string;
   cartId: string;
+  // Driver workflow fields
+  pendingDriverId?: string;
+  declineReason?: string;
+  declinedByDriverId?: string;
 }
 
 export interface DeliveryRequest {

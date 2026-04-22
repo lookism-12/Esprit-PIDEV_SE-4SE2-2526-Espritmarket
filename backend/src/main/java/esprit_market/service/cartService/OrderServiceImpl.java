@@ -12,6 +12,8 @@ import esprit_market.repository.cartRepository.*;
 import esprit_market.repository.marketplaceRepository.ProductRepository;
 import esprit_market.repository.userRepository.UserRepository;
 import esprit_market.service.marketplaceService.IProductService;
+import esprit_market.entity.SAV.Delivery;
+import esprit_market.repository.SAVRepository.DeliveryRepository;
 import esprit_market.config.Exceptions.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
@@ -42,6 +44,7 @@ public class OrderServiceImpl implements IOrderService {
     private final ICouponsService couponService;
     private final ILoyaltyCardService loyaltyCardService;
     private final StockManagementService stockManagementService;
+    private final DeliveryRepository deliveryRepository;
     
     @Override
     @Transactional
@@ -124,6 +127,15 @@ public class OrderServiceImpl implements IOrderService {
         if (order.getCouponCode() != null) {
             couponService.incrementCouponUsage(order.getCouponCode());
         }
+        
+        // 🚚 CREATE DELIVERY RECORD FOR ADMIN DASHBOARD
+        Delivery delivery = Delivery.builder()
+                .cartId(cart.getId()) 
+                .address(request.getShippingAddress())
+                .deliveryDate(LocalDateTime.now())
+                .status("PREPARING")
+                .build();
+        deliveryRepository.save(delivery);
         
         return buildOrderResponse(savedOrder);
     }

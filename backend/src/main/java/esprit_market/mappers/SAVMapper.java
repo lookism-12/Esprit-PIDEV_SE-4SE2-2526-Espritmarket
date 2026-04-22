@@ -32,6 +32,9 @@ public class SAVMapper {
                 .status(entity.getStatus())
                 .userId(entity.getUserId() != null ? entity.getUserId().toHexString() : null)
                 .cartId(entity.getCartId() != null ? entity.getCartId().toHexString() : null)
+                .pendingDriverId(entity.getPendingDriverId() != null ? entity.getPendingDriverId().toHexString() : null)
+                .declineReason(entity.getDeclineReason())
+                .declinedByDriverId(entity.getDeclinedByDriverId())
                 .build();
     }
 

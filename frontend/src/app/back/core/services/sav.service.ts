@@ -59,7 +59,7 @@ export class SavService {
     return this.http.delete<void>(`${this.feedbackUrl}/${id}`);
   }
 
-  // ── Deliveries ─────────────────────────────────────────────────────────────
+  // ── Deliveries — Base CRUD ──────────────────────────────────────────────────
 
   createDelivery(request: DeliveryRequest): Observable<Delivery> {
     return this.http.post<Delivery>(this.deliveryUrl, request);
@@ -93,5 +93,33 @@ export class SavService {
 
   deleteDelivery(id: string): Observable<void> {
     return this.http.delete<void>(`${this.deliveryUrl}/${id}`);
+  }
+
+  // ── Deliveries — Driver Workflow (FR-DEL5) ─────────────────────────────────
+
+  /** Admin assigns a driver — sends notification to driver automatically */
+  assignDriver(deliveryId: string, driverId: string): Observable<Delivery> {
+    return this.http.patch<Delivery>(`${this.deliveryUrl}/${deliveryId}/assign`, null, {
+      params: { driverId }
+    });
+  }
+
+  /** Driver accepts or declines a delivery assignment */
+  respondToDelivery(deliveryId: string, driverId: string, accepted: boolean, declineReason: string = ''): Observable<Delivery> {
+    return this.http.patch<Delivery>(`${this.deliveryUrl}/${deliveryId}/respond`, null, {
+      params: { driverId, accepted: String(accepted), declineReason }
+    });
+  }
+
+  /** Driver marks delivery as completed */
+  markAsDelivered(deliveryId: string, driverId: string): Observable<Delivery> {
+    return this.http.patch<Delivery>(`${this.deliveryUrl}/${deliveryId}/mark-delivered`, null, {
+      params: { driverId }
+    });
+  }
+
+  /** Get deliveries pending response for a specific driver */
+  getPendingForDriver(driverId: string): Observable<Delivery[]> {
+    return this.http.get<Delivery[]>(`${this.deliveryUrl}/pending-driver/${driverId}`);
   }
 }

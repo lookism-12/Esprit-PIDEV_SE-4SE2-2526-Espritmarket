@@ -128,6 +128,10 @@ export const routes: Routes = [
             {
                 path: 'settings',
                 loadComponent: () => import('./front/pages/profile/settings/profile-settings.component').then(m => m.ProfileSettingsComponent)
+            },
+            {
+                path: 'deliveries',
+                loadComponent: () => import('./front/pages/driver-deliveries/driver-deliveries.component').then(m => m.DriverDeliveriesComponent)
             }
         ]
     },
