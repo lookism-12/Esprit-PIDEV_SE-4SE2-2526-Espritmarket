@@ -40,4 +40,19 @@ public class ShopResponseDTO {
     private int approvedProductCount;
     private double averageRating;
     private int totalReviews;
+    
+    // ========================================
+    // TRUST & REPUTATION SYSTEM FIELDS
+    // ========================================
+    
+    /**
+     * Shop trust score (0-100)
+     */
+    private double trustScore;
+    
+    /**
+     * Trust badge level
+     * Values: NEW_SELLER, GROWING_SELLER, TRUSTED_SELLER, TOP_SELLER
+     */
+    private String trustBadge;
 }

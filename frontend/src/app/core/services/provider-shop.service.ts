@@ -33,6 +33,21 @@ export interface ShopDto {
   approvedProductCount?: number;
   averageRating?: number;
   totalReviews?: number;
+  
+  // ========================================
+  // TRUST & REPUTATION SYSTEM FIELDS
+  // ========================================
+  
+  /**
+   * Shop trust score (0-100)
+   */
+  trustScore?: number;
+  
+  /**
+   * Trust badge level
+   * Values: NEW_SELLER, GROWING_SELLER, TRUSTED_SELLER, TOP_SELLER
+   */
+  trustBadge?: string;
 }
 
 export interface ShopCreateRequest {

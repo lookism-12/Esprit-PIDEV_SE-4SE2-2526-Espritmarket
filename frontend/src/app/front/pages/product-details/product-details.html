@@ -137,10 +137,29 @@
                                     </svg>
                                     <span class="text-xs text-green-600 font-semibold">ESPRIT Verified</span>
                                 </div>
+                                <!-- ✅ TRUST SCORE DISPLAY -->
+                                @if (safeProduct().trustScore !== undefined && safeProduct().trustScore !== null) {
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <span class="text-xs text-gray-600">⭐ Trust Score:</span>
+                                        <span class="text-xs font-bold" [ngClass]="getTrustScoreColorClass(safeProduct().trustScore!)">
+                                            {{ safeProduct().trustScore!.toFixed(1) }}%
+                                        </span>
+                                    </div>
+                                    @if (safeProduct().trustBadge) {
+                                        <div class="mt-1">
+                                            <span class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full font-semibold" [ngClass]="getTrustBadgeClass(safeProduct().trustBadge!)">
+                                                <span>{{ getTrustBadgeIcon(safeProduct().trustBadge!) }}</span>
+                                                <span>{{ formatTrustBadge(safeProduct().trustBadge!) }}</span>
+                                            </span>
+                                        </div>
+                                    }
+                                }
                             </div>
                         </div>
                         <div class="flex gap-2">
-                            <a [routerLink]="['/shop', safeProduct().sellerId]" class="px-4 py-2 border border-gray-200 text-gray-700 font-semibold text-sm rounded-lg hover:bg-gray-100 transition-colors">
+                            <a [routerLink]="['/products']" 
+                               [queryParams]="{ shop: safeProduct().shopId, shopName: safeProduct().sellerName }" 
+                               class="px-4 py-2 border border-gray-200 text-gray-700 font-semibold text-sm rounded-lg hover:bg-gray-100 transition-colors">
                                 View Shop
                             </a>
                             <button (click)="contactSeller()" class="px-4 py-2 bg-primary text-white font-semibold text-sm rounded-lg hover:bg-primary-dark transition-colors">

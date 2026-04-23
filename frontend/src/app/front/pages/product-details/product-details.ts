@@ -102,14 +102,17 @@ export class ProductDetails implements OnInit {
           imageUrl: ImageUrlHelper.toAbsoluteUrl(((data as any).images && (data as any).images.length > 0) ? (data as any).images[0].url || (data as any).images[0] : null),
           images: (data as any).images?.map((img: any) => ImageUrlHelper.toAbsoluteUrl(img.url || img)) || [],
           sellerId: (data as any).shopId || 'Unknown',
-          sellerName: 'Marketplace Seller',
+          sellerName: (data as any).sellerName || 'Marketplace Seller',
           rating: 4.5,
           reviewsCount: 12,
           stock: data.stock || 0,
           stockStatus: data.stock > 0 ? StockStatus.IN_STOCK : StockStatus.OUT_OF_STOCK,
           condition: (data.condition as ProductCondition) || ProductCondition.NEW,
           isNegotiable: (data as any).isNegotiable || false,
-          status: data.status || ProductStatus.APPROVED
+          status: data.status || ProductStatus.APPROVED,
+          // ✅ TRUST & REPUTATION FIELDS
+          trustScore: (data as any).trustScore,
+          trustBadge: (data as any).trustBadge
         };
         
         this.product.set(product);
@@ -347,6 +350,68 @@ export class ProductDetails implements OnInit {
       case ProposalStatus.REJECTED: return 'bg-red-100 text-red-700';
       case ProposalStatus.COUNTER_OFFERED: return 'bg-blue-100 text-blue-700';
       default: return 'bg-gray-100 text-gray-700';
+    }
+  }
+
+  // ========================================
+  // TRUST & REPUTATION HELPER METHODS
+  // ========================================
+
+  /**
+   * Get color class for trust score
+   */
+  getTrustScoreColorClass(score: number): string {
+    if (score < 30) return 'text-gray-600';
+    if (score < 60) return 'text-blue-600';
+    if (score < 80) return 'text-green-600';
+    return 'text-yellow-600';
+  }
+
+  /**
+   * Get badge styling class
+   */
+  getTrustBadgeClass(badge: string): string {
+    switch (badge) {
+      case 'NEW_SELLER':
+        return 'bg-gray-100 text-gray-700';
+      case 'GROWING_SELLER':
+        return 'bg-blue-100 text-blue-700';
+      case 'TRUSTED_SELLER':
+        return 'bg-green-100 text-green-700';
+      case 'TOP_SELLER':
+        return 'bg-yellow-100 text-yellow-700';
+      default:
+        return 'bg-gray-100 text-gray-600';
+    }
+  }
+
+  /**
+   * Format trust badge for display
+   */
+  formatTrustBadge(badge: string): string {
+    if (!badge) return '';
+    return badge.replace(/_/g, ' ')
+      .toLowerCase()
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  }
+
+  /**
+   * Get icon for trust badge
+   */
+  getTrustBadgeIcon(badge: string): string {
+    switch (badge) {
+      case 'NEW_SELLER':
+        return '🌱';
+      case 'GROWING_SELLER':
+        return '📈';
+      case 'TRUSTED_SELLER':
+        return '✅';
+      case 'TOP_SELLER':
+        return '⭐';
+      default:
+        return '🏷️';
     }
   }
 }

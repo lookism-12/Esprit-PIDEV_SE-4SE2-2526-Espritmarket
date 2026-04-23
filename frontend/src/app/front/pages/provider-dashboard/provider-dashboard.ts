@@ -1,9 +1,10 @@
 import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { RouterLink, Router } from '@angular/router';
 import { ProviderService } from '../../core/provider.service';
 import { ProductService } from '../../core/product.service';
+import { ServiceService, Service } from '../../../core/services/service.service';
 import { ToastService } from '../../core/toast.service';
 import { Product, ProductStatus } from '../../models/product';
 import { environment } from '../../../../environment';
@@ -42,17 +43,20 @@ export interface ProviderStats {
 export class ProviderDashboard implements OnInit {
   private providerService = inject(ProviderService);
   private productService = inject(ProductService);
+  private serviceService = inject(ServiceService);
   private toastService = inject(ToastService);
+  private router = inject(Router);
 
   // State
   readonly orders = signal<ProviderOrder[]>([]);
   readonly stats = signal<ProviderStats | null>(null);
   readonly products = signal<Product[]>([]);
+  readonly services = signal<Service[]>([]);
   readonly isLoading = signal(false);
   readonly error = signal<string | null>(null);
   readonly selectedStatus = signal<string>('ALL');
   readonly searchText = signal<string>('');
-  readonly activeTab = signal<'orders' | 'products'>('orders');
+  readonly activeTab = signal<'orders' | 'products' | 'services'>('orders');
 
   // Product status enum for template
   readonly ProductStatus = ProductStatus;
@@ -116,6 +120,7 @@ export class ProviderDashboard implements OnInit {
     this.loadOrders();
     this.loadStatistics();
     this.loadProducts();
+    this.loadServices();
   }
 
   loadProducts() {
@@ -144,6 +149,78 @@ export class ProviderDashboard implements OnInit {
         this.toastService.error('Failed to load your products');
       }
     });
+  }
+
+  loadServices() {
+    console.log('🔧 Loading provider services...');
+    
+    this.serviceService.getMyServices().subscribe({
+      next: (services) => {
+        console.log('✅ Provider services loaded:', services.length);
+        this.services.set(services);
+      },
+      error: (err) => {
+        console.error('❌ Failed to load provider services:', err);
+        this.toastService.error('Failed to load your services');
+      }
+    });
+  }
+
+  editService(service: Service) {
+    this.router.navigate(['/edit-service', service.id]);
+  }
+
+  deleteService(service: Service) {
+    if (confirm(`Are you sure you want to delete "${service.name}"?`)) {
+      this.serviceService.delete(service.id).subscribe({
+        next: () => {
+          this.toastService.success('Service deleted successfully');
+          this.loadServices();
+        },
+        error: (err) => {
+          console.error('❌ Failed to delete service:', err);
+          this.toastService.error('Failed to delete service');
+        }
+      });
+    }
+  }
+
+  getServiceStatusBadgeClass(status: string): string {
+    switch (status) {
+      case 'APPROVED':
+      case 'AVAILABLE':
+        return 'bg-green-100 text-green-700';
+      case 'PENDING':
+        return 'bg-yellow-100 text-yellow-700';
+      case 'PARTIALLY_BOOKED':
+        return 'bg-blue-100 text-blue-700';
+      case 'FULLY_BOOKED':
+        return 'bg-purple-100 text-purple-700';
+      case 'REJECTED':
+      case 'UNAVAILABLE':
+        return 'bg-red-100 text-red-700';
+      default:
+        return 'bg-gray-100 text-gray-700';
+    }
+  }
+
+  getServiceStatusIcon(status: string): string {
+    switch (status) {
+      case 'APPROVED':
+      case 'AVAILABLE':
+        return '✅';
+      case 'PENDING':
+        return '⏳';
+      case 'PARTIALLY_BOOKED':
+        return '📅';
+      case 'FULLY_BOOKED':
+        return '🔒';
+      case 'REJECTED':
+      case 'UNAVAILABLE':
+        return '❌';
+      default:
+        return '❓';
+    }
   }
 
   loadOrders() {

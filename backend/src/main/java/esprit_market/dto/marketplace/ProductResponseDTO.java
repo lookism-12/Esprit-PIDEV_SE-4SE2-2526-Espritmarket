@@ -39,4 +39,19 @@ public class ProductResponseDTO {
     private java.time.LocalDateTime approvedAt;
     private String approvedBy;
     private String rejectionReason;
+    
+    // ========================================
+    // TRUST & REPUTATION SYSTEM FIELDS
+    // ========================================
+    
+    /**
+     * Seller's trust score (0-100)
+     */
+    private Double trustScore;
+    
+    /**
+     * Seller's trust badge
+     * Values: NEW_SELLER, GROWING_SELLER, TRUSTED_SELLER, TOP_SELLER
+     */
+    private String trustBadge;
 }

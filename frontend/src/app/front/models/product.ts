@@ -33,6 +33,18 @@ export interface Product {
     approvedAt?: Date;
     approvedBy?: string;
     rejectionReason?: string;
+    // ========================================
+    // TRUST & REPUTATION SYSTEM FIELDS
+    // ========================================
+    /**
+     * Seller's trust score (0-100)
+     */
+    trustScore?: number;
+    /**
+     * Seller's trust badge
+     * Values: NEW_SELLER, GROWING_SELLER, TRUSTED_SELLER, TOP_SELLER
+     */
+    trustBadge?: string;
 }
 
 export enum ProductStatus {

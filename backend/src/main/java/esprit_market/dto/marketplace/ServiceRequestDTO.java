@@ -15,4 +15,8 @@ public class ServiceRequestDTO {
     private double price;
     private String shopId;
     private String categoryId;
+    
+    // Booking system fields
+    private Integer durationMinutes;
+    private ServiceAvailabilityDTO availability;
 }

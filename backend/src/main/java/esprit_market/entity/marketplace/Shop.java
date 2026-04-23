@@ -45,4 +45,21 @@ public class Shop {
     private int approvedProducts;
     private double averageRating;
     private int totalReviews;
+    
+    // ========================================
+    // TRUST & REPUTATION SYSTEM FIELDS
+    // ========================================
+    
+    /**
+     * Shop-level trust score (mirrors owner's trust score)
+     * This allows filtering/sorting shops by trust
+     */
+    @Builder.Default
+    private double trustScore = 0.0;
+    
+    /**
+     * Trust badge level for quick UI display
+     * Values: NEW_SELLER, GROWING_SELLER, TRUSTED_SELLER, TOP_SELLER
+     */
+    private String trustBadge;
 }

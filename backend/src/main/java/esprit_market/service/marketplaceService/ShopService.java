@@ -73,6 +73,10 @@ public class ShopService implements IShopService {
             userRepository.findById(shop.getOwnerId()).ifPresent(user -> {
                 dto.setOwnerName(user.getFirstName() + " " + user.getLastName());
                 dto.setOwnerEmail(user.getEmail());
+                
+                // ✅ Add trust score and badge
+                dto.setTrustScore(user.getTrustScore());
+                dto.setTrustBadge(shop.getTrustBadge());
             });
         }
         

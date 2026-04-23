@@ -3,6 +3,17 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environment';
 
+export interface TimeRangeDTO {
+  startTime: string;
+  endTime: string;
+}
+
+export interface ServiceAvailabilityDTO {
+  workingDays: string[]; // DayOfWeek enum values
+  timeRanges: TimeRangeDTO[];
+  breaks: TimeRangeDTO[];
+}
+
 export interface ServiceDto {
   id: string;
   name: string;
@@ -10,9 +21,15 @@ export interface ServiceDto {
   price: number;
   shopId: string;
   categoryIds: string[];
-  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'AVAILABLE' | 'PARTIALLY_BOOKED' | 'FULLY_BOOKED' | 'UNAVAILABLE';
   createdAt?: Date;
   updatedAt?: Date;
+  // Booking system fields
+  durationMinutes?: number;
+  workingHoursStart?: string;
+  workingHoursEnd?: string;
+  // Provider-controlled availability
+  availability?: ServiceAvailabilityDTO;
 }
 
 // Alias for compatibility
@@ -53,5 +70,10 @@ export class ServiceService {
   // Get services by shop
   getByShop(shopId: string): Observable<ServiceDto[]> {
     return this.http.get<ServiceDto[]>(`${this.apiUrl}/services/shop/${shopId}`);
+  }
+
+  // Get services for authenticated provider/seller
+  getMyServices(): Observable<ServiceDto[]> {
+    return this.http.get<ServiceDto[]>(`${this.apiUrl}/services/mine`);
   }
 }

@@ -78,10 +78,22 @@
                   {{ safeService().status }}
                 </span>
               </div>
-              <div class="flex items-center justify-between py-3">
+              <div class="flex items-center justify-between py-3 border-b border-gray-100">
                 <span class="text-secondary font-medium">Price</span>
                 <span class="text-2xl font-black text-primary">{{ safeService().price }} TND</span>
               </div>
+              @if (safeService().durationMinutes) {
+                <div class="flex items-center justify-between py-3 border-b border-gray-100">
+                  <span class="text-secondary font-medium">Duration</span>
+                  <span class="text-dark font-bold">{{ safeService().durationMinutes }} minutes</span>
+                </div>
+              }
+              @if (safeService().workingHoursStart && safeService().workingHoursEnd) {
+                <div class="flex items-center justify-between py-3">
+                  <span class="text-secondary font-medium">Working Hours</span>
+                  <span class="text-dark font-bold">{{ safeService().workingHoursStart }} - {{ safeService().workingHoursEnd }}</span>
+                </div>
+              }
             </div>
           </div>
         </div>
@@ -156,3 +168,113 @@
     }
   </div>
 </div>
+
+
+<!-- Booking Modal -->
+@if (showBookingModal()) {
+  <div class="fixed inset-0 z-50 overflow-y-auto" (click)="closeBookingModal()">
+    <div class="fixed inset-0 bg-black/50"></div>
+    <div class="flex min-h-full items-center justify-center p-4">
+      <div class="relative w-full max-w-4xl bg-white rounded-2xl shadow-2xl p-6" (click)="$event.stopPropagation()">
+        <button (click)="closeBookingModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
+        <h3 class="text-2xl font-black text-dark mb-2">Book Service</h3>
+        <p class="text-sm text-gray-500 mb-6">{{ safeService().name }} - {{ safeService().price }} TND</p>
+
+        <div class="grid lg:grid-cols-2 gap-6">
+          <!-- Left: Calendar -->
+          <div>
+            <h4 class="text-lg font-bold text-dark mb-3">Select Date</h4>
+            <app-booking-calendar 
+              [allowedDays]="getAllowedDays()"
+              (dateSelected)="onDateSelected($event)">
+            </app-booking-calendar>
+            @if (getAllowedDays().length > 0) {
+              <div class="mt-2 text-xs text-gray-500">
+                <span class="font-semibold">Available days:</span> {{ formatAllowedDays() }}
+              </div>
+            }
+          </div>
+
+          <!-- Right: Time Slots -->
+          <div>
+            <h4 class="text-lg font-bold text-dark mb-3">Select Time Slot</h4>
+            @if (selectedDate()) {
+              <app-time-slot-selector
+                [slots]="availableSlots()"
+                [isLoading]="isLoadingSlots()"
+                (slotSelected)="onSlotSelected($event)">
+              </app-time-slot-selector>
+            } @else {
+              <div class="bg-gray-50 rounded-xl border border-gray-200 p-8 text-center">
+                <div class="text-4xl mb-2">📅</div>
+                <p class="text-gray-500 text-sm">Please select a date first</p>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Booking Summary -->
+        @if (selectedDate() && selectedSlot()) {
+          <div class="mt-6 p-4 bg-primary/5 rounded-xl border border-primary/10">
+            <h4 class="text-sm font-bold text-dark mb-2">Booking Summary</h4>
+            <div class="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span class="text-gray-500">Date:</span>
+                <span class="ml-2 font-bold text-dark">{{ selectedDate()! | date:'mediumDate' }}</span>
+              </div>
+              <div>
+                <span class="text-gray-500">Time:</span>
+                <span class="ml-2 font-bold text-dark">{{ selectedSlot()!.label }}</span>
+              </div>
+              <div>
+                <span class="text-gray-500">Duration:</span>
+                <span class="ml-2 font-bold text-dark">{{ safeService().durationMinutes }} min</span>
+              </div>
+              <div>
+                <span class="text-gray-500">Price:</span>
+                <span class="ml-2 font-bold text-primary">{{ safeService().price }} TND</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Notes -->
+          <div class="mt-4">
+            <label class="block text-sm font-bold text-gray-700 mb-2">Notes (Optional)</label>
+            <textarea 
+              [(ngModel)]="bookingNotes"
+              rows="3"
+              class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-sm resize-none"
+              placeholder="Add any special requests or notes..."></textarea>
+          </div>
+        }
+
+        <!-- Action Buttons -->
+        <div class="mt-6 flex gap-3">
+          <button 
+            (click)="closeBookingModal()"
+            class="flex-1 py-3 border border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-colors">
+            Cancel
+          </button>
+          <button 
+            (click)="confirmBooking()"
+            [disabled]="!canConfirmBooking()"
+            class="flex-1 py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            @if (isBooking()) {
+              <svg class="animate-spin h-5 w-5 mx-auto" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+              </svg>
+            } @else {
+              Confirm Booking
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}

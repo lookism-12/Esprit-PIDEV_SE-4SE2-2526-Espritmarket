@@ -84,6 +84,16 @@ public class ServiceService implements IServiceService {
         existingService.setDescription(dto.getDescription());
         existingService.setPrice(dto.getPrice());
 
+        // Update duration if provided
+        if (dto.getDurationMinutes() != null) {
+            existingService.setDurationMinutes(dto.getDurationMinutes());
+        }
+
+        // Update availability if provided
+        if (dto.getAvailability() != null) {
+            existingService.setAvailability(mapper.toAvailabilityEntity(dto.getAvailability()));
+        }
+
         // Affectation Shop: validate and assign if provided
         if (dto.getShopId() != null) {
             ObjectId shopId = new ObjectId(dto.getShopId());

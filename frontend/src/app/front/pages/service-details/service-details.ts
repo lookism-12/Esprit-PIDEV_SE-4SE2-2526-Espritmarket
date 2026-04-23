@@ -1,14 +1,18 @@
 import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute, Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { ServiceService, Service } from '../../../core/services/service.service';
+import { BookingService, TimeSlot, BookingRequest } from '../../../core/services/booking.service';
 import { AuthService } from '../../core/auth.service';
 import { ToastService } from '../../core/toast.service';
+import { BookingCalendarComponent } from '../../../shared/components/booking-calendar.component';
+import { TimeSlotSelectorComponent } from '../../../shared/components/time-slot-selector.component';
 
 @Component({
   selector: 'app-service-details',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, FormsModule, BookingCalendarComponent, TimeSlotSelectorComponent],
   templateUrl: './service-details.html',
   styleUrl: './service-details.scss',
 })
@@ -16,6 +20,7 @@ export class ServiceDetails implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private serviceService = inject(ServiceService);
+  private bookingService = inject(BookingService);
   private authService = inject(AuthService);
   private toastService = inject(ToastService);
 
@@ -27,6 +32,15 @@ export class ServiceDetails implements OnInit {
   hasService = computed(() => this.service() !== null);
 
   relatedServices = signal<Service[]>([]);
+
+  // Booking state
+  showBookingModal = signal(false);
+  selectedDate = signal<Date | null>(null);
+  selectedSlot = signal<TimeSlot | null>(null);
+  availableSlots = signal<TimeSlot[]>([]);
+  isLoadingSlots = signal(false);
+  isBooking = signal(false);
+  bookingNotes = signal('');
 
   ngOnInit(): void {
     const serviceId = this.route.snapshot.paramMap.get('id');
@@ -89,7 +103,7 @@ export class ServiceDetails implements OnInit {
     this.toastService.success('Contact feature coming soon!');
   }
 
-  bookService(): void {
+  openBookingModal(): void {
     const service = this.service();
     if (!service) return;
     
@@ -99,14 +113,124 @@ export class ServiceDetails implements OnInit {
       return;
     }
     
-    this.toastService.success('Booking feature coming soon!');
+    this.showBookingModal.set(true);
+    this.selectedDate.set(null);
+    this.selectedSlot.set(null);
+    this.availableSlots.set([]);
+    this.bookingNotes.set('');
+  }
+
+  closeBookingModal(): void {
+    this.showBookingModal.set(false);
+  }
+
+  onDateSelected(date: Date): void {
+    this.selectedDate.set(date);
+    this.selectedSlot.set(null);
+    this.loadAvailableSlots(date);
+  }
+
+  onSlotSelected(slot: TimeSlot): void {
+    this.selectedSlot.set(slot);
+  }
+
+  private loadAvailableSlots(date: Date): void {
+    const service = this.service();
+    if (!service) return;
+
+    this.isLoadingSlots.set(true);
+    const dateStr = date.toISOString().split('T')[0];
+
+    this.bookingService.getAvailableTimeSlots(service.id, dateStr).subscribe({
+      next: (slots) => {
+        console.log('✅ Loaded slots:', slots);
+        this.availableSlots.set(slots);
+        this.isLoadingSlots.set(false);
+      },
+      error: (err) => {
+        console.error('❌ Failed to load slots:', err);
+        this.toastService.error('Failed to load available time slots');
+        this.isLoadingSlots.set(false);
+      }
+    });
+  }
+
+  confirmBooking(): void {
+    const service = this.service();
+    const date = this.selectedDate();
+    const slot = this.selectedSlot();
+
+    if (!service || !date || !slot) {
+      this.toastService.error('Please select a date and time slot');
+      return;
+    }
+
+    this.isBooking.set(true);
+
+    const request: BookingRequest = {
+      serviceId: service.id,
+      bookingDate: date.toISOString().split('T')[0],
+      startTime: slot.startTime,
+      notes: this.bookingNotes() || undefined
+    };
+
+    this.bookingService.createBooking(request).subscribe({
+      next: (booking) => {
+        console.log('✅ Booking created:', booking);
+        this.toastService.success('Service booked successfully!');
+        this.closeBookingModal();
+        this.isBooking.set(false);
+      },
+      error: (err) => {
+        console.error('❌ Booking failed:', err);
+        this.toastService.error(err.error?.message || 'Failed to book service');
+        this.isBooking.set(false);
+      }
+    });
+  }
+
+  canConfirmBooking = computed(() => {
+    return this.selectedDate() !== null && this.selectedSlot() !== null && !this.isBooking();
+  });
+
+  getAllowedDays(): string[] {
+    const service = this.service();
+    if (!service || !service.availability || !service.availability.workingDays) {
+      return []; // No restrictions if not configured
+    }
+    return service.availability.workingDays;
+  }
+
+  formatAllowedDays(): string {
+    const days = this.getAllowedDays();
+    if (days.length === 0) return 'All days';
+    
+    const dayNames: { [key: string]: string } = {
+      'MONDAY': 'Mon',
+      'TUESDAY': 'Tue',
+      'WEDNESDAY': 'Wed',
+      'THURSDAY': 'Thu',
+      'FRIDAY': 'Fri',
+      'SATURDAY': 'Sat',
+      'SUNDAY': 'Sun'
+    };
+    
+    return days.map(d => dayNames[d] || d).join(', ');
+  }
+
+  bookService(): void {
+    this.openBookingModal();
   }
 
   getStatusClass(status: string): string {
     switch (status) {
       case 'APPROVED': return 'bg-green-100 text-green-700';
+      case 'AVAILABLE': return 'bg-green-100 text-green-700';
+      case 'PARTIALLY_BOOKED': return 'bg-yellow-100 text-yellow-700';
+      case 'FULLY_BOOKED': return 'bg-red-100 text-red-700';
       case 'PENDING': return 'bg-yellow-100 text-yellow-700';
       case 'REJECTED': return 'bg-red-100 text-red-700';
+      case 'UNAVAILABLE': return 'bg-gray-100 text-gray-700';
       default: return 'bg-gray-100 text-gray-700';
     }
   }

@@ -266,7 +266,7 @@ import { ProviderShopService, ShopDto, SocialLinks } from '../../../core/service
                   Shop Statistics
                 </h2>
                 
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-6">
                   <div class="text-center p-4 bg-blue-50 rounded-xl">
                     <div class="text-2xl font-black text-blue-600">{{ currentShop()?.productCount || 0 }}</div>
                     <div class="text-sm text-blue-700 font-medium">Total Products</div>
@@ -282,6 +282,14 @@ import { ProviderShopService, ShopDto, SocialLinks } from '../../../core/service
                   <div class="text-center p-4 bg-purple-50 rounded-xl">
                     <div class="text-2xl font-black text-purple-600">{{ currentShop()?.totalReviews || 0 }}</div>
                     <div class="text-sm text-purple-700 font-medium">Reviews</div>
+                  </div>
+                  <!-- ✅ TRUST SCORE DISPLAY -->
+                  <div class="text-center p-4 bg-gradient-to-br from-orange-50 to-yellow-50 rounded-xl border-2 border-orange-200">
+                    <div class="text-2xl font-black text-orange-600">{{ currentShop()?.trustScore?.toFixed(1) || '0.0' }}</div>
+                    <div class="text-sm text-orange-700 font-medium">Trust Score</div>
+                    @if (currentShop()?.trustBadge) {
+                      <div class="mt-1 text-xs text-orange-600">{{ formatBadge(currentShop()?.trustBadge) }}</div>
+                    }
                   </div>
                 </div>
               </div>
@@ -487,5 +495,16 @@ export class ShopManagementComponent implements OnInit {
     if (socialLinks.linkedin?.trim()) cleaned.linkedin = socialLinks.linkedin.trim();
     
     return cleaned;
+  }
+  
+  /**
+   * Format trust badge for display
+   */
+  formatBadge(badge: string | undefined): string {
+    if (!badge) return '';
+    return badge.replace(/_/g, ' ').toLowerCase()
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
   }
 }

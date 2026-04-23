@@ -1,9 +1,11 @@
 package esprit_market.config;
 
 import esprit_market.entity.marketplace.Product;
+import esprit_market.entity.marketplace.ServiceEntity;
 import esprit_market.entity.marketplace.Shop;
 import esprit_market.entity.user.User;
 import esprit_market.repository.marketplaceRepository.ProductRepository;
+import esprit_market.repository.marketplaceRepository.ServiceRepository;
 import esprit_market.repository.marketplaceRepository.ShopRepository;
 import esprit_market.repository.userRepository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +26,7 @@ public class MarketplaceSecurity {
     private final UserRepository userRepository;
     private final ShopRepository shopRepository;
     private final ProductRepository productRepository;
+    private final ServiceRepository serviceRepository;
     
     /**
      * Check if the authenticated user owns the specified shop
@@ -80,6 +83,42 @@ public class MarketplaceSecurity {
             
             // Get the shop that owns this product
             Optional<Shop> shopOpt = shopRepository.findById(product.getShopId());
+            if (!shopOpt.isPresent()) {
+                return false;
+            }
+            
+            Shop shop = shopOpt.get();
+            return shop.getOwnerId().equals(user.getId());
+        } catch (Exception e) {
+            return false;
+        }
+    }
+    
+    /**
+     * Check if the authenticated user owns the service (via shop ownership)
+     */
+    public boolean isServiceOwner(Authentication authentication, ObjectId serviceId) {
+        if (authentication == null || serviceId == null) {
+            return false;
+        }
+        
+        try {
+            String email = authentication.getName();
+            Optional<User> userOpt = userRepository.findByEmail(email);
+            if (!userOpt.isPresent()) {
+                return false;
+            }
+            
+            Optional<ServiceEntity> serviceOpt = serviceRepository.findById(serviceId);
+            if (!serviceOpt.isPresent()) {
+                return false;
+            }
+            
+            ServiceEntity service = serviceOpt.get();
+            User user = userOpt.get();
+            
+            // Get the shop that owns this service
+            Optional<Shop> shopOpt = shopRepository.findById(service.getShopId());
             if (!shopOpt.isPresent()) {
                 return false;
             }

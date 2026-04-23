@@ -40,6 +40,7 @@ public class ProductService implements IProductService {
     private final ProductCategoryRepository productCategoryRepository;
     private final UserRepository userRepository;
     private final ProductMapper mapper;
+    private final esprit_market.service.userService.TrustService trustService;
 
     @Override
     public List<ProductResponseDTO> findAll() {
@@ -284,7 +285,12 @@ public class ProductService implements IProductService {
         Product product = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
         product.setStatus(ProductStatus.APPROVED);
-        return mapper.toDTO(repository.save(product));
+        Product saved = repository.save(product);
+        
+        // ✅ Trigger trust score update
+        trustService.onProductApproved(id);
+        
+        return mapper.toDTO(saved);
     }
 
     @Override
@@ -292,6 +298,11 @@ public class ProductService implements IProductService {
         Product product = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
         product.setStatus(ProductStatus.REJECTED);
-        return mapper.toDTO(repository.save(product));
+        Product saved = repository.save(product);
+        
+        // ✅ Trigger trust score update
+        trustService.onProductRejected(id);
+        
+        return mapper.toDTO(saved);
     }
 }

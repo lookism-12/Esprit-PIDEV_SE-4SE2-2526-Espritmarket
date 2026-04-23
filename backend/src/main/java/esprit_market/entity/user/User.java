@@ -92,4 +92,47 @@ public class User {
     private List<ObjectId> reactionIds = new ArrayList<>();
     @Builder.Default
     private List<ObjectId> commentIds = new ArrayList<>();
+    
+    // ========================================
+    // TRUST & REPUTATION SYSTEM FIELDS
+    // ========================================
+    
+    /**
+     * Dynamic trust score calculated based on seller performance
+     * Range: 0-100
+     * Formula: (averageRating * 40) + (totalSales * 30) + (approvalRate * 20) - (rejectionRate * 10)
+     */
+    @Builder.Default
+    private double trustScore = 0.0;
+    
+    /**
+     * Total number of completed sales (DELIVERED orders)
+     */
+    @Builder.Default
+    private int totalSales = 0;
+    
+    /**
+     * Total number of products approved by admin
+     */
+    @Builder.Default
+    private int approvedProducts = 0;
+    
+    /**
+     * Total number of products rejected by admin
+     */
+    @Builder.Default
+    private int rejectedProducts = 0;
+    
+    /**
+     * Average rating across all seller's products
+     * Range: 0-5
+     */
+    @Builder.Default
+    private double averageRating = 0.0;
+    
+    /**
+     * Total number of ratings received
+     */
+    @Builder.Default
+    private int totalRatings = 0;
 }

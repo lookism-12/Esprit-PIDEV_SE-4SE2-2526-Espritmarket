@@ -47,6 +47,8 @@ public class ProductMapper {
         String sellerName = "Unknown Seller";
         String shopName = "Unknown Shop";
         String shopLogo = null;
+        Double trustScore = null;
+        String trustBadge = null;
         
         if (product.getShopId() != null) {
             Shop shop = shopRepository.findById(product.getShopId()).orElse(null);
@@ -54,6 +56,10 @@ public class ProductMapper {
                 // Set shop name and logo
                 shopName = shop.getName() != null ? shop.getName() : "Unknown Shop";
                 shopLogo = shop.getLogo();
+                
+                // ✅ Get trust info from shop
+                trustScore = shop.getTrustScore();
+                trustBadge = shop.getTrustBadge();
                 
                 // Get seller name from shop owner
                 if (shop.getOwnerId() != null) {
@@ -132,6 +138,9 @@ public class ProductMapper {
                 .approvedAt(product.getApprovedAt())
                 .approvedBy(approvedBy)
                 .rejectionReason(product.getRejectionReason())
+                // ✅ TRUST & REPUTATION FIELDS
+                .trustScore(trustScore)
+                .trustBadge(trustBadge)
                 .build();
     }
 

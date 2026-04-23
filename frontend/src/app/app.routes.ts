@@ -158,6 +158,16 @@ export const routes: Routes = [
         loadComponent: () => import('./front/pages/add-product/add-product').then(m => m.AddProduct),
         canActivate: [authGuard, providerGuard]
     },
+    {
+        path: 'add-service',
+        loadComponent: () => import('./front/pages/add-service/add-service').then(m => m.AddService),
+        canActivate: [authGuard, providerGuard]
+    },
+    {
+        path: 'edit-service/:id',
+        loadComponent: () => import('./front/pages/edit-service/edit-service').then(m => m.EditService),
+        canActivate: [authGuard, providerGuard]
+    },
     { path: 'seller', redirectTo: 'provider', pathMatch: 'prefix' },
 
     // ==================== DRIVER ROUTES ====================
