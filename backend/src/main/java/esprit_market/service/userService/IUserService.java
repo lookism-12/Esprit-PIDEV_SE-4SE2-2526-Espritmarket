@@ -30,4 +30,6 @@ public interface IUserService {
     ObjectId resolveUserId(String email);
 
     String uploadAvatar(String email, MultipartFile file) throws Exception;
+
+    java.util.Map<String, Long> getMonthlyUserGrowth();
 }

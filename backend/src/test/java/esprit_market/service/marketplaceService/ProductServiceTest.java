@@ -4,7 +4,7 @@ import esprit_market.config.Exceptions.ResourceNotFoundException;
 import esprit_market.dto.marketplace.ProductRequestDTO;
 import esprit_market.dto.marketplace.ProductResponseDTO;
 import esprit_market.entity.marketplace.Product;
-import esprit_market.entity.marketplace.ProductStatus;
+import esprit_market.Enum.marketplaceEnum.ProductStatus;
 import esprit_market.entity.user.User;
 import esprit_market.mappers.marketplace.ProductMapper;
 import esprit_market.repository.marketplaceRepository.CategoryRepository;

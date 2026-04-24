@@ -5,6 +5,8 @@ export enum NotificationType {
   EXTERNAL_NOTIFICATION = 'EXTERNAL_NOTIFICATION',
   RIDE_UPDATE = 'RIDE_UPDATE',
   NEGOTIATION_UPDATE = 'NEGOTIATION_UPDATE',
+  NEGOTIATION_ACCEPTED = 'NEGOTIATION_ACCEPTED',
+  NEGOTIATION_PROPOSAL = 'NEGOTIATION_PROPOSAL',
   ORDER_CONFIRMATION = 'ORDER_CONFIRMATION',
   PROMOTION = 'PROMOTION',
   SYSTEM = 'SYSTEM',
@@ -45,6 +47,8 @@ export interface NotificationResponse {
   message: string;        // mapped from backend 'description'
   description?: string;   // backend field alias
   read: boolean;
+  isStarred: boolean;
+  isFollowed: boolean;
   active: boolean;
   notification_status?: boolean;
   linkedObjectId?: string;
@@ -69,6 +73,7 @@ export interface NotificationData {
   [key: string]: unknown;
 }
 
+/** Legacy frontend-only settings shape (kept for backward compat) */
 export interface NotificationSettings {
   email: boolean;
   push: boolean;
@@ -77,6 +82,22 @@ export interface NotificationSettings {
   promotions: boolean;
   messages: boolean;
   systemAlerts: boolean;
+}
+
+/** Mirrors backend NotificationSettingsDTO */
+export interface UserNotificationSettings {
+  externalNotificationsEnabled: boolean;
+  internalNotificationsEnabled: boolean;
+  focusModeEnabled: boolean;
+  /** "HH:mm" string, e.g. "21:00" */
+  focusModeStart: string | null;
+  /** "HH:mm" string, e.g. "05:00" */
+  focusModeEnd: string | null;
+}
+
+export enum QueuedNotificationStatus {
+  QUEUED = 'QUEUED',
+  DELIVERED = 'DELIVERED'
 }
 
 export interface WebSocketMessage {

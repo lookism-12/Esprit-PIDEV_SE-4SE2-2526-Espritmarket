@@ -35,9 +35,8 @@ public class BookingController {
                         @ApiResponse(responseCode = "403", description = "Forbidden - passenger role required")
         })
         public BookingResponseDTO create(@Valid @RequestBody BookingRequestDTO dto,
-                        @AuthenticationPrincipal UserDetails user,
-                        @RequestParam String rideId) {
-                return bookingService.createBooking(dto, user.getUsername(), new ObjectId(rideId));
+                        @AuthenticationPrincipal UserDetails user) {
+                return bookingService.createBooking(dto, user.getUsername(), new ObjectId(dto.getRideId()));
         }
 
         @GetMapping("/{id}")

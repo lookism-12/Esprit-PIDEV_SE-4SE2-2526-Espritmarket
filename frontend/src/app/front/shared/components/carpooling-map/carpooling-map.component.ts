@@ -5,6 +5,7 @@ import {
 } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RoutingService } from '../../../core/routing.service';
 
 export interface MapRide {
   rideId: string;
@@ -24,8 +25,7 @@ export interface MapRide {
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="relative w-full" style="height:520px;background:#1a1a2e">
-
+    <div class="relative w-full" style="height:650px;background:#1a1a2e">
       <!-- MAP CONTAINER -->
       <div #mapContainer style="position:absolute;inset:0;z-index:1"></div>
 
@@ -100,19 +100,46 @@ export interface MapRide {
         </div>
       }
 
-      <!-- MY LOCATION BUTTON -->
-      <button (click)="centerOnTunisia()" class="absolute right-4 bottom-6 z-20 w-12 h-12 bg-white rounded-full shadow-xl flex items-center justify-center text-xl hover:scale-105 transition-all active:scale-95">
-        📍
-      </button>
     </div>
+
+    <!-- ROUTE SUMMARY (Now under map) -->
+    @if (routeDistance() !== null && !isGeocoding()) {
+      <div class="mt-6 p-4">
+        <div class="max-w-xl mx-auto flex items-center justify-between gap-6 px-10 py-6 rounded-[2.5rem] shadow-2xl border border-gray-100 bg-white">
+          <div class="flex items-center gap-5">
+            <div class="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary text-2xl">📏</div>
+            <div class="flex flex-col">
+              <span class="text-gray-400 text-[10px] uppercase font-black tracking-widest">Total Distance</span>
+              <span class="text-gray-900 font-black text-2xl">{{ routeDistance() }} <small class="text-xs text-gray-400">km</small></span>
+            </div>
+          </div>
+          
+          <div class="w-px h-12 bg-gray-100"></div>
+          
+          <div class="flex items-center gap-5">
+            <div class="w-14 h-14 rounded-2xl bg-green-500/10 flex items-center justify-center text-green-500 text-2xl">⏱️</div>
+            <div class="flex flex-col">
+              <span class="text-gray-400 text-[10px] uppercase font-black tracking-widest">Est. Travel Time</span>
+              <span class="text-gray-900 font-black text-2xl">{{ formatDuration(routeDuration()!) }}</span>
+            </div>
+          </div>
+
+          <button (click)="clearRoute()" class="w-10 h-10 rounded-full bg-gray-50 hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-all">
+            ✕
+          </button>
+        </div>
+      </div>
+    }
   `
 })
 export class CarpoolingMapComponent implements AfterViewInit, OnChanges, OnDestroy {
   @Input() rides: MapRide[] = [];
   @Output() bookRide = new EventEmitter<MapRide>();
+  @Output() routeSelected = new EventEmitter<{from: string, to: string, distanceKm: number}>();
   @ViewChild('mapContainer') mapContainer!: ElementRef;
 
   private platformId = inject(PLATFORM_ID);
+  private routingService = inject(RoutingService);
   private map: any = null;
   private L: any = null;
   private routeLayer: any = null;
@@ -129,10 +156,15 @@ export class CarpoolingMapComponent implements AfterViewInit, OnChanges, OnDestr
   suggestions = signal<any[]>([]);
   isGeocoding = signal(false);
   selectedRide = signal<MapRide | null>(null);
+  routeDistance = signal<number | null>(null);
+  routeDuration = signal<number | null>(null);
 
   async ngAfterViewInit(): Promise<void> {
     if (!isPlatformBrowser(this.platformId)) return;
     await this.initMap();
+    if (this.map) {
+      setTimeout(() => this.map.invalidateSize(), 200);
+    }
     if (this.rides.length > 0) await this.plotAllRides();
   }
 
@@ -207,22 +239,48 @@ export class CarpoolingMapComponent implements AfterViewInit, OnChanges, OnDestr
       if (!this.fromCoords) this.fromCoords = await this.geocode(this.fromInput);
       if (!this.toCoords) this.toCoords = await this.geocode(this.toInput);
       if (this.fromCoords && this.toCoords) {
-        this.drawRoute(this.fromCoords, this.toCoords);
+        await this.drawRoute(this.fromCoords, this.toCoords);
       }
     } finally { this.isGeocoding.set(false); }
   }
 
-  private drawRoute(from: [number, number], to: [number, number]): void {
+  private async drawRoute(from: [number, number], to: [number, number]): Promise<void> {
     if (!this.L || !this.map) return;
     if (this.routeLayer) { this.routeLayer.remove(); this.routeLayer = null; }
 
-    // Animated dashed route
-    this.routeLayer = this.L.layerGroup([
-      this.L.polyline([from, to], { color: '#8B0000', weight: 4, opacity: 0.9 }),
-      this.L.polyline([from, to], { color: 'white', weight: 2, opacity: 0.4, dashArray: '8 12' })
-    ]).addTo(this.map);
+    try {
+      const routeRes = await this.routingService.getRoute({
+        startLat: from[0], startLng: from[1],
+        endLat: to[0], endLng: to[1]
+      }).toPromise();
 
-    // From marker
+      if (routeRes && routeRes.coordinates.length > 0) {
+        const coords = routeRes.coordinates;
+        // Animated dashed route
+        this.routeLayer = this.L.layerGroup([
+          this.L.polyline(coords, { color: '#8B0000', weight: 4, opacity: 0.9 }),
+          this.L.polyline(coords, { color: 'white', weight: 2, opacity: 0.4, dashArray: '8 12' })
+        ]).addTo(this.map);
+
+        this.map.fitBounds(this.L.polyline(coords).getBounds().pad(0.3));
+        
+        const distanceKm = Math.round((routeRes.distance / 1000) * 10) / 10;
+        this.routeDistance.set(distanceKm);
+        this.routeDuration.set(routeRes.duration);
+        this.routeSelected.emit({ from: this.fromInput, to: this.toInput, distanceKm });
+      } else {
+        // Fallback to straight line if routing fails
+        this.routeLayer = this.L.layerGroup([
+          this.L.polyline([from, to], { color: '#8B0000', weight: 4, opacity: 0.9 }),
+          this.L.polyline([from, to], { color: 'white', weight: 2, opacity: 0.4, dashArray: '8 12' })
+        ]).addTo(this.map);
+        this.map.fitBounds(this.L.latLngBounds([from, to]).pad(0.3));
+      }
+    } catch (e) {
+      console.error('Routing failed', e);
+    }
+
+    // Markers
     const fromIcon = this.L.divIcon({
       html: `<div style="background:#8B0000;width:16px;height:16px;border-radius:50%;border:3px solid white;box-shadow:0 0 0 3px rgba(139,0,0,0.3)"></div>`,
       className: '', iconSize: [16, 16], iconAnchor: [8, 8]
@@ -234,12 +292,20 @@ export class CarpoolingMapComponent implements AfterViewInit, OnChanges, OnDestr
 
     this.L.marker(from, { icon: fromIcon }).bindPopup(`<b>📍 ${this.fromInput}</b>`).addTo(this.map);
     this.L.marker(to, { icon: toIcon }).bindPopup(`<b>🏁 ${this.toInput}</b>`).addTo(this.map);
-
-    this.map.fitBounds(this.L.latLngBounds([from, to]).pad(0.3));
   }
 
   clearRoute(): void {
     if (this.routeLayer) { this.routeLayer.remove(); this.routeLayer = null; }
+    this.routeDistance.set(null);
+    this.routeDuration.set(null);
+  }
+
+  formatDuration(seconds: number): string {
+    const mins = Math.round(seconds / 60);
+    if (mins < 60) return `${mins} min`;
+    const hrs = Math.floor(mins / 60);
+    const remMins = mins % 60;
+    return remMins > 0 ? `${hrs}h ${remMins}m` : `${hrs}h`;
   }
 
   private async plotAllRides(): Promise<void> {
@@ -275,11 +341,34 @@ export class CarpoolingMapComponent implements AfterViewInit, OnChanges, OnDestr
     const dest = await this.geocode(ride.destinationLocation);
     if (dep && dest) {
       if (this.routeLayer) { this.routeLayer.remove(); }
-      this.routeLayer = this.L.layerGroup([
-        this.L.polyline([dep, dest], { color: '#8B0000', weight: 5, opacity: 1 }),
-        this.L.polyline([dep, dest], { color: 'white', weight: 2, opacity: 0.5, dashArray: '8 12' })
-      ]).addTo(this.map);
-      this.map.fitBounds(this.L.latLngBounds([dep, dest]).pad(0.3));
+      
+      try {
+        const routeRes = await this.routingService.getRoute({
+          startLat: dep[0], startLng: dep[1],
+          endLat: dest[0], endLng: dest[1]
+        }).toPromise();
+
+        if (routeRes && routeRes.coordinates.length > 0) {
+          const coords = routeRes.coordinates;
+          this.routeLayer = this.L.layerGroup([
+            this.L.polyline(coords, { color: '#8B0000', weight: 5, opacity: 1 }),
+            this.L.polyline(coords, { color: 'white', weight: 2, opacity: 0.5, dashArray: '8 12' })
+          ]).addTo(this.map);
+          this.map.fitBounds(this.L.polyline(coords).getBounds().pad(0.3));
+        } else {
+          this.routeLayer = this.L.layerGroup([
+            this.L.polyline([dep, dest], { color: '#8B0000', weight: 5, opacity: 1 }),
+            this.L.polyline([dep, dest], { color: 'white', weight: 2, opacity: 0.5, dashArray: '8 12' })
+          ]).addTo(this.map);
+          this.map.fitBounds(this.L.latLngBounds([dep, dest]).pad(0.3));
+        }
+      } catch {
+        this.routeLayer = this.L.layerGroup([
+          this.L.polyline([dep, dest], { color: '#8B0000', weight: 5, opacity: 1 }),
+          this.L.polyline([dep, dest], { color: 'white', weight: 2, opacity: 0.5, dashArray: '8 12' })
+        ]).addTo(this.map);
+        this.map.fitBounds(this.L.latLngBounds([dep, dest]).pad(0.3));
+      }
     }
   }
 

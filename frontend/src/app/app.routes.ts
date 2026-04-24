@@ -132,6 +132,10 @@ export const routes: Routes = [
             {
                 path: 'deliveries',
                 loadComponent: () => import('./front/pages/driver-deliveries/driver-deliveries.component').then(m => m.DriverDeliveriesComponent)
+            },
+            {
+                path: 'negotiations',
+                loadComponent: () => import('./front/pages/profile/negotiations/profile-negotiations.component').then(m => m.ProfileNegotiationsComponent)
             }
         ]
     },
@@ -178,7 +182,8 @@ export const routes: Routes = [
             { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
             { path: 'dashboard', loadComponent: () => import('./front/pages/carpooling/carpooling').then(m => m.Carpooling) },
             { path: 'rides', loadComponent: () => import('./front/pages/carpooling/carpooling').then(m => m.Carpooling) },
-            { path: 'schedule', loadComponent: () => import('./front/pages/carpooling/carpooling').then(m => m.Carpooling) }
+            { path: 'schedule', loadComponent: () => import('./front/pages/carpooling/carpooling').then(m => m.Carpooling) },
+            { path: 'analytics', loadComponent: () => import('./front/pages/carpooling/driver-dashboard').then(m => m.DriverDashboard) }
         ]
     },
 

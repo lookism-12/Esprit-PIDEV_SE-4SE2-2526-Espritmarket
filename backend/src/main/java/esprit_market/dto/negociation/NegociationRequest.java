@@ -17,5 +17,11 @@ public class NegociationRequest {
 
     private Double amount;
 
+    private Integer quantity;
+
     private String message;
+
+    private String exchangeImage;
+
+    private Boolean isExchange;
 }

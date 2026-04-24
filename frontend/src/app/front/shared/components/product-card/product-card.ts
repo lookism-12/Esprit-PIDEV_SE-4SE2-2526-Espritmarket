@@ -150,9 +150,6 @@ export class ProductCard implements OnInit, OnDestroy {
     this.subscription.unsubscribe();
   }
 
-  /**
-   * Enhanced add to cart with better stock validation and UX
-   */
   addToCart(): void {
     if (!this.isAuthenticated()) {
       this.handleVisitorCheckout();
@@ -172,9 +169,10 @@ export class ProductCard implements OnInit, OnDestroy {
       return;
     }
 
-    // Show stock warning for low stock items
-    if (this.isLowStock()) {
-      this.toastService.info(`Hurry! Only ${product.stock} items left in stock`, 3000);
+    if (product.stock === 1) {
+      this.toastService.info('Last item! Using direct checkout...', 2000);
+      this.buyNow();
+      return;
     }
 
     this.cartService.addItem({
@@ -182,33 +180,29 @@ export class ProductCard implements OnInit, OnDestroy {
       quantity: 1
     }).subscribe({
       next: (cartItem) => {
-        // Enhanced success message with stock info
-        const successMsg = this.isLowStock() 
-          ? `${product.name} added to cart! Only ${product.stock - 1} left.`
-          : `${product.name} added to cart!`;
-        
-        this.toastService.success(successMsg, 3000);
-        console.log('✅ Product added to cart:', cartItem);
+        this.toastService.success(`${product.name} added to cart!`, 3000);
       },
       error: (error) => {
-        console.error('❌ Failed to add product to cart:', error);
-        
-        // Enhanced error handling with stock-specific messages
-        if (error.status === 409) {
-          this.toastService.error('This item is no longer available. Stock may have changed.');
-        } else if (error.status === 400 && error.error?.message?.includes('stock')) {
-          this.toastService.error('Insufficient stock available. Please try a smaller quantity.');
-        } else if (error.status === 401 || error.status === 403) {
-          this.toastService.error('Please log in again to add items to cart.');
-          this.handleVisitorCheckout();
-        } else if (error.status === 404) {
-          this.toastService.error('Product not found. It may have been discontinued.');
-        } else if (error.status >= 500) {
-          this.toastService.error('Server error. Please try again in a moment.');
-        } else {
-          this.toastService.error('Failed to add product to cart. Please try again.');
-        }
+        this.toastService.error('Failed to add to cart.');
       }
+    });
+  }
+
+  buyNow(): void {
+    if (!this.isAuthenticated()) {
+      this.handleVisitorCheckout();
+      return;
+    }
+
+    const product = this.product();
+    this.cartService.addItem({
+      productId: product.id,
+      quantity: 1
+    }).subscribe({
+      next: () => {
+        this.router.navigate(['/cart'], { queryParams: { step: 'PLACE_ORDER' } });
+      },
+      error: () => this.toastService.error('Direct checkout failed.')
     });
   }
 

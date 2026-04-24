@@ -25,4 +25,11 @@ public interface RidePaymentRepository extends MongoRepository<RidePayment, Obje
         "{ '$group': { '_id': null, 'total': { '$sum': '$amount' } } }"
     })
     Double sumCompletedPayments();
+
+    @org.springframework.data.mongodb.repository.Aggregation(pipeline = {
+        "{ $match: { status: 'COMPLETED' } }",
+        "{ $group: { _id: { $dateToString: { format: '%m', date: '$createdAt' } }, amount: { $sum: '$amount' } } }",
+        "{ $sort: { _id: 1 } }"
+    })
+    List<esprit_market.dto.carpooling.stats.AggregationAmountResult> getMonthlyEarningsTrend();
 }

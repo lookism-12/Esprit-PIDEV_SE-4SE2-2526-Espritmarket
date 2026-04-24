@@ -1,8 +1,7 @@
-import { Component, signal, computed, inject, OnInit } from '@angular/core';
+import { Component, signal, computed, inject, OnInit, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, Router } from '@angular/router';
+import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { Product, StockStatus, ProductCondition } from '../../models/product';
 import { CartService } from '../../core/cart.service';
 import { CartResponse, CartItemResponse } from '../../models/cart.model';
 import { CouponService } from '../../core/coupon.service';
@@ -11,6 +10,7 @@ import { ToastService } from '../../core/toast.service';
 import { ImageUrlHelper } from '../../../shared/utils/image-url.helper';
 import { LoyaltyLevel } from '../../models/loyalty.model';
 import { AuthService } from '../../core/auth.service';
+import { forkJoin } from 'rxjs';
 
 // Enhanced cart item interface for display
 interface DisplayCartItem extends CartItemResponse {
@@ -41,6 +41,7 @@ export class Cart implements OnInit {
   private loyaltyService = inject(LoyaltyService);
   private toastService = inject(ToastService);
   private authService = inject(AuthService);
+  private route = inject(ActivatedRoute);
 
   // New Wizard Flow State
   readonly currentStep = signal<'CART' | 'PLACE_ORDER' | 'PAY' | 'COMPLETE'>('CART');
@@ -139,16 +140,21 @@ export class Cart implements OnInit {
     return Math.min(this.loyaltyPoints(), Math.floor(maxDiscount * 100));
   });
 
+  constructor() {
+    // Watch for wizard step redirect (e.g. from Buy Now)
+    effect(() => {
+      const step = this.route.snapshot.queryParamMap.get('step');
+      if (step === 'PLACE_ORDER' && this.canCheckout()) {
+        this.goToStep('PLACE_ORDER');
+      }
+    });
+  }
+
   ngOnInit(): void {
     this.loadRealCartData();
-    this.loadLoyaltyAccount();
+    this.loyaltyService.getAccount().subscribe();
     this.initDeliveryEstimation();
     this.prefillUserProfile();
-    
-    // Subscribe to cart updates
-    this.cartService.cartUpdated$.subscribe(() => {
-      this.loadRealCartData();
-    });
   }
 
   private initDeliveryEstimation(): void {
@@ -286,18 +292,12 @@ export class Cart implements OnInit {
   }
 
   loadRealCartData(): void {
-    const cart$ = this.cartService.getCart();
-    const items$ = this.cartService.getCartItems();
-
-    cart$.subscribe({
-      error: (error) => this.toastService.error('Failed to load cart.')
-    });
-
-    items$.subscribe({
-      next: (items) => this.processCartItems(items),
-      error: (error) => {
-        this.cartItems.set([]);
-      }
+    forkJoin({
+      cart: this.cartService.getCart(),
+      items: this.cartService.getCartItems()
+    }).subscribe({
+      next: ({ items }) => this.processCartItems(items),
+      error: () => this.cartItems.set([])
     });
   }
 

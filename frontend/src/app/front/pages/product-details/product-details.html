@@ -162,9 +162,15 @@
                                class="px-4 py-2 border border-gray-200 text-gray-700 font-semibold text-sm rounded-lg hover:bg-gray-100 transition-colors">
                                 View Shop
                             </a>
-                            <button (click)="contactSeller()" class="px-4 py-2 bg-primary text-white font-semibold text-sm rounded-lg hover:bg-primary-dark transition-colors">
-                                Contact
-                            </button>
+                            @if (!isOwnProduct()) {
+                              <button (click)="openNegotiationModal()" class="px-4 py-2 bg-primary text-white font-semibold text-sm rounded-lg hover:bg-primary-dark transition-colors flex items-center gap-1.5">
+                                  🤝 Make Offer
+                              </button>
+                            } @else {
+                              <span class="px-4 py-2 bg-gray-100 text-gray-400 font-semibold text-sm rounded-lg cursor-not-allowed">
+                                Your Product
+                              </span>
+                            }
                         </div>
                     </div>
                 </div>
@@ -198,7 +204,7 @@
                 <div class="flex gap-4">
                     <button 
                         (click)="addToCart()"
-                        [disabled]="isAddingToCart() || safeProduct().stockStatus === 'OUT_OF_STOCK'"
+                        [disabled]="isAddingToCart() || safeProduct().stockStatus === 'OUT_OF_STOCK' || safeProduct().stock === 1"
                         class="flex-1 btn-primary py-4 text-lg font-bold shadow-xl shadow-primary/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
                         @if (safeProduct().stockStatus === 'OUT_OF_STOCK') {
                             Out of Stock
@@ -212,18 +218,28 @@
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                             </svg>
-                            Added!
+                            ✓ Added to Cart!
+                        } @else if (safeProduct().stock === 1) {
+                            Buy Now Only
                         } @else {
                             Add to Cart
                         }
                     </button>
                     <button 
                         (click)="buyNow()"
-                        [disabled]="safeProduct().stockStatus === 'OUT_OF_STOCK'"
+                        [disabled]="isAddingToCart() || safeProduct().stockStatus === 'OUT_OF_STOCK'"
                         class="px-8 py-4 bg-dark text-white rounded-xl font-bold hover:bg-black transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                         Buy Now
                     </button>
                 </div>
+
+                <!-- Cart error -->
+                @if (error()) {
+                    <div class="mt-3 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 font-semibold flex items-center justify-between">
+                        <span>⚠️ {{ error() }}</span>
+                        <button (click)="error.set(null)" class="text-red-400 hover:text-red-600 font-black ml-2">✕</button>
+                    </div>
+                }
 
                 <!-- Product Features -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-6 border-t border-gray-100">
@@ -336,85 +352,99 @@
 
                 @if (activeTab() === 'negotiation') {
                     <div class="max-w-2xl">
+
+                        <!-- Status banner if active negotiation -->
+                        @if (activeNegotiation()) {
+                            <div class="mb-5 p-4 rounded-xl font-bold text-sm flex items-center gap-2"
+                                [class.bg-yellow-50]="activeNegotiation()!.status === 'IN_PROGRESS' || activeNegotiation()!.status === 'PENDING'"
+                                [class.text-yellow-800]="activeNegotiation()!.status === 'IN_PROGRESS' || activeNegotiation()!.status === 'PENDING'"
+                                [class.bg-green-50]="activeNegotiation()!.status === 'ACCEPTED'"
+                                [class.text-green-800]="activeNegotiation()!.status === 'ACCEPTED'"
+                                [class.bg-red-50]="activeNegotiation()!.status === 'REJECTED'"
+                                [class.text-red-800]="activeNegotiation()!.status === 'REJECTED'">
+                                @if (activeNegotiation()!.status === 'ACCEPTED') { ✅ Offer accepted! }
+                                @else if (activeNegotiation()!.status === 'REJECTED') { ❌ Offer rejected. You can make a new one below. }
+                                @else { ⏳ Negotiation in progress — waiting for seller response. }
+                            </div>
+                        }
+
                         <!-- AI Suggested Price -->
-                        <div class="mb-6 p-4 bg-gradient-to-r from-primary/5 to-accent/5 rounded-xl border border-primary/10">
-                            <div class="flex items-center gap-3 mb-2">
-                                <div class="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-                                    <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                                    </svg>
-                                </div>
-                                <span class="text-sm font-bold text-dark">AI Suggested Price</span>
-                                <span class="px-2 py-0.5 bg-accent/20 text-accent-dark text-[10px] font-bold rounded-full">BETA</span>
+                        <div class="mb-6 p-4 bg-gradient-to-r from-primary/5 to-accent/5 rounded-xl border border-primary/10 flex items-center justify-between">
+                            <div>
+                                <p class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">💡 Suggested offer (15% off)</p>
+                                <p class="text-2xl font-black text-primary">{{ suggestedPrice }} TND</p>
                             </div>
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-2xl font-black text-primary">{{ aiSuggestedPrice() }} TND</p>
-                                    <p class="text-xs text-gray-500">Based on market analysis and similar products</p>
-                                </div>
-                                <button (click)="useAiSuggestedPrice(); openNegotiationModal()" class="px-4 py-2 bg-primary text-white font-bold text-sm rounded-lg hover:bg-primary-dark transition-colors">
-                                    Use This Price
-                                </button>
-                            </div>
+                            <button (click)="useAiSuggestedPrice(); openNegotiationModal()"
+                                class="px-4 py-2 bg-primary text-white font-bold text-sm rounded-lg hover:bg-primary-dark transition-colors">
+                                Use This Price
+                            </button>
                         </div>
 
-                        <!-- Negotiation Timeline -->
-                        @if (negotiationHistory().length > 0) {
+                        <!-- Proposal history -->
+                        @if (activeNegotiation() && activeNegotiation()!.proposals.length > 0) {
                             <h4 class="text-lg font-bold text-dark mb-4">Negotiation History</h4>
-                            <div class="space-y-4 mb-6">
-                                @for (proposal of negotiationHistory(); track proposal.id) {
-                                    <div class="relative pl-8 pb-4" [class.border-l-2]="!$last" [class.border-gray-200]="!$last">
+                            <div class="space-y-3 mb-6">
+                                @for (proposal of activeNegotiation()!.proposals; track proposal.createdAt) {
+                                    <div class="relative pl-8 pb-3" [class.border-l-2]="!$last" [class.border-gray-200]="!$last">
                                         <div class="absolute left-0 top-0 -translate-x-1/2 w-4 h-4 rounded-full"
-                                            [ngClass]="proposal.proposedBy === 'buyer' ? 'bg-primary' : 'bg-accent'"></div>
+                                            [class.bg-primary]="proposal.senderId === activeNegotiation()!.clientId"
+                                            [class.bg-amber-400]="proposal.senderId !== activeNegotiation()!.clientId"></div>
                                         <div class="bg-gray-50 rounded-xl p-4">
                                             <div class="flex items-center justify-between mb-2">
                                                 <div class="flex items-center gap-2">
-                                                    <span class="font-bold text-dark">
-                                                        {{ proposal.proposedBy === 'buyer' ? 'You' : safeProduct().sellerName }}
+                                                    <span class="font-bold text-dark text-sm">
+                                                        {{ proposal.senderId === activeNegotiation()!.clientId ? '🧑 You' : '🏪 ' + safeProduct().sellerName }}
                                                     </span>
-                                                    <span class="px-2 py-0.5 text-xs font-semibold rounded-full" [ngClass]="getProposalStatusClass(proposal.status)">
+                                                    <span class="px-2 py-0.5 text-[10px] font-bold rounded-full"
+                                                        [class.bg-yellow-100]="proposal.status === 'PENDING'" [class.text-yellow-700]="proposal.status === 'PENDING'"
+                                                        [class.bg-green-100]="proposal.status === 'ACCEPTED'" [class.text-green-700]="proposal.status === 'ACCEPTED'"
+                                                        [class.bg-red-100]="proposal.status === 'REJECTED'" [class.text-red-700]="proposal.status === 'REJECTED'">
                                                         {{ proposal.status }}
                                                     </span>
                                                 </div>
                                                 <span class="text-xs text-gray-400">{{ proposal.createdAt | date:'short' }}</span>
                                             </div>
-                                            <p class="text-2xl font-black text-primary mb-2">{{ proposal.amount }} TND</p>
-                                            @if (proposal.message) {
-                                                <p class="text-sm text-gray-600">"{{ proposal.message }}"</p>
+                                            <div class="flex flex-wrap gap-x-4 gap-y-1 mb-1">
+                                                <p class="text-2xl font-black text-primary">{{ proposal.amount }} TND</p>
+                                                @if (proposal.quantity && proposal.quantity > 1) {
+                                                    <p class="text-sm font-bold text-gray-400 mt-2">Qty: {{ proposal.quantity }}</p>
+                                                }
+                                                @if (proposal.isExchange) {
+                                                    <span class="px-2 py-1 bg-accent/10 text-accent-dark text-[10px] font-black rounded-lg mt-1.5">🔄 EXCHANGE OFFER</span>
+                                                }
+                                            </div>
+                                            @if (proposal.isExchange && proposal.exchangeImage) {
+                                                <div class="mt-2 mb-3 rounded-lg overflow-hidden border border-gray-200 max-w-[150px]">
+                                                    <img [src]="proposal.exchangeImage" alt="Exchange product" class="w-full h-auto object-cover">
+                                                </div>
                                             }
-                                            @if (proposal.status === 'PENDING' && proposal.proposedBy === 'seller') {
+                                            @if (proposal.message) {
+                                                <p class="text-sm text-gray-500 italic">"{{ proposal.message }}"</p>
+                                            }
+                                            <!-- Buyer can accept/reject seller counter-offers -->
+                                            @if (proposal.status === 'PENDING' && proposal.senderId !== activeNegotiation()!.clientId) {
                                                 <div class="flex gap-2 mt-3">
-                                                    <button (click)="acceptOffer(proposal.id)" class="px-4 py-2 bg-green-500 text-white font-bold text-sm rounded-lg hover:bg-green-600 transition-colors">
-                                                        Accept
-                                                    </button>
-                                                    <button (click)="openNegotiationModal()" class="px-4 py-2 bg-blue-500 text-white font-bold text-sm rounded-lg hover:bg-blue-600 transition-colors">
-                                                        Counter
-                                                    </button>
-                                                    <button (click)="rejectOffer(proposal.id)" class="px-4 py-2 bg-red-500 text-white font-bold text-sm rounded-lg hover:bg-red-600 transition-colors">
-                                                        Reject
-                                                    </button>
+                                                    <button (click)="acceptOffer(proposal.createdAt)" class="px-4 py-2 bg-green-500 text-white font-bold text-sm rounded-lg hover:bg-green-600 transition-colors">✓ Accept</button>
+                                                    <button (click)="openNegotiationModal()" class="px-4 py-2 bg-blue-500 text-white font-bold text-sm rounded-lg hover:bg-blue-600 transition-colors">↩ Counter</button>
+                                                    <button (click)="rejectOffer(proposal.createdAt)" class="px-4 py-2 bg-red-500 text-white font-bold text-sm rounded-lg hover:bg-red-600 transition-colors">✕ Reject</button>
                                                 </div>
                                             }
                                         </div>
                                     </div>
                                 }
                             </div>
-                        } @else {
+                        } @else if (!activeNegotiation()) {
                             <div class="text-center py-12 bg-gray-50 rounded-xl">
-                                <div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <svg class="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                                    </svg>
-                                </div>
+                                <div class="text-5xl mb-3">🤝</div>
                                 <h4 class="text-lg font-bold text-dark mb-2">No negotiations yet</h4>
-                                <p class="text-gray-500 mb-4">Start a negotiation by making an offer</p>
-                                <button (click)="openNegotiationModal()" class="btn-primary">Make an Offer</button>
+                                <p class="text-gray-500 mb-4">Make an offer and start negotiating with the seller</p>
+                                <button (click)="openNegotiationModal()" class="px-6 py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary-dark transition-colors">Make an Offer</button>
                             </div>
                         }
 
-                        @if (negotiationHistory().length > 0) {
-                            <button (click)="openNegotiationModal()" class="w-full py-4 bg-primary text-white font-bold rounded-xl hover:bg-primary-dark transition-colors">
-                                Make New Offer
+                        @if (activeNegotiation() && activeNegotiation()!.status !== 'ACCEPTED') {
+                            <button (click)="openNegotiationModal()" class="w-full py-4 bg-primary text-white font-bold rounded-xl hover:bg-primary-dark transition-colors mt-2">
+                                🔄 Make New Offer
                             </button>
                         }
                     </div>
@@ -451,71 +481,172 @@
 
 <!-- Negotiation Modal -->
 @if (showNegotiationModal()) {
-    <div class="fixed inset-0 z-50 overflow-y-auto" (click)="closeNegotiationModal()">
-        <div class="fixed inset-0 bg-black/50"></div>
-        <div class="flex min-h-full items-center justify-center p-4">
-            <div class="relative w-full max-w-md bg-white rounded-2xl shadow-2xl p-6" (click)="$event.stopPropagation()">
-                <button (click)="closeNegotiationModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4" (click)="closeNegotiationModal()">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+    <div class="relative w-full max-w-md bg-white rounded-[2rem] shadow-2xl p-8" (click)="$event.stopPropagation()">
 
-                <h3 class="text-xl font-bold text-dark mb-2">Make an Offer</h3>
-                <p class="text-sm text-gray-500 mb-6">Current price: <span class="font-bold text-primary">{{ safeProduct().price }} TND</span></p>
+        <!-- Close -->
+        <button (click)="closeNegotiationModal()" class="absolute top-5 right-5 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 font-bold transition-all">✕</button>
 
-                <!-- AI Suggestion in Modal -->
-                <div class="mb-6 p-3 bg-primary/5 rounded-xl border border-primary/10">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-2">
-                            <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                            </svg>
-                            <span class="text-xs font-semibold text-gray-600">AI suggests:</span>
-                        </div>
-                        <button (click)="useAiSuggestedPrice()" class="text-xs font-bold text-primary hover:underline">
-                            Use {{ aiSuggestedPrice() }} TND
-                        </button>
-                    </div>
-                </div>
-
-                <form [formGroup]="negotiationForm" (ngSubmit)="submitOffer()">
-                    <div class="mb-4">
-                        <label class="block text-sm font-bold text-gray-700 mb-2">Your Offer (TND)</label>
-                        <input 
-                            type="number" 
-                            formControlName="proposedPrice"
-                            class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-lg font-bold"
-                            placeholder="Enter your price">
-                        @if (negotiationForm.get('proposedPrice')?.invalid && negotiationForm.get('proposedPrice')?.touched) {
-                            <p class="text-red-500 text-xs mt-1">Please enter a valid price</p>
-                        }
-                    </div>
-
-                    <div class="mb-6">
-                        <label class="block text-sm font-bold text-gray-700 mb-2">Message (Optional)</label>
-                        <textarea 
-                            formControlName="message"
-                            rows="3"
-                            class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-sm resize-none"
-                            placeholder="Add a message to the seller..."></textarea>
-                    </div>
-
-                    <button 
-                        type="submit"
-                        [disabled]="isSubmittingOffer() || negotiationForm.invalid"
-                        class="w-full btn-primary py-4 font-bold disabled:opacity-50">
-                        @if (isSubmittingOffer()) {
-                            <svg class="animate-spin h-5 w-5 mx-auto" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                            </svg>
-                        } @else {
-                            Submit Offer
-                        }
-                    </button>
-                </form>
-            </div>
+        <!-- Header -->
+        <div class="mb-6">
+            <h3 class="text-2xl font-black text-gray-900">Make an Offer 🤝</h3>
+            <p class="text-sm text-gray-500 mt-1">
+                Listed price: <span class="font-black text-primary">{{ safeProduct().price }} TND</span>
+                &nbsp;·&nbsp; Seller: <span class="font-semibold">{{ safeProduct().sellerName }}</span>
+            </p>
         </div>
+
+        <!-- Active negotiation status banner -->
+        @if (activeNegotiation()) {
+            <div class="mb-5 p-3 rounded-xl text-sm font-bold flex items-center gap-2"
+                [class.bg-yellow-50]="activeNegotiation()!.status === 'IN_PROGRESS' || activeNegotiation()!.status === 'PENDING'"
+                [class.text-yellow-800]="activeNegotiation()!.status === 'IN_PROGRESS' || activeNegotiation()!.status === 'PENDING'"
+                [class.bg-green-50]="activeNegotiation()!.status === 'ACCEPTED'"
+                [class.text-green-800]="activeNegotiation()!.status === 'ACCEPTED'"
+                [class.bg-red-50]="activeNegotiation()!.status === 'REJECTED'"
+                [class.text-red-800]="activeNegotiation()!.status === 'REJECTED'">
+                @if (activeNegotiation()!.status === 'ACCEPTED') { ✅ Offer accepted! }
+                @else if (activeNegotiation()!.status === 'REJECTED') { ❌ Offer rejected. You can make a new one. }
+                @else { ⏳ Negotiation in progress — you can counter-offer below. }
+            </div>
+        }
+
+        <!-- AI suggestion -->
+        <div class="mb-5 p-3 bg-primary/5 border border-primary/10 rounded-xl flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <span class="text-base">💡</span>
+                <span class="text-xs font-semibold text-gray-600">Suggested offer (15% off):</span>
+                <span class="text-sm font-black text-primary">{{ suggestedPrice }} TND</span>
+            </div>
+            <button (click)="useAiSuggestedPrice()" class="text-xs font-bold text-primary hover:underline">Use it</button>
+        </div>
+
+        <!-- Proposal history -->
+        @if (activeNegotiation() && activeNegotiation()!.proposals.length > 0) {
+            <div class="mb-5 max-h-40 overflow-y-auto space-y-2">
+                @for (p of activeNegotiation()!.proposals; track p.createdAt) {
+                    <div class="flex items-start gap-3 p-3 rounded-xl text-sm"
+                        [class.bg-primary/5]="p.senderId === activeNegotiation()!.clientId"
+                        [class.bg-gray-50]="p.senderId !== activeNegotiation()!.clientId">
+                        <span class="font-black shrink-0">
+                            {{ p.senderId === activeNegotiation()!.clientId ? '🧑 You' : '🏪 Seller' }}
+                        </span>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-baseline gap-2">
+                                <span class="font-black text-primary">{{ p.amount }} TND</span>
+                                @if (p.quantity && p.quantity > 1) { <span class="text-[10px] text-gray-400 font-bold">Qty: {{ p.quantity }}</span> }
+                                @if (p.isExchange) { <span class="text-[9px] font-black text-accent uppercase">Exchange</span> }
+                            </div>
+                            @if (p.message) { <p class="text-gray-500 text-xs mt-0.5 truncate">{{ p.message }}</p> }
+                        </div>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0"
+                            [class.bg-yellow-100]="p.status === 'PENDING'" [class.text-yellow-700]="p.status === 'PENDING'"
+                            [class.bg-green-100]="p.status === 'ACCEPTED'" [class.text-green-700]="p.status === 'ACCEPTED'"
+                            [class.bg-red-100]="p.status === 'REJECTED'" [class.text-red-700]="p.status === 'REJECTED'">
+                            {{ p.status }}
+                        </span>
+                    </div>
+                }
+            </div>
+        }
+
+        <!-- Form -->
+        @if (activeNegotiation()?.status !== 'ACCEPTED') {
+        <form [formGroup]="negotiationForm" (ngSubmit)="submitOffer()" class="space-y-4">
+
+            <!-- Quantity & Price Row -->
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5">Quantity *</label>
+                    <input type="number" formControlName="quantity" min="1" [max]="safeProduct().stock || 99"
+                        class="w-full h-14 px-4 bg-gray-50 border-2 rounded-xl text-xl font-black text-dark transition-all focus:outline-none focus:bg-white focus:border-primary"
+                        [class.border-red-400]="isFieldInvalid('quantity')"
+                        [class.border-transparent]="!isFieldInvalid('quantity')">
+                </div>
+                <div>
+                    <label class="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5" [class.opacity-50]="negotiationForm.get('isExchange')?.value">Price Offer (TND) *</label>
+                    <input type="number" formControlName="proposedPrice" min="0" [max]="safeProduct().price - 0.01" step="0.5"
+                        [disabled]="negotiationForm.get('isExchange')?.value"
+                        class="w-full h-14 px-4 bg-gray-50 border-2 rounded-xl text-xl font-black text-primary transition-all focus:outline-none focus:bg-white focus:border-primary disabled:opacity-30 disabled:cursor-not-allowed"
+                        [class.border-red-400]="isFieldInvalid('proposedPrice')"
+                        [class.border-transparent]="!isFieldInvalid('proposedPrice')"
+                        placeholder="e.g. {{ suggestedPrice }}">
+                </div>
+            </div>
+
+            <!-- Exchange Toggle -->
+            <div class="p-4 bg-accent/5 border border-accent/20 rounded-2xl">
+                <label class="flex items-center justify-between cursor-pointer">
+                    <div class="flex items-center gap-3">
+                        <span class="text-xl">🔄</span>
+                        <div>
+                            <p class="text-sm font-black text-dark">Offer an Exchange</p>
+                            <p class="text-[10px] text-gray-500 font-bold uppercase tracking-tight">Propose your own product instead of cash</p>
+                        </div>
+                    </div>
+                    <div class="relative inline-block w-12 h-6 transition duration-200 ease-in-out rounded-full cursor-pointer select-none">
+                        <input type="checkbox" formControlName="isExchange" class="absolute z-10 w-6 h-6 opacity-0 cursor-pointer peer">
+                        <div class="w-12 h-6 bg-gray-200 rounded-full peer-checked:bg-accent transition-colors"></div>
+                        <div class="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-6"></div>
+                    </div>
+                </label>
+
+                @if (negotiationForm.get('isExchange')?.value) {
+                    <div class="mt-4 animate-fadeIn">
+                        <label class="block text-xs font-black text-accent-dark uppercase tracking-widest mb-2">Exchange Product Photo</label>
+                        
+                        @if (exchangeImagePreview()) {
+                            <div class="relative w-32 h-32 rounded-xl overflow-hidden border-2 border-accent shadow-lg group">
+                                <img [src]="exchangeImagePreview()" class="w-full h-full object-cover">
+                                <button type="button" (click)="removeExchangeImage()" 
+                                    class="absolute top-1 right-1 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">✕</button>
+                            </div>
+                        } @else {
+                            <div (click)="exchangeFileInput.click()" 
+                                class="w-full h-32 border-2 border-dashed border-accent/30 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:bg-accent/5 hover:border-accent transition-all group">
+                                <input #exchangeFileInput type="file" accept="image/*" (change)="onExchangeFileSelected($event)" hidden>
+                                <span class="text-2xl mb-1 group-hover:scale-110 transition-transform">📸</span>
+                                <span class="text-[10px] font-black text-accent-dark">UPLOAD PHOTO</span>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            <!-- Message field -->
+            <div>
+                <label class="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5">Message to seller <span class="normal-case font-normal">(optional)</span></label>
+                <textarea formControlName="message" rows="3" maxlength="500"
+                    class="w-full px-4 py-3 bg-gray-50 border-2 border-transparent rounded-xl text-sm resize-none transition-all focus:outline-none focus:bg-white focus:border-primary"
+                    [class.border-red-400]="isFieldInvalid('message')"
+                    placeholder="Explain why you're offering this price..."></textarea>
+                <div class="flex justify-between mt-1">
+                    @if (isFieldInvalid('message')) {
+                        <p class="text-red-500 text-xs font-semibold">{{ getFieldError('message') }}</p>
+                    } @else { <span></span> }
+                    <span class="text-xs text-gray-400">{{ negotiationForm.get('message')?.value?.length || 0 }}/500</span>
+                </div>
+            </div>
+
+            <!-- API error -->
+            @if (negotiationError()) {
+                <div class="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 font-semibold">
+                    ⚠️ {{ negotiationError() }}
+                </div>
+            }
+
+            <button type="submit" [disabled]="isSubmittingOffer() || negotiationForm.invalid"
+                class="w-full h-14 bg-gray-900 hover:bg-black text-white rounded-2xl font-black text-lg transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                @if (isSubmittingOffer()) {
+                    <div class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>Sending...</span>
+                } @else {
+                    <span>{{ activeNegotiation() ? '🔄 Counter Offer' : '🤝 Send Offer' }}</span>
+                }
+            </button>
+        </form>
+        }
     </div>
+</div>
 }

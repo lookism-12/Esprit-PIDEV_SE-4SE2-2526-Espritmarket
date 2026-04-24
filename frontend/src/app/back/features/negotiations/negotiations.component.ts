@@ -53,9 +53,10 @@ export class NegotiationsComponent implements OnInit {
   load(): void {
     this.isLoading.set(true);
     this.error.set(null);
-    this.negotiationService.getProviderNegotiations().subscribe({
-      next: (list: any) => {
-        const mapped = (list || []).map((n: any) => ({
+    this.negotiationService.getAllAdmin(0, 1000).subscribe({
+      next: (response: any) => {
+        const list = response.content || [];
+        const mapped = list.map((n: any) => ({
           ...n,
           currentOffer: n.proposals?.length ? n.proposals[n.proposals.length - 1].amount : null
         }));

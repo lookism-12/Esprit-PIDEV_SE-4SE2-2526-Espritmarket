@@ -8,7 +8,9 @@
         <a [routerLink]="['/product', product().id]">
             <img [src]="product().imageUrl" [alt]="product().name"
                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                [class.grayscale]="isOutOfStock()">
+                [class.grayscale]="isOutOfStock()"
+                [attr.loading]="isFeatured() ? 'eager' : 'lazy'"
+                [attr.fetchpriority]="isFeatured() ? 'high' : 'auto'">
         </a>
         
         <!-- Out of Stock Overlay -->
@@ -78,10 +80,11 @@
             } @else if (shouldShowAddToCart()) {
                 <!-- Client: Enhanced Add to Cart -->
                 <button
-                    (click)="addToCart()"
+                    (click)="product().stock === 1 ? buyNow() : addToCart()"
                     [disabled]="isOutOfStock() || isAddingToCart()"
                     [class]="'w-full py-3 rounded-xl font-black transition-all text-sm uppercase tracking-widest ' + 
                             (isOutOfStock() ? 'bg-gray-300 text-gray-500 cursor-not-allowed' :
+                             product().stock === 1 ? 'bg-primary text-white hover:bg-primary-dark' :
                              isLowStock() ? 'bg-orange-400 text-dark hover:bg-orange-500 animate-pulse' :
                              'bg-accent text-dark hover:bg-accent-dark') + 
                             (isAddingToCart() ? ' opacity-75' : '')">
@@ -95,6 +98,8 @@
                         </span>
                     } @else if (isOutOfStock()) {
                         🚫 Out of Stock
+                    } @else if (product().stock === 1) {
+                        🔥 Buy Now
                     } @else if (isLowStock()) {
                         ⚡ Add to Cart ({{ product().stock }} left!)
                     } @else {

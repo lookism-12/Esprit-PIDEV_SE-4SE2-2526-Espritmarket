@@ -43,6 +43,8 @@ public class DriverProfileMapper {
                 .averageRating(profile.getAverageRating())
                 .totalRidesCompleted(profile.getTotalRidesCompleted())
                 .totalEarnings(profile.getTotalEarnings())
+                .driverScore(profile.getDriverScore())
+                .badge(profile.getBadge())
                 .rideIds(profile.getRideIds() != null
                         ? profile.getRideIds().stream().map(ObjectId::toHexString).collect(Collectors.toList())
                         : Collections.emptyList())

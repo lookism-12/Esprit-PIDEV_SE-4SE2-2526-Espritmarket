@@ -1,10 +1,11 @@
-import { Component, OnInit, signal, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, inject } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { NegotiationService } from '../../core/negotiation.service';
 import { NegotiationResponse, NegotiationStatus } from '../../models/negotiation.model';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthService } from '../../core/auth.service';
 import { UserRole } from '../../models/user.model';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-negotiations',
@@ -13,8 +14,9 @@ import { UserRole } from '../../models/user.model';
   templateUrl: './negotiations.html',
   styleUrl: './negotiations.scss'
 })
-export class Negotiations implements OnInit {
+export class Negotiations implements OnInit, OnDestroy {
   private authService = inject(AuthService);
+  private wsSub: Subscription | null = null;
 
   negotiations = signal<NegotiationResponse[]>([]);
   isLoading = signal<boolean>(true);
@@ -85,6 +87,18 @@ export class Negotiations implements OnInit {
   loadById(id: string): void {
     this.selectedId.set(id);
     this.loadNegotiationDetails();
+
+    // Subscribe to real-time updates for this negotiation
+    this.wsSub?.unsubscribe();
+    this.wsSub = this.negotiationService.connectToNegotiation(id).subscribe(updated => {
+      this.selected.set(updated);
+      this.negotiations.update(items => items.map(n => n.id === updated.id ? updated : n));
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.wsSub?.unsubscribe();
+    this.negotiationService.disconnect();
   }
 
   applyAction(action: 'ACCEPT' | 'REJECT' | 'COUNTER'): void {

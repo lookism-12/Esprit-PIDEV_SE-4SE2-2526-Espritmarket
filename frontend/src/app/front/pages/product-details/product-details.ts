@@ -1,12 +1,17 @@
-import { Component, signal, computed, inject, OnInit } from '@angular/core';
+import { Component, signal, computed, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute, Router } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Product, StockStatus, ProductCondition, ProductStatus } from '../../models/product';
 import { ProductService } from '../../../core/services/product.service';
 import { CartService } from '../../core/cart.service';
-import { NegotiationStatus, ProposalStatus } from '../../models/negotiation.model';
+import { NegotiationService } from '../../core/negotiation.service';
+import { AuthService } from '../../core/auth.service';
+import { ShopService } from '../../core/shop.service';
+import { NegotiationStatus, NegotiationResponse, ProposalStatus } from '../../models/negotiation.model';
 import { ImageUrlHelper } from '../../../shared/utils/image-url.helper';
+import { Subscription } from 'rxjs';
+import { catchError, of } from 'rxjs';
 
 interface NegotiationProposal {
   id: string;
@@ -24,12 +29,19 @@ interface NegotiationProposal {
   templateUrl: './product-details.html',
   styleUrl: './product-details.scss',
 })
-export class ProductDetails implements OnInit {
+export class ProductDetails implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private productService = inject(ProductService);
   private cartService = inject(CartService);
+  private negotiationService = inject(NegotiationService);
+  private authService = inject(AuthService);
+  private shopService = inject(ShopService);
   private fb = inject(FormBuilder);
+  private wsSub?: Subscription;
+
+  // my shop id (set if current user is a provider)
+  private myShopId = signal<string | null>(null);
 
   // State
   product = signal<Product | null>(null);
@@ -51,15 +63,22 @@ export class ProductDetails implements OnInit {
   isFavorite = signal(false);
   isTogglingFavorite = signal(false);
 
-  // Negotiation state
+  // True when the logged-in provider owns the shop that sells this product
+  isOwnProduct = computed(() => {
+    const shopId = this.myShopId();
+    const product = this.product();
+    if (!shopId || !product) return false;
+    return (product as any).sellerId === shopId || (product as any).shopId === shopId;
+  });
   showNegotiationModal = signal(false);
   negotiationForm!: FormGroup;
   isSubmittingOffer = signal(false);
   hasActiveNegotiation = signal(false);
   negotiationStatus = signal<NegotiationStatus>(NegotiationStatus.PENDING);
-  aiSuggestedPrice = signal<number>(105);
-  
-  negotiationHistory = signal<NegotiationProposal[]>([]);
+  aiSuggestedPrice = signal<number>(0);
+  activeNegotiation = signal<NegotiationResponse | null>(null);
+  negotiationError = signal<string | null>(null);
+  error = signal<string | null>(null);
 
   // Mock reviews (TODO: Load from API)
   reviews = signal<any[]>([]);
@@ -73,12 +92,39 @@ export class ProductDetails implements OnInit {
       this.loadProduct(productId);
     }
     this.initNegotiationForm();
+    // Load provider's shop so we can block self-negotiation
+    const role = this.authService.userRole();
+    if (role === 'PROVIDER' || role === 'SELLER') {
+      this.shopService.getMyShop().pipe(catchError(() => of(null))).subscribe(shop => {
+        if (shop?.id) this.myShopId.set(shop.id);
+      });
+    }
   }
 
   private initNegotiationForm(): void {
+    const price = this.product()?.price ?? 0;
     this.negotiationForm = this.fb.group({
-      proposedPrice: [null, [Validators.required, Validators.min(1)]],
-      message: ['', [Validators.maxLength(500)]]
+      proposedPrice: [
+        Math.floor(price * 0.9) || null,
+        [
+          Validators.min(0)
+        ]
+      ],
+      quantity: [1, [Validators.required, Validators.min(1)]],
+      message: ['', [Validators.maxLength(500)]],
+      isExchange: [false],
+      exchangeImage: [null]
+    });
+
+    // Handle conditional validation
+    this.negotiationForm.get('isExchange')?.valueChanges.subscribe(isExchange => {
+      const priceControl = this.negotiationForm.get('proposedPrice');
+      if (isExchange) {
+        priceControl?.clearValidators();
+      } else {
+        priceControl?.setValidators([Validators.required, Validators.min(1), Validators.max(price > 0 ? price - 0.01 : 999999)]);
+      }
+      priceControl?.updateValueAndValidity();
     });
   }
 
@@ -189,23 +235,46 @@ export class ProductDetails implements OnInit {
   addToCart(): void {
     const product = this.product();
     if (!product || product.stockStatus === StockStatus.OUT_OF_STOCK) return;
-    
+
     this.isAddingToCart.set(true);
-    setTimeout(() => {
-      console.log('Adding to cart:', this.product(), 'Quantity:', this.quantity());
-      this.isAddingToCart.set(false);
-      this.addedToCart.set(true);
-      setTimeout(() => this.addedToCart.set(false), 2000);
-    }, 500);
+    this.cartService.addItem({
+      productId: product.id,
+      quantity: this.quantity()
+    }).subscribe({
+      next: () => {
+        this.isAddingToCart.set(false);
+        this.addedToCart.set(true);
+        setTimeout(() => this.addedToCart.set(false), 2000);
+      },
+      error: (err) => {
+        this.isAddingToCart.set(false);
+        this.error.set(err.error?.message || err.error?.fieldErrors
+          ? JSON.stringify(err.error?.fieldErrors)
+          : 'Failed to add to cart. Please try again.');
+        console.error('❌ addToCart error:', err);
+      }
+    });
   }
 
   buyNow(): void {
     const product = this.product();
     if (!product || product.stockStatus === StockStatus.OUT_OF_STOCK) return;
-    this.addToCart();
-    setTimeout(() => {
-      this.router.navigate(['/cart']);
-    }, 600);
+
+    this.isAddingToCart.set(true);
+    this.cartService.addItem({
+      productId: product.id,
+      quantity: this.quantity()
+    }).subscribe({
+      next: () => {
+        this.isAddingToCart.set(false);
+        this.router.navigate(['/cart'], { queryParams: { step: 'PLACE_ORDER' } });
+      },
+      error: (err) => {
+        this.isAddingToCart.set(false);
+        this.error.set(err.error?.message || 'Failed to add to cart.');
+        console.error('❌ buyNow error:', err);
+      }
+    });
   }
 
   toggleFavorite(): void {
@@ -242,25 +311,32 @@ export class ProductDetails implements OnInit {
     return ((p.originalPrice - p.price) / p.originalPrice) * 100;
   }
 
+  ngOnDestroy(): void {
+    this.wsSub?.unsubscribe();
+    this.negotiationService.disconnect();
+  }
+
   contactSeller(): void {
-    const product = this.product();
-    if (!product) return;
-    this.router.navigate(['/chat'], { queryParams: { sellerId: product.sellerId } });
+    this.openNegotiationModal();
   }
 
   // Negotiation methods
   openNegotiationModal(): void {
     const product = this.product();
     if (!product) return;
+    if (this.isOwnProduct()) {
+      this.error.set('You cannot negotiate on your own product.');
+      return;
+    }
+    this.negotiationError.set(null);
+    this.initNegotiationForm();
     this.showNegotiationModal.set(true);
-    this.negotiationForm.patchValue({
-      proposedPrice: Math.floor(product.price * 0.9)
-    });
   }
 
   closeNegotiationModal(): void {
     this.showNegotiationModal.set(false);
     this.negotiationForm.reset();
+    this.negotiationError.set(null);
   }
 
   submitOffer(): void {
@@ -269,44 +345,157 @@ export class ProductDetails implements OnInit {
       return;
     }
 
-    this.isSubmittingOffer.set(true);
-    const { proposedPrice, message } = this.negotiationForm.value;
+    const product = this.product();
+    if (!product) return;
 
-    setTimeout(() => {
-      this.negotiationHistory.update(history => [
-        ...history,
-        {
-          id: `${history.length + 1}`,
-          proposedBy: 'buyer',
-          amount: proposedPrice,
-          message: message,
-          status: ProposalStatus.PENDING,
-          createdAt: new Date()
+    this.isSubmittingOffer.set(true);
+    this.negotiationError.set(null);
+    this.isUploadingExchangeImage.set(false);
+
+    const { proposedPrice, message, quantity, isExchange, exchangeImage } = this.negotiationForm.value;
+    const existing = this.activeNegotiation();
+
+    if (existing && existing.status === NegotiationStatus.IN_PROGRESS) {
+      // Add a counter-proposal to existing negotiation
+      this.negotiationService.submitCounterProposal({
+        negotiationId: existing.id,
+        amount: isExchange ? 0 : proposedPrice,
+        quantity,
+        isExchange,
+        exchangeImage,
+        message: message || undefined
+      }).subscribe({
+        next: (updated) => {
+          this.activeNegotiation.set(updated);
+          this.isSubmittingOffer.set(false);
+          this.closeNegotiationModal();
+        },
+        error: (err) => {
+          this.negotiationError.set(err.error?.message || 'Failed to submit offer. Please try again.');
+          this.isSubmittingOffer.set(false);
         }
-      ]);
-      this.hasActiveNegotiation.set(true);
-      this.isSubmittingOffer.set(false);
-      this.closeNegotiationModal();
-    }, 1000);
+      });
+    } else {
+      // Create a new negotiation
+      this.negotiationService.create({
+        productId: product.id,
+        proposedPrice: isExchange ? 0 : proposedPrice,
+        amount: isExchange ? 0 : proposedPrice,
+        quantity,
+        isExchange,
+        exchangeImage,
+        message: message || undefined
+      }).subscribe({
+        next: (created) => {
+          this.activeNegotiation.set(created);
+          this.hasActiveNegotiation.set(true);
+          // Subscribe to real-time updates
+          this.wsSub?.unsubscribe();
+          this.wsSub = this.negotiationService.connectToNegotiation(created.id).subscribe(updated => {
+            this.activeNegotiation.set(updated);
+          });
+          this.isSubmittingOffer.set(false);
+          this.closeNegotiationModal();
+        },
+        error: (err) => {
+          this.negotiationError.set(err.error?.message || 'Failed to create negotiation. Please try again.');
+          this.isSubmittingOffer.set(false);
+        }
+      });
+    }
   }
 
   acceptOffer(proposalId: string): void {
-    this.negotiationHistory.update(history =>
-      history.map(p => p.id === proposalId ? { ...p, status: ProposalStatus.ACCEPTED } : p)
-    );
-    this.negotiationStatus.set(NegotiationStatus.ACCEPTED);
+    const neg = this.activeNegotiation();
+    if (!neg) return;
+    this.negotiationService.accept(neg.id).subscribe({
+      next: (updated) => {
+        this.activeNegotiation.set(updated);
+        // Use the product ID from the loaded product (most reliable source)
+        const productId = this.product()?.id
+          || updated.productId
+          || updated.serviceId;
+        const negotiatedPrice = updated.proposals.length > 0
+          ? updated.proposals[updated.proposals.length - 1].amount
+          : undefined;
+        if (productId) {
+          this.cartService.addItem({ productId, quantity: 1, negotiatedPrice }).subscribe({
+            next: () => this.router.navigate(['/cart']),
+            error: (err) => {
+              console.error('Failed to add negotiated item to cart:', err);
+              this.router.navigate(['/cart']);
+            }
+          });
+        }
+      },
+      error: () => {}
+    });
   }
 
   rejectOffer(proposalId: string): void {
-    this.negotiationHistory.update(history =>
-      history.map(p => p.id === proposalId ? { ...p, status: ProposalStatus.REJECTED } : p)
-    );
+    const neg = this.activeNegotiation();
+    if (!neg) return;
+    this.negotiationService.reject(neg.id).subscribe({
+      next: (updated) => this.activeNegotiation.set(updated),
+      error: () => {}
+    });
   }
 
   useAiSuggestedPrice(): void {
-    this.negotiationForm.patchValue({
-      proposedPrice: this.aiSuggestedPrice()
-    });
+    const price = this.product()?.price ?? 0;
+    const suggested = Math.floor(price * 0.85);
+    this.negotiationForm.patchValue({ proposedPrice: suggested });
+  }
+
+  get suggestedPrice(): number {
+    return Math.floor((this.product()?.price ?? 0) * 0.85);
+  }
+
+  isFieldInvalid(field: string): boolean {
+    const c = this.negotiationForm.get(field);
+    return !!(c && c.invalid && (c.dirty || c.touched));
+  }
+
+  getFieldError(field: string): string {
+    const c = this.negotiationForm.get(field);
+    if (!c?.errors) return '';
+    if (c.errors['required']) return 'This field is required';
+    if (c.errors['min']) return 'Price must be at least 1 TND';
+    if (c.errors['max']) return `Your offer must be lower than the listed price (${this.product()?.price} TND)`;
+    if (c.errors['maxlength']) return `Maximum ${c.errors['maxlength'].requiredLength} characters`;
+    return 'Invalid value';
+  }
+
+  isUploadingExchangeImage = signal(false);
+  exchangeImagePreview = signal<string | null>(null);
+
+  onExchangeFileSelected(event: Event): void {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      this.negotiationError.set('Image size must be less than 2MB');
+      return;
+    }
+
+    this.isUploadingExchangeImage.set(true);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = reader.result as string;
+      this.negotiationForm.patchValue({ exchangeImage: base64 });
+      this.exchangeImagePreview.set(base64);
+      this.isUploadingExchangeImage.set(false);
+    };
+    reader.onerror = () => {
+      this.negotiationError.set('Failed to read image');
+      this.isUploadingExchangeImage.set(false);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  removeExchangeImage(): void {
+    this.negotiationForm.patchValue({ exchangeImage: null });
+    this.exchangeImagePreview.set(null);
   }
 
   // Stock status helpers

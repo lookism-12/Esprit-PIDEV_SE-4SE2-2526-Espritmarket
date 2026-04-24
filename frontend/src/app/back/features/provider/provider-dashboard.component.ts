@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ProviderShopService, ShopDto } from '../../../core/services/provider-shop.service';
 import { AuthService } from '../../../front/core/auth.service';
+import { NegotiationService } from '../../../front/core/negotiation.service';
 
 @Component({
   selector: 'app-provider-dashboard',
@@ -127,6 +128,35 @@ import { AuthService } from '../../../front/core/auth.service';
                  [class.opacity-50]="!hasShop()"
                  [class.pointer-events-none]="!hasShop()">
                 Manage Products
+              </a>
+            </div>
+
+            <!-- Negotiations -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all group">
+              <div class="flex items-center gap-4 mb-4">
+                <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                  🤝
+                </div>
+                <div>
+                  <h3 class="font-bold text-gray-900">Negotiations</h3>
+                  <p class="text-sm text-gray-600">Handle price offers</p>
+                </div>
+              </div>
+              
+              <div class="grid grid-cols-2 gap-4 mb-4">
+                <div class="text-center p-3 bg-orange-50 rounded-lg">
+                  <div class="text-lg font-bold text-orange-600">{{ activeNegotiationsCount() }}</div>
+                  <div class="text-xs text-orange-700">Active</div>
+                </div>
+                <div class="text-center p-3 bg-blue-50 rounded-lg">
+                  <div class="text-lg font-bold text-blue-600">{{ totalNegotiationsCount() }}</div>
+                  <div class="text-xs text-blue-700">Total</div>
+                </div>
+              </div>
+              
+              <a routerLink="/admin/negotiations" 
+                 class="block w-full text-center py-2 bg-orange-600 text-white font-semibold rounded-lg hover:bg-orange-700 transition-all">
+                View Negotiations
               </a>
             </div>
 
@@ -318,10 +348,13 @@ import { AuthService } from '../../../front/core/auth.service';
 export class ProviderDashboardComponent implements OnInit {
   private shopService = inject(ProviderShopService);
   private authService = inject(AuthService);
+  private negotiationService = inject(NegotiationService);
 
   // State
   isLoading = signal(false);
   currentShop = signal<ShopDto | null>(null);
+  activeNegotiationsCount = signal(0);
+  totalNegotiationsCount = signal(0);
   currentUser = computed(() => this.authService.currentUser());
   hasShop = computed(() => !!this.currentShop());
   hasSocialLinks = computed(() => {
@@ -336,6 +369,7 @@ export class ProviderDashboardComponent implements OnInit {
   loadDashboard(): void {
     this.isLoading.set(true);
     
+    // Load shop info
     this.shopService.checkHasShop().subscribe({
       next: (hasShop) => {
         if (hasShop) {
@@ -359,6 +393,18 @@ export class ProviderDashboardComponent implements OnInit {
         console.error('Failed to check shop status:', err);
         this.isLoading.set(false);
       }
+    });
+
+    // Load negotiation stats
+    this.negotiationService.getProviderNegotiations().subscribe({
+      next: (list: any) => {
+        const negotiations = list.negotiations || list || [];
+        this.totalNegotiationsCount.set(negotiations.length);
+        this.activeNegotiationsCount.set(
+          negotiations.filter((n: any) => n.status === 'PENDING' || n.status === 'IN_PROGRESS').length
+        );
+      },
+      error: (err) => console.error('Failed to load negotiation stats:', err)
     });
   }
 }

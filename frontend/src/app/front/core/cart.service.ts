@@ -130,21 +130,16 @@ export class CartService {
       return throwError(() => new Error(error));
     }
 
-    // ✅ ENSURE PROPER DATA TYPES
-    const backendRequest = {
+    // ✅ ENSURE PROPER DATA TYPES — include negotiatedPrice if provided
+    const backendRequest: any = {
       productId: String(request.productId).trim(),
       quantity: Number(request.quantity)
     };
+    if (request.negotiatedPrice != null && request.negotiatedPrice > 0) {
+      backendRequest.negotiatedPrice = request.negotiatedPrice;
+    }
 
     console.log('🛒 Adding item to cart:', backendRequest);
-    console.log('🔍 Request validation:', {
-      productIdType: typeof backendRequest.productId,
-      productIdLength: backendRequest.productId.length,
-      productIdValue: backendRequest.productId,
-      quantityType: typeof backendRequest.quantity,
-      quantityValue: backendRequest.quantity,
-      isValidObjectId: /^[0-9a-fA-F]{24}$/.test(backendRequest.productId)
-    });
 
     return this.http.post<CartItemResponse>(`${this.apiUrl}/items`, backendRequest).pipe(
       tap((cartItem) => {
@@ -350,24 +345,14 @@ export class CartService {
   }
 
   /**
-   * Refresh cart data
+   * Refresh cart data — single request, updates the cart signal
    */
   refreshCart(): void {
-    this.refreshCartAndItems();
+    this.getCart().subscribe({ error: () => {} });
   }
 
-  /**
-   * Refresh both cart and cart items data
-   */
   private refreshCartAndItems(): void {
-    // Refresh cart totals
-    this.getCart().subscribe({
-      error: (error) => console.warn('Failed to refresh cart:', error)
-    });
-    // Refresh cart items
-    this.getCartItems().subscribe({
-      error: (error) => console.warn('Failed to refresh cart items:', error)
-    });
+    this.getCart().subscribe({ error: () => {} });
   }
 
   /**

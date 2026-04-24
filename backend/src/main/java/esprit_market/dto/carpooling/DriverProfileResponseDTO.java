@@ -23,6 +23,8 @@ public class DriverProfileResponseDTO {
     private Float averageRating;
     private Integer totalRidesCompleted;
     private Float totalEarnings;
+    private Float driverScore;
+    private String badge;
     private List<String> rideIds;
     private List<String> vehicleIds;
     private LocalDateTime createdAt;

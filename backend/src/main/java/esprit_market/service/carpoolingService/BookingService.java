@@ -1,9 +1,11 @@
 package esprit_market.service.carpoolingService;
 
 import esprit_market.Enum.carpoolingEnum.BookingStatus;
+import esprit_market.Enum.userEnum.Role;
 import esprit_market.dto.carpooling.BookingRequestDTO;
 import esprit_market.dto.carpooling.BookingResponseDTO;
 import esprit_market.entity.carpooling.Booking;
+import esprit_market.entity.carpooling.PassengerProfile;
 import esprit_market.entity.carpooling.Ride;
 import esprit_market.entity.carpooling.RidePayment;
 import esprit_market.entity.user.User;
@@ -148,8 +150,7 @@ public class BookingService implements IBookingService {
         var user = userRepository.findByEmail(passengerEmail)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         var passengerProfile = passengerProfileRepository.findByUserId(user.getId())
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Passenger profile not found. Register as passenger first."));
+                .orElseGet(() -> createPassengerProfile(user));
         ObjectId passengerProfileId = passengerProfile.getId();
 
         Ride ride = rideRepository.findById(rideId).orElseThrow(() -> new IllegalArgumentException("Ride not found"));
@@ -235,4 +236,32 @@ public class BookingService implements IBookingService {
         });
     }
 
+    private PassengerProfile createPassengerProfile(User user) {
+        PassengerProfile profile = PassengerProfile.builder()
+                .userId(user.getId())
+                .averageRating(0f)
+                .preferences("")
+                .build();
+        profile = passengerProfileRepository.save(profile);
+        user.setPassengerProfileId(profile.getId());
+        if (user.getRoles() == null) {
+            user.setRoles(new java.util.ArrayList<>());
+        }
+        if (!user.getRoles().contains(Role.PASSENGER)) {
+            user.getRoles().add(Role.PASSENGER);
+        }
+        userRepository.save(user);
+        return profile;
+    }
+
+    @Override
+    public java.util.Map<String, Double> getMonthlyDemandTrend() {
+        return bookingRepository.getMonthlyDemandTrend().stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        esprit_market.dto.carpooling.stats.AggregationAmountResult::getId,
+                        esprit_market.dto.carpooling.stats.AggregationAmountResult::getAmount,
+                        (v1, v2) -> v1,
+                        java.util.TreeMap::new
+                ));
+    }
 }

@@ -97,9 +97,16 @@ export class Home implements OnInit, OnDestroy {
     // Load featured products from backend
     this.productService.getAll({ limit: 4 }).subscribe({
       next: (products) => {
-        this.featuredProducts.set(products.slice(0, 4));
-        this.recommendedProducts.set(products.slice(4, 6));
-        console.log('✅ Home products loaded:', products.length);
+        // Explicitly sort by newest first
+        const sorted = [...products].sort((a, b) => {
+          const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          return dateB - dateA;
+        });
+        
+        this.featuredProducts.set(sorted.slice(0, 4));
+        this.recommendedProducts.set(sorted.slice(4, 6));
+        console.log('✅ Home products loaded and sorted (newest first):', sorted.length);
       },
       error: (err) => {
         console.error('❌ Failed to load home products:', err);

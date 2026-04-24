@@ -1,8 +1,6 @@
 package esprit_market.dto.carpooling;
 
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -14,7 +12,10 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class RideSearchRequestDTO {
+public class RideRequestDTO {
+
+    @NotBlank(message = "Vehicle ID is required")
+    private String vehicleId;
 
     @NotBlank(message = "Departure location is required")
     private String departureLocation;
@@ -23,9 +24,16 @@ public class RideSearchRequestDTO {
     private String destinationLocation;
 
     @NotNull(message = "Departure time is required")
-    private LocalDateTime departureTime; // typically a future date for search
+    @Future(message = "Departure time must be in the future")
+    private LocalDateTime departureTime;
 
     @NotNull
-    @Min(value = 1, message = "At least 1 seat is required")
-    private Integer requestedSeats;
+    @Min(value = 1, message = "At least 1 seat must be available")
+    private Integer availableSeats;
+
+    @NotNull
+    @Min(value = 0, message = "Price per seat cannot be negative")
+    private Float pricePerSeat;
+
+    private Double distanceKm;
 }

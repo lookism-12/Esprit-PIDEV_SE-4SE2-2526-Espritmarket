@@ -51,6 +51,8 @@ public class RideMapper {
                 .pricePerSeat(ride.getPricePerSeat())
                 .status(ride.getStatus())
                 .completedAt(ride.getCompletedAt())
+                .createdAt(ride.getCreatedAt())
+                .estimatedDurationMinutes(ride.getEstimatedDurationMinutes())
                 .build();
     }
 }

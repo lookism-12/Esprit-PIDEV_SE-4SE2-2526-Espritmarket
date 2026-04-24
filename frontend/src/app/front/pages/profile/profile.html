@@ -55,6 +55,9 @@
           </div>
         </div>
         <div class="flex gap-2 shrink-0">
+          @if (isDriver()) {
+            <button (click)="goToAnalytics()" class="flex items-center gap-2 px-4 py-2 bg-[#8B0000] hover:bg-[#A00000] text-white font-bold rounded-xl text-sm transition-all active:scale-95 shadow-md shadow-red-900/20">📊 Dashboard</button>
+          }
           <button (click)="startEditing()" class="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-dark text-white font-bold rounded-xl text-sm transition-all active:scale-95">✏️ Edit Profile</button>
           <button (click)="openPasswordChange()" class="px-4 py-2 font-bold rounded-xl text-sm transition-all" style="background-color:var(--subtle);color:var(--text-color)">🔐</button>
         </div>
@@ -132,6 +135,9 @@
             @if (isDelivery()) {
               <a routerLink="/profile/deliveries" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors hover:bg-amber-500/10 text-amber-600">🚚 My Driver Hub</a>
               <a routerLink="/profile/settings" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors hover:bg-primary/5" style="color:var(--text-color)">⚙️ Account Settings</a>
+            } @else if (isDriver()) {
+              <a routerLink="/driver/analytics" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors hover:bg-[#8B0000]/10 text-[#8B0000]">📊 Driver Analytics</a>
+              <a routerLink="/profile/settings" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors hover:bg-primary/5" style="color:var(--text-color)">⚙️ Account Settings</a>
             } @else {
               <a routerLink="/products" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors hover:bg-primary/5" style="color:var(--text-color)">🛍️ Browse Products</a>
               <a routerLink="/favorites" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors hover:bg-primary/5" style="color:var(--text-color)">❤️ My Favorites</a>
@@ -148,4 +154,26 @@
 
     </div>
   </div>
+
+  <!-- Modals -->
+  @if (showAvatarModal()) {
+    <app-avatar-upload-modal 
+      [onClose]="onAvatarUploadClose.bind(this)"
+      [onUploadComplete]="onAvatarUploadComplete.bind(this)">
+    </app-avatar-upload-modal>
+  }
+
+  @if (showEditModal()) {
+    <app-profile-edit-modal 
+      [onClose]="onEditProfileClose.bind(this)"
+      [onSave]="onProfileSave.bind(this)">
+    </app-profile-edit-modal>
+  }
+
+  @if (showPasswordModal()) {
+    <app-password-change-modal 
+      [onClose]="onPasswordChangeClose.bind(this)"
+      [onChangeComplete]="onPasswordChangeComplete.bind(this)">
+    </app-password-change-modal>
+  }
 </div>

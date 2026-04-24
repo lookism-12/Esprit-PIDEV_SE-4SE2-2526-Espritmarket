@@ -16,6 +16,8 @@ public class NotificationDTO {
     private NotificationType type;
     private String linkedObjectId;
     private boolean read;
+    private boolean isStarred;
+    private boolean isFollowed;
     private boolean notification_status; // true = active, false = deactivated
     private LocalDateTime createdAt;
 }

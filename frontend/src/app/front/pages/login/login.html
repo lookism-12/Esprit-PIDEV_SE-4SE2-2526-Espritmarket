@@ -47,7 +47,9 @@
               autocomplete="current-password"
               class="lp-input" [class.lp-input-err]="isFieldInvalid('password')"
               placeholder="password">
-            <button type="button" (click)="togglePassword()" class="lp-eye">{{ showPassword() ? '🙈' : '👁️' }}</button>
+            <button type="button" (click)="togglePassword()" class="lp-eye">
+              {{ showPassword() ? '🙈' : '👁️' }}
+            </button>
             <a routerLink="/forgot-password" class="lp-forgot">Forgot</a>
           </div>
           @if (isFieldInvalid('password')) { <p class="lp-err">{{ getFieldError('password') }}</p> }

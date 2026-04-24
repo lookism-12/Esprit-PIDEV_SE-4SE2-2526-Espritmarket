@@ -88,6 +88,7 @@ export interface AddToCartRequest {
   productId: string;
   quantity: number;
   notes?: string;
+  negotiatedPrice?: number;
 }
 
 export interface UpdateCartItemRequest {

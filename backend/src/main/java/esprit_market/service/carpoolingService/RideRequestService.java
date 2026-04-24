@@ -42,7 +42,23 @@ public class RideRequestService implements IRideRequestService {
         User user = userRepository.findByEmail(passengerEmail)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         PassengerProfile profile = passengerProfileRepository.findByUserId(user.getId())
-                .orElseThrow(() -> new IllegalArgumentException("Passenger profile not found"));
+                .orElseGet(() -> {
+                    PassengerProfile newProfile = PassengerProfile.builder()
+                            .userId(user.getId())
+                            .averageRating(0f)
+                            .preferences("")
+                            .build();
+                    newProfile = passengerProfileRepository.save(newProfile);
+                    user.setPassengerProfileId(newProfile.getId());
+                    if (user.getRoles() == null) {
+                        user.setRoles(new java.util.ArrayList<>());
+                    }
+                    if (!user.getRoles().contains(esprit_market.Enum.userEnum.Role.PASSENGER)) {
+                        user.getRoles().add(esprit_market.Enum.userEnum.Role.PASSENGER);
+                    }
+                    userRepository.save(user);
+                    return newProfile;
+                });
 
         RideRequest request = RideRequest.builder()
                 .passengerProfileId(profile.getId())

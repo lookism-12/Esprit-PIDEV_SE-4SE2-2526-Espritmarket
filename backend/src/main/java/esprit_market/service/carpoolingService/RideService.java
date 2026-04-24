@@ -75,7 +75,16 @@ public class RideService implements IRideService {
 
     @Override
     public List<RideResponseDTO> findAll() {
+        LocalDateTime now = LocalDateTime.now();
         return rideRepository.findAll().stream()
+                // Passenger view: only active, non-expired rides, newest first
+                .filter(r -> r.getStatus() == RideStatus.CONFIRMED || r.getStatus() == RideStatus.ACCEPTED)
+                .filter(r -> r.getDepartureTime() != null && r.getDepartureTime().isAfter(now))
+                .sorted((a, b) -> {
+                    if (a.getCreatedAt() == null) return 1;
+                    if (b.getCreatedAt() == null) return -1;
+                    return b.getCreatedAt().compareTo(a.getCreatedAt());
+                })
                 .map(rideMapper::toResponseDTO)
                 .collect(Collectors.toList());
     }
@@ -163,7 +172,7 @@ public class RideService implements IRideService {
     @Override
     public List<RideResponseDTO> findByFilters(String departureLocation, String destinationLocation,
             LocalDateTime departureTime,
-            Integer availableSeats, RideStatus status, Pageable pageable) {
+            Integer availableSeats, RideStatus status, LocalDateTime postedSince, Pageable pageable) {
         return rideRepository.findAll().stream()
                 .filter(r -> departureLocation == null || r.getDepartureLocation().equalsIgnoreCase(departureLocation))
                 .filter(r -> destinationLocation == null
@@ -172,6 +181,7 @@ public class RideService implements IRideService {
                         || r.getDepartureTime().isEqual(departureTime))
                 .filter(r -> availableSeats == null || r.getAvailableSeats() >= availableSeats)
                 .filter(r -> status == null || r.getStatus() == status)
+                .filter(r -> postedSince == null || (r.getCreatedAt() != null && !r.getCreatedAt().isBefore(postedSince)))
                 .map(rideMapper::toResponseDTO)
                 .collect(Collectors.toList());
     }
@@ -188,16 +198,31 @@ public class RideService implements IRideService {
     }
 
     public List<RideResponseDTO> searchRides(String departureLocation, String destinationLocation,
-            java.time.LocalDateTime departureTime, Integer requestedSeats) {
-        // Logic improvement: Case-insensitive partial matching for locations
+            java.time.LocalDateTime departureTime, Integer requestedSeats, LocalDateTime postedSince) {
+        LocalDateTime now = LocalDateTime.now();
         List<Ride> rides = rideRepository.findAll().stream()
-                .filter(r -> r.getStatus() == RideStatus.CONFIRMED)
-                .filter(r -> departureTime == null || r.getDepartureTime().isAfter(departureTime))
+                // Only active statuses
+                .filter(r -> r.getStatus() == RideStatus.CONFIRMED || r.getStatus() == RideStatus.ACCEPTED)
+                // Not expired: departureTime must be in the future
+                .filter(r -> r.getDepartureTime() != null && r.getDepartureTime().isAfter(now))
+                // Date filter: if provided, ride must depart on or after that time
+                .filter(r -> departureTime == null || !r.getDepartureTime().isBefore(departureTime))
+                // Posted Since filter
+                .filter(r -> postedSince == null || (r.getCreatedAt() != null && !r.getCreatedAt().isBefore(postedSince)))
+                // Seats
                 .filter(r -> requestedSeats == null || r.getAvailableSeats() >= requestedSeats)
-                .filter(r -> departureLocation == null || r.getDepartureLocation().toLowerCase()
-                        .contains(departureLocation.toLowerCase()))
-                .filter(r -> destinationLocation == null || r.getDestinationLocation().toLowerCase()
-                        .contains(destinationLocation.toLowerCase()))
+                // Departure: case-insensitive partial match
+                .filter(r -> departureLocation == null || departureLocation.isBlank()
+                        || r.getDepartureLocation().toLowerCase().contains(departureLocation.toLowerCase()))
+                // Destination: case-insensitive partial match
+                .filter(r -> destinationLocation == null || destinationLocation.isBlank()
+                        || r.getDestinationLocation().toLowerCase().contains(destinationLocation.toLowerCase()))
+                // Sort by createdAt descending (newest post first)
+                .sorted((a, b) -> {
+                    if (a.getCreatedAt() == null) return 1;
+                    if (b.getCreatedAt() == null) return -1;
+                    return b.getCreatedAt().compareTo(a.getCreatedAt());
+                })
                 .collect(Collectors.toList());
         return rides.stream().map(rideMapper::toResponseDTO).collect(Collectors.toList());
     }
@@ -227,7 +252,6 @@ public class RideService implements IRideService {
         var driverProfile = driverProfileRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new IllegalArgumentException("Driver profile not found. Register as driver first."));
 
-        // Fix Part 1 #11: Driver verification check
         if (!Boolean.TRUE.equals(driverProfile.getIsVerified())) {
             throw new IllegalStateException("Your driver profile is not verified yet");
         }
@@ -237,6 +261,15 @@ public class RideService implements IRideService {
             throw new AccessDeniedException("Vehicle does not belong to this driver");
         }
 
+        // Apply Dynamic Pricing
+        Float computedPrice = computeDynamicPrice(
+            dto.getDepartureLocation(), 
+            dto.getDestinationLocation(), 
+            dto.getDepartureTime(), 
+            dto.getAvailableSeats(),
+            dto.getDistanceKm() // Pass real distance if available
+        );
+
         Ride ride = Ride.builder()
                 .driverProfileId(driverProfile.getId())
                 .vehicleId(vehicleId)
@@ -244,12 +277,11 @@ public class RideService implements IRideService {
                 .destinationLocation(dto.getDestinationLocation())
                 .departureTime(dto.getDepartureTime())
                 .availableSeats(dto.getAvailableSeats())
-                .pricePerSeat(dto.getPricePerSeat())
+                .pricePerSeat(computedPrice) // Override user input
                 .status(RideStatus.CONFIRMED)
                 .build();
         ride = rideRepository.save(ride);
 
-        // Part 2: Track ride on DriverProfile
         if (driverProfile.getRideIds() == null) {
             driverProfile.setRideIds(new java.util.ArrayList<>());
         }
@@ -257,6 +289,47 @@ public class RideService implements IRideService {
         driverProfileRepository.save(driverProfile);
 
         return rideMapper.toResponseDTO(ride);
+    }
+
+    /**
+     * Deterministic Dynamic Pricing Logic
+     * Price = (Distance Proxy * Rate) * (Multipliers: Peak, Demand, Seats)
+     */
+    private Float computeDynamicPrice(String from, String to, LocalDateTime time, Integer seats, Double realDistanceKm) {
+        // 1. Distance Proxy or Real Distance
+        double distanceKm;
+        if (realDistanceKm != null && realDistanceKm > 0) {
+            distanceKm = realDistanceKm;
+        } else {
+            // Fallback to deterministic proxy based on location string lengths
+            distanceKm = (from.trim().length() + to.trim().length()) * 1.5;
+        }
+        
+        double ratePerKm = 0.12;
+        double basePrice = distanceKm * ratePerKm;
+
+        // 2. Peak Hour Multiplier (Deterministic based on time)
+        int hour = time.getHour();
+        double peakMultiplier = ( (hour >= 7 && hour <= 9) || (hour >= 17 && hour <= 19) ) ? 1.25 : 1.0;
+
+        // 3. Demand Multiplier (Dynamic but deterministic based on current state)
+        // Check for ride requests on similar route
+        long requests = rideRepository.findAll().stream()
+                .filter(r -> r.getDepartureLocation().equalsIgnoreCase(from) && r.getDestinationLocation().equalsIgnoreCase(to))
+                .count(); 
+        double demandMultiplier = 1.0 + Math.min(requests * 0.05, 0.4); // Max +40%
+
+        // 4. Seat Scarcity Multiplier
+        double seatMultiplier = (seats != null && seats <= 2) ? 1.15 : 1.0;
+
+        // Final Calculation
+        double finalPrice = basePrice * peakMultiplier * demandMultiplier * seatMultiplier;
+
+        // Min/Max Caps (3 TND to 60 TND)
+        finalPrice = Math.max(3.0, Math.min(finalPrice, 60.0));
+        
+        // Round to 1 decimal place and cast to Float
+        return (float) (Math.round(finalPrice * 10.0) / 10.0);
     }
 
     @Transactional
@@ -310,7 +383,17 @@ public class RideService implements IRideService {
         ride.setDestinationLocation(dto.getDestinationLocation());
         ride.setDepartureTime(dto.getDepartureTime());
         ride.setAvailableSeats(dto.getAvailableSeats());
-        ride.setPricePerSeat(dto.getPricePerSeat());
+
+        // Recalculate Dynamic Price
+        Float updatedPrice = computeDynamicPrice(
+            dto.getDepartureLocation(), 
+            dto.getDestinationLocation(), 
+            dto.getDepartureTime(), 
+            dto.getAvailableSeats(),
+            dto.getDistanceKm()
+        );
+        ride.setPricePerSeat(updatedPrice); 
+
         ride = rideRepository.save(ride);
         return rideMapper.toResponseDTO(ride);
     }
@@ -447,5 +530,32 @@ public class RideService implements IRideService {
                                 esprit_market.Enum.notificationEnum.NotificationType.RIDE_UPDATE, rideId));
             });
         }
+    }
+
+    @Override
+    public java.util.Map<String, Long> getMonthlyRidesTrend() {
+        return rideRepository.getMonthlyRidesTrend().stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        esprit_market.dto.carpooling.stats.AggregationResult::getId,
+                        esprit_market.dto.carpooling.stats.AggregationResult::getCount,
+                        (v1, v2) -> v1,
+                        java.util.TreeMap::new
+                ));
+    }
+
+    @Override
+    public java.util.Map<String, Long> getStatusDistribution() {
+        return rideRepository.getStatusDistribution().stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        r -> r.getId() != null ? r.getId() : "UNKNOWN",
+                        esprit_market.dto.carpooling.stats.AggregationResult::getCount
+                ));
+    }
+
+    @Override
+    public java.util.List<esprit_market.dto.carpooling.RouteStatDTO> getTopRoutes() {
+        return rideRepository.getTopRoutes().stream()
+                .map(r -> new esprit_market.dto.carpooling.RouteStatDTO(r.getId(), r.getCount()))
+                .collect(java.util.stream.Collectors.toList());
     }
 }

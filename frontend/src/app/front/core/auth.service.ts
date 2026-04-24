@@ -307,8 +307,8 @@ export class AuthService {
         this.router.navigate(['/profile']);
         break;
       case UserRole.DRIVER:
-        console.log('🚗 DRIVER detected - redirecting to driver dashboard');
-        this.router.navigate(['/driver/dashboard']);
+        console.log('🚗 DRIVER detected - redirecting to driver cockpit');
+        this.router.navigate(['/driver/analytics']);
         break;
       case UserRole.DELIVERY:
         console.log('📦 DELIVERY detected - redirecting to front-end profile');

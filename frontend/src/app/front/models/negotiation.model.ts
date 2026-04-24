@@ -27,7 +27,10 @@ export interface ProposalResponse {
   senderId?: string;
   senderFullName?: string;
   amount: number;
+  quantity?: number;
   message?: string;
+  exchangeImage?: string;
+  isExchange?: boolean;
   type?: ProposalType;
   status?: ProposalStatus;
   createdAt: string;
@@ -48,6 +51,7 @@ export interface NegotiationResponse {
   productId?: string;
   productName?: string;
   productOriginalPrice?: number;
+  itemDescription?: string;
   status: NegotiationStatus;
   proposals: ProposalResponse[];
   createdAt: string;
@@ -56,7 +60,12 @@ export interface NegotiationResponse {
 
 export interface CreateNegotiationRequest {
   productId: string;
-  proposedPrice: number;
+  proposedPrice?: number;
+  amount?: number;
+  quantity?: number;
+  message?: string;
+  exchangeImage?: string;
+  isExchange?: boolean;
 }
 
 export interface UpdateNegotiationRequest {

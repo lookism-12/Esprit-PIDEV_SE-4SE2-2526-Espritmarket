@@ -21,4 +21,6 @@ public interface IRidePaymentService {
     double getTotalCompletedRevenue();
 
     long countCompletedPayments();
+    
+    java.util.Map<String, Double> getMonthlyEarningsTrend();
 }

@@ -31,6 +31,8 @@ public class NegociationMapper {
                 .productId(negociation.getProduct() != null ? negociation.getProduct().getId().toHexString() : null)
                 .productName(negociation.getProduct() != null ? negociation.getProduct().getName() : null)
                 .productOriginalPrice(negociation.getProduct() != null ? negociation.getProduct().getPrice() : null)
+                .itemDescription(negociation.getService() != null ? negociation.getService().getDescription() 
+                        : (negociation.getProduct() != null ? negociation.getProduct().getDescription() : null))
                 .status(negociation.getStatuts())
                 .proposals(toProposalResponseList(negociation.getProposals()))
                 .createdAt(negociation.getCreatedAt())
@@ -49,7 +51,10 @@ public class NegociationMapper {
                         ? proposal.getSender().getFirstName() + " " + proposal.getSender().getLastName()
                         : null)
                 .amount(proposal.getAmount())
+                .quantity(proposal.getQuantity())
                 .message(proposal.getMessage())
+                .exchangeImage(proposal.getExchangeImage())
+                .isExchange(proposal.getIsExchange())
                 .type(proposal.getType())
                 .status(proposal.getStatuts())
                 .createdAt(proposal.getCreatedAt())
@@ -63,7 +68,10 @@ public class NegociationMapper {
 
         return Proposal.builder()
                 .amount(request.getAmount())
+                .quantity(request.getQuantity())
                 .message(request.getMessage())
+                .exchangeImage(request.getExchangeImage())
+                .isExchange(request.getIsExchange())
                 .type(request.getType())
                 .build();
     }

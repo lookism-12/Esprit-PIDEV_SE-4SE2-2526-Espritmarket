@@ -27,4 +27,6 @@ public class RideResponseDTO {
     private Float pricePerSeat;
     private RideStatus status;
     private LocalDateTime completedAt;
+    private LocalDateTime createdAt;
+    private Integer estimatedDurationMinutes;
 }

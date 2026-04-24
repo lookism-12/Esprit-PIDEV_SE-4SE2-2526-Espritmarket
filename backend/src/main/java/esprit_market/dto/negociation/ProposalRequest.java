@@ -19,8 +19,14 @@ public class ProposalRequest {
     @Positive(message = "Amount must be positive")
     private Double amount;
 
+    private Integer quantity;
+
     @Size(max = 500, message = "Message cannot exceed 500 characters")
     private String message;
+
+    private String exchangeImage;
+
+    private Boolean isExchange;
 
     @NotNull(message = "Proposal type is required")
     private ProposalType type;

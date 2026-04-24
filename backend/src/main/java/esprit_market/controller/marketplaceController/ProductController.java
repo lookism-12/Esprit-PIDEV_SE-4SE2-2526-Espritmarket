@@ -5,6 +5,7 @@ import esprit_market.dto.marketplace.ProductRequestDTO;
 import esprit_market.dto.marketplace.ProductResponseDTO;
 import esprit_market.entity.marketplace.Product;
 import esprit_market.entity.marketplace.ProductImage;
+import esprit_market.service.CloudinaryService;
 import esprit_market.service.marketplaceService.IProductService;
 import esprit_market.service.marketplaceService.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -15,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +29,7 @@ public class ProductController {
     private static final Logger log = LoggerFactory.getLogger(ProductController.class);
 
     private final IProductService service;
+    private final CloudinaryService cloudinaryService;
 
     @GetMapping
     @Operation(summary = "Get all approved products (Client/Public)")
@@ -121,6 +124,26 @@ public class ProductController {
         return dto.getImages() != null ? dto.getImages() : new ArrayList<>();
     }
 
+    @PostMapping("/{id}/images/upload")
+    @PreAuthorize("hasRole('ADMIN') or (hasRole('PROVIDER') and @marketplaceSecurity.isProductOwner(authentication, #id))")
+    @Operation(summary = "Upload image files for a product — stored in Cloudinary (PROVIDER/ADMIN)")
+    public ProductResponseDTO uploadImages(
+            @PathVariable ObjectId id,
+            @RequestParam("files") MultipartFile[] files) {
+
+        ProductService productService = (ProductService) service;
+        Product p = productService.findEntityById(id);
+        if (p.getImages() == null) p.setImages(new ArrayList<>());
+
+        for (MultipartFile file : files) {
+            String url = cloudinaryService.upload(file, "products");
+            p.getImages().add(new ProductImage(url, file.getOriginalFilename()));
+            log.info("Uploaded product image to Cloudinary: {}", url);
+        }
+
+        return productService.saveAndMap(p);
+    }
+
     @PostMapping("/{id}/images")
     @PreAuthorize("hasRole('ADMIN') or (hasRole('PROVIDER') and @marketplaceSecurity.isProductOwner(authentication, #id))")
     @Operation(summary = "Add an image to a product (PROVIDER/ADMIN)")
@@ -145,6 +168,8 @@ public class ProductController {
         if (p.getImages() != null) {
             p.getImages().removeIf(img -> img.getUrl().equals(imageUrl));
         }
+        // Delete from Cloudinary (non-fatal if it fails)
+        cloudinaryService.delete(imageUrl);
         return productService.saveAndMap(p);
     }
 }

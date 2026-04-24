@@ -207,3 +207,17 @@
   .rp-row2 { grid-template-columns: 1fr; }
   .rp-social-card { flex-direction: column; align-items: flex-start; }
 }
+
+input::-ms-reveal,
+input::-ms-clear {
+  display: none;
+}
+
+input::-webkit-contacts-auto-fill-button,
+input::-webkit-credentials-auto-fill-button {
+  visibility: hidden;
+  display: none !important;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+}

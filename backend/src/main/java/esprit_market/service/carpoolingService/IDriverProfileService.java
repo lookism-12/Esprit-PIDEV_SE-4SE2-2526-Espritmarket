@@ -29,6 +29,8 @@ public interface IDriverProfileService {
 
     DriverStatsDTO getDriverStats(ObjectId id);
 
+    DriverStatsDTO getMyDriverStats(String email);
+
     void incrementTotalRidesAndEarnings(ObjectId driverProfileId, float earnings);
 
     long countUnverifiedDrivers();

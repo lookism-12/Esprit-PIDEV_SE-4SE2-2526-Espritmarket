@@ -34,4 +34,6 @@ public interface IBookingService {
     void cancelBooking(String bookingId, String passengerEmail);
 
     BookingResponseDTO createBooking(BookingRequestDTO dto, String passengerEmail, ObjectId rideId);
+
+    java.util.Map<String, Double> getMonthlyDemandTrend();
 }

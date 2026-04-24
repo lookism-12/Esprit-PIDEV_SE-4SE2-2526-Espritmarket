@@ -27,7 +27,7 @@ public interface IRideService {
 
         List<RideResponseDTO> findByFilters(String departureLocation, String destinationLocation,
                         LocalDateTime departureTime,
-                        Integer availableSeats, RideStatus status, Pageable pageable);
+                        Integer availableSeats, RideStatus status, LocalDateTime postedSince, Pageable pageable);
 
         void cancelRide(String rideId, String driverEmail);
 
@@ -41,7 +41,7 @@ public interface IRideService {
 
         List<RideResponseDTO> searchRides(String departureLocation, String destinationLocation,
                         LocalDateTime departureTime,
-                        Integer availableSeats);
+                        Integer requestedSeats, LocalDateTime postedSince);
 
         List<RideResponseDTO> findByDriverUserId(String email);
 
@@ -50,4 +50,8 @@ public interface IRideService {
         long countActiveRides();
 
         void rateRide(String rideId, Integer rating, String comment, boolean isDriverRating);
+
+        java.util.Map<String, Long> getMonthlyRidesTrend();
+        java.util.Map<String, Long> getStatusDistribution();
+        java.util.List<esprit_market.dto.carpooling.RouteStatDTO> getTopRoutes();
 }

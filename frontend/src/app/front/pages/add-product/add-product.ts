@@ -2,7 +2,7 @@ import { Component, signal, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { ProductService, CreateProductRequest, ProductImageDTO } from '../../core/product.service';
 import { CategoryService } from '../../core/shop.service';
 import { ShopService } from '../../core/shop.service';
@@ -13,7 +13,7 @@ import { environment } from '../../../../environment';
 @Component({
   selector: 'app-add-product',
   standalone: true,
-  imports: [CommonModule, FormsModule, ProductImageUpload],
+  imports: [CommonModule, FormsModule],
   templateUrl: './add-product.html',
   styleUrl: './add-product.scss'
 })
@@ -207,72 +207,30 @@ export class AddProduct implements OnInit {
         return;
       }
 
-      console.log('🚀 Uploading', files.length, 'images temporarily...');
+      console.log('🚀 Uploading', files.length, 'image(s) to Cloudinary...');
       this.isUploadingImages.set(true);
 
-      // Create FormData for multipart upload
       const formData = new FormData();
-      files.forEach((file, index) => {
-        formData.append('files', file, file.name);
-      });
+      files.forEach(file => formData.append('files', file, file.name));
 
-      console.log('📤 Making upload request to:', `${environment.apiUrl}/uploads/temp-images`);
-      console.log('📤 Files to upload:', files.length);
-      files.forEach((file, i) => {
-        console.log(`📤 File ${i}: ${file.name} (${file.type}, ${file.size} bytes)`);
-      });
-
-      // Use XMLHttpRequest directly to avoid Angular interceptor issues
-      const xhr = new XMLHttpRequest();
-      
-      xhr.onreadystatechange = () => {
-        if (xhr.readyState === XMLHttpRequest.DONE) {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            try {
-              const response = JSON.parse(xhr.responseText);
-              console.log('✅ Images uploaded successfully:', response);
-              const imageUrls = response.urls || [];
-              this.uploadedImageUrls.set(imageUrls);
-              this.isUploadingImages.set(false);
-              resolve(imageUrls);
-            } catch (e) {
-              console.error('❌ Failed to parse response:', e);
-              this.isUploadingImages.set(false);
-              reject(new Error('Failed to parse server response'));
-            }
-          } else {
-            console.error('❌ Upload failed with status:', xhr.status);
-            let errorMsg = `Upload failed with status ${xhr.status}`;
-            
-            try {
-              const errorResponse = JSON.parse(xhr.responseText);
-              if (errorResponse.error) {
-                errorMsg = errorResponse.error;
-              } else if (errorResponse.message) {
-                errorMsg = errorResponse.message;
-              }
-            } catch (e) {
-              console.warn('Could not parse error response');
-            }
-            
-            this.isUploadingImages.set(false);
-            reject(new Error(errorMsg));
-          }
+      this.http.post<{ urls: string[]; count: number }>(
+        `${environment.apiUrl}/uploads/temp-images`,
+        formData
+      ).subscribe({
+        next: (response) => {
+          const imageUrls = response.urls || [];
+          console.log('✅ Images uploaded to Cloudinary:', imageUrls);
+          this.uploadedImageUrls.set(imageUrls);
+          this.isUploadingImages.set(false);
+          resolve(imageUrls);
+        },
+        error: (err) => {
+          console.error('❌ Image upload failed:', err);
+          this.isUploadingImages.set(false);
+          const msg = err.error?.error || err.error?.message || err.message || `Upload failed (${err.status})`;
+          reject(new Error(msg));
         }
-      };
-
-      xhr.onerror = () => {
-        console.error('❌ Network error during upload');
-        this.isUploadingImages.set(false);
-        reject(new Error('Network error during upload'));
-      };
-
-      xhr.open('POST', `${environment.apiUrl}/uploads/temp-images`);
-      
-      // Don't set Content-Type header - let browser handle multipart boundary
-      // Don't add Authorization header - endpoint is public
-      
-      xhr.send(formData);
+      });
     });
   }
 

@@ -21,10 +21,12 @@ public class AdminDashboardController {
     private final IRideRequestService rideRequestService;
     private final IDriverProfileService driverProfileService;
     private final IRidePaymentService paymentService;
+    private final esprit_market.service.carpoolingService.IBookingService bookingService;
+    private final esprit_market.service.userService.IUserService userService;
 
     @GetMapping("/stats")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Get global carpooling stats")
+    @Operation(summary = "Get global carpooling stats with analytics")
     public AdminDashboardStatsDTO getGlobalStats() {
         return AdminDashboardStatsDTO.builder()
                 .activeRidesCount(rideService.countActiveRides())
@@ -35,6 +37,12 @@ public class AdminDashboardController {
                 .pendingRequestsGrowth(5)
                 .unverifiedDriversGrowth(-2)
                 .totalRevenueGrowth(18)
+                .ridesTrend(rideService.getMonthlyRidesTrend())
+                .earningsTrend(paymentService.getMonthlyEarningsTrend())
+                .userGrowth(userService.getMonthlyUserGrowth())
+                .statusDistribution(rideService.getStatusDistribution())
+                .topRoutes(rideService.getTopRoutes())
+                .reservationsDemand(bookingService.getMonthlyDemandTrend())
                 .build();
     }
 }

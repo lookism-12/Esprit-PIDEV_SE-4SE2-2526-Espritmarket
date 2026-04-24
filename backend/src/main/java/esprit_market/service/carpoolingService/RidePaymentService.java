@@ -75,4 +75,15 @@ public class RidePaymentService implements IRidePaymentService {
     public long countCompletedPayments() {
         return repository.countByStatus(PaymentStatus.COMPLETED);
     }
+
+    @Override
+    public java.util.Map<String, Double> getMonthlyEarningsTrend() {
+        return repository.getMonthlyEarningsTrend().stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        esprit_market.dto.carpooling.stats.AggregationAmountResult::getId,
+                        esprit_market.dto.carpooling.stats.AggregationAmountResult::getAmount,
+                        (v1, v2) -> v1,
+                        java.util.TreeMap::new
+                ));
+    }
 }

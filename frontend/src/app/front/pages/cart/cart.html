@@ -472,10 +472,10 @@
                     
                     @else if (currentStep() === 'PLACE_ORDER') {
                         <button (click)="proceedToPaymentOrComplete()"
-                                class="w-full py-4 rounded-xl text-lg font-bold bg-dark text-white hover:bg-black shadow-xl shadow-dark/20 transform hover:-translate-y-1 transition-all mb-4">
+                                class="w-full py-4 rounded-xl text-lg font-bold bg-primary hover:bg-red-700 text-white shadow-xl shadow-primary/30 transform hover:-translate-y-1 transition-all mb-4">
                             Continue &rarr;
                         </button>
-                        <button (click)="goToStep('CART')" class="w-full py-3 text-sm font-bold text-gray-500 hover:text-dark transition-colors">
+                        <button (click)="goToStep('CART')" class="w-full py-3 text-sm font-bold text-gray-500 hover:text-primary transition-colors">
                             &larr; Return to Cart
                         </button>
                     }

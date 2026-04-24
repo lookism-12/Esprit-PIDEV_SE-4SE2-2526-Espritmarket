@@ -1,143 +1,229 @@
-<div class="inbox-shell" style="background:var(--bg-color);min-height:100vh;padding-top:80px">
+<div class="inbox-shell">
   <div class="inbox-wrap">
 
     <!-- ── SIDEBAR ─────────────────────────────────────────────────────── -->
     <aside class="inbox-sidebar">
       <div class="sidebar-header">
-        <h1 class="sidebar-title">Inbox</h1>
-        @if (unreadCount() > 0) {
-          <span class="unread-badge">{{ unreadCount() }}</span>
-        }
+        <div class="sidebar-brand">
+          <span class="brand-emoji">🔔</span>
+          <span class="brand-text">Notifications</span>
+          @if (unreadCount() > 0) {
+            <span class="unread-badge">{{ unreadCount() }}</span>
+          }
+        </div>
       </div>
 
       <nav class="sidebar-nav">
         @for (tab of [
-          {id:'all',        label:'All Mail',     icon:'📬'},
-          {id:'unread',     label:'Unread',       icon:'✉️'},
-          {id:'orders',     label:'Orders',       icon:'🧾'},
-          {id:'negotiations',label:'Negotiations',icon:'🤝'},
-          {id:'promotions', label:'Promotions',   icon:'📣'},
-          {id:'system',     label:'System',       icon:'⚙️'}
+          {id:'all',        label:'Inbox',        icon:'📥'},
+          {id:'starred',    label:'Starred',      icon:'⭐'},
+          {id:'unread',     label:'Unread',       icon:'🔵'},
+          {id:'followed',   label:'Followed',     icon:'📌'},
+          {id:'important',  label:'Important',    icon:'🔖'}
         ]; track tab.id) {
           <button class="nav-item" [class.active]="activeFilter()===tab.id"
-            (click)="activeFilter.set($any(tab.id))">
+            (click)="switchTab($any(tab.id))">
             <span class="nav-icon">{{ tab.icon }}</span>
             <span class="nav-label">{{ tab.label }}</span>
-            @if (tab.id === 'unread' && unreadCount() > 0) {
+            @if (tab.id === 'all' && unreadCount() > 0) {
               <span class="nav-count">{{ unreadCount() }}</span>
             }
           </button>
         }
       </nav>
 
-      @if (unreadCount() > 0) {
-        <button class="mark-all-btn" (click)="markAllRead()">✓ Mark all read</button>
-      }
+      <div class="sidebar-footer">
+        <button class="settings-btn" [class.active]="activeFilter()==='settings'"
+          (click)="switchTab('settings')">
+          <span class="nav-icon">⚙️</span>
+          <span class="nav-label">Settings</span>
+        </button>
+
+        <div class="user-profile-mini">
+          <div class="mini-avatar">
+            @if (authService.userAvatar()) {
+              <img [src]="authService.userAvatar()" alt="Profile">
+            } @else {
+              <span>{{ authService.getInitials() }}</span>
+            }
+            <span class="status-dot"></span>
+          </div>
+          <div class="mini-info">
+            <div class="mini-name">{{ authService.getFullName() }}</div>
+            <div class="mini-status">Online</div>
+          </div>
+        </div>
+      </div>
     </aside>
 
-    <!-- ── EMAIL LIST ──────────────────────────────────────────────────── -->
-    <section class="inbox-list" [class.has-detail]="!!selected()">
-
-      <!-- Toolbar -->
-      <div class="list-toolbar">
-        <span class="toolbar-label">
-          {{ filtered().length }} {{ activeFilter() === 'all' ? 'messages' : activeFilter() }}
-        </span>
-      </div>
-
-      @if (isLoading()) {
-        <div class="list-loading">
-          @for (i of [1,2,3,4,5]; track i) {
-            <div class="skeleton-row">
-              <div class="sk sk-avatar"></div>
-              <div class="sk-body">
-                <div class="sk sk-line w-40"></div>
-                <div class="sk sk-line w-64 mt-1"></div>
-              </div>
-              <div class="sk sk-line w-12"></div>
+    <!-- ── MAIN CONTENT ────────────────────────────────────────────────── -->
+    <main class="inbox-main" [class.show-detail]="!!selected()">
+      
+      <!-- ── LIST SECTION ────────────────────────────────────────────── -->
+      <section class="inbox-list-section">
+        <header class="list-header">
+          <div class="header-search">
+            <div class="search-input-group">
+              <span class="search-ico">🔍</span>
+              <input type="text" placeholder="Search..." (input)="onSearch($event)" class="search-field">
             </div>
-          }
-        </div>
-      } @else if (filtered().length === 0) {
-        <div class="list-empty">
-          <span class="empty-icon">📭</span>
-          <p class="empty-title">Nothing here</p>
-          <p class="empty-sub">No notifications in this category.</p>
-        </div>
-      } @else {
-        <ul class="email-list">
-          @for (n of filtered(); track n.id) {
-            <li class="email-row" [class.unread]="!n.read" [class.active]="selected()?.id===n.id"
-              (click)="open(n)">
-              <!-- Sender avatar -->
-              <div class="email-avatar" [style.background]="getIconBg(n.type)">
-                {{ getIcon(n.type) }}
-              </div>
-              <!-- Content -->
-              <div class="email-body">
-                <div class="email-meta">
-                  <span class="email-from">{{ getLabel(n.type) }}</span>
-                  <span class="email-time">{{ formatTime(n.createdAt) }}</span>
+            <select (change)="sortOrder.set($any($event.target).value)" class="sort-dropdown">
+              <option value="newest">Newest</option>
+              <option value="oldest">Oldest</option>
+            </select>
+          </div>
+
+          <div class="header-actions">
+            @if (isSelectionMode()) {
+              <div class="bulk-bar">
+                <button class="bulk-close" (click)="clearSelection()">✕</button>
+                <span class="selected-txt">{{ selectedIds().length }} selected</span>
+                <div class="bulk-btns">
+                  <button (click)="bulkStar(true)" title="Star">⭐</button>
+                  <button (click)="bulkDelete()" title="Delete">🗑️</button>
                 </div>
-                <p class="email-subject" [class.font-bold]="!n.read">{{ n.title }}</p>
-                <p class="email-preview">{{ n.message || n.description }}</p>
               </div>
-              <!-- Unread dot + delete -->
-              <div class="email-actions">
-                @if (!n.read) {
-                  <span class="dot-unread"></span>
-                }
-                <button class="del-btn" (click)="deleteNotification(n.id, $event)" title="Delete">🗑</button>
+            } @else {
+              <div class="standard-actions">
+                <button (click)="selectAll()">Select All</button>
+                <button (click)="markAllRead()" *ngIf="unreadCount() > 0">Mark all as read</button>
               </div>
-            </li>
-          }
-        </ul>
-      }
-    </section>
-
-    <!-- ── DETAIL PANEL ────────────────────────────────────────────────── -->
-    @if (selected()) {
-      <article class="inbox-detail">
-        <!-- Header -->
-        <div class="detail-header">
-          <button class="back-btn" (click)="close()">← Back</button>
-          <div class="detail-actions">
-            @if (!selected()!.read) {
-              <button class="action-btn" (click)="markAsRead(selected()!.id)">✓ Mark read</button>
             }
-            <button class="action-btn danger" (click)="deleteNotification(selected()!.id)">🗑 Delete</button>
           </div>
-        </div>
+        </header>
 
-        <!-- Subject -->
-        <div class="detail-subject">
-          <div class="detail-avatar" [style.background]="getIconBg(selected()!.type)">
-            {{ getIcon(selected()!.type) }}
-          </div>
-          <div>
-            <h2 class="detail-title">{{ selected()!.title }}</h2>
-            <div class="detail-meta">
-              <span class="detail-tag">{{ getLabel(selected()!.type) }}</span>
-              <span class="detail-date">{{ selected()!.createdAt | date:'medium' }}</span>
+        <div class="list-container">
+          @if (isLoading()) {
+            <div class="loading-state">
+              <div class="spinner"></div>
+              <p>Loading...</p>
+            </div>
+          } @else if (filtered().length === 0) {
+            <div class="empty-state">
+              <span class="empty-emoji">📭</span>
+              <p>No notifications found</p>
+            </div>
+          } @else {
+            <div class="notif-rows">
+              @for (n of filtered(); track n.id) {
+                <div class="notif-row" 
+                     [class.active]="selected()?.id === n.id"
+                     [class.unread]="!n.read"
+                     [class.selected]="selectedIds().includes(n.id)"
+                     (click)="open(n)">
+                  
+                  <div class="row-check" (click)="toggleSelection(n.id, $event)">
+                    <div class="check-box" [class.checked]="selectedIds().includes(n.id)">
+                      @if (selectedIds().includes(n.id)) { <span>✓</span> }
+                    </div>
+                  </div>
+
+                  <div class="row-icon" [style.background]="getIconBg(n.type)">
+                    {{ getIcon(n.type) }}
+                  </div>
+
+                  <div class="row-content">
+                    <div class="row-meta">
+                      <span class="row-sender">{{ getSenderName(n) }}</span>
+                      <div class="row-utils">
+                        <button class="pin-btn" [class.pinned]="isFollowed(n.id)" (click)="toggleFollow(n.id, $event)">
+                          {{ isFollowed(n.id) ? '📍' : '📌' }}
+                        </button>
+                        <button class="star-btn" [class.starred]="isFavorite(n.id)" (click)="toggleFavorite(n.id, $event)">
+                          {{ isFavorite(n.id) ? '⭐' : '☆' }}
+                        </button>
+                        <span class="row-date">{{ formatTime(n.createdAt) }}</span>
+                      </div>
+                    </div>
+                    <div class="row-title">{{ n.title }}</div>
+                    <div class="row-snippet">{{ n.message || n.description }}</div>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </section>
+
+      <!-- ── DETAIL SECTION ──────────────────────────────────────────── -->
+      <section class="inbox-detail-section">
+        @if (selected(); as n) {
+          <header class="detail-header">
+            <div class="detail-btns">
+              <button class="btn-icon" (click)="close()" title="Back">↩️</button>
+              <button class="btn-icon danger" (click)="deleteNotification(n.id)" title="Delete">🗑️</button>
+            </div>
+          </header>
+
+          <div class="detail-viewport">
+            <div class="detail-sender">
+              <div class="sender-avatar" [style.background]="getIconBg(n.type)">
+                {{ getInitials(n) }}
+              </div>
+              <div class="sender-info">
+                <div class="sender-name">{{ getSenderName(n) }}</div>
+                <div class="sender-meta">To: Me · {{ formatTime(n.createdAt) }}</div>
+              </div>
+            </div>
+
+            <h1 class="detail-h1">{{ n.title }}</h1>
+            
+            <div class="detail-body-card">
+              <p class="greeting">Hello {{ authService.userFirstName() || 'User' }},</p>
+              <p class="message">{{ n.message || n.description }}</p>
+            </div>
+
+            @if (n.type === 'NEGOTIATION_ACCEPTED') {
+              <div class="action-card accepted-card">
+                <div class="card-head">
+                  <span class="card-emoji">🤝</span>
+                  <div class="card-text">
+                    <h4>Special Offer Ready!</h4>
+                    <p class="expiry" [class.expired]="isNegotiationExpired(n)">
+                      {{ isNegotiationExpired(n) ? '⚠️ Offer expired' : '⏱️ Expires in 24h' }}
+                    </p>
+                  </div>
+                </div>
+                <div class="card-buttons">
+                  <button (click)="addToCartFromNegotiation(n)" [disabled]="isNegotiationExpired(n)" class="btn-sec">🛒 Add to Cart</button>
+                  <button (click)="buyNowFromNegotiation(n)" [disabled]="isNegotiationExpired(n)" class="btn-prim">⚡ Buy Now</button>
+                </div>
+              </div>
+            }
+
+            @if (n.type === 'NEGOTIATION_PROPOSAL' && (authService.userRole() === 'PROVIDER' || authService.userRole() === 'SELLER')) {
+              <div class="action-card proposal-card">
+                <div class="card-head">
+                  <span class="card-emoji">💼</span>
+                  <div class="card-text">
+                    <h4>New Offer Received</h4>
+                    <p class="sub">A client has sent a proposal</p>
+                  </div>
+                </div>
+                <div class="card-buttons">
+                  <button (click)="consultNegotiation(n)" class="btn-prim">🔍 Consult Offer</button>
+                </div>
+              </div>
+            }
+
+            <div class="detail-footer">
+              <p>Best regards,<br><strong>{{ getSenderName(n) }} Team</strong></p>
             </div>
           </div>
-        </div>
-
-        <!-- Divider -->
-        <hr class="detail-divider">
-
-        <!-- Body -->
-        <div class="detail-body">
-          <p>{{ selected()!.message || selected()!.description || 'No content.' }}</p>
-        </div>
-
-        @if (selected()!.linkedObjectId) {
-          <div class="detail-footer">
-            <span class="detail-ref">Ref: {{ selected()!.linkedObjectId }}</span>
+        } @else if (isSettingsTab()) {
+          <div class="settings-container">
+            <app-notification-settings />
+          </div>
+        } @else {
+          <div class="detail-empty">
+            <div class="empty-illus">✉️</div>
+            <h3>Select a message</h3>
+            <p>Pick a notification from the list to view details</p>
           </div>
         }
-      </article>
-    }
+      </section>
+
+    </main>
 
   </div>
 </div>

@@ -12,16 +12,36 @@ export interface RideResponseDTO {
   vehicleId: string; departureLocation: string; destinationLocation: string;
   departureTime: string; availableSeats: number; pricePerSeat: number;
   status: string; estimatedDurationMinutes?: number;
+  createdAt?: string;
 }
 
 export interface DriverProfileDTO {
-  id: string; driverName: string; licenseNumber: string; isVerified: boolean;
-  averageRating: number; totalRidesCompleted: number; totalEarnings: number;
+  id: string;
+  driverName: string;
+  licenseNumber: string;
+  isVerified: boolean;
+  averageRating: number;
+  totalRidesCompleted: number;
+  totalEarnings: number;
+  createdAt?: string;
+}
+
+export interface MonthlyEarningDTO {
+  month: string;
+  earnings: number;
 }
 
 export interface DriverStatsDTO {
-  totalRidesCompleted: number; recentRidesCompleted?: number;
-  averageRating: number; totalEarnings: number; directRequestsCount?: number;
+  totalRidesCreated: number;
+  totalRidesCompleted: number;
+  totalEarnings: number;
+  monthlyEarnings: number;
+  pendingRequests: number;
+  acceptanceRate: number;
+  averageRating: number;
+  driverScore: number;
+  badge: 'BRONZE' | 'SILVER' | 'GOLD';
+  monthlyEarningsTrend: MonthlyEarningDTO[];
 }
 
 export interface PassengerProfileDTO {
@@ -60,11 +80,13 @@ export class CarpoolingService {
     return this.http.get<RideResponseDTO[]>(`${this.base}/rides`);
   }
 
-  searchRides(from?: string, to?: string, date?: string, seats?: number): Observable<any> {
+  searchRides(from?: string, to?: string, date?: string, seats?: number, postedSince?: string): Observable<any> {
     let params = new HttpParams();
-    if (from) params = params.set('departureLocation', from);
-    if (to) params = params.set('destinationLocation', to);
-    if (seats) params = params.set('availableSeats', seats.toString());
+    if (from?.trim())  params = params.set('departureLocation', from.trim());
+    if (to?.trim())    params = params.set('destinationLocation', to.trim());
+    if (date?.trim())  params = params.set('departureTime', new Date(date).toISOString().slice(0, 19));
+    if (seats && seats > 0) params = params.set('requestedSeats', seats.toString());
+    if (postedSince)   params = params.set('postedSince', postedSince);
     return this.http.get<any>(`${this.base}/rides/search`, { params });
   }
 
@@ -111,6 +133,10 @@ export class CarpoolingService {
 
   getMyDriverStats(): Observable<DriverStatsDTO> {
     return this.http.get<DriverStatsDTO>(`${this.base}/driver-profiles/me/stats`);
+  }
+
+  getDriverDashboard(userId: string): Observable<DriverStatsDTO> {
+     return this.http.get<DriverStatsDTO>(`${this.base}/driver-dashboard/${userId}`);
   }
 
   getPassengerProfile(): Observable<PassengerProfileDTO> {

@@ -18,7 +18,10 @@ public class Proposal {
     private User sender; // l'utilisateur qui envoie la proposition (client ou vendeur)
 
     private Double amount;
+    private Integer quantity;
     private String message;
+    private String exchangeImage;
+    private Boolean isExchange;
 
     private ProposalType type;       // PROPOSAL ou COUNTER_PROPOSAL
     private ProposalStatuts statuts; // PENDING, ACCEPTED, REJECTED...

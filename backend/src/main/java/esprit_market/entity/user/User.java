@@ -2,14 +2,19 @@ package esprit_market.entity.user;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import esprit_market.Enum.userEnum.Role;
+import esprit_market.entity.notification.NotificationSettings;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.bson.types.ObjectId;
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.annotation.Transient;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -23,6 +28,12 @@ import java.util.List;
 public class User {
     @Id
     private ObjectId id;
+
+    @CreatedDate
+    private LocalDateTime createdAt;
+
+    @LastModifiedDate
+    private LocalDateTime updatedAt;
     
     private String firstName;
     private String lastName;
@@ -72,10 +83,19 @@ public class User {
     @Builder.Default
     private boolean externalNotificationsEnabled = true;
 
-    @Builder.Default
-    private List<ObjectId> notificationIds = new ArrayList<>();
-    @Builder.Default
-    private List<ObjectId> externalNotificationIds = new ArrayList<>();
+    /** Granular notification preferences including focus mode */
+    private NotificationSettings notificationSettings;
+
+    /**
+     * Legacy fields — kept as @Transient so Spring Data ignores them.
+     * Old documents may have these stored as DBRef arrays which would cause
+     * deserialization errors if mapped.
+     */
+    @Transient
+    private List<ObjectId> notificationIds;
+    @Transient
+    private List<ObjectId> externalNotificationIds;
+
     private ObjectId driverProfileId;
     private ObjectId passengerProfileId;
     @Builder.Default

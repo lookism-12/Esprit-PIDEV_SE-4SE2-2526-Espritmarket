@@ -246,13 +246,18 @@ public class CartServiceImpl implements ICartService {
         CartItem existingItem = cartItemRepository.findByCartIdAndProductId(cart.getId(), productId)
                 .orElse(null);
 
-        // If exists -> update quantity
+        // If exists -> update quantity (and price if negotiated)
         if (existingItem != null) {
 
             int newQuantity = existingItem.getQuantity() + request.getQuantity();
 
             // Validate total quantity with stock management service
             stockManagementService.validateStockAvailability(productId, newQuantity);
+
+            // Override price if a negotiated price is provided
+            if (request.getNegotiatedPrice() != null && request.getNegotiatedPrice() > 0) {
+                existingItem.setUnitPrice(request.getNegotiatedPrice());
+            }
 
             existingItem.setQuantity(newQuantity);
             existingItem.setSubTotal(existingItem.getUnitPrice() * newQuantity);
@@ -266,13 +271,17 @@ public class CartServiceImpl implements ICartService {
         }
 
         // Otherwise create new cart item
+        double unitPrice = (request.getNegotiatedPrice() != null && request.getNegotiatedPrice() > 0)
+                ? request.getNegotiatedPrice()
+                : product.getPrice();
+
         CartItem cartItem = CartItem.builder()
                 .cartId(cart.getId())
                 .productId(productId)
                 .productName(product.getName())
                 .quantity(request.getQuantity())
-                .unitPrice(product.getPrice())
-                .subTotal(product.getPrice() * request.getQuantity())
+                .unitPrice(unitPrice)
+                .subTotal(unitPrice * request.getQuantity())
                 .discountApplied(0.0)
                 .build();
 

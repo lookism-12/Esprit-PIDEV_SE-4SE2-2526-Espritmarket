@@ -3,5 +3,7 @@ package esprit_market.Enum.notificationEnum;
 public enum NotificationType {
     INTERNAL_NOTIFICATION,   // liée aux activités de l'utilisateur (messages, négociations, etc.)
     EXTERNAL_NOTIFICATION,   // liée aux événements externes (promotions, Black Friday, etc.)
-    RIDE_UPDATE              // Carpooling module: ride updates, cancellations, etc.
+    RIDE_UPDATE,             // Carpooling module: ride updates, cancellations, etc.
+    NEGOTIATION_ACCEPTED,    // Triggered when a provider accepts a client's offer
+    NEGOTIATION_PROPOSAL    // New offer or counter-offer received
 }

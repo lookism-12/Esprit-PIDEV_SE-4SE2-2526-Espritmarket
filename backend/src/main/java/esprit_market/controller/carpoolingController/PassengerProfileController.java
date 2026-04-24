@@ -29,6 +29,12 @@ public class PassengerProfileController {
         return passengerProfileService.registerPassenger(dto, user.getUsername());
     }
 
+    @GetMapping("/all")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
+    public List<PassengerProfileResponseDTO> getAll() {
+        return passengerProfileService.findAll();
+    }
+
     @GetMapping("/me")
     public PassengerProfileResponseDTO getMyProfile(@AuthenticationPrincipal UserDetails user) {
         return passengerProfileService.getMyProfile(user.getUsername());

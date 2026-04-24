@@ -29,6 +29,12 @@ public class DriverProfile {
     private Integer totalRidesCompleted;
     private Float totalEarnings;
 
+    /** Composite score 0–100 computed from rating, rides completed, acceptance rate */
+    private Float driverScore;
+
+    /** Badge tier: BRONZE / SILVER / GOLD */
+    private String badge;
+
     private java.util.List<ObjectId> rideIds;
     private java.util.List<ObjectId> vehicleIds;
 

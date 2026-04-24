@@ -94,23 +94,15 @@ export class Products implements OnInit {
       const selectedCat = this.categoriesFromDB().find(c => c.name === selectedCatName);
       
       filtered = filtered.filter(p => {
-        // Check if product has categoryIds array with matching ID
         const hasMatchingId = selectedCat && p.categoryIds && p.categoryIds.includes(selectedCat.id);
-        
-        // Check if product has category name that matches (case-insensitive)
         const hasMatchingName = p.category && p.category.toLowerCase() === selectedCatName.toLowerCase();
-        
-        // Product matches if either condition is true
         return hasMatchingId || hasMatchingName;
       });
-      
-      console.log(`🏷️ Filtered by category "${selectedCatName}": ${filtered.length} products found`);
     }
 
     // ✅ Shop filter
     if (this.selectedShopId()) {
       filtered = filtered.filter(p => p.shopId === this.selectedShopId());
-      console.log(`🏪 Filtered by shop "${this.selectedShopName()}": ${filtered.length} products found`);
     }
 
     // Condition filter
@@ -145,7 +137,11 @@ export class Products implements OnInit {
         break;
       case 'newest':
       default:
-        // Keep original order (newest first)
+        filtered = [...filtered].sort((a, b) => {
+          const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          return dateB - dateA;
+        });
         break;
     }
 
@@ -171,63 +167,30 @@ export class Products implements OnInit {
   });
 
   ngOnInit(): void {
-    // Load categories first, then products (in loadCategories callback)
-    this.loadCategories();
+    // Load categories and products in PARALLEL
+    this.categoryService.getAll().subscribe({
+      next: (categories) => this.categoriesFromDB.set(categories),
+      error: () => this.categoriesFromDB.set([])
+    });
+
+    this.loadProducts();
 
     // Check for search query and shop filter in URL
     this.route.queryParams.subscribe(params => {
-      if (params['q']) {
-        this.searchQuery.set(params['q']);
-      }
-      if (params['category']) {
-        this.selectedCategory.set(params['category']);
-      }
-      if (params['shop']) {
-        this.filterByShop(params['shop'], params['shopName']);
-      }
-    });
-  }
-
-  loadCategories(): void {
-    console.log('🏷️ Loading categories from MongoDB...');
-    this.categoryService.getAll().subscribe({
-      next: (categories) => {
-        console.log('✅ Categories loaded:', categories);
-        this.categoriesFromDB.set(categories);
-        // Load products AFTER categories are loaded for proper mapping
-        this.loadProducts();
-      },
-      error: (err) => {
-        console.error('❌ Failed to load categories:', err);
-        // Fallback to empty array if categories fail to load
-        this.categoriesFromDB.set([]);
-        // Still load products even if categories fail
-        this.loadProducts();
-      }
+      if (params['q']) this.searchQuery.set(params['q']);
+      if (params['category']) this.selectedCategory.set(params['category']);
+      if (params['shop']) this.filterByShop(params['shop'], params['shopName']);
     });
   }
 
   loadProducts(): void {
     this.isLoading.set(true);
-    
-    // Always load approved products for marketplace browsing
-    // This ensures consistent behavior regardless of user role
-    const request = this.productService.getAll(); // ✅ Always use approved products
-
-    request.subscribe({
+    this.productService.getAll().subscribe({
       next: (data) => {
-        console.log('📦 Raw products from API:', data);
-        console.log('📦 Products count:', data.length);
-        // Handle both DTO and mapped Product formats
-        const mappedProducts = data.map(p => this.mapProduct(p));
-        console.log('📦 Mapped products:', mappedProducts);
-        this.products.set(mappedProducts);
+        this.products.set(data.map(p => this.mapProduct(p)));
         this.isLoading.set(false);
       },
-      error: (err) => {
-        console.error("❌ API ERROR", err);
-        this.isLoading.set(false);
-      }
+      error: () => this.isLoading.set(false)
     });
   }
 
@@ -260,7 +223,8 @@ export class Products implements OnInit {
       stockStatus: product.stock > 0 ? StockStatus.IN_STOCK : StockStatus.OUT_OF_STOCK,
       condition: product.condition || ProductCondition.NEW,
       isNegotiable: product.isNegotiable || false,
-      status: (product.status as ProductStatus) || ProductStatus.PENDING
+      status: (product.status as ProductStatus) || ProductStatus.PENDING,
+      createdAt: product.createdAt ? new Date(product.createdAt) : undefined
     };
   }
 

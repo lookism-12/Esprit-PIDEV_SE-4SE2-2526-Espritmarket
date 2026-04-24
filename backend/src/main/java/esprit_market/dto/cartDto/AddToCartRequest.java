@@ -21,4 +21,7 @@ public class AddToCartRequest {
     @NotNull(message = "Quantity is required")
     @Positive(message = "Quantity must be positive")
     private Integer quantity;
+
+    /** Optional negotiated price — overrides the product's listed price when set. */
+    private Double negotiatedPrice;
 }

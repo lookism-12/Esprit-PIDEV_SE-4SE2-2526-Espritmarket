@@ -24,6 +24,7 @@ public class NegociationResponse {
     private String productId;
     private String productName;
     private Double productOriginalPrice;
+    private String itemDescription;
     private NegociationStatuts status;
     private List<ProposalResponse> proposals;
     private LocalDateTime createdAt;

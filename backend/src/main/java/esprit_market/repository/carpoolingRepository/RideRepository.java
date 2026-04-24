@@ -36,4 +36,23 @@ public interface RideRepository extends MongoRepository<Ride, ObjectId> {
         List<Ride> findByVehicleId(ObjectId vehicleId);
 
     long countByStatusIn(java.util.Collection<RideStatus> statuses);
+
+    @org.springframework.data.mongodb.repository.Aggregation(pipeline = {
+        "{ $group: { _id: { $dateToString: { format: '%m', date: '$createdAt' } }, count: { $sum: 1 } } }",
+        "{ $sort: { _id: 1 } }"
+    })
+    List<esprit_market.dto.carpooling.stats.AggregationResult> getMonthlyRidesTrend();
+
+    @org.springframework.data.mongodb.repository.Aggregation(pipeline = {
+        "{ $group: { _id: '$status', count: { $sum: 1 } } }"
+    })
+    List<esprit_market.dto.carpooling.stats.AggregationResult> getStatusDistribution();
+
+    @org.springframework.data.mongodb.repository.Aggregation(pipeline = {
+        "{ $project: { route: { $concat: ['$departureLocation', ' → ', '$destinationLocation'] } } }",
+        "{ $group: { _id: '$route', count: { $sum: 1 } } }",
+        "{ $sort: { count: -1 } }",
+        "{ $limit: 5 }"
+    })
+    List<esprit_market.dto.carpooling.stats.AggregationResult> getTopRoutes();
 }

@@ -68,9 +68,10 @@ public class RideController {
                         @Parameter(description = "Departure time filter (ISO format)") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime departureTime,
                         @Parameter(description = "Available seats filter") @RequestParam(required = false) Integer availableSeats,
                         @Parameter(description = "Ride status filter") @RequestParam(required = false) RideStatus status,
+                        @Parameter(description = "Posted after date filter") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime postedSince,
                         Pageable pageable) {
                 return rideService.findByFilters(departureLocation, destinationLocation, departureTime,
-                                availableSeats, status, pageable);
+                                availableSeats, status, postedSince, pageable);
         }
 
         @GetMapping("/driver/{driverUserId}")
@@ -129,14 +130,12 @@ public class RideController {
 
         @GetMapping("/search")
         @Operation(summary = "Search rides", description = "Searches for available rides based on criteria")
-        @ApiResponses(value = {
-                        @ApiResponse(responseCode = "200", description = "Rides found")
-        })
-        public List<RideResponseDTO> searchRides(@Valid @ModelAttribute RideSearchRequestDTO search) {
+        public List<RideResponseDTO> searchRides(@ModelAttribute RideSearchRequestDTO search) {
                 return rideService.searchRides(
                                 search.getDepartureLocation(),
                                 search.getDestinationLocation(),
                                 search.getDepartureTime(),
-                                search.getRequestedSeats());
+                                search.getRequestedSeats(),
+                                search.getPostedSince());
         }
 }

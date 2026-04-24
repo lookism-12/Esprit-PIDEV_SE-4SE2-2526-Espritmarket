@@ -138,23 +138,24 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.UNAUTHORIZED, "Unauthorized", "Authentication required", request.getRequestURI());
     }
 
+    @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleNoResourceFound(
+            org.springframework.web.servlet.resource.NoResourceFoundException ex,
+            HttpServletRequest request) {
+        // Static resource not found (favicon.ico, swagger-ui, etc.) — log at DEBUG only
+        log.debug("Static resource not found: {}", request.getRequestURI());
+        return buildErrorResponse(HttpStatus.NOT_FOUND, "Not Found", ex.getMessage(), request.getRequestURI());
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGenericException(
             Exception ex, HttpServletRequest request) {
-        log.error("Unexpected error occurred", ex);
-        
-        // For debugging: show actual error message during development
-        String message = "An unexpected error occurred. Please try again later.";
-        if (request.getRequestURI().contains("/uploads/") || 
-            request.getRequestURI().contains("/cart")) {
-            message = ex.getMessage() != null ? ex.getMessage() : ex.getClass().getSimpleName();
-            log.error("API error details: ", ex);
-        }
-        
+        log.error("Unexpected error at {}: {}", request.getRequestURI(), ex.getMessage(), ex);
+
         return buildErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR,
                 "Internal Server Error",
-                message,
+                ex.getClass().getSimpleName() + ": " + ex.getMessage(),
                 request.getRequestURI()
         );
     }

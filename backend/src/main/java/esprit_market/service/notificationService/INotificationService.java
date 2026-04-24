@@ -32,4 +32,11 @@ public interface INotificationService {
     void sendNotification(User user, String title, String description, NotificationType type, String linkedObjectId);
 
     void notifyAllAdmins(String title, String description, NotificationType type, String linkedObjectId);
+
+    NotificationDTO toggleStar(ObjectId id, ObjectId userId);
+    NotificationDTO toggleFollow(ObjectId id, ObjectId userId);
+
+    void bulkMarkAsRead(List<ObjectId> ids, ObjectId userId);
+    void bulkDelete(List<ObjectId> ids, ObjectId userId);
+    void bulkToggleStar(List<ObjectId> ids, boolean star, ObjectId userId);
 }

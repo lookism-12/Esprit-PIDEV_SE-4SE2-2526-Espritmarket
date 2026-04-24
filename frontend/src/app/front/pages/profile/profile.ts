@@ -16,13 +16,16 @@ import { FavoriteService } from '../../core/favorite.service';
 import { UserRole } from '../../models/user.model';
 import { LoyaltyLevel, LoyaltyAccount, PointsTransaction, PointsTransactionType, LOYALTY_LEVELS } from '../../models/loyalty.model';
 import { OrderResponse } from '../../models/order.model';
+import { AvatarUploadModal } from './avatar-upload-modal';
+import { ProfileEditModal } from './profile-edit-modal';
+import { PasswordChangeModal } from './password-change-modal';
 
-type ProfileTab = 'orders' | 'loyalty' | 'preferences' | 'settings' | 'deliveries';
+type ProfileTab = 'orders' | 'loyalty' | 'preferences' | 'settings' | 'deliveries' | 'negotiations';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet, ReactiveFormsModule],
+  imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet, ReactiveFormsModule, AvatarUploadModal, ProfileEditModal, PasswordChangeModal],
   templateUrl: './profile.html',
   styleUrl: './profile.scss',
 })
@@ -209,6 +212,10 @@ export class Profile implements OnInit {
     }
   }
 
+  goToAnalytics(): void {
+    this.router.navigate(['/driver/analytics']);
+  }
+
   // ── Tab helpers ───────────────────────────────────────────────────────────
   get tabs() {
     if (this.isDelivery()) {
@@ -221,15 +228,18 @@ export class Profile implements OnInit {
     }
     // Remove Dashboard tab for clients
     return [
-      { id: 'orders'      as ProfileTab, label: '🛍️ Orders', route: '/profile/orders' },
-      { id: 'loyalty'     as ProfileTab, label: '🏆 Loyalty', route: '/profile/loyalty' },
-      { id: 'preferences' as ProfileTab, label: '⚙️ Preferences', route: '/profile/preferences' },
-      { id: 'settings'    as ProfileTab, label: '👤 Settings', route: '/profile/settings' }
+      { id: 'orders'        as ProfileTab, label: '🛍️ Orders',       route: '/profile/orders' },
+      { id: 'negotiations'  as ProfileTab, label: '🤝 Negotiations',  route: '/profile/negotiations' },
+      { id: 'loyalty'       as ProfileTab, label: '🏆 Loyalty',       route: '/profile/loyalty' },
+      { id: 'preferences'   as ProfileTab, label: '⚙️ Preferences',   route: '/profile/preferences' },
+      { id: 'settings'      as ProfileTab, label: '👤 Settings',      route: '/profile/settings' }
     ];
   }
 
   // ── Profile edit ──────────────────────────────────────────────────────────
-  startEditing():          void { this.showEditModal.set(true); }
+  startEditing(): void {
+    this.showEditModal.set(true);
+  }
   onEditProfileClose():    void { this.showEditModal.set(false); }
   onProfileSave():         void { this.showEditModal.set(false); }
   openAvatarUpload():      void { this.showAvatarModal.set(true); }
@@ -249,7 +259,6 @@ export class Profile implements OnInit {
   }
 
   cancelEditing(): void { this.isEditing.set(false); }
-
   savePreferences(): void {
     const v = this.preferencesForm.value;
     this.preferences.update(p => ({ ...p, notifications: { email: v.emailNotifications, push: v.pushNotifications, sms: v.smsNotifications }, theme: v.theme }));
@@ -320,6 +329,13 @@ export class Profile implements OnInit {
   rejectNeg(id: string): void {
     this.negotiationService.rejectNegotiation(id).subscribe({
       next: (u: any) => this.myNegotiations.update(list => list.map(n => n.id === id ? { ...n, status: u.status } : n)),
+      error: () => {}
+    });
+  }
+
+  counterNeg(id: string, price: number): void {
+    this.negotiationService.counterOffer(id, price).subscribe({
+      next: (u: any) => this.myNegotiations.update(list => list.map(n => n.id === id ? u : n)),
       error: () => {}
     });
   }

@@ -9,9 +9,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class DriverStatsDTO {
-
-    private Integer totalRidesCompleted;
-    private Float averageRating;
-    private Float totalEarnings;
+public class RouteStatDTO {
+    private String route; // "Departure -> Destination"
+    private long count;
 }

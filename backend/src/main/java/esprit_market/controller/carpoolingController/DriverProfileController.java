@@ -43,6 +43,11 @@ public class DriverProfileController {
         return service.getMyProfile(user.getUsername());
     }
 
+    @GetMapping("/me/stats")
+    public DriverStatsDTO getMyStats(@AuthenticationPrincipal UserDetails user) {
+        return service.getMyDriverStats(user.getUsername());
+    }
+
     @GetMapping("/{id}")
     public DriverProfileResponseDTO getById(@PathVariable String id) {
         return service.findById(new ObjectId(id));

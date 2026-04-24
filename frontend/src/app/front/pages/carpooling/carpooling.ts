@@ -1,7 +1,7 @@
 import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { RouterModule, ActivatedRoute } from '@angular/router';
+import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import {
   CarpoolingService, RideResponseDTO, VehicleDTO, DriverProfileDTO,
   BookingResponseDTO, RideRequestResponseDTO, DriverStatsDTO
@@ -21,8 +21,10 @@ import { CarpoolingMapComponent, MapRide } from '../../shared/components/carpool
 export class Carpooling implements OnInit {
   readonly carpoolingService = inject(CarpoolingService);
   private readonly fb = inject(FormBuilder);
+  // Re-triggering build for analytics integration
   private readonly auth = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
 
   activeView = signal<'passenger' | 'driver'>('passenger');
   isLoading = signal(false);
@@ -39,48 +41,28 @@ export class Carpooling implements OnInit {
 
   filteredRides = computed(() => {
     const sort = this.searchSortBy();
-    const list = [...this.rides()].filter(r => r.status === 'CONFIRMED' || r.status === 'ACCEPTED');
+    const now = new Date();
+    // Passenger view: exclude expired rides (departureTime in the past)
+    const list = [...this.rides()].filter(r =>
+      (r.status === 'CONFIRMED' || r.status === 'ACCEPTED' || r.status === 'IN_PROGRESS') &&
+      new Date(r.departureTime) > now
+    );
     if (sort === 'cheapest') return list.sort((a, b) => a.pricePerSeat - b.pricePerSeat);
     if (sort === 'fastest') return list.sort((a, b) => (a.estimatedDurationMinutes ?? 999) - (b.estimatedDurationMinutes ?? 999));
-    return list;
+    // Default: newest post first (by createdAt)
+    return list.sort((a, b) => new Date(b.createdAt ?? b.departureTime).getTime() - new Date(a.createdAt ?? a.departureTime).getTime());
   });
 
-  // Driver
-  driverProfile = signal<DriverProfileDTO | null>(null);
-  driverStats = signal<DriverStatsDTO | null>(null);
-  myRides = signal<RideResponseDTO[]>([]);
-  myVehicles = signal<VehicleDTO[]>([]);
-  myBookings = signal<Map<string, BookingResponseDTO[]>>(new Map());
-  showMyRidesBookings = signal<string | null>(null);
-  showCreateRideModal = signal(false);
-  showDriverOnboarding = signal(false);
-  showAddVehicleModal = signal(false);
-  showAcceptRequestModal = signal(false);
-  showRequestsDrawer = signal(false);
-  selectedRequestId = signal<string | null>(null);
-  showCounterModal = signal(false);
-  selectedRequest = signal<RideRequestResponseDTO | null>(null);
-
-  hasDriverProfile = computed(() => !!this.driverProfile());
-  isDriverUser = computed(() => this.auth.userRole() === UserRole.DRIVER);
-
-  // Forms
   searchForm!: FormGroup;
-  createRideForm!: FormGroup;
-  driverOnboardingForm!: FormGroup;
-  addVehicleForm!: FormGroup;
   bookingForm!: FormGroup;
-  acceptRequestForm!: FormGroup;
   createRideRequestForm!: FormGroup;
   counterForm!: FormGroup;
 
   ngOnInit(): void {
     this.initForms();
     this.loadPassengerView();
-    if (this.isDriverUser()) this.loadDriverView();
     this.carpoolingService.getAvailableRideRequests().subscribe();
     this.route.queryParams.subscribe(params => {
-      if (params['view'] === 'driver') this.activeView.set('driver');
       if (params['action'] === 'request') {
         this.activeView.set('passenger');
         this.passengerTab.set('rides');
@@ -90,42 +72,22 @@ export class Carpooling implements OnInit {
   }
 
   private initForms(): void {
-    this.searchForm = this.fb.group({ from: [''], to: [''], date: [''], seats: [1] });
-    this.createRideForm = this.fb.group({
-      departureLocation: ['', Validators.required],
-      destinationLocation: ['', Validators.required],
-      departureTime: ['', Validators.required],
-      estimatedDurationMinutes: [60, [Validators.required, Validators.min(1)]],
-      vehicleId: ['', Validators.required],
-      availableSeats: [3, [Validators.required, Validators.min(1), Validators.max(7)]],
-      pricePerSeat: [2.5, [Validators.required, Validators.min(0)]],
-    });
-    this.driverOnboardingForm = this.fb.group({
-      licenseNumber: ['', [Validators.required, Validators.minLength(5)]],
-      licenseDocument: ['', Validators.required],
-    });
-    this.addVehicleForm = this.fb.group({
-      make: ['', Validators.required], model: ['', Validators.required],
-      licensePlate: ['', Validators.required],
-      numberOfSeats: [5, [Validators.required, Validators.min(1), Validators.max(7)]],
-    });
+    this.searchForm = this.fb.group({ from: [''], to: [''], date: [''], seats: [1], postedSince: [''] });
     this.bookingForm = this.fb.group({
       pickupLocation: ['', Validators.required], dropoffLocation: ['', Validators.required],
     });
-    this.acceptRequestForm = this.fb.group({ vehicleId: ['', Validators.required] });
     this.createRideRequestForm = this.fb.group({
       departureLocation: ['', Validators.required],
       destinationLocation: ['', Validators.required],
-      departureTime: ['', Validators.required],
-      requestedSeats: [1, [Validators.required, Validators.min(1)]],
-      proposedPrice: [null],
+      departureTime: ['', [Validators.required, this.futureDateValidator]],
+      requestedSeats: [1, [Validators.required, Validators.min(1), Validators.max(7)]],
+      proposedPrice: [null, [Validators.min(0)]],
     });
     this.counterForm = this.fb.group({
       price: [0, [Validators.required, Validators.min(0.5)]], note: [''],
     });
   }
 
-  setView(v: 'passenger' | 'driver'): void { this.activeView.set(v); }
   setSort(s: 'cheapest' | 'fastest' | 'rated'): void { this.searchSortBy.set(s); }
 
   // Map rides adapter
@@ -146,6 +108,7 @@ export class Carpooling implements OnInit {
   formatDate(d: string): string { return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }); }
   formatPrice(p: number): string { return `${p.toFixed(1)} TND`; }
   isRideFull(ride: RideResponseDTO): boolean { return ride.availableSeats <= 0; }
+  isExpired(ride: RideResponseDTO): boolean { return new Date(ride.departureTime) < new Date(); }
   isFieldInvalid(form: FormGroup, field: string): boolean {
     const c = form.get(field); return !!(c && c.invalid && (c.dirty || c.touched));
   }
@@ -165,9 +128,21 @@ export class Carpooling implements OnInit {
   }
 
   onSearch(): void {
-    const { from, to, date, seats } = this.searchForm.value;
+    const { from, to, date, seats, postedSince } = this.searchForm.value;
+    
+    // Map dropdown to ISO string
+    let postedSinceDate: string | undefined;
+    if (postedSince) {
+      const now = new Date();
+      if (postedSince === 'last2h') now.setHours(now.getHours() - 2);
+      else if (postedSince === 'last6h') now.setHours(now.getHours() - 6);
+      else if (postedSince === 'today') now.setHours(0, 0, 0, 0);
+      else if (postedSince === 'last24h') now.setHours(now.getHours() - 24);
+      postedSinceDate = now.toISOString().slice(0, 19);
+    }
+
     this.isLoading.set(true);
-    this.carpoolingService.searchRides(from, to, date, seats).subscribe({
+    this.carpoolingService.searchRides(from, to, date, seats, postedSinceDate).subscribe({
       next: (res: any) => { this.rides.set(res.content || res); this.isLoading.set(false); },
       error: () => this.isLoading.set(false)
     });
@@ -206,184 +181,19 @@ export class Carpooling implements OnInit {
     });
   }
 
-  private loadDriverView(): void {
-    this.carpoolingService.getDriverProfile().subscribe({
-      next: p => { this.driverProfile.set(p); this.loadDriverStats(); this.loadMyRidesAndVehicles(); },
-      error: (err) => {
-        this.driverProfile.set(null);
-        const userId = this.auth.userId();
-        if (userId) {
-          this.carpoolingService.getDriverProfileByUserId(userId).subscribe({
-            next: p => { if (p) { this.driverProfile.set(p); this.loadDriverStats(); this.loadMyRidesAndVehicles(); } },
-            error: () => {}
-          });
-        }
-      }
-    });
-  }
-
-  private loadDriverStats(): void {
-    this.carpoolingService.getMyDriverStats().subscribe({ next: s => this.driverStats.set(s), error: () => {} });
-  }
-
-  private loadMyRidesAndVehicles(): void {
-    this.carpoolingService.getMyVehicles().subscribe({ next: v => this.myVehicles.set(v), error: () => {} });
-    this.carpoolingService.getMyRides().subscribe({
-      next: rides => {
-        this.myRides.set(rides);
-        rides.forEach(r => {
-          this.carpoolingService.getBookingsForRide(r.rideId).subscribe({
-            next: bookings => this.myBookings.update(m => { m.set(r.rideId, bookings); return new Map(m); }),
-            error: () => {}
-          });
-        });
-      },
-      error: () => {}
-    });
-  }
-
-  getBookingsForRide(rideId: string): BookingResponseDTO[] { return this.myBookings().get(rideId) ?? []; }
-  showRideBookings(rideId: string): void { this.showMyRidesBookings.set(rideId); }
-  hideRideBookings(): void { this.showMyRidesBookings.set(null); }
-
-  acceptBooking(id: string): void {
-    this.carpoolingService.acceptBooking(id).subscribe({ next: () => this.loadMyRidesAndVehicles(), error: e => this.error.set(e.error?.message || 'Error') });
-  }
-  rejectBooking(id: string): void {
-    this.carpoolingService.rejectBooking(id).subscribe({ next: () => this.loadMyRidesAndVehicles(), error: e => this.error.set(e.error?.message || 'Error') });
-  }
-
-  openDriverOnboarding(): void { this.showDriverOnboarding.set(true); }
-  closeDriverOnboarding(): void { this.showDriverOnboarding.set(false); }
-
-  onFileSelected(event: Event): void {
-    const file = (event.target as HTMLInputElement).files?.[0];
-    if (file) this.driverOnboardingForm.patchValue({ licenseDocument: file.name });
-  }
-
-  registerAsDriver(): void {
-    if (this.driverOnboardingForm.invalid) { this.driverOnboardingForm.markAllAsTouched(); return; }
-    const { licenseNumber, licenseDocument } = this.driverOnboardingForm.value;
-    this.carpoolingService.registerAsDriver({ licenseNumber, licenseDocument }).subscribe({
-      next: p => {
-        this.success.set('✓ Driver profile created!');
-        setTimeout(() => this.success.set(null), 4000);
-        this.driverProfile.set(p);
-        this.closeDriverOnboarding();
-        this.loadMyRidesAndVehicles();
-      },
-      error: e => this.error.set(e?.error?.message ?? e?.message ?? 'Registration failed')
-    });
-  }
-
-  openAddVehicleModal(): void { this.addVehicleForm.reset(); this.showAddVehicleModal.set(true); }
-  closeAddVehicleModal(): void { this.showAddVehicleModal.set(false); }
-
-  submitVehicle(): void {
-    if (this.addVehicleForm.invalid) { this.addVehicleForm.markAllAsTouched(); return; }
-    this.carpoolingService.addVehicle(this.addVehicleForm.value).subscribe({
-      next: v => {
-        this.success.set('✓ Vehicle added!');
-        setTimeout(() => this.success.set(null), 4000);
-        this.myVehicles.update(arr => [...arr, v]);
-        this.closeAddVehicleModal();
-      },
-      error: e => this.error.set(e.error?.message || 'Vehicle creation failed')
-    });
-  }
-
-  openCreateRideModal(): void {
-    this.createRideForm.reset({ availableSeats: 3, pricePerSeat: 2.5, estimatedDurationMinutes: 60 });
-    this.showCreateRideModal.set(true);
-  }
-  closeCreateRideModal(): void { this.showCreateRideModal.set(false); }
-
-  createRide(): void {
-    if (this.createRideForm.invalid) { this.createRideForm.markAllAsTouched(); return; }
-    const v = this.createRideForm.value;
-    this.carpoolingService.createRide({
-      ...v,
-      departureTime: new Date(v.departureTime).toISOString(),
-      availableSeats: parseInt(v.availableSeats, 10),
-      pricePerSeat: parseFloat(v.pricePerSeat),
-      estimatedDurationMinutes: parseInt(v.estimatedDurationMinutes, 10),
-    }).subscribe({
-      next: () => {
-        this.success.set('✓ Ride published!');
-        setTimeout(() => this.success.set(null), 4000);
-        this.closeCreateRideModal();
-        this.loadMyRidesAndVehicles();
-      },
-      error: e => this.error.set(e.error?.message || 'Ride creation failed')
-    });
-  }
-
-  openAcceptRequestModal(requestId: string): void {
-    this.selectedRequestId.set(requestId);
-    this.acceptRequestForm.reset();
-    this.showAcceptRequestModal.set(true);
-  }
-  closeAcceptRequestModal(): void { this.showAcceptRequestModal.set(false); this.selectedRequestId.set(null); }
-
-  submitAcceptRequest(): void {
-    if (this.acceptRequestForm.invalid || !this.selectedRequestId()) return;
-    const { vehicleId } = this.acceptRequestForm.value;
-    this.carpoolingService.acceptRideRequest(this.selectedRequestId()!, vehicleId).subscribe({
-      next: () => {
-        this.success.set('✓ Request accepted!');
-        setTimeout(() => this.success.set(null), 4000);
-        this.closeAcceptRequestModal();
-        this.carpoolingService.getAvailableRideRequests().subscribe();
-        this.loadMyRidesAndVehicles();
-      },
-      error: e => this.error.set(e.error?.message || 'Could not accept request')
-    });
-  }
-
-  quickAcceptRequest(req: RideRequestResponseDTO): void {
-    const vehicleId = this.myVehicles()?.[0]?.id;
-    if (!vehicleId) { this.error.set('Add a vehicle first.'); this.openAddVehicleModal(); return; }
-    this.carpoolingService.acceptRideRequest(req.id, vehicleId).subscribe({
-      next: () => {
-        this.success.set('✓ Quick accepted!');
-        setTimeout(() => this.success.set(null), 4000);
-        this.carpoolingService.getAvailableRideRequests().subscribe();
-        this.loadMyRidesAndVehicles();
-      },
-      error: e => this.error.set(e?.error?.message || 'Could not quick-accept')
-    });
+  private futureDateValidator(control: import('@angular/forms').AbstractControl) {
+    if (!control.value) return null;
+    return new Date(control.value) > new Date() ? null : { pastDate: true };
   }
 
   joinCoRequest(req: RideRequestResponseDTO): void {
-    if (req.status === 'PENDING') { this.error.set('No driver has accepted this request yet.'); return; }
-    if (req.status === 'CANCELLED') { this.error.set('This request has been cancelled.'); return; }
-    if (req.status === 'ACCEPTED' && req.rideId) { this.openBookingPanel(req.rideId); }
-    else { this.error.set('Ride details are not available yet.'); }
+    if (req.status === 'ACCEPTED' && req.rideId) {
+      this.openBookingPanel(req.rideId);
+    } else {
+      this.error.set('This request is still pending or not yet linked to a confirmed ride.');
+    }
   }
 
-  toggleRequestsDrawer(): void { this.showRequestsDrawer.update(v => !v); }
-  refreshFeed(): void { this.carpoolingService.getAvailableRideRequests().subscribe(); }
-
-  openCounterModal(req: RideRequestResponseDTO): void {
-    this.selectedRequest.set(req);
-    this.counterForm.patchValue({ price: (req.proposedPrice || 5) + 1.5, note: '' });
-    this.showCounterModal.set(true);
-  }
-  closeCounterModal(): void { this.showCounterModal.set(false); this.selectedRequest.set(null); }
-
-  submitCounterPrice(): void {
-    if (this.counterForm.invalid || !this.selectedRequest()) return;
-    const { price, note } = this.counterForm.value;
-    this.carpoolingService.counterPrice(this.selectedRequest()!.id, price, note).subscribe({
-      next: () => {
-        this.success.set('✓ Counter offer sent!');
-        setTimeout(() => this.success.set(null), 4000);
-        this.closeCounterModal();
-        this.carpoolingService.getAvailableRideRequests().subscribe();
-      },
-      error: e => this.error.set(e.error?.message || 'Counter failed')
-    });
-  }
 
   // Video event handlers
   onVideoLoadStart(): void {

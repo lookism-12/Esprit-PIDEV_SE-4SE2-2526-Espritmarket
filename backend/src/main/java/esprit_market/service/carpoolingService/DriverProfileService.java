@@ -3,6 +3,7 @@ package esprit_market.service.carpoolingService;
 import esprit_market.dto.carpooling.DriverProfileRequestDTO;
 import esprit_market.dto.carpooling.DriverProfileResponseDTO;
 import esprit_market.dto.carpooling.DriverStatsDTO;
+import esprit_market.dto.carpooling.MonthlyEarningDTO;
 import esprit_market.entity.carpooling.Booking;
 import esprit_market.entity.carpooling.DriverProfile;
 import esprit_market.entity.carpooling.Ride;
@@ -23,7 +24,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.context.annotation.Lazy;
 
-import java.util.List;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -37,6 +40,7 @@ public class DriverProfileService implements IDriverProfileService {
     private final UserRepository userRepository;
     private final DriverProfileMapper driverProfileMapper;
     private final @Lazy IRideService rideService;
+    private final @Lazy RatingService ratingService;
 
     public DriverProfileService(DriverProfileRepository driverProfileRepository,
                                RideRepository rideRepository,
@@ -44,7 +48,8 @@ public class DriverProfileService implements IDriverProfileService {
                                RidePaymentRepository ridePaymentRepository,
                                UserRepository userRepository,
                                DriverProfileMapper driverProfileMapper,
-                               @Lazy IRideService rideService) {
+                               @Lazy IRideService rideService,
+                               @Lazy RatingService ratingService) {
         this.driverProfileRepository = driverProfileRepository;
         this.rideRepository = rideRepository;
         this.bookingRepository = bookingRepository;
@@ -52,6 +57,7 @@ public class DriverProfileService implements IDriverProfileService {
         this.userRepository = userRepository;
         this.driverProfileMapper = driverProfileMapper;
         this.rideService = rideService;
+        this.ratingService = ratingService;
     }
 
     public DriverProfileResponseDTO registerDriver(DriverProfileRequestDTO dto, String userEmail) {
@@ -155,26 +161,75 @@ public class DriverProfileService implements IDriverProfileService {
         DriverProfile driver = driverProfileRepository.findById(driverProfileId)
                 .orElseThrow(() -> new IllegalArgumentException("Driver profile not found"));
 
-        List<Ride> completedRides = rideRepository.findByDriverProfileId(driverProfileId).stream()
+        List<Ride> allRides = rideRepository.findByDriverProfileId(driverProfileId);
+        List<ObjectId> rideIds = allRides.stream().map(Ride::getId).toList();
+        List<Booking> allBookings = rideIds.isEmpty() ? new ArrayList<>() : bookingRepository.findByRideIdIn(rideIds);
+
+        int totalRidesCreated = allRides.size();
+        List<Ride> completedRides = allRides.stream()
                 .filter(r -> r.getStatus() == RideStatus.COMPLETED)
                 .toList();
 
         float totalEarnings = 0;
-        for (Ride ride : completedRides) {
-            List<Booking> bookings = bookingRepository.findByRideIdAndStatus(ride.getId(), BookingStatus.COMPLETED);
-            for (Booking b : bookings) {
-                var payment = ridePaymentRepository.findByBookingId(b.getId());
-                if (payment.isPresent()
-                        && payment.get().getStatus() == esprit_market.Enum.carpoolingEnum.PaymentStatus.COMPLETED) {
-                    totalEarnings += payment.get().getAmount();
+        float monthlyEarnings = 0;
+        LocalDateTime now = LocalDateTime.now();
+        Map<String, Float> trendMap = new TreeMap<>(); // Sorted by month YYYY-MM
+
+        int acceptedBookings = 0;
+        int totalRequests = 0;
+        int pendingRequests = 0;
+
+        for (Booking b : allBookings) {
+            if (b.getStatus() == BookingStatus.PENDING) {
+                pendingRequests++;
+                continue;
+            }
+
+            totalRequests++;
+            if (b.getStatus() == BookingStatus.CONFIRMED || b.getStatus() == BookingStatus.COMPLETED) {
+                acceptedBookings++;
+                
+                // Calculate earnings for confirmed/completed bookings
+                float amount = b.getTotalPrice() != null ? b.getTotalPrice() : 0f;
+                totalEarnings += amount;
+
+                // Monthly analytics grouping
+                LocalDateTime date = b.getCreatedAt() != null ? b.getCreatedAt() : now;
+                String monthKey = date.format(DateTimeFormatter.ofPattern("yyyy-MM"));
+                trendMap.put(monthKey, trendMap.getOrDefault(monthKey, 0f) + amount);
+
+                if (date.getMonth() == now.getMonth() && date.getYear() == now.getYear()) {
+                    monthlyEarnings += amount;
                 }
             }
         }
 
+        // Acceptance Rate
+        float acceptanceRate = totalRequests > 0 ? (float) acceptedBookings * 100 / totalRequests : 100f;
+
+        // Score + Badge
+        float score = ratingService.computeScore(
+                driver.getAverageRating() != null ? driver.getAverageRating() : 0f,
+                completedRides.size(),
+                acceptanceRate);
+        String badge = ratingService.computeBadge(score);
+
+        // Structured Trend Data
+        List<MonthlyEarningDTO> trend = trendMap.entrySet().stream()
+                .map(e -> new MonthlyEarningDTO(e.getKey(), e.getValue()))
+                .collect(Collectors.toList());
+
         return DriverStatsDTO.builder()
+                .totalRidesCreated(totalRidesCreated)
                 .totalRidesCompleted(completedRides.size())
-                .averageRating(driver.getAverageRating() != null ? driver.getAverageRating() : 0f)
                 .totalEarnings(totalEarnings)
+                .monthlyEarnings(monthlyEarnings)
+                .pendingRequests(pendingRequests)
+                .acceptanceRate(acceptanceRate)
+                .averageRating(driver.getAverageRating() != null ? driver.getAverageRating() : 0f)
+                .driverScore(score)
+                .badge(badge)
+                .monthlyEarningsTrend(trend)
                 .build();
     }
 
@@ -187,6 +242,8 @@ public class DriverProfileService implements IDriverProfileService {
             driver.setTotalEarnings(
                     driver.getTotalEarnings() != null ? driver.getTotalEarnings() + earnings : earnings);
             driverProfileRepository.save(driver);
+            // Recompute score and badge after ride count changes
+            ratingService.updateDriverAverageRating(driverProfileId);
         }
     }
 
@@ -195,6 +252,30 @@ public class DriverProfileService implements IDriverProfileService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         return driverProfileMapper.toResponseDTO(driverProfileRepository.findByUserId(user.getId()).orElse(null));
+    }
+
+    @Override
+    public DriverStatsDTO getMyDriverStats(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        
+        Optional<DriverProfile> profileOpt = driverProfileRepository.findByUserId(user.getId());
+        
+        if (profileOpt.isEmpty()) {
+            log.info("No driver profile found for user {}, returning empty stats", email);
+            return DriverStatsDTO.builder()
+                    .totalRidesCreated(0)
+                    .totalRidesCompleted(0)
+                    .totalEarnings(0f)
+                    .monthlyEarnings(0f)
+                    .pendingRequests(0)
+                    .acceptanceRate(100f)
+                    .averageRating(5.0f)
+                    .monthlyEarningsTrend(new ArrayList<>())
+                    .build();
+        }
+        
+        return getDriverStats(profileOpt.get().getId());
     }
 
     @Override

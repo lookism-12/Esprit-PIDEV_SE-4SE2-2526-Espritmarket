@@ -78,6 +78,11 @@ export class ProductService {
   readonly isLoading = signal<boolean>(false);
   readonly error = signal<string | null>(null);
 
+  // Cache state
+  private productsCache: Product[] = [];
+  private lastFetchTime = 0;
+  private readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
   constructor(private http: HttpClient) {}
 
   /**
@@ -116,6 +121,7 @@ export class ProductService {
       // Add approval workflow fields
       status: dto.status as any,
       approvedAt: dto.approvedAt ? new Date(dto.approvedAt) : undefined,
+      createdAt: dto.createdAt ? new Date(dto.createdAt) : undefined,
       approvedBy: dto.approvedBy,
       rejectionReason: dto.rejectionReason
     }));
@@ -171,23 +177,35 @@ export class ProductService {
     );
   }
 
-  getAll(filter?: ProductFilter): Observable<Product[]> {
+  getAll(filter?: ProductFilter, forceRefresh = false): Observable<Product[]> {
+    const now = Date.now();
+    
+    // Check cache (ignore filter for now as backend doesn't support it, 
+    // but keep parameter to avoid build errors)
+    if (!forceRefresh && this.productsCache.length > 0 && (now - this.lastFetchTime < this.CACHE_DURATION)) {
+      console.log('⚡ Returning products from cache');
+      this.products.set(this.productsCache);
+      return new Observable(subscriber => {
+        subscriber.next(this.productsCache);
+        subscriber.complete();
+      });
+    }
+
     this.isLoading.set(true);
-    // NOTE: Removing query parameters since backend doesn't support filtering yet
     return this.http.get<ProductResponseDTO[]>(this.apiUrl).pipe(
       map((dtos) => {
         const products = this.mapToFrontendProducts(dtos);
+        this.productsCache = products;
+        this.lastFetchTime = Date.now();
         this.products.set(products);
         this.isLoading.set(false);
-        console.log('✅ Products loaded:', products.length);
+        console.log('✅ Products loaded from server:', products.length);
         return products;
       }),
       catchError((error) => {
         this.error.set('Failed to load products');
         this.isLoading.set(false);
         console.error('❌ Products loading error:', error);
-        console.error('❌ Request URL was:', this.apiUrl);
-        console.error('❌ Error details:', error);
         return throwError(() => error);
       })
     );
@@ -417,56 +435,39 @@ export class ProductService {
   }
 
   /**
-   * Upload multiple images for a product (PROVIDER only)
-   * @param productId - Product ID
-   * @param files - Array of image files to upload
-   * @returns Observable with upload result
+   * Upload image files for a product — sent to backend which uploads to Cloudinary.
+   * Only the returned secure URLs are stored in MongoDB.
    */
-  uploadProductImages(productId: string, files: File[]): Observable<any> {
-    if (!files || files.length === 0) {
-      throw new Error('No files provided for upload');
-    }
-
-    // Validate each file
-    const maxSize = 5 * 1024 * 1024; // 5MB
-    for (const file of files) {
-      if (!file.type.startsWith('image/')) {
-        throw new Error(`File must be an image: ${file.name}`);
-      }
-      if (file.size > maxSize) {
-        throw new Error(`File too large (max 5MB): ${file.name}`);
-      }
-    }
-
-    console.log('📤 Uploading product images:', files.length, 'files for product:', productId);
+  uploadProductImages(productId: string, files: File[]): Observable<{ images: { url: string; altText: string }[] }> {
+    if (!files || files.length === 0) throw new Error('No files provided');
 
     const formData = new FormData();
-    files.forEach((file, index) => {
-      formData.append('files', file);
-      console.log(`  File ${index + 1}:`, file.name, `(${(file.size / 1024 / 1024).toFixed(2)} MB)`);
-    });
+    files.forEach(file => formData.append('files', file, file.name));
 
-    return this.http.post<any>(`${this.apiUrl}/${productId}/images/upload`, formData);
+    return this.http.post<any>(`${this.apiUrl}/${productId}/images/upload`, formData).pipe(
+      map((dto: any) => ({
+        images: (dto.images || []).map((img: any) => ({
+          url: img.url,
+          altText: img.altText || ''
+        }))
+      })),
+      catchError(err => {
+        console.error('❌ Image upload error:', err);
+        return throwError(() => err);
+      })
+    );
   }
 
   /**
-   * Delete a product image (PROVIDER only)
-   * @param productId - Product ID
-   * @param imageUrl - Image URL to delete
-   * @returns Observable with updated product
+   * Delete a product image — removes from MongoDB and Cloudinary.
    */
   deleteProductImage(productId: string, imageUrl: string): Observable<Product> {
-    let params = new HttpParams().set('imageUrl', imageUrl);
-    console.log('🗑️ Deleting product image:', imageUrl, 'from product:', productId);
+    const params = new HttpParams().set('imageUrl', imageUrl);
     return this.http.delete<ProductResponseDTO>(`${this.apiUrl}/${productId}/images`, { params }).pipe(
-      map((dto) => {
-        const product = this.mapToFrontendProducts([dto])[0];
-        console.log('✅ Product image deleted:', product);
-        return product;
-      }),
-      catchError((error) => {
-        console.error('❌ Delete image error:', error);
-        return throwError(() => error);
+      map(dto => this.mapToFrontendProducts([dto])[0]),
+      catchError(err => {
+        console.error('❌ Delete image error:', err);
+        return throwError(() => err);
       })
     );
   }

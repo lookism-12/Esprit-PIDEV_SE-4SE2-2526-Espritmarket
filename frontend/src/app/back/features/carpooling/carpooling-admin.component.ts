@@ -1,7 +1,8 @@
 import { Component, OnInit, signal, computed, inject } from '@angular/core';
-import { CommonModule, DatePipe } from '@angular/common';
+import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
@@ -15,6 +16,7 @@ interface AdminRide {
   pricePerSeat: number;
   status: string;
   bookedSeats?: number;
+  createdAt?: string;
 }
 
 interface AdminDriver {
@@ -39,6 +41,15 @@ interface AdminRequest {
   status: string;
 }
 
+interface AdminPassenger {
+  id: string;
+  fullName: string;
+  email: string;
+  averageRating: number;
+  totalRidesCompleted: number;
+  createdAt: string;
+}
+
 interface AdminPayment {
   id: string;
   bookingId: string;
@@ -47,273 +58,92 @@ interface AdminPayment {
   createdAt: string;
 }
 
+interface RouteStat {
+  route: string;
+  count: number;
+}
+
 interface AdminStats {
   activeRidesCount: number;
   pendingRequestsCount: number;
   unverifiedDriversCount: number;
   totalRevenue: number;
+  activeRidesGrowth: number;
+  pendingRequestsGrowth: number;
+  unverifiedDriversGrowth: number;
+  totalRevenueGrowth: number;
+  
+  ridesTrend?: Record<string, number>;
+  earningsTrend?: Record<string, number>;
+  userGrowth?: Record<string, number>;
+  statusDistribution?: Record<string, number>;
+  topRoutes?: RouteStat[];
+  reservationsDemand?: Record<string, number>;
 }
 
-type Tab = 'rides' | 'drivers' | 'requests' | 'payments';
+type Tab = 'overview' | 'rides' | 'drivers' | 'requests' | 'payments' | 'passengers';
 
 @Component({
   selector: 'app-carpooling-admin',
   standalone: true,
-  imports: [CommonModule, DatePipe, FormsModule],
-  template: `
-<div class="p-6 min-h-screen" style="background-color: var(--bg-color)">
-
-  <!-- Header -->
-  <header class="flex justify-between items-start mb-6">
-    <div>
-      <h1 class="text-2xl font-extrabold text-gray-900">Carpooling Management</h1>
-      <p class="text-gray-500 text-sm mt-1">Monitor all rides, drivers, requests and payments.</p>
-    </div>
-    <button (click)="load()" class="px-4 py-2 bg-[#7D0408] text-white rounded-lg font-bold text-sm hover:bg-[#5a0306] transition-colors">↻ Refresh</button>
-  </header>
-
-  <!-- Stats -->
-  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-    <div class="bg-white rounded-xl p-4 shadow-sm border-l-4 border-blue-500">
-      <p class="text-xs font-bold text-gray-400 uppercase tracking-wide">Active Rides</p>
-      <p class="text-3xl font-black text-blue-600 mt-1">{{ stats()?.activeRidesCount ?? '—' }}</p>
-    </div>
-    <div class="bg-white rounded-xl p-4 shadow-sm border-l-4 border-amber-500">
-      <p class="text-xs font-bold text-gray-400 uppercase tracking-wide">Pending Requests</p>
-      <p class="text-3xl font-black text-amber-600 mt-1">{{ stats()?.pendingRequestsCount ?? '—' }}</p>
-    </div>
-    <div class="bg-white rounded-xl p-4 shadow-sm border-l-4 border-red-500">
-      <p class="text-xs font-bold text-gray-400 uppercase tracking-wide">Unverified Drivers</p>
-      <p class="text-3xl font-black text-red-600 mt-1">{{ stats()?.unverifiedDriversCount ?? '—' }}</p>
-    </div>
-    <div class="bg-white rounded-xl p-4 shadow-sm border-l-4 border-green-500">
-      <p class="text-xs font-bold text-gray-400 uppercase tracking-wide">Total Revenue</p>
-      <p class="text-3xl font-black text-green-600 mt-1">{{ (stats()?.totalRevenue ?? 0) | number:'1.0-0' }} TND</p>
-    </div>
-  </div>
-
-  <!-- Tabs -->
-  <div class="flex gap-1 mb-4 bg-white rounded-xl p-1 shadow-sm w-fit">
-    @for (tab of tabs; track tab.key) {
-      <button (click)="activeTab.set(tab.key)"
-        class="px-5 py-2 rounded-lg font-bold text-sm transition-all"
-        [class.bg-[#7D0408]]="activeTab() === tab.key"
-        [class.text-white]="activeTab() === tab.key"
-        [class.text-gray-500]="activeTab() !== tab.key">
-        {{ tab.label }}
-        @if (tab.count() > 0) {
-          <span class="ml-1.5 text-xs font-black opacity-70">({{ tab.count() }})</span>
-        }
-      </button>
-    }
-  </div>
-
-  <!-- Search + Status filter -->
-  <div class="flex gap-3 mb-4 flex-wrap">
-    <input type="text" placeholder="Search..."
-      [ngModel]="search()" (ngModelChange)="search.set($event)"
-      class="flex-1 min-w-[200px] px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#7D0408]">
-    @if (activeTab() === 'rides') {
-      <div class="flex gap-2 flex-wrap">
-        @for (s of rideStatuses; track s) {
-          <button class="px-3 py-2 rounded-full text-xs font-bold border transition-all"
-            [class.bg-[#7D0408]]="filterStatus() === s" [class.text-white]="filterStatus() === s"
-            [class.border-[#7D0408]]="filterStatus() === s"
-            [class.bg-white]="filterStatus() !== s" [class.text-gray-600]="filterStatus() !== s"
-            [class.border-gray-200]="filterStatus() !== s"
-            (click)="filterStatus.set(s)">{{ s === 'ALL' ? 'All' : s }}</button>
-        }
-      </div>
-    }
-  </div>
-
-  @if (isLoading()) {
-    <div class="text-center py-16 text-gray-400 font-bold">Loading data...</div>
-  } @else {
-
-    <!-- RIDES TAB -->
-    @if (activeTab() === 'rides') {
-      @if (filteredRides().length === 0) {
-        <div class="text-center py-16 text-gray-400 font-bold">No rides found.</div>
-      } @else {
-        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-          <table class="w-full border-collapse text-sm">
-            <thead>
-              <tr class="bg-gray-50 text-left">
-                <th class="px-4 py-3 font-bold text-gray-500 uppercase text-xs">Driver</th>
-                <th class="px-4 py-3 font-bold text-gray-500 uppercase text-xs">Route</th>
-                <th class="px-4 py-3 font-bold text-gray-500 uppercase text-xs">Departure</th>
-                <th class="px-4 py-3 font-bold text-gray-500 uppercase text-xs">Seats</th>
-                <th class="px-4 py-3 font-bold text-gray-500 uppercase text-xs">Price</th>
-                <th class="px-4 py-3 font-bold text-gray-500 uppercase text-xs">Status</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-50">
-              @for (ride of filteredRides(); track ride.rideId) {
-              <tr class="hover:bg-gray-50 transition-colors">
-                <td class="px-4 py-3 font-semibold text-gray-800">{{ ride.driverName || '—' }}</td>
-                <td class="px-4 py-3 text-gray-700">
-                  <span class="font-bold">{{ ride.departureLocation }}</span>
-                  <span class="text-gray-400 mx-1">→</span>
-                  <span>{{ ride.destinationLocation }}</span>
-                </td>
-                <td class="px-4 py-3 text-gray-500 text-xs">{{ ride.departureTime | date:'MMM d, HH:mm' }}</td>
-                <td class="px-4 py-3 text-center font-bold text-gray-700">{{ ride.availableSeats }}</td>
-                <td class="px-4 py-3 font-bold text-gray-800 font-mono">{{ ride.pricePerSeat }} TND</td>
-                <td class="px-4 py-3">
-                  <span class="px-2 py-1 rounded-full text-xs font-bold" [ngClass]="statusClass(ride.status)">{{ ride.status }}</span>
-                </td>
-              </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-        <p class="text-xs text-gray-400 text-right mt-2">{{ filteredRides().length }} of {{ rides().length }} rides</p>
-      }
-    }
-
-    <!-- DRIVERS TAB -->
-    @if (activeTab() === 'drivers') {
-      @if (filteredDrivers().length === 0) {
-        <div class="text-center py-16 text-gray-400 font-bold">No drivers found.</div>
-      } @else {
-        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-          <table class="w-full border-collapse text-sm">
-            <thead>
-              <tr class="bg-gray-50 text-left">
-                <th class="px-4 py-3 font-bold text-gray-500 uppercase text-xs">Driver</th>
-                <th class="px-4 py-3 font-bold text-gray-500 uppercase text-xs">Email</th>
-                <th class="px-4 py-3 font-bold text-gray-500 uppercase text-xs">License</th>
-                <th class="px-4 py-3 font-bold text-gray-500 uppercase text-xs">Verified</th>
-                <th class="px-4 py-3 font-bold text-gray-500 uppercase text-xs">Rating</th>
-                <th class="px-4 py-3 font-bold text-gray-500 uppercase text-xs">Rides</th>
-                <th class="px-4 py-3 font-bold text-gray-500 uppercase text-xs">Earnings</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-50">
-              @for (d of filteredDrivers(); track d.id) {
-              <tr class="hover:bg-gray-50 transition-colors">
-                <td class="px-4 py-3 font-semibold text-gray-800">{{ d.fullName }}</td>
-                <td class="px-4 py-3 text-gray-500 text-xs">{{ d.email }}</td>
-                <td class="px-4 py-3 font-mono text-xs text-gray-600">{{ d.licenseNumber }}</td>
-                <td class="px-4 py-3">
-                  <span class="px-2 py-1 rounded-full text-xs font-bold" [ngClass]="d.isVerified ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'">
-                    {{ d.isVerified ? '✓ Verified' : '✗ Pending' }}
-                  </span>
-                </td>
-                <td class="px-4 py-3 font-bold text-amber-600">{{ d.averageRating | number:'1.1-1' }} ⭐</td>
-                <td class="px-4 py-3 text-center font-bold text-gray-700">{{ d.totalRidesCompleted }}</td>
-                <td class="px-4 py-3 font-bold text-green-700 font-mono">{{ d.totalEarnings | number:'1.0-0' }} TND</td>
-              </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-        <p class="text-xs text-gray-400 text-right mt-2">{{ filteredDrivers().length }} drivers</p>
-      }
-    }
-
-    <!-- REQUESTS TAB -->
-    @if (activeTab() === 'requests') {
-      @if (filteredRequests().length === 0) {
-        <div class="text-center py-16 text-gray-400 font-bold">No ride requests found.</div>
-      } @else {
-        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-          <table class="w-full border-collapse text-sm">
-            <thead>
-              <tr class="bg-gray-50 text-left">
-                <th class="px-4 py-3 font-bold text-gray-500 uppercase text-xs">Passenger</th>
-                <th class="px-4 py-3 font-bold text-gray-500 uppercase text-xs">Route</th>
-                <th class="px-4 py-3 font-bold text-gray-500 uppercase text-xs">Date</th>
-                <th class="px-4 py-3 font-bold text-gray-500 uppercase text-xs">Seats</th>
-                <th class="px-4 py-3 font-bold text-gray-500 uppercase text-xs">Proposed Price</th>
-                <th class="px-4 py-3 font-bold text-gray-500 uppercase text-xs">Status</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-50">
-              @for (r of filteredRequests(); track r.id) {
-              <tr class="hover:bg-gray-50 transition-colors">
-                <td class="px-4 py-3 font-semibold text-gray-800">{{ r.passengerName }}</td>
-                <td class="px-4 py-3 text-gray-700">
-                  <span class="font-bold">{{ r.departureLocation }}</span>
-                  <span class="text-gray-400 mx-1">→</span>
-                  <span>{{ r.destinationLocation }}</span>
-                </td>
-                <td class="px-4 py-3 text-gray-500 text-xs">{{ r.departureTime | date:'MMM d, HH:mm' }}</td>
-                <td class="px-4 py-3 text-center font-bold text-gray-700">{{ r.requestedSeats }}</td>
-                <td class="px-4 py-3 font-bold text-gray-800 font-mono">{{ r.proposedPrice || '—' }} TND</td>
-                <td class="px-4 py-3">
-                  <span class="px-2 py-1 rounded-full text-xs font-bold" [ngClass]="statusClass(r.status)">{{ r.status }}</span>
-                </td>
-              </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-        <p class="text-xs text-gray-400 text-right mt-2">{{ filteredRequests().length }} requests</p>
-      }
-    }
-
-    <!-- PAYMENTS TAB -->
-    @if (activeTab() === 'payments') {
-      @if (filteredPayments().length === 0) {
-        <div class="text-center py-16 text-gray-400 font-bold">No payments found.</div>
-      } @else {
-        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-          <table class="w-full border-collapse text-sm">
-            <thead>
-              <tr class="bg-gray-50 text-left">
-                <th class="px-4 py-3 font-bold text-gray-500 uppercase text-xs">Payment ID</th>
-                <th class="px-4 py-3 font-bold text-gray-500 uppercase text-xs">Booking ID</th>
-                <th class="px-4 py-3 font-bold text-gray-500 uppercase text-xs">Amount</th>
-                <th class="px-4 py-3 font-bold text-gray-500 uppercase text-xs">Status</th>
-                <th class="px-4 py-3 font-bold text-gray-500 uppercase text-xs">Date</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-50">
-              @for (p of filteredPayments(); track p.id) {
-              <tr class="hover:bg-gray-50 transition-colors">
-                <td class="px-4 py-3 font-mono text-xs text-gray-500">{{ p.id.substring(0, 8) }}...</td>
-                <td class="px-4 py-3 font-mono text-xs text-gray-500">{{ p.bookingId.substring(0, 8) }}...</td>
-                <td class="px-4 py-3 font-bold text-green-700 font-mono">{{ p.amount | number:'1.2-2' }} TND</td>
-                <td class="px-4 py-3">
-                  <span class="px-2 py-1 rounded-full text-xs font-bold" [ngClass]="statusClass(p.status)">{{ p.status }}</span>
-                </td>
-                <td class="px-4 py-3 text-gray-500 text-xs">{{ p.createdAt | date:'MMM d, HH:mm' }}</td>
-              </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-        <p class="text-xs text-gray-400 text-right mt-2">{{ filteredPayments().length }} payments</p>
-      }
-    }
-
-  }
-</div>
-  `
+  imports: [CommonModule, DatePipe, DecimalPipe, FormsModule, RouterLink],
+  templateUrl: './carpooling-admin.component.html',
+  styleUrl: './carpooling-admin.scss'
 })
 export class CarpoolingAdminComponent implements OnInit {
   private http = inject(HttpClient);
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
 
   rides = signal<AdminRide[]>([]);
   drivers = signal<AdminDriver[]>([]);
   requests = signal<AdminRequest[]>([]);
   payments = signal<AdminPayment[]>([]);
+  passengers = signal<AdminPassenger[]>([]);
   stats = signal<AdminStats | null>(null);
   isLoading = signal(true);
   search = signal('');
   filterStatus = signal('ALL');
-  activeTab = signal<Tab>('rides');
+  activeTab = signal<Tab>('overview');
 
+  readonly months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   readonly rideStatuses = ['ALL', 'CONFIRMED', 'ACCEPTED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'];
 
   readonly tabs = [
+    { key: 'overview' as Tab, label: '📈 Overview', count: () => 0 },
     { key: 'rides' as Tab,    label: '🚗 Rides',    count: computed(() => this.rides().length) },
-    { key: 'drivers' as Tab,  label: '🧑‍✈️ Drivers',  count: computed(() => this.drivers().length) },
+    { key: 'drivers' as Tab,  label: '👨‍✈️ Drivers',  count: computed(() => this.drivers().length) },
+    { key: 'passengers' as Tab, label: '👤 Passengers', count: computed(() => this.passengers().length) },
     { key: 'requests' as Tab, label: '📋 Requests', count: computed(() => this.requests().length) },
     { key: 'payments' as Tab, label: '💰 Payments', count: computed(() => this.payments().length) },
   ];
+
+  protected readonly Math = Math;
+
+  readonly ridesTrend = computed(() => {
+    const data = this.stats()?.ridesTrend ?? {};
+    return this.months.map((_, i) => data[(i + 1).toString().padStart(2, '0')] ?? 0);
+  });
+
+  readonly earningsTrend = computed(() => {
+    const data = this.stats()?.earningsTrend ?? {};
+    return this.months.map((_, i) => data[(i + 1).toString().padStart(2, '0')] ?? 0);
+  });
+
+  readonly userGrowth = computed(() => {
+    const data = this.stats()?.userGrowth ?? {};
+    return this.months.map((_, i) => data[(i + 1).toString().padStart(2, '0')] ?? 0);
+  });
+
+  readonly demandTrend = computed(() => {
+    const data = this.stats()?.reservationsDemand ?? {};
+    return this.months.map((_, i) => data[(i + 1).toString().padStart(2, '0')] ?? 0);
+  });
+
+  readonly statusStats = computed(() => {
+    const dist = this.stats()?.statusDistribution ?? {};
+    return Object.entries(dist).map(([k, v]) => ({ label: k, value: v }));
+  });
 
   readonly filteredRides = computed(() => {
     const s = this.filterStatus();
@@ -346,7 +176,27 @@ export class CarpoolingAdminComponent implements OnInit {
     return this.payments().filter(p => !q || p.status.toLowerCase().includes(q));
   });
 
-  ngOnInit(): void { this.load(); }
+  readonly filteredPassengers = computed(() => {
+    const q = this.search().toLowerCase().trim();
+    return this.passengers().filter(p => !q ||
+      p.fullName.toLowerCase().includes(q) ||
+      p.email.toLowerCase().includes(q));
+  });
+
+  ngOnInit(): void { 
+    this.load(); 
+    this.syncTabWithRoute();
+  }
+
+  syncTabWithRoute(): void {
+    const url = this.router.url;
+    if (url.includes('/rides')) this.activeTab.set('rides');
+    else if (url.includes('/drivers')) this.activeTab.set('drivers');
+    else if (url.includes('/requests')) this.activeTab.set('requests');
+    else if (url.includes('/payments')) this.activeTab.set('payments');
+    else if (url.includes('/passengers')) this.activeTab.set('passengers');
+    else this.activeTab.set('overview');
+  }
 
   load(): void {
     this.isLoading.set(true);
@@ -356,27 +206,68 @@ export class CarpoolingAdminComponent implements OnInit {
       drivers:  this.http.get<AdminDriver[]>('/api/driver-profiles/all').pipe(catchError(() => of([]))),
       requests: this.http.get<AdminRequest[]>('/api/ride-requests').pipe(catchError(() => of([]))),
       payments: this.http.get<AdminPayment[]>('/api/ride-payments').pipe(catchError(() => of([]))),
+      passengers: this.http.get<AdminPassenger[]>('/api/passenger-profiles/all').pipe(catchError(() => of([]))),
       stats:    this.http.get<AdminStats>('/api/admin/carpooling/stats').pipe(catchError(() => of(null))),
-    }).subscribe(({ rides, drivers, requests, payments, stats }) => {
+    }).subscribe(({ rides, drivers, requests, payments, passengers, stats }) => {
       this.rides.set(rides);
       this.drivers.set(drivers);
       this.requests.set(requests);
       this.payments.set(payments);
+      this.passengers.set(passengers);
       if (stats) this.stats.set(stats);
       this.isLoading.set(false);
     });
   }
 
+  getPath(data: number[], height: number, width: number): string {
+    if (!data.length) return '';
+    const max = Math.max(...data, 10);
+    const stepX = width / (data.length - 1);
+    return data.map((v, i) => `${i * stepX},${height - (v / max * height)}`).join(' L ');
+  }
+
+  getPoints(data: number[], height: number, width: number): {x: number, y: number}[] {
+    const max = Math.max(...data, 10);
+    const stepX = width / (data.length - 1);
+    return data.map((v, i) => ({ x: i * stepX, y: height - (v / max * height) }));
+  }
+
+  verifyDriver(driver: AdminDriver): void {
+    if (!confirm(`Are you sure you want to verify ${driver.fullName}?`)) return;
+    this.http.patch(`/api/driver-profiles/${driver.id}/verify`, {}).subscribe({
+      next: () => {
+        alert('Driver verified successfully');
+        this.load();
+      },
+      error: () => alert('Failed to verify driver')
+    });
+  }
+
+  rejectDriver(driver: AdminDriver): void {
+    if (!confirm(`Reject ${driver.fullName}? This will delete their driver profile.`)) return;
+    this.http.delete(`/api/driver-profiles/${driver.id}`).subscribe({
+      next: () => {
+        alert('Driver application rejected/deleted');
+        this.load();
+      },
+      error: () => alert('Failed to reject driver')
+    });
+  }
+
   statusClass(status: string): string {
     const map: Record<string, string> = {
-      CONFIRMED:   'bg-blue-100 text-blue-700',
-      ACCEPTED:    'bg-indigo-100 text-indigo-700',
-      IN_PROGRESS: 'bg-amber-100 text-amber-700',
-      COMPLETED:   'bg-green-100 text-green-700',
-      CANCELLED:   'bg-red-100 text-red-700',
-      PENDING:     'bg-yellow-100 text-yellow-700',
-      REFUNDED:    'bg-purple-100 text-purple-700',
+      CONFIRMED:   'bg-blue-500/20 text-blue-400',
+      ACCEPTED:    'bg-indigo-500/20 text-indigo-400',
+      IN_PROGRESS: 'bg-amber-500/20 text-amber-400',
+      COMPLETED:   'bg-green-500/20 text-green-400',
+      CANCELLED:   'bg-red-500/20 text-red-400',
+      PENDING:     'bg-yellow-500/20 text-yellow-400',
+      REFUNDED:    'bg-purple-500/20 text-purple-400',
     };
-    return map[status] || 'bg-gray-100 text-gray-600';
+    return map[status] || 'bg-slate-500/20 text-slate-400';
+  }
+
+  isExpired(time: string): boolean {
+    return new Date(time) < new Date();
   }
 }

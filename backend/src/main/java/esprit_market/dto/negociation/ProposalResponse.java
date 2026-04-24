@@ -18,7 +18,10 @@ public class ProposalResponse {
     private String senderId;
     private String senderFullName;
     private Double amount;
+    private Integer quantity;
     private String message;
+    private String exchangeImage;
+    private Boolean isExchange;
     private ProposalType type;
     private ProposalStatuts status;
     private LocalDateTime createdAt;

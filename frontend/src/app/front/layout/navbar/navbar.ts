@@ -68,8 +68,10 @@ export class Navbar implements OnInit, OnDestroy {
   userFullName = computed(() => this.authService.getFullName() || 'User');
   userInitials = computed(() => this.authService.getInitials() || 'U');
   userAvatar = computed(() => this.authService.userAvatar() || null);
+  userEmail = computed(() => this.authService.userEmail() || '');
   isAdmin = computed(() => this.authService.userRole() === UserRole.ADMIN);
   isProvider = computed(() => this.authService.userRole() === UserRole.PROVIDER);
+  isDriver = computed(() => this.authService.userRole() === UserRole.DRIVER);
 
   // Menu sections for the drawer — public sections always visible, protected only when authenticated
   readonly publicMenuSections: MenuSection[] = [
@@ -228,6 +230,9 @@ export class Navbar implements OnInit, OnDestroy {
       next: () => this.notifications.update(list => list.map(n => n.id === id ? { ...n, isRead: true } : n)),
       error: () => this.notifications.update(list => list.map(n => n.id === id ? { ...n, isRead: true } : n))
     });
+    // Navigate to notifications page and open this specific notification
+    this.showNotifications.set(false);
+    this.router.navigate(['/notifications'], { queryParams: { id } });
   }
 
   markAllAsRead(): void {

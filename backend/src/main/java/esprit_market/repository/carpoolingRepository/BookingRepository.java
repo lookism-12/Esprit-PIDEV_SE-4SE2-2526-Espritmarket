@@ -18,4 +18,12 @@ public interface BookingRepository extends MongoRepository<Booking, ObjectId> {
     List<Booking> findByRideIdAndStatus(ObjectId rideId, BookingStatus status);
 
     List<Booking> findByStatus(BookingStatus status);
+
+    List<Booking> findByRideIdIn(List<ObjectId> rideIds);
+
+    @org.springframework.data.mongodb.repository.Aggregation(pipeline = {
+        "{ $group: { _id: { $dateToString: { format: '%m', date: '$createdAt' } }, amount: { $sum: '$numberOfSeats' } } }",
+        "{ $sort: { _id: 1 } }"
+    })
+    List<esprit_market.dto.carpooling.stats.AggregationAmountResult> getMonthlyDemandTrend();
 }

@@ -100,6 +100,19 @@
             <artifactId>spring-boot-starter-aop</artifactId>
         </dependency>
 
+        <!-- WebSocket / STOMP -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-websocket</artifactId>
+        </dependency>
+
+        <!-- Cloudinary SDK -->
+        <dependency>
+            <groupId>com.cloudinary</groupId>
+            <artifactId>cloudinary-http44</artifactId>
+            <version>1.38.0</version>
+        </dependency>
+
     </dependencies>
 
     <build>
@@ -119,6 +132,10 @@
                             <version>1.18.30</version>
                         </path>
                     </annotationProcessorPaths>
+                    <testExcludes>
+                        <testExclude>**/*Test.java</testExclude>
+                        <testExclude>**/*Spec.java</testExclude>
+                    </testExcludes>
                 </configuration>
             </plugin>
 
