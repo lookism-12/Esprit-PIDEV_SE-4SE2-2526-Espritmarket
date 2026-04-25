@@ -2,53 +2,52 @@ package esprit_market.mappers.cartMapper;
 
 import esprit_market.dto.cartDto.LoyaltyCardResponse;
 import esprit_market.entity.cart.LoyaltyCard;
+import esprit_market.entity.cart.LoyaltyConfig;
+import esprit_market.service.cartService.ILoyaltyConfigService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 
 @Component
+@RequiredArgsConstructor
 public class LoyaltyCardMapper {
+    
+    private final ILoyaltyConfigService configService;
     
     private static final int POINTS_TO_DISCOUNT_RATIO = 100;
     
-    // Level thresholds
-    private static final int SILVER_THRESHOLD = 1000;
-    private static final int GOLD_THRESHOLD = 5000;
-    private static final int PLATINUM_THRESHOLD = 10000;
-    
-    // Points multipliers
-    private static final double BRONZE_MULTIPLIER = 1.0;
-    private static final double SILVER_MULTIPLIER = 1.5;
-    private static final double GOLD_MULTIPLIER = 2.0;
-    private static final double PLATINUM_MULTIPLIER = 3.0;
-    
     /**
      * Convert entity to Response DTO with computed fields.
+     * Uses dynamic configuration from database.
      */
     public LoyaltyCardResponse toResponse(LoyaltyCard card) {
         if (card == null) return null;
+        
+        // Load active configuration from database
+        LoyaltyConfig config = configService.getActiveConfig();
         
         LocalDate today = LocalDate.now();
         String currentLevel = card.getLevel() != null ? card.getLevel() : "BRONZE";
         int totalPoints = card.getTotalPointsEarned() != null ? card.getTotalPointsEarned() : 0;
         int currentPoints = card.getPoints() != null ? card.getPoints() : 0;
         
-        // Calculate points to next level
+        // Calculate points to next level using database config
         Integer pointsToNextLevel = null;
         String nextLevel = null;
         
         switch (currentLevel.toUpperCase()) {
             case "BRONZE":
-                pointsToNextLevel = SILVER_THRESHOLD - totalPoints;
+                pointsToNextLevel = config.getSilverThreshold() - totalPoints;
                 nextLevel = "SILVER";
                 break;
             case "SILVER":
-                pointsToNextLevel = GOLD_THRESHOLD - totalPoints;
+                pointsToNextLevel = config.getGoldThreshold() - totalPoints;
                 nextLevel = "GOLD";
                 break;
             case "GOLD":
-                pointsToNextLevel = PLATINUM_THRESHOLD - totalPoints;
+                pointsToNextLevel = config.getPlatinumThreshold() - totalPoints;
                 nextLevel = "PLATINUM";
                 break;
             case "PLATINUM":
@@ -72,8 +71,8 @@ public class LoyaltyCardMapper {
         // Points value in currency
         double pointsValueInCurrency = currentPoints / (double) POINTS_TO_DISCOUNT_RATIO;
         
-        // Get multiplier for current level
-        double multiplier = getMultiplierForLevel(currentLevel);
+        // Get multiplier for current level from database config
+        double multiplier = getMultiplierForLevel(currentLevel, config);
         
         return LoyaltyCardResponse.builder()
             .id(card.getId() != null ? card.getId().toHexString() : null)
@@ -92,13 +91,17 @@ public class LoyaltyCardMapper {
             .build();
     }
     
-    private double getMultiplierForLevel(String level) {
-        if (level == null) return BRONZE_MULTIPLIER;
+    /**
+     * Get multiplier from database configuration based on user's level.
+     * This ensures frontend displays the same multipliers used in calculations.
+     */
+    private double getMultiplierForLevel(String level, LoyaltyConfig config) {
+        if (level == null) return config.getBronzeMultiplier();
         return switch (level.toUpperCase()) {
-            case "PLATINUM" -> PLATINUM_MULTIPLIER;
-            case "GOLD" -> GOLD_MULTIPLIER;
-            case "SILVER" -> SILVER_MULTIPLIER;
-            default -> BRONZE_MULTIPLIER;
+            case "PLATINUM" -> config.getPlatinumMultiplier();
+            case "GOLD" -> config.getGoldMultiplier();
+            case "SILVER" -> config.getSilverMultiplier();
+            default -> config.getBronzeMultiplier();
         };
     }
 }

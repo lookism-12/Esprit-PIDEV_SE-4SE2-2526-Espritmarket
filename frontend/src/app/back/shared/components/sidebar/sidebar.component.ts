@@ -135,6 +135,7 @@ export class SidebarComponent {
     isProviderOpen = signal(false);
     isForumOpen = signal(false);
     isCarpoolingOpen = signal(false);
+    isPlatformManagementOpen = signal(false);
     
     menuItems: MenuItem[] = [
         { label: 'Dashboard', icon: '🏠', route: '/admin/dashboard' },
@@ -182,6 +183,13 @@ export class SidebarComponent {
         { label: 'Reports', icon: '⚠️', route: '/admin/forum/reports' }
     ];
 
+    platformManagementItems = [
+        { label: 'Orders & Analytics', icon: '📊', route: '/admin/platform-management/orders-analytics' },
+        { label: 'Loyalty System', icon: '🏆', route: '/admin/platform-management/loyalty-system' },
+        { label: 'Coupons & Discounts', icon: '🎟️', route: '/admin/platform-management/coupons-discounts' },
+        { label: 'System Settings', icon: '⚙️', route: '/admin/platform-management/system-settings' }
+    ];
+
     // Check if user is provider/seller
     isProvider = computed(() => {
         const user = this.currentUser();
@@ -202,5 +210,9 @@ export class SidebarComponent {
 
     toggleCarpooling(): void {
         this.isCarpoolingOpen.update(open => !open);
+    }
+
+    togglePlatformManagement(): void {
+        this.isPlatformManagementOpen.update(open => !open);
     }
 }

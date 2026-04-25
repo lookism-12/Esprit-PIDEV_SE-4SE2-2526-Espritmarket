@@ -50,6 +50,8 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@SuppressWarnings("deprecation") // Suppress warnings for deprecated methods that are kept for backward compatibility
+
 public class CartServiceImpl implements ICartService {
 
     // --- Repositories for database access ---
@@ -69,6 +71,9 @@ public class CartServiceImpl implements ICartService {
     
     // --- Stock management service ---
     private final StockManagementService stockManagementService;
+    
+    // --- Auto discount rules service ---
+    private final IAutoDiscountRuleService autoDiscountRuleService;
 
     // Tax rate applied after discount
     private static final double TAX_RATE = 0.18;
@@ -463,6 +468,13 @@ public class CartServiceImpl implements ICartService {
             }
         }
 
+        // ✅ NEW: Apply automatic discount rules per shop
+        double autoDiscountAmount = calculateAutoDiscountForCart(items, subtotal);
+        if (autoDiscountAmount > 0) {
+            log.info("🎉 Auto discount applied: {} TND for cart {}", autoDiscountAmount, cartId.toHexString());
+            discountAmount += autoDiscountAmount;
+        }
+
         // Ensure total doesn't go negative
         double afterDiscount = Math.max(0, subtotal - discountAmount);
 
@@ -474,6 +486,9 @@ public class CartServiceImpl implements ICartService {
         cart.setTaxAmount(taxAmount);
         cart.setTotal(total);
         cart.setLastUpdated(LocalDateTime.now());
+
+        log.info("Cart {} recalculated: subtotal={}, discount={}, tax={}, total={}", 
+                cartId.toHexString(), subtotal, discountAmount, taxAmount, total);
 
         return cartRepository.save(cart);
     }
@@ -497,6 +512,60 @@ public class CartServiceImpl implements ICartService {
             case PERCENTAGE -> subtotal * (value / 100.0);
             case FIXED -> Math.min(value, subtotal);
         };
+    }
+
+    /**
+     * Calculate automatic discount for cart based on shop rules.
+     * Groups items by shop and applies best matching rule per shop.
+     */
+    private double calculateAutoDiscountForCart(List<CartItem> items, double totalCartAmount) {
+        try {
+            // Group items by shopId (get from product)
+            var itemsByShop = new java.util.HashMap<ObjectId, List<CartItem>>();
+            
+            for (CartItem item : items) {
+                if (item.getProductId() != null) {
+                    Product product = productRepository.findById(item.getProductId()).orElse(null);
+                    if (product != null && product.getShopId() != null) {
+                        itemsByShop.computeIfAbsent(product.getShopId(), k -> new ArrayList<>()).add(item);
+                    }
+                }
+            }
+            
+            double totalAutoDiscount = 0.0;
+            
+            // Apply rules per shop
+            for (var entry : itemsByShop.entrySet()) {
+                ObjectId shopId = entry.getKey();
+                List<CartItem> shopItems = entry.getValue();
+                
+                // Calculate shop subtotal
+                double shopSubtotal = shopItems.stream()
+                        .mapToDouble(i -> i.getSubTotal() != null ? i.getSubTotal() : 0.0)
+                        .sum();
+                
+                // Count shop items
+                int shopItemCount = shopItems.stream()
+                        .mapToInt(i -> i.getQuantity() != null ? i.getQuantity() : 0)
+                        .sum();
+                
+                // Get best discount for this shop
+                Double shopDiscount = autoDiscountRuleService.calculateBestDiscount(
+                        shopId, shopSubtotal, shopItemCount);
+                
+                if (shopDiscount != null && shopDiscount > 0) {
+                    log.info("✅ Auto discount for shop {}: {} TND (subtotal: {}, items: {})", 
+                            shopId.toHexString(), shopDiscount, shopSubtotal, shopItemCount);
+                    totalAutoDiscount += shopDiscount;
+                }
+            }
+            
+            return totalAutoDiscount;
+            
+        } catch (Exception e) {
+            log.error("❌ Failed to calculate auto discount: {}", e.getMessage(), e);
+            return 0.0; // Don't break cart calculation if auto discount fails
+        }
     }
 
     /**

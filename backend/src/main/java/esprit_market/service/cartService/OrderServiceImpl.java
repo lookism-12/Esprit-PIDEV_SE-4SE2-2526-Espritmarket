@@ -16,6 +16,7 @@ import esprit_market.entity.SAV.Delivery;
 import esprit_market.repository.SAVRepository.DeliveryRepository;
 import esprit_market.config.Exceptions.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -31,6 +32,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class OrderServiceImpl implements IOrderService {
     
     private final OrderRepository orderRepository;
@@ -90,16 +92,25 @@ public class OrderServiceImpl implements IOrderService {
         
         // Convert CartItems to OrderItems
         for (CartItem cartItem : cartItems) {
-            // Fetch product to get shopId
-            Product product = productRepository.findById(cartItem.getProductId()).orElse(null);
-            ObjectId shopId = (product != null) ? product.getShopId() : null;
+            // ✅ CRITICAL: Fetch product to get shopId - MUST NOT BE NULL
+            Product product = productRepository.findById(cartItem.getProductId())
+                    .orElseThrow(() -> new IllegalStateException(
+                        "Product not found for CartItem: " + cartItem.getProductId()));
+            
+            // ✅ CRITICAL: Validate shopId exists
+            if (product.getShopId() == null) {
+                throw new IllegalStateException(
+                    "Product '" + product.getName() + "' has no shopId. Cannot create order.");
+            }
+            
+            ObjectId shopId = product.getShopId();
             
             OrderItem orderItem = OrderItem.builder()
                     .orderId(savedOrder.getId())
                     .productId(cartItem.getProductId())
                     .productName(cartItem.getProductName())
                     .productPrice(cartItem.getUnitPrice())
-                    .shopId(shopId)  // ✅ CRITICAL: Added for provider filtering
+                    .shopId(shopId)  // ✅ CRITICAL: ALWAYS set for provider filtering
                     .quantity(cartItem.getQuantity())
                     .subtotal(cartItem.getSubTotal())
                     .status(OrderItemStatus.ACTIVE)
@@ -109,8 +120,10 @@ public class OrderServiceImpl implements IOrderService {
             
             orderItemRepository.save(orderItem);
             
-            System.out.println("✅ ORDER ITEM CREATED - Product: " + cartItem.getProductName() + 
-                             " | Shop: " + (shopId != null ? shopId.toHexString() : "NULL"));
+            log.info("✅ ORDER ITEM CREATED - Product: {} | ProductId: {} | ShopId: {}", 
+                    cartItem.getProductName(), 
+                    cartItem.getProductId().toHexString(),
+                    shopId.toHexString());
         }
         
         // Clear cart (or keep it empty for next shopping session)

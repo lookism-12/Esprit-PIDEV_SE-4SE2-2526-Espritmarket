@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.List;
 
 @Component
 public class JwtUtil {
@@ -32,9 +33,11 @@ public class JwtUtil {
         UserDetails userPrincipal = (UserDetails) authentication.getPrincipal();
         
         // Extract roles from authorities
-        java.util.List<String> roles = authentication.getAuthorities().stream()
+        List<String> roles = authentication.getAuthorities().stream()
                 .map(auth -> auth.getAuthority())
                 .toList();
+        
+        logger.info("🔐 Generating JWT token for user: {} with roles: {}", userPrincipal.getUsername(), roles);
         
         return Jwts.builder()
                 .setSubject(userPrincipal.getUsername())
@@ -61,6 +64,29 @@ public class JwtUtil {
                 .parseClaimsJws(token)
                 .getBody()
                 .getSubject();
+    }
+    
+    /**
+     * Extract roles from JWT token
+     */
+    @SuppressWarnings("unchecked")
+    public List<String> getRolesFromToken(String token) {
+        try {
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(getSigningKey())
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+            
+            Object rolesObj = claims.get("roles");
+            if (rolesObj instanceof List<?>) {
+                return (List<String>) rolesObj;
+            }
+            return List.of();
+        } catch (Exception e) {
+            logger.error("Failed to extract roles from token: {}", e.getMessage());
+            return List.of();
+        }
     }
 
     public boolean validateToken(String token) {

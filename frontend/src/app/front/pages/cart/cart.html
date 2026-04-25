@@ -408,12 +408,43 @@
                     </div>
                     }
 
+                    <!-- Auto Discount Banner -->
+                    @if (autoDiscount() > 0) {
+                    <div class="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-5 shadow-sm animate-fadeIn">
+                        <div class="flex items-start gap-4">
+                            <div class="flex-shrink-0">
+                                <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center shadow-lg">
+                                    <span class="text-2xl">🎉</span>
+                                </div>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="text-lg font-black text-blue-900 mb-1">Automatic Promotion Applied!</h3>
+                                <p class="text-sm text-blue-700 font-medium mb-2">You're saving with our shop discount rules</p>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-2xl font-black text-blue-600">-{{ autoDiscount() | number:'1.2-2' }} TND</span>
+                                    <span class="px-3 py-1 bg-blue-500 text-white text-xs font-bold rounded-full uppercase tracking-wider">Auto Applied</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    }
+
                     <!-- Price Breakdown -->
                     <div class="space-y-3 mb-6 bg-gray-50 p-5 rounded-2xl border border-gray-100">
                         <div class="flex justify-between text-gray-600 text-sm font-medium">
                             <span>Subtotal ({{ itemCount() }} items)</span>
                             <span>{{ subtotal() | number:'1.2-2' }} TND</span>
                         </div>
+                        
+                        @if (autoDiscount() > 0) {
+                        <div class="flex justify-between text-blue-600 text-sm font-bold animate-pulse">
+                            <span class="flex items-center gap-1">
+                                <span>🎉</span>
+                                <span>Auto Discount</span>
+                            </span>
+                            <span>-{{ autoDiscount() | number:'1.2-2' }} TND</span>
+                        </div>
+                        }
                         
                         @if (couponDiscount() > 0) {
                         <div class="flex justify-between text-green-600 text-sm font-medium">

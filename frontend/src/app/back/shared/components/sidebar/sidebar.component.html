@@ -180,6 +180,47 @@
       </div>
     </div>
 
+    <!-- Platform Management Section -->
+    <div class="mb-6">
+      <div class="text-xs font-bold text-white/60 uppercase tracking-wider px-4 mb-3">Platform Management</div>
+
+      <button
+        (click)="togglePlatformManagement()"
+        class="w-full flex items-center px-4 py-3 rounded-xl text-white/70 hover:text-white transition-all cursor-pointer group relative overflow-hidden mb-2"
+        [class.nav-item-active]="isPlatformManagementOpen()">
+
+        <div class="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-xl"></div>
+
+        <div class="relative z-10 flex items-center w-full">
+          <div class="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center mr-3 group-hover:bg-white/20 transition-colors border border-white/20">
+            <span class="text-lg drop-shadow-sm">⚙️</span>
+          </div>
+          <span class="flex-1 text-sm font-medium text-left drop-shadow-sm">Platform Management</span>
+          <div class="w-6 h-6 rounded-lg bg-white/10 flex items-center justify-center border border-white/20">
+            <span class="text-xs transition-transform duration-300 drop-shadow-sm" [class.rotate-90]="isPlatformManagementOpen()">▶</span>
+          </div>
+        </div>
+      </button>
+
+      <div class="overflow-hidden transition-all duration-300 ease-out"
+           [style.max-height]="isPlatformManagementOpen() ? '400px' : '0px'"
+           [style.opacity]="isPlatformManagementOpen() ? '1' : '0'">
+        <div class="ml-6 space-y-1 pt-2">
+          <ng-container *ngFor="let subItem of platformManagementItems; let i = index">
+            <a [routerLink]="subItem.route"
+              routerLinkActive="bg-white/20 text-white border-l-2 border-white shadow-inner"
+              class="flex items-center px-3 py-2 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-all cursor-pointer group border-l-2 border-transparent"
+              [style.transition-delay]="isPlatformManagementOpen() ? (i * 50) + 'ms' : '0ms'">
+              <div class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center mr-3 group-hover:bg-white/20 transition-colors border border-white/20">
+                <span class="text-sm drop-shadow-sm">{{ subItem.icon }}</span>
+              </div>
+              <span class="text-sm font-medium drop-shadow-sm">{{ subItem.label }}</span>
+            </a>
+          </ng-container>
+        </div>
+      </div>
+    </div>
+
     <!-- Provider Section (only for providers/sellers) -->
     @if (isProvider()) {
       <div class="mb-6">

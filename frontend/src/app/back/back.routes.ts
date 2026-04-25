@@ -101,6 +101,10 @@ export const BACK_ROUTES: Routes = [
                     {
                         path: 'shop',
                         loadComponent: () => import('./features/provider/shop-management.component').then(m => m.ShopManagementComponent)
+                    },
+                    {
+                        path: 'coupons',
+                        loadComponent: () => import('./features/provider/provider-coupons.component').then(m => m.ProviderCouponsComponent)
                     }
                 ]
             },
@@ -159,6 +163,33 @@ export const BACK_ROUTES: Routes = [
             {
                 path: 'carpooling/payments',
                 loadComponent: () => import('./features/carpooling/carpooling-admin.component').then(m => m.CarpoolingAdminComponent)
+            },
+            {
+                path: 'platform-management',
+                loadComponent: () => import('./features/platform-management/platform-management-shell.component').then(m => m.PlatformManagementShellComponent),
+                children: [
+                    {
+                        path: '',
+                        redirectTo: 'orders-analytics',
+                        pathMatch: 'full'
+                    },
+                    {
+                        path: 'orders-analytics',
+                        loadComponent: () => import('./features/platform-management/orders-analytics.component').then(m => m.OrdersAnalyticsComponent)
+                    },
+                    {
+                        path: 'loyalty-system',
+                        loadComponent: () => import('./features/platform-management/loyalty-system.component').then(m => m.LoyaltySystemComponent)
+                    },
+                    {
+                        path: 'coupons-discounts',
+                        loadComponent: () => import('./features/platform-management/coupons-discounts.component').then(m => m.CouponsDiscountsComponent)
+                    },
+                    {
+                        path: 'system-settings',
+                        loadComponent: () => import('./features/platform-management/system-settings.component').then(m => m.SystemSettingsComponent)
+                    }
+                ]
             },
             {
                 path: 'sav',

@@ -15,6 +15,7 @@ import esprit_market.repository.marketplaceRepository.ShopRepository;
 import esprit_market.repository.userRepository.UserRepository;
 import esprit_market.service.cartService.ICartService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -45,6 +46,7 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/provider/dashboard")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('PROVIDER')")
+@Slf4j
 public class ProviderDashboardController {
 
     private final ICartService cartService;
@@ -224,42 +226,61 @@ public class ProviderDashboardController {
         try {
             // Get logged-in provider
             User provider = getAuthenticatedProvider(authentication);
-            System.out.println("🔍 DEBUG: Provider ID: " + provider.getId());
+            log.info("🔍 PROVIDER ORDERS REQUEST - Provider ID: {} | Email: {}", 
+                    provider.getId().toHexString(), provider.getEmail());
 
             // Get provider's shop
             Optional<Shop> shopOpt = shopRepository.findByOwnerId(provider.getId());
             if (!shopOpt.isPresent()) {
-                System.out.println("⚠️ WARNING: No shop found for provider " + provider.getId());
+                log.warn("⚠️  No shop found for provider {} ({})", 
+                        provider.getId().toHexString(), provider.getEmail());
                 return ResponseEntity.ok(new ArrayList<>());
             }
             
             Shop shop = shopOpt.get();
-            System.out.println("🔍 DEBUG: Shop ID: " + shop.getId());
+            log.info("🏪 Shop found - ID: {} | Name: {}", 
+                    shop.getId().toHexString(), shop.getName());
 
             // ✅ Primary path: shopId on OrderItems
             List<OrderItem> providerOrderItems = orderItemRepository.findByShopId(shop.getId());
+            log.info("📦 Primary query (findByShopId) returned: {} OrderItems", 
+                    providerOrderItems.size());
 
             // ✅ Fallback for legacy OrderItems without shopId: filter by provider's productIds
             if (providerOrderItems.isEmpty()) {
+                log.warn("⚠️  Primary query returned 0 results. Trying fallback query...");
                 List<ObjectId> productIds = productRepository.findByShopId(shop.getId())
                         .stream().map(Product::getId).collect(Collectors.toList());
+                log.info("📦 Found {} products in shop", productIds.size());
+                
                 if (!productIds.isEmpty()) {
                     providerOrderItems = orderItemRepository.findByProductIdIn(productIds);
+                    log.info("📦 Fallback query (findByProductIdIn) returned: {} OrderItems", 
+                            providerOrderItems.size());
                 }
             }
 
-            System.out.println("🔍 DEBUG: Provider order items count: " + providerOrderItems.size());
-
             if (providerOrderItems.isEmpty()) {
-                System.out.println("⚠️ WARNING: No order items found for shop " + shop.getId());
+                log.warn("⚠️  No order items found for shop {} after both queries", 
+                        shop.getId().toHexString());
                 return ResponseEntity.ok(new ArrayList<>());
+            }
+
+            // Log sample OrderItem for debugging
+            if (!providerOrderItems.isEmpty()) {
+                OrderItem sample = providerOrderItems.get(0);
+                log.info("📋 Sample OrderItem - ID: {} | ProductName: {} | ShopId: {} | OrderId: {}", 
+                        sample.getId() != null ? sample.getId().toHexString() : "NULL",
+                        sample.getProductName(),
+                        sample.getShopId() != null ? sample.getShopId().toHexString() : "NULL",
+                        sample.getOrderId() != null ? sample.getOrderId().toHexString() : "NULL");
             }
 
             // Group order items by orderId for efficient processing
             Map<ObjectId, List<OrderItem>> itemsByOrder = providerOrderItems.stream()
                     .collect(Collectors.groupingBy(OrderItem::getOrderId));
             
-            System.out.println("🔍 DEBUG: Orders containing provider products: " + itemsByOrder.size());
+            log.info("📊 Orders containing provider products: {}", itemsByOrder.size());
 
             List<ProviderOrderDTO> providerOrders = new ArrayList<>();
 
@@ -271,12 +292,13 @@ public class ProviderDashboardController {
                 // Get the order details
                 Optional<Order> orderOpt = orderRepository.findById(orderId);
                 if (!orderOpt.isPresent()) {
-                    System.out.println("⚠️ WARNING: Order not found: " + orderId);
+                    log.warn("⚠️  Order not found: {}", orderId.toHexString());
                     continue;
                 }
                 
                 Order order = orderOpt.get();
-                System.out.println("🔍 DEBUG: Processing order " + order.getOrderNumber() + " with " + orderItems.size() + " provider items");
+                log.debug("✅ Processing order {} with {} provider items", 
+                        order.getOrderNumber(), orderItems.size());
 
                 // Create DTO for each provider item in this order
                 for (OrderItem item : orderItems) {
@@ -295,12 +317,12 @@ public class ProviderDashboardController {
                         clientName = clientName.trim();
                         if (clientName.isEmpty()) clientName = "Unknown Customer";
                         clientEmail = customer.getEmail() != null ? customer.getEmail() : "unknown@example.com";
-                        clientAvatar = customer.getAvatarUrl();  // ✅ Added avatar
+                        clientAvatar = customer.getAvatarUrl();
                     }
                     
                     dto.setClientName(clientName);
                     dto.setClientEmail(clientEmail);
-                    dto.setClientAvatar(clientAvatar);  // ✅ Set avatar
+                    dto.setClientAvatar(clientAvatar);
                     dto.setProductName(item.getProductName() != null ? item.getProductName() : "Unknown Product");
                     dto.setQuantity(item.getQuantity() != null ? item.getQuantity() : 0);
                     dto.setUnitPrice(item.getProductPrice() != null ? item.getProductPrice() : 0.0);
@@ -312,11 +334,11 @@ public class ProviderDashboardController {
                 }
             }
 
-            System.out.println("🔍 DEBUG: Final provider orders count: " + providerOrders.size());
+            log.info("✅ Returning {} provider orders to frontend", providerOrders.size());
             return ResponseEntity.ok(providerOrders);
+            
         } catch (Exception e) {
-            System.err.println("❌ Provider Orders Error: " + e.getMessage());
-            e.printStackTrace();
+            log.error("❌ Provider Orders Error: {}", e.getMessage(), e);
             return ResponseEntity.ok(new ArrayList<>());
         }
     }

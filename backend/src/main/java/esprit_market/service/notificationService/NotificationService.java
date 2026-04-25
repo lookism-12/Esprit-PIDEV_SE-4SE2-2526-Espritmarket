@@ -278,4 +278,77 @@ public class NotificationService implements INotificationService {
                 .forEach(n -> n.setStarred(star));
         notificationRepository.saveAll(list);
     }
+
+    // ─────────────────────────────────────────────────────────────
+    // Coupon Broadcast Notification
+    // ─────────────────────────────────────────────────────────────
+
+    @Override
+    @Transactional
+    public void notifyUsersAboutCoupon(ObjectId couponId, String couponCode, String shopName,
+                                       String discountInfo, LocalDateTime expiryDate) {
+        log.info("Broadcasting coupon notification: {} from shop: {}", couponCode, shopName);
+        
+        // Get all active customers (users who are not ADMIN or PROVIDER)
+        List<User> customers = userRepository.findAll().stream()
+                .filter(user -> user.getRoles() != null && 
+                       !user.getRoles().contains(esprit_market.Enum.userEnum.Role.ADMIN) &&
+                       !user.getRoles().contains(esprit_market.Enum.userEnum.Role.PROVIDER))
+                .collect(Collectors.toList());
+        
+        log.info("Sending coupon notification to {} customers", customers.size());
+        
+        String title = "🎟️ New Coupon Available";
+        String description = String.format("%s offers %s with code %s. Valid until %s",
+                shopName, discountInfo, couponCode,
+                expiryDate.toLocalDate().toString());
+        
+        for (User customer : customers) {
+            if (!customer.isNotificationsEnabled()) {
+                continue;
+            }
+            
+            // Check focus mode and notification settings
+            LocalTime now = LocalTime.now();
+            if (notificationSettingsService.isInFocusWindow(customer, now)) {
+                log.debug("Focus mode: queuing coupon notification for {}", customer.getEmail());
+                queuedNotificationRepository.save(QueuedNotification.builder()
+                        .user(customer)
+                        .title(title)
+                        .description(description)
+                        .type(NotificationType.COUPON_ALERT)
+                        .linkedObjectId(couponId.toHexString())
+                        .status(QueuedNotificationStatus.QUEUED)
+                        .createdAt(LocalDateTime.now())
+                        .build());
+                continue;
+            }
+            
+            if (!notificationSettingsService.canSendNotification(customer, "external", now)) {
+                continue;
+            }
+            
+            // Persist notification with coupon metadata
+            Notification saved = notificationRepository.save(Notification.builder()
+                    .userId(customer.getId())
+                    .userFullName(fullName(customer))
+                    .title(title)
+                    .description(description)
+                    .type(NotificationType.COUPON_ALERT)
+                    .linkedObjectId(couponId.toHexString())
+                    .couponCode(couponCode)
+                    .shopName(shopName)
+                    .discountInfo(discountInfo)
+                    .couponExpiryDate(expiryDate)
+                    .read(false)
+                    .notificationStatus(true)
+                    .createdAt(LocalDateTime.now())
+                    .build());
+            
+            // Push real-time over WebSocket
+            notificationWebSocketService.pushToUser(customer.getId(), notificationMapper.toDTO(saved));
+        }
+        
+        log.info("Coupon notification broadcast completed for coupon: {}", couponCode);
+    }
 }

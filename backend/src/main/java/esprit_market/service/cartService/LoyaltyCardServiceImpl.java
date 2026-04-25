@@ -1,8 +1,10 @@
 package esprit_market.service.cartService;
 
+import esprit_market.config.Exceptions.ResourceNotFoundException;
 import esprit_market.dto.cartDto.ConvertPointsRequest;
 import esprit_market.dto.cartDto.LoyaltyCardResponse;
 import esprit_market.entity.cart.LoyaltyCard;
+import esprit_market.entity.cart.LoyaltyConfig;
 import esprit_market.entity.cart.OrderItem;
 import esprit_market.entity.user.User;
 import esprit_market.mappers.cartMapper.LoyaltyCardMapper;
@@ -24,33 +26,12 @@ public class LoyaltyCardServiceImpl implements ILoyaltyCardService {
     private final LoyaltyCardRepository repository;
     private final UserRepository userRepository;
     private final LoyaltyCardMapper mapper;
+    private final ILoyaltyConfigService configService;
     
-    // ==================== CONSTANTS ====================
-    
-    // Base formula: points = productPrice * quantity * BASE_POINTS_RATE
-    // REALISTIC: 1% of purchase amount (instead of 10%)
-    private static final double BASE_POINTS_RATE = 0.01;
-    
-    // Tier multipliers (more conservative)
-    private static final double BRONZE_MULTIPLIER = 1.0;
-    private static final double SILVER_MULTIPLIER = 1.1;   // 10% bonus (instead of 20%)
-    private static final double GOLD_MULTIPLIER = 1.25;    // 25% bonus (instead of 50%)
-    private static final double PLATINUM_MULTIPLIER = 1.5; // 50% bonus (instead of 100%)
-    
-    // Bonus thresholds (more restrictive)
-    private static final int QUANTITY_BONUS_THRESHOLD = 10;     // Need 10+ items (instead of 5)
-    private static final double QUANTITY_BONUS_PERCENTAGE = 0.05; // 5% bonus (instead of 10%)
-    private static final double PRICE_BONUS_THRESHOLD = 500.0;   // Need $500+ (instead of $200)
-    private static final int PRICE_BONUS_FLAT = 5;              // Only 5 points (instead of 20)
-    
-    // Legacy constants (for backward compatibility)
-    private static final int POINTS_PER_CURRENCY_UNIT = 1;      // 1 point per dollar (instead of 10)
+    // ==================== LEGACY CONSTANTS ====================
+    // (Only for backward compatibility - not used in new calculation)
+    private static final int POINTS_PER_CURRENCY_UNIT = 1;
     private static final int POINTS_TO_DISCOUNT_RATIO = 100;
-    
-    // Level thresholds (more realistic)
-    private static final int PLATINUM_THRESHOLD = 50000;  // 50k points (instead of 10k)
-    private static final int GOLD_THRESHOLD = 20000;      // 20k points (instead of 5k)
-    private static final int SILVER_THRESHOLD = 5000;     // 5k points (instead of 1k)
 
     // ==================== CORE LOYALTY LOGIC ====================
 
@@ -113,52 +94,63 @@ public class LoyaltyCardServiceImpl implements ILoyaltyCardService {
      * 4. Add price bonus (if total > 200)
      */
     private int calculatePointsForOrderInternal(String level, List<OrderItem> orderItems, Double totalAmount) {
-        // Step 1: Calculate base points from all items
+        // ==================== LOAD DYNAMIC CONFIGURATION ====================
+        LoyaltyConfig config = configService.getActiveConfig();
+        
+        // ==================== STEP 1: Calculate Base Points ====================
+        // ✅ DYNAMIC: Load base rate from database configuration
         double basePoints = 0.0;
         int totalQuantity = 0;
         
         for (OrderItem item : orderItems) {
             if (item.getProductPrice() != null && item.getQuantity() != null) {
-                double itemPoints = item.getProductPrice() * item.getQuantity() * BASE_POINTS_RATE;
+                double itemPoints = item.getProductPrice() * item.getQuantity() * config.getBaseRate();
                 basePoints += itemPoints;
                 totalQuantity += item.getQuantity();
                 
-                log.debug("Item: {} x {} @ {} = {} base points", 
+                log.debug("📦 Item: {} x {} @ ${} = {:.2f} base points", 
                         item.getProductName(), item.getQuantity(), 
                         item.getProductPrice(), itemPoints);
             }
         }
         
-        log.debug("Total base points before multiplier: {}", basePoints);
+        // ✅ Ensure minimum 1 point for any purchase
+        basePoints = Math.max(1.0, basePoints);
         
-        // Step 2: Apply tier multiplier
-        double multiplier = getPointsMultiplier(level);
-        double pointsAfterMultiplier = basePoints * multiplier;
+        log.debug("💰 Total base points ({}% of ${}): {:.2f}", 
+                config.getBaseRate() * 100, totalAmount, basePoints);
         
-        log.debug("Points after {} multiplier ({}x): {}", level, multiplier, pointsAfterMultiplier);
+        // ==================== STEP 2: Add Fixed Bonuses ====================
+        // ✅ DYNAMIC: Load bonus values from configuration
+        int bonusPoints = 0;
         
-        // Step 3: Apply quantity bonus (if total quantity >= 5)
-        double bonusPoints = 0.0;
-        if (totalQuantity >= QUANTITY_BONUS_THRESHOLD) {
-            bonusPoints += pointsAfterMultiplier * QUANTITY_BONUS_PERCENTAGE;
-            log.debug("Quantity bonus applied ({}+ items): +{} points", 
-                    QUANTITY_BONUS_THRESHOLD, bonusPoints);
+        if (totalQuantity >= config.getBonusQuantityThreshold()) {
+            bonusPoints += config.getBonusQuantity();
+            log.debug("🎁 Quantity bonus ({}+ items): +{} points", 
+                    config.getBonusQuantityThreshold(), config.getBonusQuantity());
         }
         
-        // Step 4: Apply price bonus (if total > 200)
-        if (totalAmount > PRICE_BONUS_THRESHOLD) {
-            bonusPoints += PRICE_BONUS_FLAT;
-            log.debug("Price bonus applied (>${} total): +{} points", 
-                    PRICE_BONUS_THRESHOLD, PRICE_BONUS_FLAT);
+        if (totalAmount > config.getBonusHighOrderThreshold()) {
+            bonusPoints += config.getBonusHighOrder();
+            log.debug("🎁 Price bonus (>${} order): +{} points", 
+                    config.getBonusHighOrderThreshold(), config.getBonusHighOrder());
         }
         
-        double totalPoints = pointsAfterMultiplier + bonusPoints;
-        int finalPoints = (int) Math.round(totalPoints);
+        // ==================== STEP 3: Apply Multiplier ONCE ====================
+        // ✅ DYNAMIC: Load multiplier from configuration based on level
+        double multiplier = getPointsMultiplierFromConfig(level, config);
+        double totalBeforeMultiplier = basePoints + bonusPoints;
+        double finalPoints = totalBeforeMultiplier * multiplier;
         
-        log.info("Final points calculation: base={}, multiplier={}x, bonuses={}, total={}", 
-                basePoints, multiplier, bonusPoints, finalPoints);
+        log.info("🏆 LOYALTY POINTS EARNED - Order: ${} | Base: {:.2f} pts | Bonuses: {} pts | Level: {} ({}x) | FINAL: {} pts", 
+                String.format("%.2f", totalAmount),
+                basePoints,
+                bonusPoints,
+                level, 
+                multiplier,
+                Math.round(finalPoints));
         
-        return finalPoints;
+        return (int) Math.round(finalPoints);
     }
 
     // ==================== LEGACY METHODS (Backward Compatibility) ====================
@@ -283,11 +275,14 @@ public class LoyaltyCardServiceImpl implements ILoyaltyCardService {
     public String calculateLevel(Integer totalPoints) {
         if (totalPoints == null) return "BRONZE";
         
-        if (totalPoints >= PLATINUM_THRESHOLD) {
+        // ✅ DYNAMIC: Load thresholds from configuration
+        LoyaltyConfig config = configService.getActiveConfig();
+        
+        if (totalPoints >= config.getPlatinumThreshold()) {
             return "PLATINUM";
-        } else if (totalPoints >= GOLD_THRESHOLD) {
+        } else if (totalPoints >= config.getGoldThreshold()) {
             return "GOLD";
-        } else if (totalPoints >= SILVER_THRESHOLD) {
+        } else if (totalPoints >= config.getSilverThreshold()) {
             return "SILVER";
         } else {
             return "BRONZE";
@@ -296,13 +291,21 @@ public class LoyaltyCardServiceImpl implements ILoyaltyCardService {
     
     @Override
     public double getPointsMultiplier(String level) {
-        if (level == null) return BRONZE_MULTIPLIER;
+        LoyaltyConfig config = configService.getActiveConfig();
+        return getPointsMultiplierFromConfig(level, config);
+    }
+    
+    /**
+     * Get multiplier from configuration based on level
+     */
+    private double getPointsMultiplierFromConfig(String level, LoyaltyConfig config) {
+        if (level == null) return config.getBronzeMultiplier();
         
         return switch (level.toUpperCase()) {
-            case "PLATINUM" -> PLATINUM_MULTIPLIER;
-            case "GOLD" -> GOLD_MULTIPLIER;
-            case "SILVER" -> SILVER_MULTIPLIER;
-            default -> BRONZE_MULTIPLIER;
+            case "PLATINUM" -> config.getPlatinumMultiplier();
+            case "GOLD" -> config.getGoldMultiplier();
+            case "SILVER" -> config.getSilverMultiplier();
+            default -> config.getBronzeMultiplier();
         };
     }
     
@@ -341,16 +344,24 @@ public class LoyaltyCardServiceImpl implements ILoyaltyCardService {
             return 0;
         }
         
+        // ✅ DYNAMIC: Load configuration from database
+        LoyaltyConfig config = configService.getActiveConfig();
+        
         User user = userRepository.findById(userId).orElse(null);
-        if (user == null) {
-            return (int) (amount * POINTS_PER_CURRENCY_UNIT * BRONZE_MULTIPLIER);
+        String level = "BRONZE"; // Default level
+        
+        if (user != null) {
+            LoyaltyCard card = repository.findByUser(user).orElse(null);
+            if (card != null) {
+                level = card.getLevel();
+            }
         }
         
-        LoyaltyCard card = repository.findByUser(user).orElse(null);
-        String level = (card != null) ? card.getLevel() : "BRONZE";
-        double multiplier = getPointsMultiplier(level);
+        // Calculate points using dynamic configuration
+        double basePoints = Math.max(1.0, amount * config.getBaseRate());
+        double multiplier = getPointsMultiplierFromConfig(level, config);
         
-        return (int) (amount * POINTS_PER_CURRENCY_UNIT * multiplier);
+        return (int) Math.round(basePoints * multiplier);
     }
     
     public LoyaltyCard getOrCreateLoyaltyCardEntity(ObjectId userId) {

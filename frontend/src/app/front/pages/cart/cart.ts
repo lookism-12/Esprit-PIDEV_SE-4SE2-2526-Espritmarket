@@ -125,6 +125,15 @@ export class Cart implements OnInit {
     return Math.min(coupon.discount, this.subtotal());
   });
 
+  // Auto discount from backend (automatic shop rules)
+  readonly autoDiscount = computed(() => {
+    const cart = this.cart();
+    const manualDiscount = this.couponDiscount() + this.pointsDiscount();
+    const totalDiscount = cart?.discountAmount ?? 0;
+    // Auto discount = total discount - manual discounts
+    return Math.max(0, totalDiscount - manualDiscount);
+  });
+
   readonly pointsDiscount = computed(() => {
     if (!this.usePoints()) return 0;
     return Math.min(this.pointsToRedeem() / 100, this.subtotal() - this.couponDiscount());

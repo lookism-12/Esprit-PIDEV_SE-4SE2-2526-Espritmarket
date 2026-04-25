@@ -188,6 +188,30 @@ import { NegotiationService } from '../../../front/core/negotiation.service';
                 View Orders
               </a>
             </div>
+
+            <!-- Coupons & Discounts -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all group">
+              <div class="flex items-center gap-4 mb-4">
+                <div class="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                  🎟️
+                </div>
+                <div>
+                  <h3 class="font-bold text-gray-900">Coupons & Discounts</h3>
+                  <p class="text-sm text-gray-600">Manage shop coupons</p>
+                </div>
+              </div>
+              
+              <div class="bg-gradient-to-r from-red-50 to-orange-50 rounded-lg p-4 mb-4">
+                <p class="text-sm text-gray-700 text-center">
+                  Create discount coupons for your shop to attract more customers
+                </p>
+              </div>
+              
+              <a routerLink="/admin/provider/coupons" 
+                 class="block w-full text-center py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-all">
+                Manage Coupons
+              </a>
+            </div>
           </div>
 
           <!-- Shop Overview (if shop exists) -->

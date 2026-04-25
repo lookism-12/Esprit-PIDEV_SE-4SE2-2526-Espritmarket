@@ -44,6 +44,12 @@ public class Notification {
 
     private String linkedObjectId;
 
+    // Coupon-specific metadata (optional, used for COUPON_ALERT type)
+    private String couponCode;
+    private String shopName;
+    private String discountInfo;
+    private LocalDateTime couponExpiryDate;
+
     private boolean read;
     private boolean isStarred;
     private boolean isFollowed;

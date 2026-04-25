@@ -31,6 +31,12 @@
                      (activeTab() === 'services' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300')">
             🔧 Services
           </button>
+          <button
+            (click)="activeTab.set('coupons')"
+            [class]="'py-2 px-1 border-b-2 font-medium text-sm ' + 
+                     (activeTab() === 'coupons' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300')">
+            🎟️ Coupons & Discounts
+          </button>
         </nav>
       </div>
     </div>
@@ -453,6 +459,309 @@
               </a>
             </div>
           }
+        </div>
+      </div>
+    }
+
+    <!-- Coupons Tab Content -->
+    @if (activeTab() === 'coupons') {
+      <div class="space-y-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-2xl font-bold text-dark">Coupons & Discounts</h2>
+            <p class="text-sm text-gray-500 mt-1">Manage discount coupons for your shop</p>
+          </div>
+          <button (click)="openCouponForm()" class="btn-primary inline-flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            Create Coupon
+          </button>
+        </div>
+
+        <!-- Create/Edit Coupon Form -->
+        @if (showCouponForm()) {
+          <div class="premium-card overflow-hidden">
+            <div class="bg-gradient-to-r from-primary to-primary-dark px-6 py-4">
+              <h3 class="text-xl font-bold text-white">
+                {{ editingCoupon() ? '✏️ Edit Coupon' : '✨ Create New Coupon' }}
+              </h3>
+              <p class="text-white/80 text-sm mt-1">This coupon will only apply to products in your shop</p>
+            </div>
+            
+            <div class="p-6 space-y-4">
+              <!-- Coupon Code -->
+              <div>
+                <label class="block text-sm font-bold text-dark mb-2">Coupon Code *</label>
+                <input 
+                  type="text" 
+                  [(ngModel)]="newCoupon.code"
+                  (input)="newCoupon.code = newCoupon.code.toUpperCase()"
+                  placeholder="e.g., SUMMER2024"
+                  maxlength="20"
+                  class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary focus:border-transparent transition-all uppercase">
+                <p class="text-xs text-gray-500 mt-1">Use uppercase letters and numbers only (3-20 characters)</p>
+              </div>
+
+              <!-- Discount Type & Value -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-bold text-dark mb-2">Discount Type *</label>
+                  <select 
+                    [(ngModel)]="newCoupon.discountType"
+                    class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary focus:border-transparent transition-all bg-white">
+                    <option value="PERCENTAGE">Percentage (%)</option>
+                    <option value="FIXED">Fixed Amount (TND)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="block text-sm font-bold text-dark mb-2">Discount Value *</label>
+                  <div class="relative">
+                    <input 
+                      type="number" 
+                      [(ngModel)]="newCoupon.discountValue"
+                      [placeholder]="newCoupon.discountType === 'PERCENTAGE' ? 'e.g., 20' : 'e.g., 50'"
+                      min="0"
+                      [max]="newCoupon.discountType === 'PERCENTAGE' ? 100 : null"
+                      step="0.01"
+                      class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary focus:border-transparent transition-all">
+                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold text-sm">
+                      {{ newCoupon.discountType === 'PERCENTAGE' ? '%' : 'TND' }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Min Order & Max Discount -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-bold text-dark mb-2">Minimum Order Amount (TND)</label>
+                  <input 
+                    type="number" 
+                    [(ngModel)]="newCoupon.minOrderAmount"
+                    placeholder="Optional"
+                    min="0"
+                    step="0.01"
+                    class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary focus:border-transparent transition-all">
+                </div>
+
+                @if (newCoupon.discountType === 'PERCENTAGE') {
+                  <div>
+                    <label class="block text-sm font-bold text-dark mb-2">Maximum Discount (TND)</label>
+                    <input 
+                      type="number" 
+                      [(ngModel)]="newCoupon.maxDiscount"
+                      placeholder="Optional"
+                      min="0"
+                      step="0.01"
+                      class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary focus:border-transparent transition-all">
+                  </div>
+                }
+              </div>
+
+              <!-- Usage Limit -->
+              <div>
+                <label class="block text-sm font-bold text-dark mb-2">Usage Limit</label>
+                <input 
+                  type="number" 
+                  [(ngModel)]="newCoupon.usageLimit"
+                  placeholder="Leave empty for unlimited usage"
+                  min="1"
+                  class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary focus:border-transparent transition-all">
+              </div>
+
+              <!-- Validity Period -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-bold text-dark mb-2">Valid From *</label>
+                  <input 
+                    type="date" 
+                    [(ngModel)]="newCoupon.validFrom"
+                    class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary focus:border-transparent transition-all">
+                </div>
+
+                <div>
+                  <label class="block text-sm font-bold text-dark mb-2">Valid Until *</label>
+                  <input 
+                    type="date" 
+                    [(ngModel)]="newCoupon.validUntil"
+                    class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary focus:border-transparent transition-all">
+                </div>
+              </div>
+
+              <!-- Active Status -->
+              <div class="flex items-center gap-3 p-4 bg-gray-50 rounded-xl">
+                <input 
+                  type="checkbox" 
+                  [(ngModel)]="newCoupon.isActive"
+                  id="isActive"
+                  class="w-5 h-5 text-primary border-gray-300 rounded focus:ring-primary">
+                <label for="isActive" class="text-sm font-bold text-dark cursor-pointer">
+                  Activate coupon immediately
+                </label>
+              </div>
+
+              <!-- Action Buttons -->
+              <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
+                <button 
+                  (click)="cancelCouponForm()"
+                  class="px-6 py-2.5 border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-colors">
+                  Cancel
+                </button>
+                <button 
+                  (click)="saveCoupon()"
+                  [disabled]="isSavingCoupon() || !isCouponFormValid()"
+                  class="px-6 py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                  {{ isSavingCoupon() ? 'Saving...' : (editingCoupon() ? 'Update Coupon' : 'Create Coupon') }}
+                </button>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- Coupons List -->
+        @if (coupons().length === 0 && !showCouponForm()) {
+          <div class="premium-card p-12 text-center">
+            <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span class="text-4xl">🎟️</span>
+            </div>
+            <h3 class="text-xl font-bold text-dark mb-2">No Coupons Created Yet</h3>
+            <p class="text-gray-500 mb-6">Create your first coupon to offer discounts to your customers</p>
+            <button (click)="openCouponForm()" class="btn-primary inline-flex items-center gap-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+              </svg>
+              Create Your First Coupon
+            </button>
+          </div>
+        } @else if (coupons().length > 0) {
+          <div class="premium-card overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="w-full">
+                <thead class="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Code</th>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Discount</th>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Min Order</th>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Usage</th>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Valid Until</th>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                  @for (coupon of coupons(); track coupon.id) {
+                    <tr class="hover:bg-gray-50 transition-colors">
+                      <!-- Code -->
+                      <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="font-mono font-bold text-primary text-base">{{ coupon.code }}</span>
+                      </td>
+                      
+                      <!-- Discount -->
+                      <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center gap-2">
+                          <span class="text-xl">💰</span>
+                          <div>
+                            <div class="font-bold text-dark text-sm">
+                              {{ coupon.discountType === 'PERCENTAGE' ? coupon.discountValue + '%' : coupon.discountValue + ' TND' }}
+                            </div>
+                            <div class="text-xs text-gray-500">
+                              {{ coupon.discountType === 'PERCENTAGE' ? 'Percentage' : 'Fixed' }}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      
+                      <!-- Min Order -->
+                      <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="text-sm text-gray-600">
+                          {{ coupon.minOrderAmount ? (coupon.minOrderAmount + ' TND') : 'No minimum' }}
+                        </span>
+                      </td>
+                      
+                      <!-- Usage -->
+                      <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center gap-2">
+                          <div class="flex-1">
+                            <div class="text-sm font-semibold text-dark">
+                              {{ coupon.usageCount || 0 }} / {{ coupon.usageLimit || '∞' }}
+                            </div>
+                            @if (coupon.usageLimit) {
+                              <div class="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+                                <div class="bg-primary h-1.5 rounded-full" 
+                                     [style.width.%]="getCouponUsagePercentage(coupon)"></div>
+                              </div>
+                            }
+                          </div>
+                        </div>
+                      </td>
+                      
+                      <!-- Valid Until -->
+                      <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-600">
+                          {{ coupon.validUntil | date:'MMM d, y' }}
+                        </div>
+                        @if (isCouponExpired(coupon)) {
+                          <span class="text-xs text-red-600 font-semibold">Expired</span>
+                        } @else if (isCouponExpiringSoon(coupon)) {
+                          <span class="text-xs text-orange-600 font-semibold">Expiring soon</span>
+                        }
+                      </td>
+                      
+                      <!-- Status -->
+                      <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="inline-block px-2 py-1 rounded-full text-xs font-bold" 
+                              [ngClass]="getCouponStatusBadgeClass(coupon)">
+                          {{ getCouponStatusText(coupon) }}
+                        </span>
+                      </td>
+                      
+                      <!-- Actions -->
+                      <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center gap-2">
+                          @if (!isCouponExpired(coupon)) {
+                            <button 
+                              (click)="toggleCouponStatus(coupon)"
+                              class="px-3 py-1 text-xs font-bold rounded-lg transition-colors"
+                              [class]="coupon.isActive ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' : 'bg-green-100 text-green-700 hover:bg-green-200'">
+                              {{ coupon.isActive ? 'Deactivate' : 'Activate' }}
+                            </button>
+                          }
+                          <button 
+                            (click)="editCoupon(coupon)"
+                            class="px-3 py-1 text-xs font-bold bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors">
+                            Edit
+                          </button>
+                          <button 
+                            (click)="deleteCoupon(coupon)"
+                            class="px-3 py-1 text-xs font-bold bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors">
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        }
+
+        <!-- Info Notice -->
+        <div class="premium-card p-6 bg-blue-50 border border-blue-200">
+          <div class="flex items-start gap-4">
+            <div class="text-3xl">💡</div>
+            <div>
+              <h3 class="font-bold text-blue-900 mb-2">About Provider Coupons</h3>
+              <ul class="text-sm text-blue-800 space-y-1">
+                <li>• Coupons you create only apply to products in <strong>your shop</strong></li>
+                <li>• Customers can use your coupons when purchasing items from your store</li>
+                <li>• You can track usage and deactivate coupons at any time</li>
+                <li>• Expired coupons cannot be reactivated - create a new one instead</li>
+              </ul>
+            </div>
+          </div>
         </div>
       </div>
     }

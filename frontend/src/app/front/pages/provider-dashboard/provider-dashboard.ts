@@ -5,6 +5,8 @@ import { RouterLink, Router } from '@angular/router';
 import { ProviderService } from '../../core/provider.service';
 import { ProductService } from '../../core/product.service';
 import { ServiceService, Service } from '../../../core/services/service.service';
+import { ProviderCouponService, ProviderCoupon } from '../../core/provider-coupon.service';
+import { AutoDiscountRuleService, AutoDiscountRuleRequest, AutoDiscountRuleResponse } from '../../core/auto-discount-rule.service';
 import { ToastService } from '../../core/toast.service';
 import { Product, ProductStatus } from '../../models/product';
 import { environment } from '../../../../environment';
@@ -44,6 +46,8 @@ export class ProviderDashboard implements OnInit {
   private providerService = inject(ProviderService);
   private productService = inject(ProductService);
   private serviceService = inject(ServiceService);
+  private couponService = inject(ProviderCouponService);
+  private autoDiscountRuleService = inject(AutoDiscountRuleService);
   private toastService = inject(ToastService);
   private router = inject(Router);
 
@@ -52,11 +56,19 @@ export class ProviderDashboard implements OnInit {
   readonly stats = signal<ProviderStats | null>(null);
   readonly products = signal<Product[]>([]);
   readonly services = signal<Service[]>([]);
+  readonly coupons = signal<ProviderCoupon[]>([]);
+  readonly discountRules = signal<AutoDiscountRuleResponse[]>([]);
   readonly isLoading = signal(false);
   readonly error = signal<string | null>(null);
   readonly selectedStatus = signal<string>('ALL');
   readonly searchText = signal<string>('');
-  readonly activeTab = signal<'orders' | 'products' | 'services'>('orders');
+  readonly activeTab = signal<'orders' | 'products' | 'services' | 'coupons' | 'discountRules'>('orders');
+  readonly showCouponForm = signal(false);
+  readonly editingCoupon = signal<ProviderCoupon | null>(null);
+  readonly isSavingCoupon = signal(false);
+  readonly showRuleForm = signal(false);
+  readonly editingRule = signal<AutoDiscountRuleResponse | null>(null);
+  readonly isSavingRule = signal(false);
 
   // Product status enum for template
   readonly ProductStatus = ProductStatus;
@@ -121,6 +133,8 @@ export class ProviderDashboard implements OnInit {
     this.loadStatistics();
     this.loadProducts();
     this.loadServices();
+    this.loadCoupons();
+    this.loadDiscountRules();
   }
 
   loadProducts() {
@@ -537,5 +551,360 @@ export class ProviderDashboard implements OnInit {
    */
   onImageError(event: any): void {
     event.target.src = 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=300&fit=crop';
+  }
+
+  // ==================== COUPON MANAGEMENT ====================
+
+  loadCoupons() {
+    console.log('🎟️ Loading provider coupons...');
+    
+    this.couponService.getMyCoupons().subscribe({
+      next: (coupons) => {
+        console.log('✅ Provider coupons loaded:', coupons.length);
+        this.coupons.set(coupons);
+      },
+      error: (err) => {
+        console.error('❌ Failed to load provider coupons:', err);
+        // Set empty array on error (backend might not be implemented yet)
+        this.coupons.set([]);
+      }
+    });
+  }
+
+  getEmptyCoupon(): ProviderCoupon {
+    const today = new Date().toISOString().split('T')[0];
+    const nextMonth = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    
+    return {
+      code: '',
+      discountType: 'PERCENTAGE',
+      discountValue: 0,
+      validFrom: today,
+      validUntil: nextMonth,
+      isActive: true,
+      scope: 'SHOP_SPECIFIC'
+    };
+  }
+
+  newCoupon = this.getEmptyCoupon();
+
+  openCouponForm() {
+    this.showCouponForm.set(true);
+    this.editingCoupon.set(null);
+    this.newCoupon = this.getEmptyCoupon();
+  }
+
+  editCoupon(coupon: ProviderCoupon) {
+    this.editingCoupon.set(coupon);
+    this.newCoupon = { ...coupon };
+    this.showCouponForm.set(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  cancelCouponForm() {
+    this.showCouponForm.set(false);
+    this.editingCoupon.set(null);
+    this.newCoupon = this.getEmptyCoupon();
+  }
+
+  isCouponFormValid(): boolean {
+    return !!(
+      this.newCoupon.code &&
+      this.newCoupon.code.length >= 3 &&
+      this.newCoupon.discountValue > 0 &&
+      this.newCoupon.validFrom &&
+      this.newCoupon.validUntil &&
+      new Date(this.newCoupon.validUntil) > new Date(this.newCoupon.validFrom)
+    );
+  }
+
+  saveCoupon() {
+    if (!this.isCouponFormValid()) {
+      this.toastService.error('Please fill in all required fields correctly');
+      return;
+    }
+
+    this.isSavingCoupon.set(true);
+    
+    const request$ = this.editingCoupon() 
+      ? this.couponService.updateCoupon(this.editingCoupon()!.id!, this.newCoupon)
+      : this.couponService.createCoupon(this.newCoupon);
+
+    request$.subscribe({
+      next: () => {
+        this.isSavingCoupon.set(false);
+        this.toastService.success(`Coupon ${this.editingCoupon() ? 'updated' : 'created'} successfully!`);
+        this.loadCoupons();
+        this.cancelCouponForm();
+      },
+      error: (error) => {
+        this.isSavingCoupon.set(false);
+        console.error('Failed to save coupon:', error);
+        
+        if (error.status === 409) {
+          this.toastService.error('A coupon with this code already exists in your shop');
+        } else if (error.status === 400) {
+          this.toastService.error('Invalid coupon data. Please check your inputs');
+        } else {
+          this.toastService.error('Failed to save coupon. Please try again');
+        }
+      }
+    });
+  }
+
+  toggleCouponStatus(coupon: ProviderCoupon) {
+    const newStatus = !coupon.isActive;
+    
+    this.couponService.toggleStatus(coupon.id!, newStatus).subscribe({
+      next: () => {
+        this.toastService.success(`Coupon ${newStatus ? 'activated' : 'deactivated'} successfully!`);
+        this.loadCoupons();
+      },
+      error: () => {
+        this.toastService.error('Failed to update coupon status');
+      }
+    });
+  }
+
+  deleteCoupon(coupon: ProviderCoupon) {
+    if (!confirm(`Are you sure you want to delete coupon "${coupon.code}"? This action cannot be undone.`)) {
+      return;
+    }
+    
+    this.couponService.deleteCoupon(coupon.id!).subscribe({
+      next: () => {
+        this.toastService.success('Coupon deleted successfully!');
+        this.loadCoupons();
+      },
+      error: () => {
+        this.toastService.error('Failed to delete coupon');
+      }
+    });
+  }
+
+  getCouponUsagePercentage(coupon: ProviderCoupon): number {
+    if (!coupon.usageLimit) return 0;
+    return Math.min(100, ((coupon.usageCount || 0) / coupon.usageLimit) * 100);
+  }
+
+  isCouponExpired(coupon: ProviderCoupon): boolean {
+    return new Date(coupon.validUntil) < new Date();
+  }
+
+  isCouponExpiringSoon(coupon: ProviderCoupon): boolean {
+    const daysUntilExpiry = Math.ceil(
+      (new Date(coupon.validUntil).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+    );
+    return daysUntilExpiry > 0 && daysUntilExpiry <= 7;
+  }
+
+  getCouponStatusBadgeClass(coupon: ProviderCoupon): string {
+    if (this.isCouponExpired(coupon)) {
+      return 'badge-red';
+    } else if (coupon.isActive) {
+      return 'badge-green';
+    } else {
+      return 'badge-gray';
+    }
+  }
+
+  getCouponStatusText(coupon: ProviderCoupon): string {
+    if (this.isCouponExpired(coupon)) {
+      return '⏰ Expired';
+    } else if (coupon.isActive) {
+      return '✅ Active';
+    } else {
+      return '⏸️ Inactive';
+    }
+  }
+
+  // ==================== AUTO DISCOUNT RULES MANAGEMENT ====================
+
+  loadDiscountRules() {
+    console.log('⚡ Loading auto discount rules...');
+    
+    this.autoDiscountRuleService.getMyRules().subscribe({
+      next: (rules) => {
+        console.log('✅ Auto discount rules loaded:', rules.length);
+        this.discountRules.set(rules);
+      },
+      error: (err) => {
+        console.error('❌ Failed to load auto discount rules:', err);
+        this.discountRules.set([]);
+      }
+    });
+  }
+
+  getEmptyRule(): AutoDiscountRuleRequest {
+    const today = new Date().toISOString().split('T')[0];
+    const nextMonth = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    
+    return {
+      ruleName: '',
+      triggerType: 'CART_TOTAL_THRESHOLD',
+      thresholdValue: 0,
+      discountType: 'PERCENTAGE',
+      discountValue: 0,
+      priority: 0,
+      isActive: true,
+      validFrom: today,
+      validUntil: nextMonth
+    };
+  }
+
+  newRule = this.getEmptyRule();
+
+  openRuleForm() {
+    this.showRuleForm.set(true);
+    this.editingRule.set(null);
+    this.newRule = this.getEmptyRule();
+  }
+
+  editRule(rule: AutoDiscountRuleResponse) {
+    this.editingRule.set(rule);
+    this.newRule = {
+      ruleName: rule.ruleName,
+      triggerType: rule.triggerType,
+      thresholdValue: rule.thresholdValue,
+      discountType: rule.discountType,
+      discountValue: rule.discountValue,
+      maximumDiscount: rule.maximumDiscount,
+      priority: rule.priority,
+      isActive: rule.isActive,
+      validFrom: rule.validFrom,
+      validUntil: rule.validUntil,
+      description: rule.description
+    };
+    this.showRuleForm.set(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  cancelRuleForm() {
+    this.showRuleForm.set(false);
+    this.editingRule.set(null);
+    this.newRule = this.getEmptyRule();
+  }
+
+  isRuleFormValid(): boolean {
+    return !!(
+      this.newRule.ruleName &&
+      this.newRule.ruleName.length >= 3 &&
+      this.newRule.thresholdValue > 0 &&
+      this.newRule.discountValue > 0 &&
+      this.newRule.validFrom &&
+      this.newRule.validUntil &&
+      new Date(this.newRule.validUntil) > new Date(this.newRule.validFrom)
+    );
+  }
+
+  saveRule() {
+    if (!this.isRuleFormValid()) {
+      this.toastService.error('Please fill in all required fields correctly');
+      return;
+    }
+
+    this.isSavingRule.set(true);
+    
+    const request$ = this.editingRule() 
+      ? this.autoDiscountRuleService.updateRule(this.editingRule()!.id, this.newRule)
+      : this.autoDiscountRuleService.createRule(this.newRule);
+
+    request$.subscribe({
+      next: () => {
+        this.isSavingRule.set(false);
+        this.toastService.success(`Rule ${this.editingRule() ? 'updated' : 'created'} successfully!`);
+        this.loadDiscountRules();
+        this.cancelRuleForm();
+      },
+      error: (error) => {
+        this.isSavingRule.set(false);
+        console.error('Failed to save rule:', error);
+        
+        if (error.status === 409) {
+          this.toastService.error('A rule with this name already exists in your shop');
+        } else if (error.status === 400) {
+          this.toastService.error('Invalid rule data. Please check your inputs');
+        } else {
+          this.toastService.error('Failed to save rule. Please try again');
+        }
+      }
+    });
+  }
+
+  toggleRuleStatus(rule: AutoDiscountRuleResponse) {
+    const newStatus = !rule.isActive;
+    
+    this.autoDiscountRuleService.toggleRuleStatus(rule.id, newStatus).subscribe({
+      next: () => {
+        this.toastService.success(`Rule ${newStatus ? 'activated' : 'deactivated'} successfully!`);
+        this.loadDiscountRules();
+      },
+      error: () => {
+        this.toastService.error('Failed to update rule status');
+      }
+    });
+  }
+
+  deleteRule(rule: AutoDiscountRuleResponse) {
+    if (!confirm(`Are you sure you want to delete rule "${rule.ruleName}"? This action cannot be undone.`)) {
+      return;
+    }
+    
+    this.autoDiscountRuleService.deleteRule(rule.id).subscribe({
+      next: () => {
+        this.toastService.success('Rule deleted successfully!');
+        this.loadDiscountRules();
+      },
+      error: () => {
+        this.toastService.error('Failed to delete rule');
+      }
+    });
+  }
+
+  isRuleExpired(rule: AutoDiscountRuleResponse): boolean {
+    return rule.validUntil ? new Date(rule.validUntil) < new Date() : false;
+  }
+
+  isRuleExpiringSoon(rule: AutoDiscountRuleResponse): boolean {
+    if (!rule.validUntil) return false;
+    const daysUntilExpiry = Math.ceil(
+      (new Date(rule.validUntil).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+    );
+    return daysUntilExpiry > 0 && daysUntilExpiry <= 7;
+  }
+
+  getRuleStatusBadgeClass(rule: AutoDiscountRuleResponse): string {
+    if (this.isRuleExpired(rule)) {
+      return 'badge-red';
+    } else if (rule.isActive && rule.isCurrentlyValid) {
+      return 'badge-green';
+    } else {
+      return 'badge-gray';
+    }
+  }
+
+  getRuleStatusText(rule: AutoDiscountRuleResponse): string {
+    if (this.isRuleExpired(rule)) {
+      return '⏰ Expired';
+    } else if (rule.isActive && rule.isCurrentlyValid) {
+      return '✅ Active';
+    } else if (rule.isActive) {
+      return '⏳ Scheduled';
+    } else {
+      return '⏸️ Inactive';
+    }
+  }
+
+  getTriggerTypeLabel(triggerType: string): string {
+    switch (triggerType) {
+      case 'CART_TOTAL_THRESHOLD':
+        return 'Cart Total';
+      case 'QUANTITY_THRESHOLD':
+        return 'Quantity';
+      case 'GROUPED_PRODUCT_OFFER':
+        return 'Grouped Products';
+      default:
+        return triggerType;
+    }
   }
 }

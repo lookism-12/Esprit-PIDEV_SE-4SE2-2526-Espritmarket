@@ -5,6 +5,7 @@ import esprit_market.Enum.notificationEnum.NotificationType;
 import esprit_market.entity.user.User;
 import org.bson.types.ObjectId;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface INotificationService {
@@ -39,4 +40,8 @@ public interface INotificationService {
     void bulkMarkAsRead(List<ObjectId> ids, ObjectId userId);
     void bulkDelete(List<ObjectId> ids, ObjectId userId);
     void bulkToggleStar(List<ObjectId> ids, boolean star, ObjectId userId);
+    
+    // Coupon broadcast notification
+    void notifyUsersAboutCoupon(ObjectId couponId, String couponCode, String shopName, 
+                                String discountInfo, LocalDateTime expiryDate);
 }
