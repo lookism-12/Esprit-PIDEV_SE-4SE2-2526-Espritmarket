@@ -13,6 +13,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import esprit_market.repository.userRepository.UserRepository;
 import esprit_market.entity.user.User;
+import jakarta.validation.Valid;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -50,14 +51,14 @@ public class CommentController {
     }
    
     @PostMapping
-    public ResponseEntity<CommentResponse> create(@RequestBody CommentRequest dto) {
+    public ResponseEntity<CommentResponse> create(@Valid @RequestBody CommentRequest dto) {
         Comment entity = service.create(dto);
         if (entity == null) return ResponseEntity.badRequest().build();
         return ResponseEntity.status(HttpStatus.CREATED).body(ForumMapper.toCommentResponse(entity));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<CommentResponse> update(@PathVariable String id, @RequestBody CommentRequest dto) {
+    public ResponseEntity<CommentResponse> update(@PathVariable String id, @Valid @RequestBody CommentRequest dto) {
         Comment existing = service.findById(new ObjectId(id));
         if (existing == null) return ResponseEntity.notFound().build();
 

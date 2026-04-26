@@ -27,6 +27,7 @@ interface SimplePost {
   isPinned?: boolean;
   approved: boolean;
   isLocked?: boolean;
+  flames: number;
   moderationBadge?: ModerationBadge;
   userReaction?: ReactionType;
 }
@@ -49,15 +50,21 @@ interface ForumCommentUI {
   replies: ForumReplyUI[];
 }
 
+import { ForumChatWidget } from '../../shared/components/forum-chat-widget/forum-chat-widget';
+import { ChatService } from '../../../core/services/chat.service';
+import { AuthService } from '../../core/auth.service';
+
 @Component({
   selector: 'app-forum',
   standalone: true,
-  imports: [CommonModule, RouterLink, ReactiveFormsModule],
+  imports: [CommonModule, RouterLink, ReactiveFormsModule, ForumChatWidget],
   templateUrl: './forum.html',
   styleUrl: './forum.scss',
 })
 export class Forum implements OnInit {
-  private fb = inject(FormBuilder);
+  private formBuilder = inject(FormBuilder);
+  public chatService = inject(ChatService);
+  private authService = inject(AuthService);
   private forumService: ForumService = inject(ForumService);
 
   readonly ReactionType = ReactionType;
@@ -105,7 +112,7 @@ export class Forum implements OnInit {
   // Filtered posts
   filteredPosts = computed(() => {
     let filtered = this.posts();
-    
+
     // Category filter
     if (this.activeCategory() !== 'all') {
       const category = this.categories().find(c => c.slug === this.activeCategory());
@@ -150,14 +157,14 @@ export class Forum implements OnInit {
   }
 
   private initForms(): void {
-    this.createPostForm = this.fb.group({
+    this.createPostForm = this.formBuilder.group({
       categoryId: ['', Validators.required],
       title: ['', [Validators.required, Validators.minLength(5), Validators.maxLength(200)]],
       content: ['', [Validators.required, Validators.minLength(20)]],
       tags: ['']
     });
 
-    this.updatePostForm = this.fb.group({
+    this.updatePostForm = this.formBuilder.group({
       categoryId: ['', Validators.required],
       title: ['', [Validators.required, Validators.minLength(5), Validators.maxLength(200)]],
       content: ['', [Validators.required, Validators.minLength(20)]],
@@ -165,20 +172,20 @@ export class Forum implements OnInit {
       approved: [false]
     });
 
-    this.commentForm = this.fb.group({
+    this.commentForm = this.formBuilder.group({
       content: ['', [Validators.required, Validators.minLength(2)]]
     });
 
-    this.editCommentForm = this.fb.group({
+    this.editCommentForm = this.formBuilder.group({
       content: ['', [Validators.required, Validators.minLength(2)]]
     });
 
-    this.categoryForm = this.fb.group({
+    this.categoryForm = this.formBuilder.group({
       name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
       description: ['', [Validators.required, Validators.minLength(5), Validators.maxLength(500)]]
     });
 
-    this.replyForm = this.fb.group({
+    this.replyForm = this.formBuilder.group({
       content: ['', [Validators.required, Validators.minLength(1)]]
     });
   }
@@ -410,17 +417,37 @@ export class Forum implements OnInit {
     const previous = post.userReaction;
     const wasSameReaction = previous === reaction;
 
+    if (reaction === ReactionType.FLAME) {
+      // Bug 5: Specific logic for Flame
+      this.forumService.reactToPostFlame(postId).subscribe({
+        next: () => {
+          this.posts.update(posts => posts.map(p => {
+            if (p.id !== postId) return p;
+            return {
+              ...p,
+              flames: p.flames + 1,
+              userReaction: ReactionType.FLAME
+            };
+          }));
+        },
+        error: (err) => console.error('Failed to add flame:', err)
+      });
+      return;
+    }
+
     if (wasSameReaction) {
       this.forumService.removeReaction(postId, 'post', reaction).subscribe({
         next: () => {
           this.posts.update((posts) =>
             posts.map((p) => {
               if (p.id !== postId) return p;
+              const rStr = reaction as any;
               return {
                 ...p,
                 userReaction: undefined,
-                likes: reaction === ReactionType.LIKE ? Math.max(0, p.likes - 1) : p.likes,
-                loves: reaction === ReactionType.LOVE ? Math.max(0, p.loves - 1) : p.loves
+                likes: rStr === 'LIKE' ? Math.max(0, p.likes - 1) : p.likes,
+                loves: rStr === 'LOVE' ? Math.max(0, p.loves - 1) : p.loves,
+                flames: rStr === 'FLAME' ? Math.max(0, p.flames - 1) : p.flames
               };
             })
           );
@@ -431,7 +458,7 @@ export class Forum implements OnInit {
       return;
     }
 
-    const remove$ = previous ? this.forumService.removeReaction(postId, 'post', previous) : of(void 0);
+    const remove$ = previous ? this.forumService.removeReaction(postId, 'post', previous as any) : of(void 0);
     remove$
       .pipe(switchMap(() => this.forumService.addReaction(postId, 'post', reaction)))
       .subscribe({
@@ -443,18 +470,24 @@ export class Forum implements OnInit {
               // Remove previous local reaction counts (if any), then add the new one.
               let likes = p.likes;
               let loves = p.loves;
+              let flames = p.flames;
 
-              if (previous === ReactionType.LIKE) likes = Math.max(0, likes - 1);
-              if (previous === ReactionType.LOVE) loves = Math.max(0, loves - 1);
+              const prevStr = previous as any;
+              if (prevStr === 'LIKE') likes = Math.max(0, likes - 1);
+              if (prevStr === 'LOVE') loves = Math.max(0, loves - 1);
+              if (prevStr === 'FLAME') flames = Math.max(0, flames - 1);
 
-              if (reaction === ReactionType.LIKE) likes += 1;
-              if (reaction === ReactionType.LOVE) loves += 1;
+              const rStr = reaction as any;
+              if (rStr === 'LIKE') likes += 1;
+              if (rStr === 'LOVE') loves += 1;
+              if (rStr === 'FLAME') flames += 1;
 
               return {
                 ...p,
                 userReaction: reaction,
                 likes,
-                loves
+                loves,
+                flames
               };
             })
           );
@@ -504,6 +537,11 @@ export class Forum implements OnInit {
         console.error('Failed to create reply:', err);
       }
     });
+  }
+
+  openMessage(authorId: string) {
+    const currentUserId = this.authService.userId() || localStorage.getItem('userId') || '';
+    this.chatService.openChatPopup(currentUserId, authorId);
   }
 
   submitUpdatePost(): void {
@@ -746,7 +784,8 @@ export class Forum implements OnInit {
             isPinned: p.pinned,
             approved: p.approved,
             moderationBadge,
-            userReaction
+            userReaction,
+            flames: postReactions.filter((r: ReactionDto) => r.type === 'FLAME').length
           };
         });
 

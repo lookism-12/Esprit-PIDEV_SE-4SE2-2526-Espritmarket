@@ -108,7 +108,8 @@ export enum ReactionType {
   LOVE = 'LOVE',
   HELPFUL = 'HELPFUL',
   INSIGHTFUL = 'INSIGHTFUL',
-  FUNNY = 'FUNNY'
+  FUNNY = 'FUNNY',
+  FLAME = 'FLAME'
 }
 
 export interface ReactionSummary {

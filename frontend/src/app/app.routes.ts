@@ -51,6 +51,7 @@ export const routes: Routes = [
     },
 
     // ==================== PROTECTED ROUTES (Authenticated users only) ====================
+    // Chat full page route has been removed, using Forum Popup instead
     // Cart & Shopping
     {
         path: 'cart',

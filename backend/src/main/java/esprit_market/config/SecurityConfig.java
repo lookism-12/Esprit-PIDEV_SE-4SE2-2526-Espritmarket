@@ -78,6 +78,9 @@ public class SecurityConfig {
                         // OPTIONS requests (CORS preflight) - MUST be public
                         .requestMatchers("OPTIONS", "/**").permitAll()
                         
+                        // WebSocket endpoint for STOMP/SockJS
+                        .requestMatchers("/ws/**", "/api/chat/**").permitAll()
+                        
                         // Admin endpoints
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/seller/**").hasAnyRole("ADMIN", "SELLER", "PROVIDER")

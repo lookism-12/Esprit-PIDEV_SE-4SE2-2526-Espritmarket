@@ -1,0 +1,110 @@
+[33mÔØ»[39m Building...
+[32mÔ£ö[39m Building...
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m                     [2m | [22m [1mRaw size[22m[2m | [22m[1mEstimated transfer size[22m
+[32mchunk-ZXO2HMT5.js[39m  [2m | [22m[2m-[22m                         [2m | [22m[36m187.46 kB[39m[2m | [22m               [36m54.26 kB[39m
+[32mstyles-5LJCD5PC.css[39m[2m | [22m[2mstyles[22m                    [2m | [22m[36m144.96 kB[39m[2m | [22m               [36m17.32 kB[39m
+[32mchunk-OUONST7Z.js[39m  [2m | [22m[2m-[22m                         [2m | [22m [36m95.34 kB[39m[2m | [22m               [36m24.01 kB[39m
+[32mchunk-N72CVQBS.js[39m  [2m | [22m[2m-[22m                         [2m | [22m [36m65.47 kB[39m[2m | [22m               [36m17.11 kB[39m
+[32mchunk-HNQWWDHR.js[39m  [2m | [22m[2m-[22m                         [2m | [22m [36m51.02 kB[39m[2m | [22m               [36m10.05 kB[39m
+[32mmain-NGDQI33H.js[39m   [2m | [22m[2mmain[22m                      [2m | [22m [36m50.92 kB[39m[2m | [22m               [36m11.73 kB[39m
+[32mchunk-YMC5DP77.js[39m  [2m | [22m[2m-[22m                         [2m | [22m [36m22.84 kB[39m[2m | [22m                [36m5.86 kB[39m
+[32mchunk-JRXMOGBB.js[39m  [2m | [22m[2m-[22m                         [2m | [22m [36m18.77 kB[39m[2m | [22m                [36m5.38 kB[39m
+[32mchunk-O5E5YORI.js[39m  [2m | [22m[2m-[22m                         [2m | [22m  [36m7.78 kB[39m[2m | [22m                [36m2.37 kB[39m
+[32mchunk-27TODZR2.js[39m  [2m | [22m[2m-[22m                         [2m | [22m  [36m6.54 kB[39m[2m | [22m                [36m1.81 kB[39m
+[32mchunk-B64MAIUJ.js[39m  [2m | [22m[2m-[22m                         [2m | [22m  [36m6.42 kB[39m[2m | [22m                [36m1.72 kB[39m
+[32mchunk-EHHWTBEO.js[39m  [2m | [22m[2m-[22m                         [2m | [22m  [36m5.83 kB[39m[2m | [22m                [36m1.41 kB[39m
+[32mchunk-ZMGMPVVN.js[39m  [2m | [22m[2m-[22m                         [2m | [22m  [36m5.51 kB[39m[2m | [22m                [36m1.20 kB[39m
+[32mchunk-UE6XAFGQ.js[39m  [2m | [22m[2m-[22m                         [2m | [22m  [36m3.90 kB[39m[2m | [22m              [36m993 bytes[39m
+[32mchunk-LF7GKATS.js[39m  [2m | [22m[2m-[22m                         [2m | [22m  [36m3.67 kB[39m[2m | [22m                [36m1.31 kB[39m
+[32mchunk-2TFW6K6N.js[39m  [2m | [22m[2m-[22m                         [2m | [22m  [36m3.62 kB[39m[2m | [22m              [36m945 bytes[39m
+[32mchunk-INS5WFUV.js[39m  [2m | [22m[2m-[22m                         [2m | [22m  [36m3.47 kB[39m[2m | [22m              [36m818 bytes[39m
+[32mchunk-7BS3XTCO.js[39m  [2m | [22m[2m-[22m                         [2m | [22m  [36m3.07 kB[39m[2m | [22m              [36m996 bytes[39m
+[32mchunk-LNO2ZULL.js[39m  [2m | [22m[2m-[22m                         [2m | [22m  [36m2.86 kB[39m[2m | [22m              [36m964 bytes[39m
+[32mchunk-3MPXN5ZY.js[39m  [2m | [22m[2m-[22m                         [2m | [22m  [36m2.19 kB[39m[2m | [22m              [36m873 bytes[39m
+[32mchunk-SOBXIEIH.js[39m  [2m | [22m[2m-[22m                         [2m | [22m  [36m2.07 kB[39m[2m | [22m              [36m684 bytes[39m
+[32mchunk-66YHQURK.js[39m  [2m | [22m[2m-[22m                         [2m | [22m  [36m1.95 kB[39m[2m | [22m              [36m765 bytes[39m
+[32mchunk-PPJGAXA5.js[39m  [2m | [22m[2m-[22m                         [2m | [22m  [36m1.84 kB[39m[2m | [22m              [36m707 bytes[39m
+[32mchunk-PPGVQ6VP.js[39m  [2m | [22m[2m-[22m                         [2m | [22m  [36m1.66 kB[39m[2m | [22m              [36m578 bytes[39m
+[32mchunk-S2CRXVUO.js[39m  [2m | [22m[2m-[22m                         [2m | [22m  [36m1.36 kB[39m[2m | [22m              [36m568 bytes[39m
+[32mchunk-E6TGZIGP.js[39m  [2m | [22m[2m-[22m                         [2m | [22m  [36m1.15 kB[39m[2m | [22m              [36m508 bytes[39m
+[32mchunk-NZT4ZPLR.js[39m  [2m | [22m[2m-[22m                         [2m | [22m[36m654 bytes[39m[2m | [22m              [36m654 bytes[39m
+[32mchunk-K3ZQQT5V.js[39m  [2m | [22m[2m-[22m                         [2m | [22m[36m634 bytes[39m[2m | [22m              [36m634 bytes[39m
+[32mchunk-6XXKWTFA.js[39m  [2m | [22m[2m-[22m                         [2m | [22m [36m73 bytes[39m[2m | [22m               [36m73 bytes[39m
+[32mchunk-BYXBJQAS.js[39m  [2m | [22m[2m-[22m                         [2m | [22m  [36m0 bytes[39m[2m | [22m                [36m0 bytes[39m
+
+[1m [22m                  [2m | [22m[1mInitial total[22m             [2m | [22m[1m[93m703.04 kB[39m[22m[2m | [22m              [1m166.31 kB[22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m                     [2m | [22m [1mRaw size[22m[2m | [22m[1mEstimated transfer size[22m
+[32mchunk-VQ36GYXH.js[39m  [2m | [22m[2m-[22m                         [2m | [22m[36m149.55 kB[39m[2m | [22m               [36m37.57 kB[39m
+[32mchunk-TPH4E6BF.js[39m  [2m | [22m[2mchat[22m                      [2m | [22m [36m60.65 kB[39m[2m | [22m               [36m18.24 kB[39m
+[32mchunk-VL3MTQ3W.js[39m  [2m | [22m[2mprovider-dashboard[22m        [2m | [22m [36m54.03 kB[39m[2m | [22m               [36m10.77 kB[39m
+[32mchunk-QR67XHUH.js[39m  [2m | [22m[2mproduct-details[22m           [2m | [22m [36m48.33 kB[39m[2m | [22m               [36m11.20 kB[39m
+[32mchunk-YT5U74OK.js[39m  [2m | [22m[2mcart[22m                      [2m | [22m [36m45.06 kB[39m[2m | [22m               [36m10.42 kB[39m
+[32mchunk-RQ6OEDTQ.js[39m  [2m | [22m[2mplaceholders[22m              [2m | [22m [36m43.27 kB[39m[2m | [22m                [36m8.45 kB[39m
+[32mchunk-W7R2HRJD.js[39m  [2m | [22m[2mprofile[22m                   [2m | [22m [36m43.06 kB[39m[2m | [22m               [36m10.19 kB[39m
+[32mchunk-SXXFTUQB.js[39m  [2m | [22m[2mforum[22m                     [2m | [22m [36m42.73 kB[39m[2m | [22m                [36m9.55 kB[39m
+[32mchunk-5JJXES6X.js[39m  [2m | [22m[2mback-routes[22m               [2m | [22m [36m40.39 kB[39m[2m | [22m                [36m8.55 kB[39m
+[32mchunk-Y4EQGHTS.js[39m  [2m | [22m[2mdeliveries-admin-component[22m[2m | [22m [36m39.42 kB[39m[2m | [22m                [36m9.66 kB[39m
+[32mchunk-ZOZJFMGR.js[39m  [2m | [22m[2mdriver-dashboard[22m          [2m | [22m [36m36.06 kB[39m[2m | [22m                [36m8.60 kB[39m
+[32mchunk-RC2EQ6HY.js[39m  [2m | [22m[2mcarpooling[22m                [2m | [22m [36m31.68 kB[39m[2m | [22m                [36m7.88 kB[39m
+[32mchunk-SUWHPHSL.js[39m  [2m | [22m[2mclient-sav-component[22m      [2m | [22m [36m31.66 kB[39m[2m | [22m                [36m8.12 kB[39m
+[32mchunk-MHJRV2B2.js[39m  [2m | [22m[2mindex[22m                     [2m | [22m [36m31.18 kB[39m[2m | [22m                [36m7.47 kB[39m
+[32mchunk-XN73CB2W.js[39m  [2m | [22m[2mnotifications[22m             [2m | [22m [36m29.03 kB[39m[2m | [22m                [36m6.90 kB[39m
+[2m...and 66 more lazy chunks files. Use "--verbose" to show all the files.[22m
+
+Application bundle generation failed. [11.644 seconds] - 2026-04-26T00:20:19.717Z
+
+Ôû▓ [WARNING] bundle initial exceeded maximum budget. Budget 500.00 kB was not met by 203.04 kB with a total of 703.04 kB.
+
+
+Ôû▓ [WARNING] angular:styles/component:scss;41b268c7096fbe9faa5eb1e95ba8f7f32183355d014cafbc2b3bd4a9254dca46;C:/Users/tesni/Desktop/pidev v3/espritmarket-v3-project/frontend/src/app/front/pages/notifications/notification-settings.component.ts exceeded maximum budget. Budget 4.00 kB was not met by 828 bytes with a total of 4.83 kB.
+
+
+Ôû▓ [WARNING] src/app/front/pages/login/login.scss exceeded maximum budget. Budget 4.00 kB was not met by 787 bytes with a total of 4.79 kB.
+
+
+Ôû▓ [WARNING] src/app/front/pages/about/about.scss exceeded maximum budget. Budget 4.00 kB was not met by 10.48 kB with a total of 14.48 kB.
+
+
+Ôû▓ [WARNING] src/app/front/pages/register/register.scss exceeded maximum budget. Budget 4.00 kB was not met by 2.17 kB with a total of 6.17 kB.
+
+
+Ôû▓ [WARNING] src/app/front/pages/shop-management/shop-management.scss exceeded maximum budget. Budget 4.00 kB was not met by 4.88 kB with a total of 8.88 kB.
+
+
+Ôû▓ [WARNING] src/app/front/pages/notifications/notifications.scss exceeded maximum budget. Budget 4.00 kB was not met by 4.90 kB with a total of 8.90 kB.
+
+
+Ôû▓ [WARNING] Module 'leaflet' used by 'src/app/back/features/deliveries/deliveries-admin.component.ts' is not ESM
+
+  CommonJS or AMD dependencies can cause optimization bailouts.
+  For more information see: https://angular.dev/tools/cli/build#configuring-commonjs-dependencies
+
+
+Ôû▓ [WARNING] Module '@stomp/stompjs' used by 'src/app/front/core/notification.service.ts' is not ESM
+
+  CommonJS or AMD dependencies can cause optimization bailouts.
+  For more information see: https://angular.dev/tools/cli/build#configuring-commonjs-dependencies
+
+
+Ôû▓ [WARNING] Module 'sockjs-client/dist/sockjs' used by 'src/app/front/core/notification.service.ts' is not ESM
+
+  CommonJS or AMD dependencies can cause optimization bailouts.
+  For more information see: https://angular.dev/tools/cli/build#configuring-commonjs-dependencies
+
+
+Ôû▓ [WARNING] Module 'sockjs-client' used by 'src/app/core/services/chat.service.ts' is not ESM
+
+  CommonJS or AMD dependencies can cause optimization bailouts.
+  For more information see: https://angular.dev/tools/cli/build#configuring-commonjs-dependencies
+
+
+X [ERROR] src/app/front/pages/about/about.scss exceeded maximum budget. Budget 8.00 kB was not met by 6.48 kB with a total of 14.48 kB.
+
+
+X [ERROR] src/app/front/pages/shop-management/shop-management.scss exceeded maximum budget. Budget 8.00 kB was not met by 875 bytes with a total of 8.88 kB.
+
+
+X [ERROR] src/app/front/pages/notifications/notifications.scss exceeded maximum budget. Budget 8.00 kB was not met by 898 bytes with a total of 8.90 kB.
+
+

@@ -4,6 +4,7 @@ import esprit_market.dto.forum.MessageRequest;
 import esprit_market.dto.forum.MessageResponse;
 import esprit_market.entity.forum.Message;
 import esprit_market.mappers.ForumMapper;
+import esprit_market.utils.HtmlSanitizer;
 import esprit_market.repository.forumRepository.MessageRepository;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
@@ -37,7 +38,7 @@ public class MessageService implements IMessageService {
     public Message update(ObjectId id, MessageRequest dto) {
         Message existing = repository.findById(id).orElse(null);
         if (existing == null || dto == null) return existing;
-        if (dto.getContent() != null) existing.setContent(dto.getContent());
+        if (dto.getContent() != null) existing.setContent(HtmlSanitizer.sanitize(dto.getContent()));
         return repository.save(existing);
     }
 

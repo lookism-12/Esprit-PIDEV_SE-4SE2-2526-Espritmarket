@@ -2,9 +2,12 @@ package esprit_market.controller.forumController;
 
 import esprit_market.dto.forum.PostRequest;
 import esprit_market.dto.forum.PostResponse;
+import esprit_market.dto.forum.ReactionRequest;
 import esprit_market.entity.forum.Post;
+import esprit_market.entity.forum.Reaction;
 import esprit_market.mappers.ForumMapper;
 import esprit_market.service.forumService.PostService;
+import esprit_market.service.forumService.ReactionService;
 import esprit_market.repository.userRepository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
@@ -12,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.context.SecurityContextHolder;
+import jakarta.validation.Valid;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -21,6 +25,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class PostController {
     private final PostService service;
+    private final ReactionService reactionService;
     private final UserRepository userRepository;
 
     private boolean isAdmin() {
@@ -49,14 +54,14 @@ public class PostController {
     }
 
     @PostMapping
-    public ResponseEntity<PostResponse> create(@RequestBody PostRequest dto) {
+    public ResponseEntity<PostResponse> create(@Valid @RequestBody PostRequest dto) {
         Post entity = service.create(dto);
         if (entity == null) return ResponseEntity.badRequest().build();
         return ResponseEntity.status(HttpStatus.CREATED).body(ForumMapper.toPostResponse(entity));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<PostResponse> update(@PathVariable String id, @RequestBody PostRequest dto) {
+    public ResponseEntity<PostResponse> update(@PathVariable String id, @Valid @RequestBody PostRequest dto) {
         Post existing = service.findById(new ObjectId(id));
         if (existing == null) return ResponseEntity.notFound().build();
 
@@ -82,5 +87,29 @@ public class PostController {
 
         service.deleteById(new ObjectId(id));
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{postId}/react")
+    public ResponseEntity<Void> reactToPost(
+            @PathVariable String postId,
+            @Valid @RequestBody ReactionRequest reactionRequest) {
+        
+        Post post = service.findById(new ObjectId(postId));
+        if (post == null) return ResponseEntity.notFound().build();
+
+        ObjectId currentUserId = getCurrentUserId();
+        if (currentUserId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        reactionRequest.setUserId(currentUserId.toHexString());
+        reactionRequest.setPostId(postId);
+        
+        Reaction reaction = reactionService.create(reactionRequest);
+        if (reaction == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        return ResponseEntity.ok().build();
     }
 }

@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.context.SecurityContextHolder;
 import esprit_market.entity.user.User;
+import jakarta.validation.Valid;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -50,14 +51,14 @@ public class ReplyController {
     }
 
     @PostMapping
-    public ResponseEntity<ReplyResponse> create(@RequestBody ReplyRequest dto) {
+    public ResponseEntity<ReplyResponse> create(@Valid @RequestBody ReplyRequest dto) {
         Reply entity = service.create(dto);
         if (entity == null) return ResponseEntity.badRequest().build();
         return ResponseEntity.status(HttpStatus.CREATED).body(ForumMapper.toReplyResponse(entity));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ReplyResponse> update(@PathVariable String id, @RequestBody ReplyRequest dto) {
+    public ResponseEntity<ReplyResponse> update(@PathVariable String id, @Valid @RequestBody ReplyRequest dto) {
         Reply existing = service.findById(new ObjectId(id));
         if (existing == null) return ResponseEntity.notFound().build();
 

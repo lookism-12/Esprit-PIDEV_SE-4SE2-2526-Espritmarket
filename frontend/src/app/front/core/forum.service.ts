@@ -261,6 +261,11 @@ export class ForumService {
     return this.http.post<ReactionDto>(`${this.apiUrl}/forum/reactions`, body);
   }
 
+  // Bug 5: Specific endpoint for FLAME reaction
+  reactToPostFlame(postId: string): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/forum/posts/${postId}/react`, { type: 'FLAME' });
+  }
+
   removeReaction(
     targetId: string,
     targetType: 'post' | 'comment',

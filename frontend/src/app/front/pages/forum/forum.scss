@@ -1,0 +1,319 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+:host {
+    --primary: #800000;
+    --primary-light: #a52a2a;
+    --gold: #E0B84A;
+    --gold-light: #F4D03F;
+    --accent: #F97316;
+    --bg-premium: #fcfcfc;
+    --text-dark: #1a1a1a;
+    --border-light: rgba(0, 0, 0, 0.05);
+
+    font-family: 'Inter', sans-serif;
+    display: block;
+}
+
+// Premium Dynamic Background
+.forum-container {
+    background-color: #ffffff;
+    background-image: 
+        radial-gradient(at 0% 0%, rgba(128, 0, 0, 0.08) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(224, 184, 74, 0.12) 0px, transparent 50%),
+        radial-gradient(at 50% 50%, rgba(128, 0, 0, 0.04) 0px, transparent 50%),
+        radial-gradient(at 0% 100%, rgba(224, 184, 74, 0.1) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(128, 0, 0, 0.08) 0px, transparent 50%);
+    background-attachment: fixed;
+    min-height: 100vh;
+    padding-bottom: 5rem;
+    position: relative;
+    
+    &::after {
+        content: '';
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: radial-gradient(circle at center, transparent 0%, rgba(0, 0, 0, 0.02) 100%);
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    &::before {
+        content: '';
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        opacity: 0.015;
+        pointer-events: none;
+        z-index: 0;
+    }
+}
+
+// Hero Section
+.hero-glass {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(40px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    border-radius: 48px;
+    padding: 6rem 5rem;
+    margin-bottom: 6rem;
+    box-shadow: 
+        0 20px 40px rgba(0, 0, 0, 0.02),
+        0 40px 120px rgba(128, 0, 0, 0.05);
+    position: relative;
+    overflow: hidden;
+    z-index: 10;
+
+    &::after {
+        content: '';
+        position: absolute;
+        width: 600px;
+        height: 600px;
+        background: radial-gradient(circle, rgba(128, 0, 0, 0.06) 0%, transparent 70%);
+        top: -300px;
+        right: -100px;
+        border-radius: 50%;
+        filter: blur(60px);
+        z-index: -1;
+    }
+
+    &::before {
+        content: '';
+        position: absolute;
+        width: 800px;
+        height: 800px;
+        background: radial-gradient(circle, rgba(224, 184, 74, 0.08) 0%, transparent 70%);
+        bottom: -400px;
+        left: -200px;
+        border-radius: 50%;
+        filter: blur(80px);
+        z-index: -1;
+    }
+
+    .hero-content {
+        position: relative;
+        z-index: 10;
+    }
+}
+
+// Premium Containers
+.floating-card {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(16px);
+    border-radius: 36px;
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 
+        0 4px 6px rgba(0, 0, 0, 0.02),
+        0 10px 30px rgba(0, 0, 0, 0.03);
+    transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+    position: relative;
+    overflow: hidden;
+
+    &:hover {
+        transform: translateY(-12px) scale(1.01);
+        background: rgba(255, 255, 255, 0.85);
+        box-shadow: 
+            0 20px 40px rgba(0, 0, 0, 0.04),
+            0 40px 80px rgba(128, 0, 0, 0.06);
+        border-color: rgba(128, 0, 0, 0.15);
+    }
+}
+
+// Premium Buttons
+.btn-mesh {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 50%, var(--primary) 100%);
+    background-size: 200% auto;
+    color: white;
+    border: none;
+    border-radius: 24px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    padding: 1.25rem 2.5rem;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 10px 30px -5px rgba(128, 0, 0, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+
+    &:hover {
+        background-position: right center;
+        transform: translateY(-4px);
+        box-shadow: 0 20px 40px -5px rgba(128, 0, 0, 0.45);
+        filter: brightness(1.1);
+    }
+
+    &:active {
+        transform: scale(0.98);
+    }
+
+    &:disabled {
+        background: #e2e8f0;
+        box-shadow: none;
+        cursor: not-allowed;
+    }
+}
+
+// Category Chips
+.category-chip {
+    padding: 1rem 1.5rem;
+    border-radius: 20px;
+    background: white;
+    border: 1px solid var(--border-light);
+    color: #64748b;
+    font-weight: 700;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+    text-align: left;
+
+    &:hover {
+        background: #f8fafc;
+        border-color: var(--primary);
+        color: var(--primary);
+        transform: translateX(5px);
+    }
+
+    &.active {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+        box-shadow: 0 10px 20px -5px rgba(128, 0, 0, 0.2);
+
+        .post-count {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+    }
+}
+
+.post-count {
+    font-size: 0.7rem;
+    background: #f1f5f9;
+    padding: 4px 10px;
+    border-radius: 8px;
+    color: #94a3b8;
+}
+
+// Modern Inputs
+.forum-input {
+    width: 100%;
+    background: rgba(248, 250, 252, 0.8);
+    border: 2px solid rgba(0, 0, 0, 0.02);
+    border-radius: 24px;
+    padding: 1rem 1.5rem;
+    font-weight: 600;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    color: var(--text-dark);
+
+    &::placeholder {
+        color: #94a3b8;
+        font-weight: 500;
+    }
+
+    &:focus {
+        background: white;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 5px rgba(128, 0, 0, 0.08);
+        outline: none;
+        transform: translateY(-1px);
+    }
+}
+
+// Flame System 🔥
+.flame-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+
+    .flame-icon {
+        font-size: 1.5rem;
+        transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    &:hover .flame-icon {
+        transform: scale(1.4) rotate(-10deg);
+        filter: drop-shadow(0 0 10px rgba(249, 115, 22, 0.5));
+    }
+
+    &.active {
+        background: rgba(249, 115, 22, 0.1);
+        color: var(--accent);
+
+        .flame-icon {
+            animation: flicker 1.5s infinite alternate;
+        }
+    }
+}
+
+@keyframes flicker {
+    0% {
+        transform: scale(1);
+        filter: brightness(1);
+    }
+
+    50% {
+        transform: scale(1.1);
+        filter: brightness(1.2);
+    }
+
+    100% {
+        transform: scale(1.05);
+        filter: brightness(1.1);
+    }
+}
+
+// Badge Styles
+.badge-gold {
+    background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%);
+    color: white;
+    font-weight: 900;
+    text-transform: uppercase;
+    font-size: 0.65rem;
+    letter-spacing: 0.05em;
+    box-shadow: 0 4px 10px rgba(224, 184, 74, 0.3);
+}
+
+// Avatars
+.avatar-container {
+    position: relative;
+
+    .avatar-ring {
+        position: absolute;
+        top: -4px;
+        left: -4px;
+        right: -4px;
+        bottom: -4px;
+        border: 2px solid var(--gold);
+        border-radius: inherit;
+        opacity: 0.3;
+    }
+}
+
+// Dark Overlay for Modals
+.dark-overlay {
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(8px);
+}
+
+// Custom Scrollbar
+.custom-scrollbar {
+    &::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: rgba(0, 0, 0, 0.1);
+        border-radius: 10px;
+    }
+}

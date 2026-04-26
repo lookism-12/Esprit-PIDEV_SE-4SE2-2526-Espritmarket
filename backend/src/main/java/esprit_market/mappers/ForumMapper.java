@@ -2,6 +2,7 @@ package esprit_market.mappers;
 
 import esprit_market.dto.forum.*;
 import esprit_market.entity.forum.*;
+import esprit_market.utils.HtmlSanitizer;
 import org.bson.types.ObjectId;
 
 import java.time.LocalDateTime;
@@ -99,7 +100,7 @@ public final class ForumMapper {
         return Post.builder()
                 .userId(toObjectId(dto.getUserId()))
                 .categoryId(toObjectId(dto.getCategoryId()))
-                .content(dto.getContent())
+                .content(HtmlSanitizer.sanitize(dto.getContent()))
                 .createdAt(LocalDateTime.now())
                 .isPinned(false)
                 .isApproved(false)
@@ -128,7 +129,7 @@ public final class ForumMapper {
                 .postId(toObjectId(dto.getPostId()))
                 .userId(toObjectId(dto.getUserId()))
                 .parentCommentId(toObjectId(dto.getParentCommentId()))
-                .content(dto.getContent())
+                .content(HtmlSanitizer.sanitize(dto.getContent()))
                 .createdAt(LocalDateTime.now())
                 .reactionIds(Collections.emptyList())
                 .build();
@@ -155,7 +156,7 @@ public final class ForumMapper {
                 .groupId(toObjectId(dto.getGroupId()))
                 .receiverId(toObjectId(dto.getReceiverId()))
                 .replyToMessageId(toObjectId(dto.getReplyToMessageId()))
-                .content(dto.getContent())
+                .content(HtmlSanitizer.sanitize(dto.getContent()))
                 .timestamp(LocalDateTime.now())
                 .build();
     }
@@ -177,7 +178,7 @@ public final class ForumMapper {
         return Reply.builder()
                 .commentId(toObjectId(dto.getCommentId()))
                 .userId(toObjectId(dto.getUserId()))
-                .content(dto.getContent())
+                .content(HtmlSanitizer.sanitize(dto.getContent()))
                 .createdAt(LocalDateTime.now())
                 .build();
     }

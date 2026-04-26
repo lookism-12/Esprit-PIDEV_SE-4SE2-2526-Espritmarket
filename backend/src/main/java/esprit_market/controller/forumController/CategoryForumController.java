@@ -10,6 +10,7 @@ import org.bson.types.ObjectId;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -39,14 +40,14 @@ public class CategoryForumController {
     }
 
     @PostMapping
-    public ResponseEntity<CategoryForumResponse> create(@RequestBody CategoryForumRequest dto) {
+    public ResponseEntity<CategoryForumResponse> create(@Valid @RequestBody CategoryForumRequest dto) {
         if (!isAdmin()) return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN).build();
         CategoryForum entity = service.create(dto);
         return ResponseEntity.ok(ForumMapper.toCategoryForumResponse(entity));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<CategoryForumResponse> update(@PathVariable String id, @RequestBody CategoryForumRequest dto) {
+    public ResponseEntity<CategoryForumResponse> update(@PathVariable String id, @Valid @RequestBody CategoryForumRequest dto) {
         if (!isAdmin()) return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN).build();
         CategoryForum entity = service.update(new ObjectId(id), dto);
         if (entity == null) return ResponseEntity.notFound().build();
