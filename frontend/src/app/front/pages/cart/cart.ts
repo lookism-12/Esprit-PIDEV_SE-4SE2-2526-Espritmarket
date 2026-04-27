@@ -247,13 +247,26 @@ export class Cart implements OnInit {
 
     this.cartService.checkout(checkoutData).subscribe({
       next: (order) => {
-        this.isProcessingPayment.set(false);
-        // Sometimes backend returns orderNumber or id
-        this.orderNumber.set(order.orderNumber || order.id || `ORD-${Math.floor(Math.random() * 1000000)}`);
-        this.goToStep('COMPLETE');
-        this.toastService.success('🎉 Order placed successfully!', 4000);
-        this.triggerConfetti();
-        sessionStorage.removeItem('pendingPurchase');
+        // ✅ CRITICAL FIX: Confirm payment to reduce stock
+        const paymentId = this.paymentMethod() === 'CARD' 
+          ? `PAY-${Date.now()}-${Math.floor(Math.random() * 10000)}`
+          : 'CASH_ON_DELIVERY';
+        
+        this.cartService.confirmPayment(order.id, paymentId).subscribe({
+          next: (confirmedOrder) => {
+            this.isProcessingPayment.set(false);
+            this.orderNumber.set(confirmedOrder.orderNumber || confirmedOrder.id || `ORD-${Math.floor(Math.random() * 1000000)}`);
+            this.goToStep('COMPLETE');
+            this.toastService.success('🎉 Order placed successfully!', 4000);
+            this.triggerConfetti();
+            sessionStorage.removeItem('pendingPurchase');
+          },
+          error: (error) => {
+            this.isProcessingPayment.set(false);
+            console.error('❌ Payment confirmation failed:', error);
+            this.toastService.error('Payment confirmation failed. Please contact support.');
+          }
+        });
       },
       error: (error) => {
         this.isProcessingPayment.set(false);

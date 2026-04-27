@@ -649,4 +649,30 @@ public class OrderServiceImpl implements IOrderService {
         return mongoTemplate.aggregate(aggregation, "order", CancelledOrderStatsDTO.class)
                 .getMappedResults();
     }
+
+    @Override
+    public List<CartItemResponse> getPurchasedItemsForUser(ObjectId userId) {
+        // Get user
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        
+        // Get all completed orders for the user
+        List<Order> orders = orderRepository.findByUserAndStatus(user, OrderStatus.CONFIRMED);
+        
+        // Collect all order items from these orders
+        List<CartItemResponse> purchasedItems = orders.stream()
+                .flatMap(order -> orderItemRepository.findByOrderId(order.getId()).stream())
+                .map(orderItem -> {
+                    CartItemResponse response = new CartItemResponse();
+                    response.setId(orderItem.getId().toString());
+                    response.setProductId(orderItem.getProductId().toString());
+                    response.setProductName(orderItem.getProductName());
+                    response.setQuantity(orderItem.getQuantity());
+                    response.setUnitPrice(orderItem.getProductPrice());
+                    return response;
+                })
+                .collect(Collectors.toList());
+        
+        return purchasedItems;
+    }
 }

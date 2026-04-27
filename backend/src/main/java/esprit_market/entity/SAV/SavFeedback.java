@@ -17,22 +17,46 @@ public class SavFeedback {
     @Id
     private ObjectId id;
 
-    private String type; // "SAV" (Complaint) or "FEEDBACK"
+    // Type: "SAV" (Complaint/Return) or "FEEDBACK" (Product Review)
+    private String type;
+    
+    // Client message and details
     private String message;
     private int rating;
-    private String reason;
-    private String status; // PENDING, INVESTIGATING, RESOLVED, ARCHIVED
-    private String problemNature;
-    private String priority;
-    private String desiredSolution;
-    private List<String> positiveTags;
-    private Boolean recommendsProduct;
+    private String reason; // Return reason
+    private String problemNature; // Nature of the problem
+    private String desiredSolution; // refund, exchange, repair, support, other
+    
+    // Status workflow
+    private String status; // PENDING, INVESTIGATING, RESOLVED, ARCHIVED, REJECTED
+    private String priority; // LOW, MEDIUM, HIGH, URGENT
+    
+    // Admin response
     private String adminResponse;
     private Boolean readByAdmin;
-
+    
+    // Product recommendation
+    private List<String> positiveTags;
+    private Boolean recommendsProduct;
+    
+    // Images uploaded by client
+    private List<String> imageUrls; // URLs of uploaded images
+    
+    // AI Verification fields (for future Siamese Network)
+    private Double aiSimilarityScore; // 0-100 score
+    private String aiDecision; // MATCH, UNCERTAIN, MISMATCH
+    private String aiRecommendation; // AI recommendation text
+    
+    // Metadata
     @Builder.Default
     private LocalDateTime creationDate = LocalDateTime.now();
-
-    // CartItem — SavFeedback (OneToMany UNIDIRECTIONAL SavFeedback -> CartItem)
+    
+    private LocalDateTime lastUpdatedDate;
+    private LocalDateTime resolvedDate;
+    
+    // CartItem relationship (OneToMany UNIDIRECTIONAL SavFeedback -> CartItem)
     private ObjectId cartItemId;
+    
+    // User relationship
+    private ObjectId userId; // Client who created the claim
 }

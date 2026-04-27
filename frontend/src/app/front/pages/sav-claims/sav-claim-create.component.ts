@@ -1,0 +1,121 @@
+import { Component, OnInit, inject, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router, ActivatedRoute } from '@angular/router';
+import { SavClaimService, SavClaim } from '../../core/sav-claim.service';
+import { CartService } from '../../core/cart.service';
+
+@Component({
+  selector: 'app-sav-claim-create',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule],
+  templateUrl: './sav-claim-create.component.html',
+  styleUrls: ['./sav-claim-create.component.css']
+})
+export class SavClaimCreateComponent implements OnInit {
+  private fb = inject(FormBuilder);
+  private savService = inject(SavClaimService);
+  private cartService = inject(CartService);
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
+
+  form = this.fb.group({
+    cartItemId: ['', Validators.required],
+    reason: ['', Validators.required],
+    problemNature: ['', Validators.required],
+    desiredSolution: ['', Validators.required],
+    priority: ['MEDIUM'],
+    message: ['', Validators.required],
+    rating: [0]
+  });
+
+  purchasedItems = signal<any[]>([]);
+  selectedImages = signal<any[]>([]);
+  isSubmitting = signal(false);
+  isLoadingItems = signal(false);
+
+  ngOnInit(): void {
+    this.loadPurchasedItems();
+    
+    // Check if cartItemId is in query params
+    const cartItemId = this.route.snapshot.queryParamMap.get('cartItemId');
+    if (cartItemId) {
+      this.form.patchValue({ cartItemId });
+    }
+  }
+
+  loadPurchasedItems(): void {
+    this.isLoadingItems.set(true);
+    
+    // Load purchased items from cart service (from database)
+    this.cartService.getPurchasedItems().subscribe({
+      next: (items: any[]) => {
+        this.purchasedItems.set(items);
+        this.isLoadingItems.set(false);
+      },
+      error: (err: any) => {
+        console.error('Error loading purchased items:', err);
+        this.purchasedItems.set([]);
+        this.isLoadingItems.set(false);
+      }
+    });
+  }
+
+  onFilesSelected(event: any): void {
+    const files = event.target.files;
+    if (files) {
+      const newImages = Array.from(files).map((file: any) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          // Update preview
+        };
+        reader.readAsDataURL(file);
+        return {
+          file,
+          name: file.name,
+          preview: URL.createObjectURL(file)
+        };
+      });
+      this.selectedImages.set([...this.selectedImages(), ...newImages]);
+    }
+  }
+
+  removeImage(name: string): void {
+    this.selectedImages.set(this.selectedImages().filter(img => img.name !== name));
+  }
+
+  setRating(rating: number): void {
+    this.form.patchValue({ rating });
+  }
+
+  submit(): void {
+    if (this.form.invalid || this.selectedImages().length === 0) {
+      alert('Please fill all required fields and add at least one image');
+      return;
+    }
+
+    this.isSubmitting.set(true);
+    const claim: SavClaim = {
+      type: 'SAV',
+      ...this.form.value as any
+    };
+
+    const files = this.selectedImages().map(img => img.file);
+
+    this.savService.createSavClaim(claim, files).subscribe({
+      next: () => {
+        alert('Your return request has been submitted successfully');
+        this.router.navigate(['/sav/claims']);
+      },
+      error: (err) => {
+        console.error('Error creating claim:', err);
+        alert('Failed to submit return request');
+        this.isSubmitting.set(false);
+      }
+    });
+  }
+
+  cancel(): void {
+    this.router.navigate(['/sav/claims']);
+  }
+}

@@ -94,8 +94,29 @@ export const routes: Routes = [
     // SAV
     {
         path: 'sav',
-        loadComponent: () => import('./front/pages/sav/client-sav.component').then(m => m.ClientSavComponent),
-        canActivate: [authGuard]
+        canActivate: [authGuard],
+        children: [
+            {
+                path: '',
+                loadComponent: () => import('./front/pages/sav/client-sav.component').then(m => m.ClientSavComponent)
+            },
+            {
+                path: 'claims',
+                loadComponent: () => import('./front/pages/sav-claims/sav-claims-list.component').then(m => m.SavClaimsListComponent)
+            },
+            {
+                path: 'claims/create',
+                loadComponent: () => import('./front/pages/sav-claims/sav-claim-create.component').then(m => m.SavClaimCreateComponent)
+            },
+            {
+                path: 'claims/:id',
+                loadComponent: () => import('./front/pages/sav-claims/sav-claim-detail.component').then(m => m.SavClaimDetailComponent)
+            },
+            {
+                path: 'claims/:id/edit',
+                loadComponent: () => import('./front/pages/sav-claims/sav-claim-create.component').then(m => m.SavClaimCreateComponent)
+            }
+        ]
     },
     // Driver deliveries
     {

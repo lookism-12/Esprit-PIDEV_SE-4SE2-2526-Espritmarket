@@ -41,4 +41,9 @@ public interface IOrderService {
      * Get order by ID (admin/provider access - no user validation)
      */
     OrderResponse getOrderByIdAdmin(ObjectId orderId);
+    
+    /**
+     * Get all purchased items for a user from completed orders
+     */
+    List<CartItemResponse> getPurchasedItemsForUser(ObjectId userId);
 }

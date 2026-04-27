@@ -4,64 +4,74 @@
     transition: background-color 0.3s ease;
 }
 
-.premium-input {
-    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
-    &:focus {
-        box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-    }
+/* Elegant Animations */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideInFromTop {
+    from { transform: translateY(-10px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes slideInFromBottom {
+    from { transform: translateY(10px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
 }
 
 .animate-in {
-    animation-duration: 400ms;
-    animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
-    animation-fill-mode: both;
+    animation: fadeIn 400ms cubic-bezier(0, 0, 0.2, 1) both;
 }
 
 .fade-in {
-    @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
-    }
-    animation-name: fadeIn;
+    animation: fadeIn 400ms cubic-bezier(0, 0, 0.2, 1) both;
 }
 
 .slide-in-from-top {
-    @keyframes slideInFromTop {
-        from { transform: translateY(-10px); opacity: 0; }
-        to { transform: translateY(0); opacity: 1; }
-    }
-    animation-name: slideInFromTop;
+    animation: slideInFromTop 400ms cubic-bezier(0, 0, 0.2, 1) both;
 }
 
-.slide-in-from-bottom-4 {
-    @keyframes slideInFromBottom4 {
-        from { transform: translateY(1rem); opacity: 0; }
-        to { transform: translateY(0); opacity: 1; }
-    }
-    animation-name: slideInFromBottom4;
+.slide-in-from-bottom {
+    animation: slideInFromBottom 400ms cubic-bezier(0, 0, 0.2, 1) both;
 }
 
-.zoom-in {
-    @keyframes zoomIn {
-        from { transform: scale(0.95); opacity: 0; }
-        to { transform: scale(1); opacity: 1; }
-    }
-    animation-name: zoomIn;
-}
-
+/* Pulse Animation */
 .animate-pulse {
     animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-    @keyframes pulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: .5; }
-    }
 }
 
-// Custom select arrow
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* Custom Select Styling */
 select {
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
-    background-position: right 1rem center;
+    background-position: right 0.75rem center;
     background-repeat: no-repeat;
     background-size: 1.5em 1.5em;
     padding-right: 2.5rem;
 }
+
+/* Smooth Transitions */
+input, select, button {
+    transition: all 0.2s ease;
+}
+
+/* Focus States */
+input:focus, select:focus {
+    box-shadow: 0 0 0 3px rgba(var(--primary-rgb, 0, 0, 0), 0.1);
+}
+
+/* Hover Effects */
+button:hover:not(:disabled) {
+    transform: translateY(-1px);
+}
+
+/* Disabled State */
+button:disabled {
+    cursor: not-allowed;
+}
+

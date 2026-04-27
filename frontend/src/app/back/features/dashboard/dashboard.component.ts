@@ -27,6 +27,10 @@ export class DashboardComponent implements OnInit {
   pendingPostsCount = signal(0);
   totalOrders = signal(0);
   totalShops = signal(0);
+  totalFavorites = signal(0); // ✅ NEW: Total favorites count
+  totalBookings = signal(0); // ✅ NEW: Total service bookings
+  pendingBookings = signal(0); // ✅ NEW: Pending bookings
+  recentBookings = signal<any[]>([]); // ✅ NEW: Recent bookings
   recentUsers = signal<any[]>([]);
   recentProducts = signal<any[]>([]);
   currentDate = signal(new Date());
@@ -46,6 +50,7 @@ export class DashboardComponent implements OnInit {
   quickActions = [
     { title: 'Manage Users', desc: 'View and moderate users', icon: '👥', route: '/admin/users', bg: 'bg-blue-50' },
     { title: 'Review Products', desc: 'Approve pending listings', icon: '📦', route: '/admin/marketplace/products', bg: 'bg-green-50' },
+    { title: 'Service Bookings', desc: 'Manage appointments', icon: '📅', route: '/admin/services/bookings', bg: 'bg-purple-50' },
     { title: 'Content Moderation', desc: 'Review forum content', icon: '🛡️', route: '/admin/moderation', bg: 'bg-red-50' },
     { title: 'SAV & Deliveries', desc: 'Manage support tickets', icon: '🎧', route: '/admin/sav', bg: 'bg-orange-50' }
   ];
@@ -55,14 +60,36 @@ export class DashboardComponent implements OnInit {
       products: this.http.get<any[]>('/api/products/all').pipe(catchError((err) => { console.error('❌ Failed to load products:', err); return of([]); })),
       posts: this.http.get<any[]>('/api/forum/posts').pipe(catchError((err) => { console.error('❌ Failed to load posts:', err); return of([]); })),
       orders: this.http.get<any[]>('/api/orders').pipe(catchError((err) => { console.error('❌ Failed to load orders:', err); return of([]); })),
-      shops: this.http.get<any[]>('/api/shops').pipe(catchError((err) => { console.error('❌ Failed to load shops:', err); return of([]); }))
-    }).subscribe(({ users, products, posts, orders, shops }) => {
+      shops: this.http.get<any[]>('/api/shops').pipe(catchError((err) => { console.error('❌ Failed to load shops:', err); return of([]); })),
+      favorites: this.http.get<any[]>('/api/admin/favoris').pipe(catchError((err) => { console.error('❌ Failed to load favorites:', err); return of([]); })), // ✅ NEW: Load favorites
+      bookings: this.http.get<any[]>('/api/service-bookings/admin/all').pipe(catchError((err) => { console.error('❌ Failed to load bookings:', err); return of([]); })) // ✅ NEW: Load service bookings
+    }).subscribe(({ users, products, posts, orders, shops, favorites, bookings }) => {
       // ✅ SAFETY: Ensure all responses are arrays
       const safeUsers = Array.isArray(users) ? users : [];
       const safeProducts = Array.isArray(products) ? products : [];
       const safePosts = Array.isArray(posts) ? posts : [];
       const safeOrders = Array.isArray(orders) ? orders : [];
       const safeShops = Array.isArray(shops) ? shops : [];
+      const safeFavorites = Array.isArray(favorites) ? favorites : []; // ✅ NEW
+      const safeBookings = Array.isArray(bookings) ? bookings : []; // ✅ NEW
+
+      // ✅ NEW: Count favorites per product
+      const favoritesCountMap = new Map<string, number>();
+      safeFavorites.forEach((fav: any) => {
+        if (fav.productId) {
+          const count = favoritesCountMap.get(fav.productId) || 0;
+          favoritesCountMap.set(fav.productId, count + 1);
+        }
+      });
+
+      // ✅ NEW: Add favoriteCount to each product
+      const productsWithFavorites = safeProducts.map((p: any) => ({
+        ...p,
+        favoriteCount: favoritesCountMap.get(p.id) || 0
+      }));
+
+      // ✅ NEW: Sort products by favoriteCount (most liked first)
+      const sortedProducts = [...productsWithFavorites].sort((a, b) => b.favoriteCount - a.favoriteCount);
 
       this.totalUsers.set(safeUsers.length);
       this.totalProducts.set(safeProducts.length);
@@ -73,8 +100,18 @@ export class DashboardComponent implements OnInit {
       this.pendingPostsCount.set(safePosts.filter((p: any) => !p.approved).length);
       this.totalOrders.set(safeOrders.length);
       this.totalShops.set(safeShops.length);
+      this.totalFavorites.set(safeFavorites.length); // ✅ NEW: Set total favorites
+      this.totalBookings.set(safeBookings.length); // ✅ NEW: Set total bookings
+      this.pendingBookings.set(safeBookings.filter((b: any) => b.status === 'PENDING').length); // ✅ NEW: Set pending bookings
       this.recentUsers.set([...safeUsers].reverse().slice(0, 5));
-      this.recentProducts.set(safeProducts.filter((p: any) => p.status === 'PENDING').slice(0, 4));
+      this.recentBookings.set([...safeBookings].reverse().slice(0, 5)); // ✅ NEW: Set recent bookings
+      // ✅ MODIFIED: Show pending products sorted by favorites, or top 4 most liked if no pending
+      const pendingProductsSorted = sortedProducts.filter((p: any) => p.status === 'PENDING');
+      this.recentProducts.set(
+        pendingProductsSorted.length > 0 
+          ? pendingProductsSorted.slice(0, 4)
+          : sortedProducts.slice(0, 4)
+      );
       this.isLoading.set(false);
     });
   }
@@ -90,6 +127,18 @@ export class DashboardComponent implements OnInit {
   getCircleDash(pct: number): string { const r = 32, circ = 2 * Math.PI * r; return (pct / 100) * circ + ' ' + circ; }
   getStatusClass(status: string): string {
     const m: Record<string, string> = { PENDING: 'bg-amber-100 text-amber-700', APPROVED: 'bg-green-100 text-green-700', REJECTED: 'bg-red-100 text-red-700', SUSPENDED: 'bg-gray-100 text-gray-600' };
+    return m[status] || 'bg-gray-100 text-gray-600';
+  }
+  
+  getBookingStatusClass(status: string): string {
+    const m: Record<string, string> = { 
+      PENDING: 'bg-amber-100 text-amber-700', 
+      CONFIRMED: 'bg-green-100 text-green-700', 
+      REJECTED: 'bg-red-100 text-red-700', 
+      CANCELLED: 'bg-gray-100 text-gray-600',
+      COMPLETED: 'bg-blue-100 text-blue-700',
+      NO_SHOW: 'bg-orange-100 text-orange-700'
+    };
     return m[status] || 'bg-gray-100 text-gray-600';
   }
 }

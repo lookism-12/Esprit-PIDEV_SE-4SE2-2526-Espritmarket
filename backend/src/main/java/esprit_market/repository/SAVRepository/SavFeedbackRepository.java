@@ -12,4 +12,13 @@ public interface SavFeedbackRepository extends MongoRepository<SavFeedback, Obje
     List<SavFeedback> findByCartItemId(ObjectId cartItemId);
 
     List<SavFeedback> findByType(String type);
+    
+    // Get SAV claims by user ID
+    List<SavFeedback> findByUserIdAndType(ObjectId userId, String type);
+    
+    // Get SAV claims by status
+    List<SavFeedback> findByTypeAndStatus(String type, String status);
+    
+    // Get unread SAV claims
+    List<SavFeedback> findByTypeAndReadByAdminFalse(String type);
 }

@@ -333,12 +333,54 @@ export class CartService {
   }
 
   /**
+   * Confirm payment for an order (reduces product stock)
+   */
+  confirmPayment(orderId: string, paymentId: string): Observable<OrderResponse> {
+    this.isLoading.set(true);
+    this.error.set(null);
+
+    const ordersUrl = `${environment.apiUrl}/orders/${orderId}/confirm-payment`;
+
+    return this.http.post<OrderResponse>(ordersUrl, null, {
+      params: { paymentId }
+    }).pipe(
+      tap((order) => {
+        console.log('✅ Payment confirmed:', order);
+        console.log('📦 Order status:', order.status);
+        this.isLoading.set(false);
+      }),
+      catchError((error) => {
+        console.error('❌ Failed to confirm payment:', error);
+        this.error.set(this.getErrorMessage(error));
+        this.isLoading.set(false);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
    * Get user orders
    */
   getOrders(): Observable<CartResponse[]> {
     return this.http.get<CartResponse[]>(`${this.apiUrl}/orders`).pipe(
       catchError((error) => {
         console.error('❌ Failed to get orders:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * Get purchased items for SAV claims
+   * Loads items from completed orders/cart history
+   */
+  getPurchasedItems(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/purchased-items`).pipe(
+      tap((items) => {
+        console.log('📦 Purchased items loaded:', items);
+      }),
+      catchError((error) => {
+        console.error('❌ Failed to load purchased items:', error);
         return throwError(() => error);
       })
     );

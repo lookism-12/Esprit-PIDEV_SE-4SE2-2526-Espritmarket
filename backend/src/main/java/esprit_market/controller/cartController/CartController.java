@@ -196,4 +196,20 @@ public class CartController {
         
         return ResponseEntity.status(HttpStatus.CREATED).body(order);
     }
+
+    // ==================== PURCHASED ITEMS ====================
+
+    /**
+     * Get all purchased items for the authenticated user.
+     * Returns items from completed orders that can be returned/claimed.
+     * 
+     * @param authentication User authentication
+     * @return List of purchased items from completed orders
+     */
+    @GetMapping("/purchased-items")
+    public ResponseEntity<List<CartItemResponse>> getPurchasedItems(Authentication authentication) {
+        ObjectId userId = getUserId(authentication);
+        List<CartItemResponse> purchasedItems = orderService.getPurchasedItemsForUser(userId);
+        return ResponseEntity.ok(purchasedItems);
+    }
 }
