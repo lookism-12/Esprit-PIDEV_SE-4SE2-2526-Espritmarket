@@ -1,10 +1,16 @@
 package esprit_market.controller.cartController;
 
+import esprit_market.Enum.cartEnum.CartStatus;
 import esprit_market.dto.cartDto.CartItemResponse;
 import esprit_market.dto.cartDto.AddToCartRequest;
 import esprit_market.dto.cartDto.UpdateCartItemRequest;
+import esprit_market.entity.cart.Cart;
+import esprit_market.entity.cart.CartItem;
+import esprit_market.repository.cartRepository.CartItemRepository;
+import esprit_market.repository.cartRepository.CartRepository;
 import esprit_market.service.cartService.ICartItemService;
 import esprit_market.service.cartService.ICartService;
+import esprit_market.service.cartService.IOrderService;
 import esprit_market.service.cartService.AuthHelperService;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
@@ -16,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/cart-items")
@@ -25,7 +32,10 @@ public class CartItemController {
 
     private final ICartItemService cartItemService;
     private final ICartService cartService;
+    private final IOrderService orderService;
     private final AuthHelperService authHelper;
+    private final CartRepository cartRepository;
+    private final CartItemRepository cartItemRepository;
 
     private ObjectId getUserId(Authentication authentication) {
         return authHelper.getUserIdFromAuthentication(authentication);
@@ -38,6 +48,20 @@ public class CartItemController {
         ObjectId cartId = new ObjectId(cartIdString);
         List<CartItemResponse> items = cartItemService.findByCartId(cartId);
         return ResponseEntity.ok(items);
+    }
+
+    /**
+     * Returns CartItems from all carts the user has checked out (non-DRAFT status).
+     * These are the items eligible for SAV claims/feedbacks.
+     */
+    @GetMapping("/my-purchased")
+    public ResponseEntity<List<CartItemResponse>> getMyPurchasedCartItems(Authentication authentication) {
+        ObjectId userId = getUserId(authentication);
+
+        // Fetch purchased items from the OrderService (using Order and OrderItem instead of DRAFT carts)
+        List<CartItemResponse> responses = orderService.getPurchasedItemsForUser(userId);
+
+        return ResponseEntity.ok(responses);
     }
 
     @PostMapping

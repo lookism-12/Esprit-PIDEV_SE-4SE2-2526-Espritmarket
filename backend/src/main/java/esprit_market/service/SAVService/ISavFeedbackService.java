@@ -12,6 +12,7 @@ public interface ISavFeedbackService {
     List<SavFeedbackResponseDTO> getAllFeedbacks();
     List<SavFeedbackResponseDTO> getFeedbacksByCartItem(String cartItemId);
     List<SavFeedbackResponseDTO> getFeedbacksByType(String type);
+    List<SavFeedbackResponseDTO> getFeedbacksByProductId(String productId);
     // FR-SAV3
     SavFeedbackResponseDTO updateFeedback(String id, SavFeedbackRequestDTO request);
     SavFeedbackResponseDTO updateFeedbackStatus(String id, String status);

@@ -35,6 +35,10 @@ export class SavService {
     return this.http.get<SavFeedback[]>(`${this.feedbackUrl}/cart-item/${cartItemId}`);
   }
 
+  getFeedbacksByProductId(productId: string): Observable<SavFeedback[]> {
+    return this.http.get<SavFeedback[]>(`${this.feedbackUrl}/product/${productId}`);
+  }
+
   getFeedbacksByType(type: string): Observable<SavFeedback[]> {
     return this.http.get<SavFeedback[]>(`${this.feedbackUrl}/type/${type}`);
   }

@@ -656,8 +656,10 @@ public class OrderServiceImpl implements IOrderService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         
-        // Get all completed orders for the user
-        List<Order> orders = orderRepository.findByUserAndStatus(user, OrderStatus.CONFIRMED);
+        // Get all completed orders for the user (CONFIRMED and PAID)
+        List<Order> orders = orderRepository.findByUser(user).stream()
+                .filter(o -> o.getStatus() == OrderStatus.CONFIRMED || o.getStatus() == OrderStatus.PAID)
+                .collect(Collectors.toList());
         
         // Collect all order items from these orders
         List<CartItemResponse> purchasedItems = orders.stream()

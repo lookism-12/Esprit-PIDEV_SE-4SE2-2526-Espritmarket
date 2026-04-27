@@ -29,4 +29,7 @@ public interface CartRepository extends MongoRepository<Cart, ObjectId> {
     
     // Provider Dashboard - Get all non-draft carts (orders)
     List<Cart> findByStatusIn(List<CartStatus> statuses);
+
+    // SAV - Find all carts by userId field directly (avoids @DBRef lazy-load)
+    List<Cart> findByUserId(ObjectId userId);
 }

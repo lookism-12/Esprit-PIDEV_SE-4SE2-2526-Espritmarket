@@ -53,6 +53,7 @@ public class SAVMapper {
                 .recommendsProduct(dto.getRecommendsProduct())
                 .adminResponse(dto.getAdminResponse())
                 .readByAdmin(dto.getReadByAdmin() != null ? dto.getReadByAdmin() : false)
+                .imageUrls(dto.getImageUrls())
                 .cartItemId(new ObjectId(dto.getCartItemId()))
                 .build();
     }
@@ -74,6 +75,7 @@ public class SAVMapper {
                 .adminResponse(entity.getAdminResponse())
                 .readByAdmin(entity.getReadByAdmin())
                 .creationDate(entity.getCreationDate())
+                .imageUrls(entity.getImageUrls())
                 .cartItemId(entity.getCartItemId() != null ? entity.getCartItemId().toHexString() : null)
                 .build();
     }

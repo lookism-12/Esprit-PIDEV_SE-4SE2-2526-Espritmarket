@@ -21,4 +21,7 @@ public interface SavFeedbackRepository extends MongoRepository<SavFeedback, Obje
     
     // Get unread SAV claims
     List<SavFeedback> findByTypeAndReadByAdminFalse(String type);
+    
+    // Get feedbacks by list of cartItemIds (OrderItems) and type
+    List<SavFeedback> findByCartItemIdInAndType(List<ObjectId> cartItemIds, String type);
 }

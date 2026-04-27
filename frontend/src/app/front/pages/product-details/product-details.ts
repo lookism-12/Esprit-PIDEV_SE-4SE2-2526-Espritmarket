@@ -12,6 +12,7 @@ import { NegotiationStatus, NegotiationResponse, ProposalStatus } from '../../mo
 import { ImageUrlHelper } from '../../../shared/utils/image-url.helper';
 import { Subscription } from 'rxjs';
 import { catchError, of } from 'rxjs';
+import { SavService } from '../../../back/core/services/sav.service';
 
 interface NegotiationProposal {
   id: string;
@@ -37,6 +38,7 @@ export class ProductDetails implements OnInit, OnDestroy {
   private negotiationService = inject(NegotiationService);
   private authService = inject(AuthService);
   private shopService = inject(ShopService);
+  private savService = inject(SavService);
   private fb = inject(FormBuilder);
   private wsSub?: Subscription;
 
@@ -62,6 +64,9 @@ export class ProductDetails implements OnInit, OnDestroy {
   // Favorites
   isFavorite = signal(false);
   isTogglingFavorite = signal(false);
+  
+  // Roles
+  isAdmin = computed(() => this.authService.userRole() === 'ADMIN');
 
   // True when the logged-in provider owns the shop that sells this product
   isOwnProduct = computed(() => {
@@ -80,8 +85,15 @@ export class ProductDetails implements OnInit, OnDestroy {
   negotiationError = signal<string | null>(null);
   error = signal<string | null>(null);
 
-  // Mock reviews (TODO: Load from API)
+  // Reviews data (loaded from API)
   reviews = signal<any[]>([]);
+  reviewsCount = computed(() => this.reviews().length);
+  averageRating = computed(() => {
+    const revs = this.reviews();
+    if (revs.length === 0) return 0.0;
+    const sum = revs.reduce((acc, r) => acc + (r.rating || 0), 0);
+    return Number((sum / revs.length).toFixed(1));
+  });
 
   // Related products from MongoDB
   relatedProducts = signal<Product[]>([]);
@@ -173,12 +185,51 @@ export class ProductDetails implements OnInit, OnDestroy {
         // Load related products (same category)
         this.loadRelatedProducts(product.category);
         
+        // Load reviews (SAV Feedbacks)
+        this.loadFeedbacks(product.id);
+        
         this.isLoadingProduct.set(false);
       },
       error: (err) => {
         console.error('❌ Failed to load product:', err);
         this.productNotFound.set(true);
         this.isLoadingProduct.set(false);
+      }
+    });
+  }
+
+  private loadFeedbacks(productId: string): void {
+    this.savService.getFeedbacksByProductId(productId).subscribe({
+      next: (feedbacks) => {
+        // Map SavFeedback to our reviews array format
+        const mappedReviews = feedbacks.map(fb => ({
+          id: fb.id,
+          userName: (fb as any).userName || 'Anonymous Customer',
+          rating: fb.rating,
+          date: fb.creationDate,
+          comment: fb.message,
+          verified: true, // It's from a cart item, so it's verified
+          imageUrls: fb.imageUrls || []
+        }));
+        this.reviews.set(mappedReviews);
+      },
+      error: (err) => {
+        console.error('❌ Failed to load feedbacks:', err);
+      }
+    });
+  }
+
+  archiveReview(reviewId: string): void {
+    if (!confirm('Are you sure you want to archive this review?')) return;
+    
+    this.savService.updateFeedbackStatus(reviewId, 'ARCHIVED').subscribe({
+      next: () => {
+        // Remove from list or update status
+        this.reviews.update(reviews => reviews.filter(r => r.id !== reviewId));
+      },
+      error: (err) => {
+        console.error('❌ Failed to archive review:', err);
+        alert('Failed to archive review.');
       }
     });
   }

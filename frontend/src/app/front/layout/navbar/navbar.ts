@@ -106,9 +106,7 @@ export class Navbar implements OnInit, OnDestroy {
       title: 'Orders & Delivery',
       icon: '📦',
       items: [
-        { label: 'My Orders', route: '/orders', icon: '🛍️' },
-        { label: 'Track Deliveries', route: '/sav/deliveries', icon: '📍' },
-        { label: 'My Claims', route: '/sav', icon: '📄' }
+        { label: 'My Orders', route: '/orders', icon: '🛍️' }
       ]
     },
     {

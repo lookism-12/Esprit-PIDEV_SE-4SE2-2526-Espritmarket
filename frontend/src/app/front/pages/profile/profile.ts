@@ -20,7 +20,7 @@ import { AvatarUploadModal } from './avatar-upload-modal';
 import { ProfileEditModal } from './profile-edit-modal';
 import { PasswordChangeModal } from './password-change-modal';
 
-type ProfileTab = 'orders' | 'loyalty' | 'preferences' | 'settings' | 'deliveries' | 'negotiations';
+type ProfileTab = 'orders' | 'loyalty' | 'preferences' | 'settings' | 'deliveries' | 'negotiations' | 'claims';
 
 @Component({
   selector: 'app-profile',
@@ -229,6 +229,7 @@ export class Profile implements OnInit {
     // Remove Dashboard tab for clients
     return [
       { id: 'orders'        as ProfileTab, label: '🛍️ Orders',       route: '/profile/orders' },
+      { id: 'claims'        as ProfileTab, label: '📄 Claims & Review', route: '/sav' },
       { id: 'negotiations'  as ProfileTab, label: '🤝 Negotiations',  route: '/profile/negotiations' },
       { id: 'loyalty'       as ProfileTab, label: '🏆 Loyalty',       route: '/profile/loyalty' },
       { id: 'preferences'   as ProfileTab, label: '⚙️ Preferences',   route: '/profile/preferences' },

@@ -19,6 +19,7 @@ export interface SavFeedback {
   readByAdmin?: boolean;
   creationDate: string;
   cartItemId: string;
+  imageUrls?: string[];
 }
 
 export interface SavFeedbackRequest {

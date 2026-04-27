@@ -11,6 +11,8 @@ import java.util.Optional;
 @Repository
 public interface CartItemRepository extends MongoRepository<CartItem, ObjectId> {
     List<CartItem> findByCartId(ObjectId cartId);
+
+    List<CartItem> findByCartIdIn(List<ObjectId> cartIds);
     
     Optional<CartItem> findByCartIdAndProductId(ObjectId cartId, ObjectId productId);
     

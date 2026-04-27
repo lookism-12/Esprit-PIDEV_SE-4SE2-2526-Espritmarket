@@ -42,4 +42,5 @@ public class SavFeedbackResponseDTO {
     // Relationships
     private String cartItemId;
     private String userId;
+    private String userName; // Client name for reviews
 }

@@ -6,7 +6,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
 @EnableScheduling
-public class EspritMarketApplication {
+public class    EspritMarketApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(EspritMarketApplication.class, args);

@@ -11,10 +11,8 @@
         class="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border-2 transition-all active:scale-95 shrink-0"
         [class]="showCreateForm() ? 'dm-toggle-idle' : 'border-primary text-primary bg-transparent'">
         @if (showCreateForm()) {
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
           Back
         } @else {
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
           New Request
         }
       </button>
@@ -44,12 +42,9 @@
         <!-- Search -->
         <div class="flex gap-2 mb-4">
           <div class="relative flex-1">
-            <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-            </svg>
             <input [ngModel]="searchItemId()" (ngModelChange)="searchItemId.set($event)" (keyup.enter)="trackFeedback()"
               type="text" placeholder="Item Reference (e.g., 65f0a000)"
-              class="dm-input pl-9 pr-4">
+              class="dm-input pl-4 pr-4">
           </div>
           <button (click)="trackFeedback()" class="px-5 py-2.5 bg-primary hover:bg-primary-dark text-white text-sm font-semibold rounded-xl transition-all active:scale-95">Search</button>
         </div>
@@ -75,7 +70,6 @@
           }
           @if (displayedFeedbacks().length === 0) {
             <div class="text-center py-12 dm-card-inner border-dashed">
-              <span class="text-4xl block mb-3">🧐</span>
               <p class="font-semibold dm-title">No requests found.</p>
               <p class="text-sm dm-muted mt-1">Open a new request using the button above.</p>
             </div>
@@ -89,7 +83,11 @@
                     <span [class]="'px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border w-fit ' + getStatusInfo(fb.status).color">{{ getStatusInfo(fb.status).label }}</span>
                     <div>
                       <p class="text-[10px] uppercase tracking-widest dm-muted mb-0.5">Type</p>
-                      <p class="text-sm font-bold dm-title">{{ fb.type === 'SAV' ? '⚠️ Claim' : '💬 Feedback' }}</p>
+                      <p class="text-sm font-bold dm-title">{{ fb.type === 'SAV' ? 'Claim' : 'Feedback' }}</p>
+                    </div>
+                    <div>
+                      <p class="text-[10px] uppercase tracking-widest dm-muted mb-0.5">Item</p>
+                      <p class="text-xs font-bold text-gray-700 dark:text-gray-300 line-clamp-2" [title]="getItemName(fb.cartItemId)">{{ getItemName(fb.cartItemId) }}</p>
                     </div>
                     <div>
                       <p class="text-[10px] uppercase tracking-widest dm-muted mb-0.5">Date</p>
@@ -103,9 +101,20 @@
                   <div class="flex-1 border-t md:border-t-0 md:border-l dm-divider pt-4 md:pt-0 md:pl-5">
                     <div class="flex items-center justify-between mb-2">
                       <h4 class="font-bold dm-title text-sm">{{ fb.reason || 'Request Details' }}</h4>
-                      <span class="text-base tracking-[0.15em]">{{ getRatingStars(fb.rating) }}</span>
+                      @if (fb.type === 'FEEDBACK') {
+                        <span class="text-base tracking-[0.15em]">{{ getRatingStars(fb.rating) }}</span>
+                      }
                     </div>
                     <p class="dm-quote">"{{ fb.message }}"</p>
+                    @if (fb.imageUrls && fb.imageUrls.length > 0) {
+                      <div class="mt-4 flex gap-2 overflow-x-auto">
+                        @for (img of fb.imageUrls; track img) {
+                          <a [href]="img" target="_blank" class="block w-24 h-24 rounded-lg overflow-hidden border dm-divider shrink-0">
+                            <img [src]="img" alt="Attached evidence" class="w-full h-full object-cover hover:scale-105 transition-transform duration-300">
+                          </a>
+                        }
+                      </div>
+                    }
                     <!-- Timeline dots -->
                     <div class="flex items-center gap-1.5 mt-3">
                       @for (step of timelineSteps(fb.status); track step.label) {
@@ -141,13 +150,11 @@
       @if (showCreateForm()) {
         @if (successMsg()) {
           <div class="dm-alert-green flex items-center gap-3 p-4 rounded-xl mb-5">
-            <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
             <p class="font-semibold text-sm">{{ successMsg() }}</p>
           </div>
         }
         @if (errorMsg()) {
           <div class="dm-alert-red flex items-center gap-3 p-4 rounded-xl mb-5">
-            <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01"/></svg>
             <p class="text-sm font-medium">{{ errorMsg() }}</p>
           </div>
         }
@@ -155,49 +162,70 @@
         <form [formGroup]="feedbackForm" (ngSubmit)="submitFeedback()" class="space-y-5">
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <!-- Item -->
+            <!-- Ordered Item -->
             <div class="space-y-1.5">
               <label class="dm-label">Ordered Item <span class="text-red-500">*</span></label>
-              <select formControlName="cartItemId" class="dm-input appearance-none cursor-pointer"
-                [class.border-red-400]="isFieldInvalid('cartItemId')">
-                <option value="" disabled selected>Select an item from your orders...</option>
-                @if (isLoadingCartItems()) { <option value="" disabled>Loading items...</option> }
-                @for (item of cartItems(); track item.id) {
-                  <option [value]="item.id">{{ item.name }} x{{ item.quantity }} ({{ item.unitPrice | number:'1.2-2' }} TND)</option>
+
+              @if (isLoadingCartItems()) {
+                <div class="dm-input flex items-center gap-2 text-sm dm-muted">
+                  <div class="w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin shrink-0"></div>
+                  Loading your ordered items...
+                </div>
+              } @else if (cartItemsError()) {
+                <div class="rounded-xl border border-amber-300 bg-amber-50 dark:bg-amber-900/20 px-4 py-3 text-sm text-amber-700 dark:text-amber-400">
+                  Unable to load your ordered items right now.
+                </div>
+              } @else if (cartItems().length === 0) {
+                <div class="rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/40 px-4 py-3 text-sm dm-muted">
+                  No purchased items available for after-sales service.
+                </div>
+              } @else {
+                <select formControlName="cartItemId" class="dm-input appearance-none cursor-pointer"
+                  [class.border-red-400]="isFieldInvalid('cartItemId')">
+                  <option value="" disabled selected>Select an item from your orders...</option>
+                  @for (item of cartItems(); track item.id) {
+                    <option [value]="item.id">
+                      {{ item.name }} — x{{ item.quantity }} — {{ item.unitPrice | number:'1.2-2' }} TND
+                    </option>
+                  }
+                </select>
+                @if (isFieldInvalid('cartItemId')) {
+                  <p class="text-xs text-red-500">Please select an ordered item.</p>
                 }
-                @if (!isLoadingCartItems() && cartItems().length === 0) { <option value="" disabled>No items found</option> }
-              </select>
-              @if (isFieldInvalid('cartItemId')) { <p class="text-xs text-red-500">Please select an item.</p> }
-              @if (cartItemsError()) { <p class="text-xs text-amber-500">{{ cartItemsError() }}</p> }
+              }
             </div>
 
-            <!-- Type -->
+            <!-- Request Type -->
             <div class="space-y-1.5">
               <label class="dm-label">Request Type <span class="text-red-500">*</span></label>
               <div class="grid grid-cols-2 gap-2">
                 <button type="button" (click)="feedbackForm.patchValue({ type: 'SAV' })"
                   class="py-2.5 rounded-xl border-2 font-semibold text-sm transition-all"
-                  [class]="isComplaintType() ? 'dm-toggle-active-red' : 'dm-toggle-idle'">⚠️ Claim</button>
+                  [class]="isComplaintType() ? 'dm-toggle-active-red' : 'dm-toggle-idle'">Claim</button>
                 <button type="button" (click)="feedbackForm.patchValue({ type: 'FEEDBACK' })"
                   class="py-2.5 rounded-xl border-2 font-semibold text-sm transition-all"
-                  [class]="!isComplaintType() ? 'dm-toggle-active-blue' : 'dm-toggle-idle'">💬 Feedback</button>
+                  [class]="!isComplaintType() ? 'dm-toggle-active-blue' : 'dm-toggle-idle'">Feedback</button>
               </div>
             </div>
           </div>
 
-          <!-- SAV fields -->
+          <!-- SAV-specific fields -->
           @if (isComplaintType()) {
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div class="space-y-1.5">
                 <label class="dm-label">Problem Nature</label>
                 <select formControlName="problemNature" class="dm-input appearance-none">
-                  @for (p of complaintNatures; track p.value) { <option [value]="p.value">{{ p.label }}</option> }
+                  @for (p of complaintNatures; track p.value) {
+                    <option [value]="p.value">{{ p.label }}</option>
+                  }
                 </select>
               </div>
               <div class="space-y-1.5">
                 <label class="dm-label">Desired Solution</label>
                 <select formControlName="desiredSolution" class="dm-input appearance-none">
-                  @for (s of desiredSolutions; track s.value) { <option [value]="s.value">{{ s.label }}</option> }
+                  @for (s of desiredSolutions; track s.value) {
+                    <option [value]="s.value">{{ s.label }}</option>
+                  }
                 </select>
               </div>
             </div>
@@ -212,7 +240,7 @@
               </div>
             </div>
           } @else {
-            <!-- Feedback fields -->
+            <!-- Feedback-specific fields -->
             <div class="dm-card-inner p-4 space-y-2">
               <label class="dm-label">Product Rating</label>
               <div class="flex gap-1.5">
@@ -251,7 +279,7 @@
             <input formControlName="reason" type="text" placeholder="e.g. Item damaged upon arrival" class="dm-input">
           </div>
 
-          <!-- Message -->
+          <!-- Details -->
           <div class="space-y-1.5">
             <label class="dm-label">Details <span class="text-red-500">*</span></label>
             <textarea formControlName="message" rows="4" placeholder="Describe your issue in detail..."
@@ -267,17 +295,70 @@
             </div>
           </div>
 
+          <!-- ── Product Image upload ────────────────────────────────── -->
+          <div class="space-y-2">
+            <label class="dm-label">
+              Product Image
+              @if (isComplaintType() && !editingFeedback()) {
+                <span class="text-red-500">*</span>
+              } @else {
+                <span class="text-xs dm-muted font-normal ml-1">(optional)</span>
+              }
+            </label>
+            <p class="text-xs dm-muted">Upload a clear image of the received product. Accepted: JPG, JPEG, PNG, WEBP — max 5 MB.</p>
+
+            @if (!imagePreviewUrl()) {
+              <!-- Drop zone / picker -->
+              <label for="sav-image-upload"
+                class="flex flex-col items-center justify-center gap-2 w-full h-36 rounded-xl border-2 border-dashed cursor-pointer transition-colors"
+                [class]="imageError()
+                  ? 'border-red-400 bg-red-50 dark:bg-red-900/10'
+                  : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/40 hover:border-primary hover:bg-primary/5'">
+                <span class="text-sm dm-muted">Click to select an image</span>
+                <span class="text-xs dm-muted">JPG · JPEG · PNG · WEBP · max 5 MB</span>
+                <input id="sav-image-upload" type="file" accept="image/jpeg,image/jpg,image/png,image/webp"
+                  class="hidden" (change)="onImageSelected($event)">
+              </label>
+            } @else {
+              <!-- Preview -->
+              <div class="relative w-full rounded-xl overflow-hidden border dm-divider">
+                <img [src]="imagePreviewUrl()" alt="Product image preview"
+                  class="w-full max-h-56 object-contain bg-gray-100 dark:bg-gray-800">
+                <div class="absolute top-2 right-2 flex gap-2">
+                  <!-- Replace -->
+                  <label for="sav-image-replace"
+                    class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-gray-800 border dm-divider dm-body cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                    Replace
+                    <input id="sav-image-replace" type="file" accept="image/jpeg,image/jpg,image/png,image/webp"
+                      class="hidden" (change)="onImageSelected($event)">
+                  </label>
+                  <!-- Remove -->
+                  <button type="button" (click)="removeImage()"
+                    class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-gray-800 border border-red-300 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                    Remove
+                  </button>
+                </div>
+              </div>
+              <p class="text-xs dm-muted">{{ selectedImageFile()?.name }}</p>
+            }
+
+            @if (imageError()) {
+              <p class="text-xs text-red-500">{{ imageError() }}</p>
+            }
+          </div>
+          <!-- ──────────────────────────────────────────────────────── -->
+
           <!-- Submit -->
           <div class="flex justify-end pt-2">
-            <button type="submit" [disabled]="isSubmitting()"
+            <button type="submit"
+              [disabled]="isSubmitting() || isLoadingCartItems() || cartItems().length === 0"
               class="flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm text-white transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
               [class]="isComplaintType() ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'">
               @if (isSubmitting()) {
                 <span class="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin"></span>
                 Submitting...
               } @else {
-                {{ isComplaintType() ? 'Submit Claim' : 'Publish Review' }}
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                {{ editingFeedback() ? 'Update Request' : (isComplaintType() ? 'Submit Claim' : 'Publish Review') }}
               }
             </button>
           </div>

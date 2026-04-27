@@ -5,7 +5,10 @@ import esprit_market.dto.SAV.SavFeedbackResponseDTO;
 import esprit_market.entity.SAV.SavFeedback;
 import esprit_market.mappers.SAVMapper;
 import esprit_market.repository.SAVRepository.SavFeedbackRepository;
-import esprit_market.repository.cartRepository.CartItemRepository;
+import esprit_market.repository.cartRepository.OrderItemRepository;
+import esprit_market.repository.cartRepository.OrderRepository;
+import esprit_market.entity.cart.OrderItem;
+import esprit_market.entity.cart.Order;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
@@ -20,7 +23,8 @@ import java.util.stream.Collectors;
 public class SavFeedbackService implements ISavFeedbackService {
 
     private final SavFeedbackRepository savFeedbackRepository;
-    private final CartItemRepository cartItemRepository;
+    private final OrderItemRepository orderItemRepository;
+    private final OrderRepository orderRepository;
     private final SAVMapper savMapper;
 
     /**
@@ -30,8 +34,8 @@ public class SavFeedbackService implements ISavFeedbackService {
     public SavFeedbackResponseDTO createFeedback(SavFeedbackRequestDTO request) {
         log.info("Creating SAV feedback for cartItemId: {}", request.getCartItemId());
         
-        if (!cartItemRepository.existsById(new ObjectId(request.getCartItemId()))) {
-            throw new RuntimeException("CartItem not found: " + request.getCartItemId());
+        if (!orderItemRepository.existsById(new ObjectId(request.getCartItemId()))) {
+            throw new RuntimeException("OrderItem not found: " + request.getCartItemId());
         }
         
         SavFeedback feedback = savMapper.toSavFeedbackEntity(request);
@@ -86,6 +90,45 @@ public class SavFeedbackService implements ISavFeedbackService {
     }
 
     /**
+     * Get FEEDBACKs for a specific product
+     */
+    @Override
+    public List<SavFeedbackResponseDTO> getFeedbacksByProductId(String productId) {
+        // 1. Find all order items for this product
+        List<ObjectId> orderItemIds = orderItemRepository.findByProductId(new ObjectId(productId))
+                .stream()
+                .map(esprit_market.entity.cart.OrderItem::getId)
+                .collect(Collectors.toList());
+        
+        if (orderItemIds.isEmpty()) {
+            return List.of();
+        }
+        
+        // 2. Find feedbacks linked to these order items
+        return savFeedbackRepository.findByCartItemIdInAndType(orderItemIds, "FEEDBACK").stream()
+                .map(this::toResponseWithUserName)
+                .collect(Collectors.toList());
+    }
+
+    private SavFeedbackResponseDTO toResponseWithUserName(SavFeedback feedback) {
+        SavFeedbackResponseDTO dto = savMapper.toSavFeedbackResponse(feedback);
+        try {
+            if (feedback.getCartItemId() != null) {
+                OrderItem orderItem = orderItemRepository.findById(feedback.getCartItemId()).orElse(null);
+                if (orderItem != null && orderItem.getOrderId() != null) {
+                    Order order = orderRepository.findById(orderItem.getOrderId()).orElse(null);
+                    if (order != null && order.getUser() != null) {
+                        dto.setUserName(order.getUser().getFirstName() + " " + order.getUser().getLastName());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Failed to fetch user name for feedback {}: {}", feedback.getId(), e.getMessage());
+        }
+        return dto;
+    }
+
+    /**
      * Get SAV claims by user ID (client's own claims)
      */
     public List<SavFeedbackResponseDTO> getSavClaimsByUserId(String userId) {
@@ -112,8 +155,8 @@ public class SavFeedbackService implements ISavFeedbackService {
         SavFeedback feedback = savFeedbackRepository.findById(new ObjectId(id))
                 .orElseThrow(() -> new RuntimeException("Feedback not found: " + id));
         
-        if (!cartItemRepository.existsById(new ObjectId(request.getCartItemId()))) {
-            throw new RuntimeException("CartItem not found: " + request.getCartItemId());
+        if (!orderItemRepository.existsById(new ObjectId(request.getCartItemId()))) {
+            throw new RuntimeException("OrderItem not found: " + request.getCartItemId());
         }
         
         feedback.setType(request.getType());

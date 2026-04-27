@@ -27,6 +27,9 @@ interface CartItemApiResponse {
   unitPrice: number;
 }
 
+const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5 MB
+
 @Component({
   selector: 'app-client-feedback',
   standalone: true,
@@ -38,73 +41,83 @@ export class ClientFeedbackComponent {
   private fb = inject(FormBuilder);
   private http = inject(HttpClient);
 
-  searchItemId = signal<string>('');
-  feedbacks = signal<SavFeedback[] | null>(null);
-  isSearching = signal<boolean>(false);
-  hasSearched = signal<boolean>(false);
-  myFeedbacks = signal<SavFeedback[]>([]);
+  // ── List / search signals ────────────────────────────────────────────────
+  searchItemId       = signal<string>('');
+  feedbacks          = signal<SavFeedback[] | null>(null);
+  isSearching        = signal<boolean>(false);
+  hasSearched        = signal<boolean>(false);
+  myFeedbacks        = signal<SavFeedback[]>([]);
   isLoadingMyFeedbacks = signal<boolean>(false);
-  myFeedbacksError = signal<string | null>(null);
+  myFeedbacksError   = signal<string | null>(null);
 
+  // ── Form / submit signals ────────────────────────────────────────────────
   showCreateForm = signal<boolean>(false);
   editingFeedback = signal<SavFeedback | null>(null);
-  isSubmitting = signal<boolean>(false);
-  successMsg = signal<string | null>(null);
-  errorMsg = signal<string | null>(null);
+  isSubmitting   = signal<boolean>(false);
+  successMsg     = signal<string | null>(null);
+  errorMsg       = signal<string | null>(null);
+
+  // ── Image upload signals ─────────────────────────────────────────────────
+  selectedImageFile = signal<File | null>(null);
+  imagePreviewUrl   = signal<string | null>(null);
+  imageError        = signal<string | null>(null);
+
+  // ── Cart items signals ───────────────────────────────────────────────────
+  cartItems          = signal<CartItemOption[]>([]);
+  isLoadingCartItems = signal<boolean>(false);
+  cartItemsError     = signal<string | null>(null);
 
   feedbackForm: FormGroup;
   ratingArray = [1, 2, 3, 4, 5];
 
   complaintNatures = [
-    { value: 'MISSING_ITEM', label: 'Article manquant' },
-    { value: 'DAMAGED', label: 'Article endommage' },
-    { value: 'WRONG_ITEM', label: 'Mauvais article' },
-    { value: 'OTHER', label: 'Autre probleme' }
+    { value: 'MISSING_ITEM', label: 'Missing item' },
+    { value: 'DAMAGED',      label: 'Damaged item' },
+    { value: 'WRONG_ITEM',   label: 'Wrong item received' },
+    { value: 'OTHER',        label: 'Other issue' }
   ];
 
   desiredSolutions = [
-    { value: 'REFUND', label: 'Remboursement' },
-    { value: 'RESHIP', label: 'Renvoi' },
-    { value: 'VOUCHER', label: 'Bon d achat' },
-    { value: 'EXCHANGE', label: 'Echange' }
+    { value: 'REFUND',    label: 'Refund' },
+    { value: 'RESHIP',    label: 'Reship' },
+    { value: 'VOUCHER',   label: 'Store voucher' },
+    { value: 'EXCHANGE',  label: 'Exchange' }
   ];
 
   priorityOptions: { value: FeedbackPriority; label: string; className: string }[] = [
-    { value: 'LOW', label: 'Faible', className: 'bg-emerald-100 text-emerald-700 border-emerald-300' },
-    { value: 'MODERATE', label: 'Modere', className: 'bg-amber-100 text-amber-700 border-amber-300' },
-    { value: 'URGENT', label: 'Urgent', className: 'bg-red-100 text-red-700 border-red-300' }
+    { value: 'LOW',      label: 'Low',      className: 'bg-emerald-100 text-emerald-700 border-emerald-300' },
+    { value: 'MODERATE', label: 'Moderate', className: 'bg-amber-100 text-amber-700 border-amber-300' },
+    { value: 'URGENT',   label: 'Urgent',   className: 'bg-red-100 text-red-700 border-red-300' }
   ];
 
-  positiveTagOptions = ['Qualite', 'Livraison', 'Emballage', 'Service', 'Rapport qualite-prix'];
-
-  cartItems = signal<CartItemOption[]>([]);
-  isLoadingCartItems = signal<boolean>(false);
-  cartItemsError = signal<string | null>(null);
+  positiveTagOptions = ['Quality', 'Delivery', 'Packaging', 'Service', 'Value for money'];
 
   statusMap: Record<FeedbackStatus, { label: string; color: string }> = {
-    PENDING: { label: 'Pending', color: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
+    PENDING:       { label: 'Pending',       color: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
     INVESTIGATING: { label: 'Investigating', color: 'bg-blue-100 text-blue-800 border-blue-200' },
-    RESOLVED: { label: 'Resolved', color: 'bg-green-100 text-green-800 border-green-200' },
-    REJECTED: { label: 'Rejected', color: 'bg-rose-100 text-rose-800 border-rose-200' },
-    ARCHIVED: { label: 'Archived', color: 'bg-gray-100 text-gray-700 border-gray-200' }
+    RESOLVED:      { label: 'Resolved',      color: 'bg-green-100 text-green-800 border-green-200' },
+    REJECTED:      { label: 'Rejected',      color: 'bg-rose-100 text-rose-800 border-rose-200' },
+    ARCHIVED:      { label: 'Archived',      color: 'bg-gray-100 text-gray-700 border-gray-200' }
   };
 
   constructor() {
     this.feedbackForm = this.fb.group({
-      cartItemId: ['', [Validators.required, Validators.minLength(3)]],
-      type: ['SAV' as FeedbackType, Validators.required],
-      rating: [5, [Validators.required, Validators.min(1), Validators.max(5)]],
-      reason: ['', Validators.maxLength(200)],
-      message: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(500)]],
-      problemNature: ['MISSING_ITEM'],
-      priority: ['MODERATE'],
-      desiredSolution: ['REFUND'],
-      positiveTags: [[]],
-      recommendsProduct: [true]
+      cartItemId:       ['', [Validators.required, Validators.minLength(3)]],
+      type:             ['SAV' as FeedbackType, Validators.required],
+      rating:           [5, [Validators.required, Validators.min(1), Validators.max(5)]],
+      reason:           ['', Validators.maxLength(200)],
+      message:          ['', [Validators.required, Validators.minLength(10), Validators.maxLength(500)]],
+      problemNature:    ['MISSING_ITEM'],
+      priority:         ['MODERATE'],
+      desiredSolution:  ['REFUND'],
+      positiveTags:     [[]],
+      recommendsProduct:[true]
     });
     this.loadMyCartItems();
     this.setupTypeRules();
   }
+
+  // ── Type rules ───────────────────────────────────────────────────────────
 
   private setupTypeRules(): void {
     this.feedbackForm.get('type')?.valueChanges.subscribe(() => this.applyTypeRules());
@@ -113,13 +126,14 @@ export class ClientFeedbackComponent {
 
   private applyTypeRules(): void {
     const isComplaint = this.isComplaintType();
-    const messageCtrl = this.feedbackForm.get('message');
-    const ratingCtrl = this.feedbackForm.get('rating');
-    const problemNatureCtrl = this.feedbackForm.get('problemNature');
-    const priorityCtrl = this.feedbackForm.get('priority');
+    const messageCtrl         = this.feedbackForm.get('message');
+    const ratingCtrl          = this.feedbackForm.get('rating');
+    const problemNatureCtrl   = this.feedbackForm.get('problemNature');
+    const priorityCtrl        = this.feedbackForm.get('priority');
     const desiredSolutionCtrl = this.feedbackForm.get('desiredSolution');
 
-    messageCtrl?.setValidators([Validators.required, Validators.minLength(10), Validators.maxLength(isComplaint ? 500 : 300)]);
+    messageCtrl?.setValidators([Validators.required, Validators.minLength(10),
+      Validators.maxLength(isComplaint ? 500 : 300)]);
 
     if (isComplaint) {
       ratingCtrl?.setValue(3, { emitEvent: false });
@@ -133,22 +147,21 @@ export class ClientFeedbackComponent {
       desiredSolutionCtrl?.clearValidators();
     }
 
-    messageCtrl?.updateValueAndValidity({ emitEvent: false });
-    ratingCtrl?.updateValueAndValidity({ emitEvent: false });
-    problemNatureCtrl?.updateValueAndValidity({ emitEvent: false });
-    priorityCtrl?.updateValueAndValidity({ emitEvent: false });
-    desiredSolutionCtrl?.updateValueAndValidity({ emitEvent: false });
+    [messageCtrl, ratingCtrl, problemNatureCtrl, priorityCtrl, desiredSolutionCtrl]
+      .forEach(c => c?.updateValueAndValidity({ emitEvent: false }));
   }
+
+  // ── Cart items loading ───────────────────────────────────────────────────
 
   private loadMyCartItems(): void {
     this.isLoadingCartItems.set(true);
     this.cartItemsError.set(null);
-    this.http.get<CartItemApiResponse[]>(`${environment.apiUrl}/cart-items/ordered`).subscribe({
+    this.http.get<CartItemApiResponse[]>(`${environment.apiUrl}/cart-items/my-purchased`).subscribe({
       next: (items) => {
-        const mapped = (items ?? []).map((item) => ({
-          id: item.id,
-          name: item.productName || 'Unnamed product',
-          quantity: item.quantity ?? 1,
+        const mapped = (items ?? []).map(item => ({
+          id:        item.id,
+          name:      item.productName || 'Unnamed product',
+          quantity:  item.quantity ?? 1,
           unitPrice: item.unitPrice ?? 0
         }));
         this.cartItems.set(mapped);
@@ -156,28 +169,24 @@ export class ClientFeedbackComponent {
         this.isLoadingCartItems.set(false);
       },
       error: (err) => {
-        console.error('Failed to load user cart items:', err);
+        console.error('Failed to load purchased items:', err);
         this.cartItems.set([]);
         this.myFeedbacks.set([]);
-        this.cartItemsError.set('Unable to load your cart items right now.');
+        this.cartItemsError.set('Unable to load your ordered items right now.');
         this.isLoadingCartItems.set(false);
       }
     });
   }
 
   private loadMyFeedbacks(items: CartItemOption[]): void {
-    if (!items.length) {
-      this.myFeedbacks.set([]);
-      return;
-    }
+    if (!items.length) { this.myFeedbacks.set([]); return; }
     this.isLoadingMyFeedbacks.set(true);
     this.myFeedbacksError.set(null);
-    const calls = items.map((item) => this.savService.getFeedbacksByCartItem(item.id));
+    const calls = items.map(item => this.savService.getFeedbacksByCartItem(item.id));
     forkJoin(calls).pipe(finalize(() => this.isLoadingMyFeedbacks.set(false))).subscribe({
       next: (groups) => {
-        const merged = (groups ?? []).flat();
         const byId = new Map<string, SavFeedback>();
-        for (const fb of merged) byId.set(fb.id, fb);
+        for (const fb of (groups ?? []).flat()) byId.set(fb.id, fb);
         const sorted = Array.from(byId.values()).sort(
           (a, b) => new Date(b.creationDate).getTime() - new Date(a.creationDate).getTime()
         );
@@ -185,18 +194,51 @@ export class ClientFeedbackComponent {
       },
       error: () => {
         this.myFeedbacks.set([]);
-        this.myFeedbacksError.set('Impossible de charger vos demandes pour le moment.');
+        this.myFeedbacksError.set('Unable to load your requests right now.');
       }
     });
   }
 
-  trackFeedback() {
+  // ── Image upload ─────────────────────────────────────────────────────────
+
+  onImageSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file  = input.files?.[0] ?? null;
+    this.imageError.set(null);
+
+    if (!file) return;
+
+    if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+      this.imageError.set('Only JPG, JPEG, PNG or WEBP files are allowed.');
+      input.value = '';
+      return;
+    }
+    if (file.size > MAX_FILE_BYTES) {
+      this.imageError.set('Image size must not exceed 5 MB.');
+      input.value = '';
+      return;
+    }
+
+    this.selectedImageFile.set(file);
+    const reader = new FileReader();
+    reader.onload = () => this.imagePreviewUrl.set(reader.result as string);
+    reader.readAsDataURL(file);
+  }
+
+  removeImage(): void {
+    this.selectedImageFile.set(null);
+    this.imagePreviewUrl.set(null);
+    this.imageError.set(null);
+  }
+
+  // ── Search / track ───────────────────────────────────────────────────────
+
+  trackFeedback(): void {
     const q = this.searchItemId().trim();
     if (!q) return;
     this.errorMsg.set(null);
-    const ownsItem = this.cartItems().some((item) => item.id === q);
-    if (!ownsItem) {
-      this.errorMsg.set('Veuillez utiliser un article de votre panier.');
+    if (!this.cartItems().some(item => item.id === q)) {
+      this.errorMsg.set('Please use an item from your orders.');
       this.hasSearched.set(true);
       this.feedbacks.set([]);
       return;
@@ -205,24 +247,28 @@ export class ClientFeedbackComponent {
     this.isSearching.set(true);
     this.savService.getFeedbacksByCartItem(q).subscribe({
       next: (data) => {
-        const sorted = [...(data ?? [])].sort(
+        this.feedbacks.set([...(data ?? [])].sort(
           (a, b) => new Date(b.creationDate).getTime() - new Date(a.creationDate).getTime()
-        );
-        this.feedbacks.set(sorted);
+        ));
         this.isSearching.set(false);
       },
-      error: () => {
-        this.feedbacks.set([]);
-        this.isSearching.set(false);
-      }
+      error: () => { this.feedbacks.set([]); this.isSearching.set(false); }
     });
   }
 
-  toggleMode() {
+  clearSearch(): void {
+    this.searchItemId.set('');
+    this.feedbacks.set(null);
+    this.hasSearched.set(false);
+    this.errorMsg.set(null);
+  }
+
+  // ── Form toggle / edit ───────────────────────────────────────────────────
+
+  toggleMode(): void {
     if (this.showCreateForm()) {
       this.editingFeedback.set(null);
-      this.feedbackForm.reset({ cartItemId: '', type: 'SAV', rating: 5, reason: '', message: '', problemNature: 'MISSING_ITEM', priority: 'MODERATE', desiredSolution: 'REFUND', positiveTags: [], recommendsProduct: true });
-      this.applyTypeRules();
+      this.resetForm();
     }
     this.showCreateForm.set(!this.showCreateForm());
     this.successMsg.set(null);
@@ -234,124 +280,193 @@ export class ClientFeedbackComponent {
     this.editingFeedback.set(feedback);
     this.showCreateForm.set(true);
     this.feedbackForm.patchValue({
-      cartItemId: feedback.cartItemId,
-      type: feedback.type,
-      rating: feedback.rating,
-      reason: feedback.reason || '',
-      message: feedback.message,
-      problemNature: feedback.problemNature || 'MISSING_ITEM',
-      priority: feedback.priority || 'MODERATE',
-      desiredSolution: feedback.desiredSolution || 'REFUND',
-      positiveTags: feedback.positiveTags || [],
+      cartItemId:       feedback.cartItemId,
+      type:             feedback.type,
+      rating:           feedback.rating,
+      reason:           feedback.reason || '',
+      message:          feedback.message,
+      problemNature:    feedback.problemNature || 'MISSING_ITEM',
+      priority:         feedback.priority || 'MODERATE',
+      desiredSolution:  feedback.desiredSolution || 'REFUND',
+      positiveTags:     feedback.positiveTags || [],
       recommendsProduct: feedback.recommendsProduct ?? true
     });
     this.applyTypeRules();
+    this.removeImage();
     this.successMsg.set(null);
     this.errorMsg.set(null);
   }
 
   removePending(feedback: SavFeedback): void {
     if (feedback.status !== 'PENDING') {
-      this.errorMsg.set('Seuls les avis non traites peuvent etre supprimes.');
+      this.errorMsg.set('Only pending requests can be deleted.');
       return;
     }
-    if (!confirm('Supprimer cet avis non traite ?')) return;
+    if (!confirm('Delete this pending request?')) return;
     this.savService.deleteFeedback(feedback.id).subscribe({
       next: () => {
-        this.successMsg.set('Avis supprime avec succes.');
+        this.successMsg.set('Request deleted successfully.');
         this.loadMyFeedbacks(this.cartItems());
         if (this.hasSearched() && this.searchItemId().trim()) this.trackFeedback();
       },
-      error: () => this.errorMsg.set('Suppression impossible pour le moment.')
+      error: () => this.errorMsg.set('Unable to delete this request right now.')
     });
   }
 
-  setRating(val: number) { this.feedbackForm.patchValue({ rating: val }); }
-  setPriority(priority: FeedbackPriority): void { this.feedbackForm.patchValue({ priority }); }
+  // ── Submit ───────────────────────────────────────────────────────────────
 
-  togglePositiveTag(tag: string): void {
-    const current = (this.feedbackForm.get('positiveTags')?.value as string[]) || [];
-    const next = current.includes(tag) ? current.filter((t) => t !== tag) : [...current, tag];
-    this.feedbackForm.patchValue({ positiveTags: next });
-  }
+  submitFeedback(): void {
+    if (this.feedbackForm.invalid) { 
+      this.feedbackForm.markAllAsTouched(); 
+      this.errorMsg.set('Please fill in all required fields correctly.');
+      return; 
+    }
 
-  setRecommend(value: boolean): void { this.feedbackForm.patchValue({ recommendsProduct: value }); }
+    // Image required for claims (SAV), optional for feedback
+    if (this.isComplaintType() && !this.selectedImageFile() && !this.editingFeedback()) {
+      this.imageError.set('Please upload a product image.');
+      this.errorMsg.set('Please upload a product image.');
+      return;
+    }
 
-  submitFeedback() {
-    if (this.feedbackForm.invalid) { this.feedbackForm.markAllAsTouched(); return; }
     this.isSubmitting.set(true);
-    const payload: SavFeedbackRequest = this.buildPayload();
-    const save$ = this.editingFeedback()
-      ? this.savService.updateFeedback(this.editingFeedback()!.id, payload)
-      : this.savService.createFeedback(payload);
-    save$.subscribe({
-      next: () => {
-        this.isSubmitting.set(false);
-        this.successMsg.set(this.editingFeedback() ? 'Votre dossier a ete modifie.' : 'Votre dossier a ete soumis avec succes.');
-        this.editingFeedback.set(null);
-        this.feedbackForm.reset({ cartItemId: '', type: 'SAV', rating: 5, reason: '', message: '', problemNature: 'MISSING_ITEM', priority: 'MODERATE', desiredSolution: 'REFUND', positiveTags: [], recommendsProduct: true });
-        this.applyTypeRules();
-        this.loadMyFeedbacks(this.cartItems());
-        setTimeout(() => this.toggleMode(), 1200);
-      },
-      error: () => {
-        this.isSubmitting.set(false);
-        this.errorMsg.set('Une erreur est survenue lors de la soumission.');
-      }
-    });
+    this.errorMsg.set(null);
+    this.imageError.set(null);
+
+    if (this.editingFeedback()) {
+      // Edit → keep existing JSON endpoint (image not re-uploaded)
+      const payload: SavFeedbackRequest = this.buildJsonPayload();
+      this.savService.updateFeedback(this.editingFeedback()!.id, payload).subscribe({
+        next: () => this.onSubmitSuccess(true),
+        error: () => this.onSubmitError()
+      });
+    } else {
+      // Create → use multipart endpoint
+      const fd = this.buildFormData();
+      this.http.post<SavFeedback>(`${environment.apiUrl}/sav-feedbacks/with-image`, fd).subscribe({
+        next: () => this.onSubmitSuccess(false),
+        error: () => this.onSubmitError()
+      });
+    }
   }
 
-  private buildPayload(): SavFeedbackRequest {
-    const v = this.feedbackForm.getRawValue();
+  private onSubmitSuccess(isEdit: boolean): void {
+    this.isSubmitting.set(false);
+    const isComplaint = this.isComplaintType();
+    if (isEdit) {
+      this.successMsg.set('Your request has been updated successfully.');
+    } else {
+      this.successMsg.set(
+        isComplaint
+          ? 'Your claim has been submitted successfully.'
+          : 'Your feedback has been submitted successfully.'
+      );
+    }
+    this.editingFeedback.set(null);
+    this.resetForm();
+    this.loadMyFeedbacks(this.cartItems());
+    setTimeout(() => this.toggleMode(), 1500);
+  }
+
+  private onSubmitError(): void {
+    this.isSubmitting.set(false);
+    this.errorMsg.set('Unable to submit your request. Please try again.');
+  }
+
+  private resetForm(): void {
+    this.feedbackForm.reset({
+      cartItemId: '', type: 'SAV', rating: 5, reason: '', message: '',
+      problemNature: 'MISSING_ITEM', priority: 'MODERATE', desiredSolution: 'REFUND',
+      positiveTags: [], recommendsProduct: true
+    });
+    this.applyTypeRules();
+    this.removeImage();
+  }
+
+  private buildFormData(): FormData {
+    const v           = this.feedbackForm.getRawValue();
+    const isComplaint = this.isComplaintType();
+    const fd          = new FormData();
+
+    fd.append('type',       v.type);
+    fd.append('cartItemId', v.cartItemId);
+    fd.append('message',    v.message);
+    fd.append('rating',     String(isComplaint ? 3 : Number(v.rating || 5)));
+    if (v.reason) fd.append('reason', v.reason);
+
+    if (isComplaint) {
+      if (v.problemNature)   fd.append('problemNature',   v.problemNature);
+      if (v.priority)        fd.append('priority',        v.priority);
+      if (v.desiredSolution) fd.append('desiredSolution', v.desiredSolution);
+    } else {
+      if (v.recommendsProduct !== null && v.recommendsProduct !== undefined)
+        fd.append('recommendsProduct', String(v.recommendsProduct));
+      (v.positiveTags as string[] || []).forEach(tag => fd.append('positiveTags', tag));
+    }
+
+    const file = this.selectedImageFile();
+    if (file) fd.append('image', file);
+
+    return fd;
+  }
+
+  private buildJsonPayload(): SavFeedbackRequest {
+    const v           = this.feedbackForm.getRawValue();
     const isComplaint = v.type === 'SAV';
-    const existing = this.editingFeedback();
+    const existing    = this.editingFeedback();
     return {
-      type: v.type,
-      cartItemId: v.cartItemId,
-      reason: v.reason || '',
-      message: v.message,
-      rating: isComplaint ? 3 : Number(v.rating || 5),
-      status: existing?.status || 'PENDING',
-      problemNature: isComplaint ? v.problemNature : undefined,
-      priority: isComplaint ? v.priority : undefined,
-      desiredSolution: isComplaint ? v.desiredSolution : undefined,
-      positiveTags: isComplaint ? [] : (v.positiveTags || []),
-      recommendsProduct: isComplaint ? undefined : !!v.recommendsProduct,
-      adminResponse: existing?.adminResponse,
-      readByAdmin: existing?.readByAdmin
+      type:             v.type,
+      cartItemId:       v.cartItemId,
+      reason:           v.reason || '',
+      message:          v.message,
+      rating:           isComplaint ? 3 : Number(v.rating || 5),
+      status:           existing?.status || 'PENDING',
+      problemNature:    isComplaint ? v.problemNature : undefined,
+      priority:         isComplaint ? v.priority : undefined,
+      desiredSolution:  isComplaint ? v.desiredSolution : undefined,
+      positiveTags:     isComplaint ? [] : (v.positiveTags || []),
+      recommendsProduct:isComplaint ? undefined : !!v.recommendsProduct,
+      adminResponse:    existing?.adminResponse,
+      readByAdmin:      existing?.readByAdmin
     };
   }
 
-  getStatusInfo(status: FeedbackStatus) { return this.statusMap[status]; }
-  isComplaintType(): boolean { return this.feedbackForm.get('type')?.value === 'SAV'; }
-  selectedTags(): string[] { return (this.feedbackForm.get('positiveTags')?.value as string[]) || []; }
-  messageLimit(): number { return this.isComplaintType() ? 500 : 300; }
-  messageLength(): number { return (this.feedbackForm.get('message')?.value || '').length; }
-  messageRemaining(): number { return Math.max(0, this.messageLimit() - this.messageLength()); }
-  canEdit(feedback: SavFeedback): boolean { return feedback.status === 'PENDING'; }
+  // ── Helpers ──────────────────────────────────────────────────────────────
 
-  clearSearch(): void {
-    this.searchItemId.set('');
-    this.feedbacks.set(null);
-    this.hasSearched.set(false);
-    this.errorMsg.set(null);
+  setRating(val: number)              { this.feedbackForm.patchValue({ rating: val }); }
+  setPriority(priority: FeedbackPriority) { this.feedbackForm.patchValue({ priority }); }
+  setRecommend(value: boolean)        { this.feedbackForm.patchValue({ recommendsProduct: value }); }
+
+  togglePositiveTag(tag: string): void {
+    const current = (this.feedbackForm.get('positiveTags')?.value as string[]) || [];
+    const next    = current.includes(tag) ? current.filter(t => t !== tag) : [...current, tag];
+    this.feedbackForm.patchValue({ positiveTags: next });
   }
+
+  getStatusInfo(status: FeedbackStatus)  { return this.statusMap[status]; }
+  isComplaintType(): boolean             { return this.feedbackForm.get('type')?.value === 'SAV'; }
+  selectedTags(): string[]               { return (this.feedbackForm.get('positiveTags')?.value as string[]) || []; }
+  messageLimit(): number                 { return this.isComplaintType() ? 500 : 300; }
+  messageLength(): number                { return (this.feedbackForm.get('message')?.value || '').length; }
+  messageRemaining(): number             { return Math.max(0, this.messageLimit() - this.messageLength()); }
+  canEdit(feedback: SavFeedback): boolean{ return feedback.status === 'PENDING'; }
 
   displayedFeedbacks(): SavFeedback[] {
     return this.hasSearched() ? (this.feedbacks() ?? []) : this.myFeedbacks();
   }
 
   countFeedbacksWithAdminResponse(): number {
-    return this.myFeedbacks().filter((fb) => !!fb.adminResponse?.trim()).length;
+    return this.myFeedbacks().filter(fb => !!fb.adminResponse?.trim()).length;
   }
 
   timelineSteps(status: FeedbackStatus): { label: string; active: boolean }[] {
     const stages: FeedbackStatus[] = ['PENDING', 'INVESTIGATING', 'RESOLVED'];
     const current = stages.indexOf(status);
     return [
-      { label: 'En attente', active: current >= 0 || status === 'REJECTED' || status === 'ARCHIVED' },
-      { label: 'En cours', active: current >= 1 },
-      { label: status === 'REJECTED' ? 'Rejete' : 'Resolu', active: current >= 2 || status === 'REJECTED' || status === 'ARCHIVED' }
+      { label: 'Submitted',     active: current >= 0 || status === 'REJECTED' || status === 'ARCHIVED' },
+      { label: 'In progress',   active: current >= 1 },
+      { label: status === 'REJECTED' ? 'Rejected' : 'Resolved',
+        active: current >= 2 || status === 'REJECTED' || status === 'ARCHIVED' }
     ];
   }
 
@@ -362,6 +477,12 @@ export class ClientFeedbackComponent {
   formatDate(date: string): string {
     if (!date) return '-';
     return new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  }
+
+  getItemName(cartItemId: string | undefined): string {
+    if (!cartItemId) return 'Unknown Item';
+    const item = this.cartItems().find(i => i.id === cartItemId);
+    return item ? item.name : 'Item (Load pending...)';
   }
 
   isFieldInvalid(field: string): boolean {
