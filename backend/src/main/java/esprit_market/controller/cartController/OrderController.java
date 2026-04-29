@@ -8,6 +8,7 @@ import esprit_market.service.cartService.AuthHelperService;
 import esprit_market.service.cartService.IOrderService;
 import esprit_market.config.Exceptions.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +25,7 @@ import java.util.List;
  * This controller is separate from CartController to maintain
  * clear separation between shopping cart and order management.
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/orders")
 @RequiredArgsConstructor
@@ -102,6 +104,26 @@ public class OrderController {
             e.printStackTrace();
             throw e;
         }
+    }
+    
+    @GetMapping("/paginated")
+    public ResponseEntity<org.springframework.data.domain.Page<OrderResponse>> getMyOrdersPaginated(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size,
+            Authentication authentication) {
+        
+        ObjectId userId = getUserId(authentication);
+        log.info("Getting paginated orders for user: {} - page: {}, size: {}", userId, page, size);
+        
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(
+                page, 
+                size, 
+                org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "createdAt")
+        );
+        
+        org.springframework.data.domain.Page<OrderResponse> ordersPage = orderService.getUserOrdersPaginated(userId, pageable);
+        
+        return ResponseEntity.ok(ordersPage);
     }
     
     @GetMapping("/{orderId}")

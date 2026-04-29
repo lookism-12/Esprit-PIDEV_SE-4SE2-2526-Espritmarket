@@ -7,6 +7,8 @@ import { ProductService } from '../../core/product.service';
 import { ServiceService, Service } from '../../../core/services/service.service';
 import { ProviderCouponService, ProviderCoupon } from '../../core/provider-coupon.service';
 import { AutoDiscountRuleService, AutoDiscountRuleRequest, AutoDiscountRuleResponse } from '../../core/auto-discount-rule.service';
+import { EventPromotionService, EventPromotionRequest, EventPromotionResponse } from '../../core/event-promotion.service';
+import { InvoiceService } from '../../core/invoice.service';
 import { ToastService } from '../../core/toast.service';
 import { Product, ProductStatus } from '../../models/product';
 import { environment } from '../../../../environment';
@@ -48,8 +50,10 @@ export class ProviderDashboard implements OnInit {
   private serviceService = inject(ServiceService);
   private couponService = inject(ProviderCouponService);
   private autoDiscountRuleService = inject(AutoDiscountRuleService);
+  private eventPromotionService = inject(EventPromotionService);
   private toastService = inject(ToastService);
   private router = inject(Router);
+  private invoiceService = inject(InvoiceService);
 
   // State
   readonly orders = signal<ProviderOrder[]>([]);
@@ -62,13 +66,19 @@ export class ProviderDashboard implements OnInit {
   readonly error = signal<string | null>(null);
   readonly selectedStatus = signal<string>('ALL');
   readonly searchText = signal<string>('');
-  readonly activeTab = signal<'orders' | 'products' | 'services' | 'coupons' | 'discountRules'>('orders');
+  readonly activeTab = signal<'orders' | 'products' | 'services' | 'coupons' | 'discountRules' | 'eventPromotions' | 'returnedOrders'>('orders');
   readonly showCouponForm = signal(false);
   readonly editingCoupon = signal<ProviderCoupon | null>(null);
   readonly isSavingCoupon = signal(false);
   readonly showRuleForm = signal(false);
   readonly editingRule = signal<AutoDiscountRuleResponse | null>(null);
   readonly isSavingRule = signal(false);
+  readonly eventPromotion = signal<EventPromotionResponse | null>(null);
+  readonly isSavingEventPromotion = signal(false);
+  readonly downloadingInvoiceId = signal<string | null>(null);
+  readonly returnedOrders = signal<ProviderOrder[]>([]);
+  readonly isLoadingReturned = signal(false);
+  readonly restockingOrderId = signal<string | null>(null);
 
   // Product status enum for template
   readonly ProductStatus = ProductStatus;
@@ -111,13 +121,28 @@ export class ProviderDashboard implements OnInit {
     this.orders().filter(o => o.orderStatus === 'CONFIRMED').length
   );
 
+  readonly deliveredCount = computed(() =>
+    this.orders().filter(o => o.orderStatus === 'DELIVERED').length
+  );
+
   readonly cancelledCount = computed(() =>
-    this.orders().filter(o => o.orderStatus === 'DECLINED').length
+    this.orders().filter(o => o.orderStatus === 'CANCELLED').length
+  );
+
+  // Legacy support: paidCount now maps to deliveredCount
+  readonly paidCount = computed(() => this.deliveredCount());
+
+  // Legacy support: outForDeliveryCount maps to confirmedCount
+  readonly outForDeliveryCount = computed(() => this.confirmedCount());
+
+  readonly returnedCount = computed(() =>
+    this.orders().filter(o => o.orderStatus === 'RETURNED').length
   );
 
   readonly totalRevenue = computed(() => {
+    // Calculate revenue from delivered orders (payment completed)
     return this.orders()
-      .filter(o => o.orderStatus === 'PAID')
+      .filter(o => o.orderStatus === 'DELIVERED')
       .reduce((sum, order) => sum + (order.subTotal || 0), 0)
       .toFixed(2);
   });
@@ -135,6 +160,8 @@ export class ProviderDashboard implements OnInit {
     this.loadServices();
     this.loadCoupons();
     this.loadDiscountRules();
+    this.loadEventPromotion();
+    this.loadReturnedOrders();
   }
 
   loadProducts() {
@@ -299,10 +326,10 @@ export class ProviderDashboard implements OnInit {
   confirmOrder(order: ProviderOrder) {
     if (!confirm(`Confirm order from ${order.clientName}?`)) return;
 
-    // ✅ CRITICAL FIX: Always use the correct orders endpoint (removed deprecated conditional logic)
     this.providerService.updateOrderStatus(order.orderId, 'CONFIRMED').subscribe({
       next: () => {
         this.toastService.success('Order confirmed successfully');
+        // ✅ CRITICAL: Reload orders to show updated status
         this.loadOrders();
         this.loadStatistics();
       },
@@ -320,23 +347,24 @@ export class ProviderDashboard implements OnInit {
   }
 
   cancelOrder(order: ProviderOrder) {
-    if (!confirm(`Decline order from ${order.clientName}? Stock will be restored.`)) return;
+    if (!confirm(`Cancel/Reject order from ${order.clientName}? Stock will be restored.`)) return;
 
-    // ✅ CRITICAL FIX: Always use the correct orders endpoint (removed deprecated conditional logic)
-    this.providerService.updateOrderStatus(order.orderId, 'DECLINED').subscribe({
+    // Provider rejection = CANCELLED status
+    this.providerService.updateOrderStatus(order.orderId, 'CANCELLED').subscribe({
       next: () => {
-        this.toastService.success('Order declined. Stock restored.');
+        this.toastService.success('Order cancelled. Stock restored.');
+        // ✅ CRITICAL: Reload orders to show updated status
         this.loadOrders();
         this.loadStatistics();
       },
       error: (err) => {
-        console.error('Failed to decline order:', err);
+        console.error('Failed to cancel order:', err);
         if (err.status === 404) {
           this.toastService.error('Order not found');
         } else if (err.status === 403) {
           this.toastService.error('You are not authorized to update this order');
         } else {
-          this.toastService.error('Failed to decline order');
+          this.toastService.error('Failed to cancel order');
         }
       }
     });
@@ -348,8 +376,7 @@ export class ProviderDashboard implements OnInit {
   changeOrderStatus(order: ProviderOrder, newStatus: string) {
     const statusMessages: Record<string, string> = {
       'CONFIRMED': `Confirm order from ${order.clientName}?`,
-      'PAID': `Mark order as PAID? This will award loyalty points to the customer.`,
-      'DECLINED': `Decline order from ${order.clientName}? Stock will be restored.`
+      'CANCELLED': `Cancel order from ${order.clientName}? Stock will be restored.`
     };
 
     const message = statusMessages[newStatus] || `Change order status to ${newStatus}?`;
@@ -359,6 +386,7 @@ export class ProviderDashboard implements OnInit {
     this.providerService.updateOrderStatus(order.orderId, newStatus).subscribe({
       next: () => {
         this.toastService.success(`Order status changed to ${newStatus}`);
+        // ✅ CRITICAL: Reload orders to show updated status
         this.loadOrders();
         this.loadStatistics();
       },
@@ -376,18 +404,33 @@ export class ProviderDashboard implements OnInit {
   }
 
   /**
-   * Get available status transitions for an order
+   * Get available status transitions for an order based on backend validation rules.
+   * 
+   * NEW WORKFLOW (Simplified):
+   * - Orders are auto-CONFIRMED on creation
+   * - Provider can only CANCEL orders
+   * - Delivery marks orders as DELIVERED
+   * 
+   * PROVIDER TRANSITIONS (actor: PROVIDER):
+   * - CONFIRMED → CANCELLED (cancel order)
+   * 
+   * Providers CANNOT:
+   * - Change DELIVERED orders (final state)
+   * - Change CANCELLED orders (final state)
+   * - Use PAID status (that's PaymentStatus, not OrderStatus)
    */
   getAvailableStatuses(currentStatus: string): string[] {
     switch (currentStatus) {
       case 'PENDING':
-        return ['CONFIRMED', 'DECLINED'];
+        // Legacy support: PENDING can be confirmed or cancelled
+        return ['CONFIRMED', 'CANCELLED'];
       case 'CONFIRMED':
-        return ['PAID', 'DECLINED'];
-      case 'PAID':
-        return []; // No transitions from PAID
-      case 'DECLINED':
-        return []; // No transitions from DECLINED
+        // Provider can only cancel confirmed orders
+        return ['CANCELLED'];
+      case 'DELIVERED':
+      case 'CANCELLED':
+        // Final states - no transitions allowed
+        return [];
       default:
         return [];
     }
@@ -423,11 +466,20 @@ export class ProviderDashboard implements OnInit {
         return 'badge-yellow';
       case 'CONFIRMED':
         return 'badge-green';
-      case 'PAID':
+      case 'DELIVERED':
         return 'badge-blue';
-      case 'DECLINED':
       case 'CANCELLED':
         return 'badge-red';
+      // Legacy status support (will be auto-migrated by backend)
+      case 'PAID':
+      case 'ACCEPTED':
+      case 'PROCESSING':
+        return 'badge-green';
+      case 'DECLINED':
+        return 'badge-red';
+      case 'OUT_FOR_DELIVERY':
+      case 'SHIPPED':
+        return 'badge-blue';
       default:
         return 'badge-gray';
     }
@@ -439,13 +491,22 @@ export class ProviderDashboard implements OnInit {
         return '⏳';
       case 'CONFIRMED':
         return '✅';
-      case 'PAID':
-        return '💰';
-      case 'DECLINED':
+      case 'DELIVERED':
+        return '📦';
       case 'CANCELLED':
         return '❌';
+      // Legacy status support
+      case 'PAID':
+      case 'ACCEPTED':
+      case 'PROCESSING':
+        return '✅';
+      case 'DECLINED':
+        return '❌';
+      case 'OUT_FOR_DELIVERY':
+      case 'SHIPPED':
+        return '🚚';
       default:
-        return '📦';
+        return '📋';
     }
   }
 
@@ -907,4 +968,203 @@ export class ProviderDashboard implements OnInit {
         return triggerType;
     }
   }
+
+  // ==================== EVENT PROMOTIONS ====================
+
+  loadEventPromotion() {
+    this.eventPromotionService.getEventPromotion().subscribe({
+      next: (response) => {
+        this.eventPromotion.set(response);
+      },
+      error: (err) => {
+        console.error('Error loading event promotion:', err);
+        // Initialize with default values if not found
+        this.eventPromotion.set({
+          providerId: '',
+          holidayEnabled: false,
+          holidayDescription: 'Not configured',
+          birthdayEnabled: false,
+          birthdayDescription: 'Not configured'
+        });
+      }
+    });
+  }
+
+  saveEventPromotion(formData: EventPromotionRequest) {
+    this.isSavingEventPromotion.set(true);
+
+    this.eventPromotionService.configureEventPromotion(formData).subscribe({
+      next: (response) => {
+        this.eventPromotion.set(response);
+        this.isSavingEventPromotion.set(false);
+        this.toastService.success('Event promotions configured successfully');
+      },
+      error: (err) => {
+        this.isSavingEventPromotion.set(false);
+        this.toastService.error('Failed to configure event promotions');
+        console.error('Error saving event promotion:', err);
+      }
+    });
+  }
+
+  // ==================== RETURNED ORDERS MANAGEMENT ====================
+
+  /**
+   * Load returned orders waiting for provider verification
+   */
+  loadReturnedOrders() {
+    console.log('🔄 Loading returned orders...');
+    this.isLoadingReturned.set(true);
+    
+    this.providerService.getReturnedOrders().subscribe({
+      next: (orders) => {
+        console.log('✅ Returned orders loaded:', orders.length);
+        this.returnedOrders.set(orders);
+        this.isLoadingReturned.set(false);
+      },
+      error: (err) => {
+        console.error('❌ Failed to load returned orders:', err);
+        this.returnedOrders.set([]);
+        this.isLoadingReturned.set(false);
+        // Don't show error toast - backend might not be implemented yet
+      }
+    });
+  }
+
+  /**
+   * Provider confirms physical verification and restocking of returned order
+   */
+  restockOrder(order: ProviderOrder) {
+    if (!confirm(`Confirm that you have physically received the returned items for order ${order.productName}?\n\nThis will restore the stock and mark the order as RESTOCKED.`)) {
+      return;
+    }
+
+    this.restockingOrderId.set(order.orderId);
+
+    this.providerService.restockOrder(order.orderId).subscribe({
+      next: () => {
+        this.toastService.success('Order restocked successfully! Stock has been restored.');
+        // Reload both returned orders and main orders
+        this.loadReturnedOrders();
+        this.loadOrders();
+        this.loadStatistics();
+        this.restockingOrderId.set(null);
+      },
+      error: (err) => {
+        console.error('Failed to restock order:', err);
+        this.restockingOrderId.set(null);
+        
+        const msg = err.error?.message || err.message || '';
+        if (err.status === 400 || err.status === 500) {
+          if (msg.includes('already RESTOCKED')) {
+            this.toastService.error('This order has already been restocked.');
+          } else if (msg.includes('DELIVERED')) {
+            this.toastService.error('This order was delivered successfully — cannot restock.');
+          } else if (msg.includes('CANCELLED')) {
+            this.toastService.error('This order is cancelled — cannot restock.');
+          } else {
+            this.toastService.error('Cannot restock this order: ' + (msg || 'Unknown error'));
+          }
+        } else if (err.status === 404) {
+          this.toastService.error('Order not found');
+        } else if (err.status === 403) {
+          this.toastService.error('You are not authorized to restock this order');
+        } else {
+          this.toastService.error('Failed to restock order. Please try again.');
+        }
+      }
+    });
+  }
+
+  /**
+   * Check if order is currently being restocked
+   */
+  isRestocking(orderId: string): boolean {
+    return this.restockingOrderId() === orderId;
+  }
+
+  // ==================== TRACKBY FUNCTIONS ====================
+  
+  /**
+   * TrackBy function for orders to prevent NG0955 duplicate key errors
+   */
+  trackByOrderId(index: number, order: ProviderOrder): string {
+    return (order.id || order.orderId) + '_' + index;
+  }
+
+  /**
+   * TrackBy function for products
+   */
+  trackByProductId(index: number, product: Product): string {
+    return product.id + '_' + index;
+  }
+
+  /**
+   * TrackBy function for services
+   */
+  trackByServiceId(index: number, service: Service): string {
+    return service.id + '_' + index;
+  }
+
+  /**
+   * TrackBy function for coupons
+   */
+  trackByCouponId(index: number, coupon: ProviderCoupon): string {
+    return coupon.id + '_' + index;
+  }
+
+  /**
+   * TrackBy function for discount rules
+   */
+  trackByRuleId(index: number, rule: AutoDiscountRuleResponse): string {
+    return rule.id + '_' + index;
+  }
+
+  /**
+   * TrackBy function for status options
+   */
+  trackByStatus(index: number, status: string): string {
+    return status + '_' + index;
+  }
+
+  // ==================== INVOICE DOWNLOAD ====================
+
+  /**
+   * Download invoice PDF for a PAID order
+   */
+  downloadInvoice(order: ProviderOrder) {
+    if (order.orderStatus !== 'PAID') {
+      this.toastService.error('Invoice can only be downloaded for paid orders');
+      return;
+    }
+
+    this.downloadingInvoiceId.set(order.orderId);
+
+    this.invoiceService.downloadInvoice(order.orderId).subscribe({
+      next: (blob) => {
+        this.invoiceService.triggerDownload(blob, `invoice-${order.orderId}.pdf`);
+        this.toastService.success('Invoice downloaded successfully!');
+        this.downloadingInvoiceId.set(null);
+      },
+      error: (err) => {
+        console.error('Failed to download invoice:', err);
+        if (err.status === 403) {
+          this.toastService.error('You do not have permission to download this invoice');
+        } else if (err.status === 404) {
+          this.toastService.error('Order not found');
+        } else {
+          this.toastService.error('Failed to download invoice. Please try again.');
+        }
+        this.downloadingInvoiceId.set(null);
+      }
+    });
+  }
+
+  /**
+   * Check if invoice is currently being downloaded
+   */
+  isDownloadingInvoice(orderId: string): boolean {
+    return this.downloadingInvoiceId() === orderId;
+  }
 }
+

@@ -12,6 +12,7 @@ public interface IDeliveryService {
     List<DeliveryResponseDTO> getAllDeliveries();
     List<DeliveryResponseDTO> getDeliveriesByUser(String userId);
     List<DeliveryResponseDTO> getDeliveriesByCart(String cartId);
+    List<DeliveryResponseDTO> getDeliveriesByStatus(String status);
     // FR-DEL3
     DeliveryResponseDTO updateDelivery(String id, DeliveryRequestDTO request);
     DeliveryResponseDTO updateDeliveryStatus(String id, String status);
@@ -21,6 +22,7 @@ public interface IDeliveryService {
     DeliveryResponseDTO assignDriver(String deliveryId, String driverId);
     DeliveryResponseDTO respondToDelivery(String deliveryId, String driverId, boolean accepted, String declineReason);
     DeliveryResponseDTO markAsDelivered(String deliveryId, String driverId);
+    DeliveryResponseDTO markAsReturned(String deliveryId, String driverId, String reason);
     List<DeliveryResponseDTO> getPendingForDriver(String driverId);
 }
 

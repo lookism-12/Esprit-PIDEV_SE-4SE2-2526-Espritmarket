@@ -52,8 +52,10 @@ public class OrderScheduler {
                 );
             }
 
-            // ❌ Update order
-            order.setStatus(OrderStatus.DECLINED);
+            // ❌ Update order to CANCELLED
+            order.setStatus(OrderStatus.CANCELLED);
+            order.setCancellationReason("Auto-cancelled: Unpaid after 24 hours");
+            order.setCancelledAt(LocalDateTime.now());
             order.setLastUpdated(LocalDateTime.now());
 
             Order updatedOrder = orderRepository.save(order);

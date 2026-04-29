@@ -43,6 +43,12 @@ import { OrderResponse, OrderStatus } from '../../../models/order.model';
                     <span class="px-2 py-0.5 rounded-full text-[10px] font-bold" [ngClass]="getStatusClass(order.status)">
                       {{ order.status }}
                     </span>
+                    @if (order.paymentStatus) {
+                      <span class="px-2 py-0.5 rounded-full text-[10px] font-bold" 
+                            [ngClass]="order.paymentStatus === 'PAID' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'">
+                        💳 {{ order.paymentStatus }}
+                      </span>
+                    }
                   </div>
                   <p class="text-xs" style="color:var(--muted)">{{ formatDate(order.createdAt) }}</p>
                   @if (order.status === 'PENDING') {
@@ -98,22 +104,61 @@ import { OrderResponse, OrderStatus } from '../../../models/order.model';
               } @else if (order.status === 'CONFIRMED') {
                 <div class="mt-3 pt-3 text-xs" style="border-top:1px solid var(--border);color:var(--muted)">
                   <p class="font-semibold">✅ Order Confirmed:</p>
-                  <p>Your order has been confirmed by the provider. Complete payment to finalize your order.</p>
+                  <p>Your order has been confirmed by the provider and is ready for delivery.</p>
                 </div>
-              } @else if (order.status === 'PAID') {
+              } @else if (order.status === 'DELIVERED') {
                 <div class="mt-3 pt-3 text-xs" style="border-top:1px solid var(--border);color:var(--muted)">
-                  <p class="font-semibold">💳 Payment Completed:</p>
-                  <p>Payment successful! Your order is being processed and loyalty points have been awarded.</p>
+                  <p class="font-semibold">📦 Delivered:</p>
+                  <p>Your order has been successfully delivered. Thank you for your purchase!</p>
                 </div>
-              } @else if (order.status === 'DECLINED') {
+              } @else if (order.status === 'CANCELLED') {
                 <div class="mt-3 pt-3 text-xs" style="border-top:1px solid var(--border);color:var(--muted)">
-                  <p class="font-semibold">❌ Order Declined:</p>
-                  <p>{{ order.cancellationReason || 'This order has been declined.' }}</p>
+                  <p class="font-semibold">❌ Order Cancelled:</p>
+                  <p>{{ order.cancellationReason || 'This order has been cancelled.' }}</p>
                 </div>
               }
             </div>
           }
         </div>
+
+        <!-- Pagination -->
+        @if (totalPages() > 1) {
+          <div class="flex items-center justify-center gap-2 mt-6 pt-4" style="border-top:1px solid var(--border)">
+            <button 
+              (click)="previousPage()" 
+              [disabled]="currentPage() === 0"
+              class="px-4 py-2 rounded-lg font-bold text-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              [ngClass]="currentPage() === 0 ? 'bg-gray-200 text-gray-500' : 'bg-primary text-white hover:bg-primary-dark'">
+              ← Previous
+            </button>
+
+            <div class="flex items-center gap-1">
+              @for (pageNum of getPageNumbers(); track pageNum) {
+                <button 
+                  (click)="goToPage(pageNum)"
+                  class="w-10 h-10 rounded-lg font-bold text-sm transition-all"
+                  [ngClass]="currentPage() === pageNum ? 'bg-primary text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
+                  style="color:var(--text-color)">
+                  {{ pageNum + 1 }}
+                </button>
+              }
+            </div>
+
+            <button 
+              (click)="nextPage()" 
+              [disabled]="currentPage() === totalPages() - 1"
+              class="px-4 py-2 rounded-lg font-bold text-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              [ngClass]="currentPage() === totalPages() - 1 ? 'bg-gray-200 text-gray-500' : 'bg-primary text-white hover:bg-primary-dark'">
+              Next →
+            </button>
+          </div>
+
+          <div class="text-center mt-3">
+            <p class="text-xs" style="color:var(--muted)">
+              Page {{ currentPage() + 1 }} of {{ totalPages() }} • Showing {{ orders().length }} of {{ totalElements() }} orders
+            </p>
+          </div>
+        }
       }
     </div>
   `,
@@ -130,6 +175,12 @@ export class ProfileOrdersComponent implements OnInit {
   orders = signal<OrderResponse[]>([]);
   isLoading = signal(false);
   cancelPermissions = signal<Map<string, boolean>>(new Map());
+  
+  // Pagination state
+  currentPage = signal(0);
+  totalPages = signal(0);
+  totalElements = signal(0);
+  pageSize = signal(5);
 
   ngOnInit(): void {
     this.loadOrders();
@@ -137,10 +188,13 @@ export class ProfileOrdersComponent implements OnInit {
 
   private loadOrders(): void {
     this.isLoading.set(true);
-    this.orderService.getMyOrders().subscribe({
-      next: (orders) => {
-        this.orders.set(orders);
-        this.loadCancelPermissions(orders);
+    this.orderService.getMyOrdersPaginated(this.currentPage(), this.pageSize()).subscribe({
+      next: (response) => {
+        this.orders.set(response.content);
+        this.totalPages.set(response.totalPages);
+        this.totalElements.set(response.totalElements);
+        this.currentPage.set(response.number);
+        this.loadCancelPermissions(response.content);
         this.isLoading.set(false);
       },
       error: (error) => {
@@ -239,8 +293,8 @@ export class ProfileOrdersComponent implements OnInit {
     const statusClasses: Record<string, string> = {
       'PENDING': 'bg-yellow-100 text-yellow-800',
       'CONFIRMED': 'bg-blue-100 text-blue-800',
-      'PAID': 'bg-green-100 text-green-800',
-      'DECLINED': 'bg-red-100 text-red-800'
+      'CANCELLED': 'bg-red-100 text-red-800',
+      'DELIVERED': 'bg-green-100 text-green-800'
     };
     return statusClasses[status] || 'bg-gray-100 text-gray-700';
   }
@@ -266,5 +320,51 @@ export class ProfileOrdersComponent implements OnInit {
     } else {
       return 'Cancellation period expired';
     }
+  }
+
+  // Pagination methods
+  goToPage(page: number): void {
+    if (page >= 0 && page < this.totalPages()) {
+      this.currentPage.set(page);
+      this.loadOrders();
+      this.scrollToTop();
+    }
+  }
+
+  nextPage(): void {
+    if (this.currentPage() < this.totalPages() - 1) {
+      this.goToPage(this.currentPage() + 1);
+    }
+  }
+
+  previousPage(): void {
+    if (this.currentPage() > 0) {
+      this.goToPage(this.currentPage() - 1);
+    }
+  }
+
+  getPageNumbers(): number[] {
+    const total = this.totalPages();
+    const current = this.currentPage();
+    const pages: number[] = [];
+    
+    // Show max 5 page numbers
+    let start = Math.max(0, current - 2);
+    let end = Math.min(total, start + 5);
+    
+    // Adjust start if we're near the end
+    if (end - start < 5) {
+      start = Math.max(0, end - 5);
+    }
+    
+    for (let i = start; i < end; i++) {
+      pages.push(i);
+    }
+    
+    return pages;
+  }
+
+  private scrollToTop(): void {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 }

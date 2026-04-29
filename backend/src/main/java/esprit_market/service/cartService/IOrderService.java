@@ -12,6 +12,7 @@ public interface IOrderService {
     
     // Get orders
     List<OrderResponse> getUserOrders(ObjectId userId);
+    org.springframework.data.domain.Page<OrderResponse> getUserOrdersPaginated(ObjectId userId, org.springframework.data.domain.Pageable pageable);
     OrderResponse getOrderById(ObjectId userId, ObjectId orderId);
     OrderResponse getOrderByNumber(String orderNumber);
     
@@ -20,6 +21,7 @@ public interface IOrderService {
     
     // Order lifecycle
     OrderResponse updateOrderStatus(ObjectId orderId, String status);
+    OrderResponse updateOrderStatus(ObjectId orderId, String status, String actor);
     
     // Order confirmation & decline
     OrderResponse confirmOrder(ObjectId userId, ObjectId orderId);
@@ -46,4 +48,10 @@ public interface IOrderService {
      * Get all purchased items for a user from completed orders
      */
     List<CartItemResponse> getPurchasedItemsForUser(ObjectId userId);
+    
+    /**
+     * Provider confirms physical pickup of returned order
+     * Restores stock after provider receives the returned product
+     */
+    OrderResponse confirmPickup(ObjectId orderId);
 }

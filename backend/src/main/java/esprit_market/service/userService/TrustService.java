@@ -259,7 +259,7 @@ public class TrustService {
                     // Check if the order is PAID
                     if (item.getOrderId() != null) {
                         return orderRepository.findById(item.getOrderId())
-                                .map(order -> order.getStatus() == OrderStatus.PAID)
+                                .map(order -> order.getPaymentStatus() == esprit_market.Enum.cartEnum.PaymentStatus.PAID)
                                 .orElse(false);
                     }
                     return false;
@@ -375,7 +375,7 @@ public class TrustService {
                 .filter(item -> {
                     if (item.getOrderId() != null) {
                         return orderRepository.findById(item.getOrderId())
-                                .map(order -> order.getStatus() == OrderStatus.PAID)
+                                .map(order -> order.getPaymentStatus() == esprit_market.Enum.cartEnum.PaymentStatus.PAID)
                                 .orElse(false);
                     }
                     return false;

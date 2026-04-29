@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute, Router } from '@angular/router';
 import { ToastService } from '../../core/toast.service';
 import { AuthService } from '../../core/auth.service';
+import { InvoiceService } from '../../core/invoice.service';
 
 @Component({
   selector: 'app-checkout-success',
@@ -82,6 +83,24 @@ import { AuthService } from '../../core/auth.service';
 
         <!-- Action Buttons -->
         <div class="flex flex-col sm:flex-row gap-4 justify-center">
+          <!-- Download Invoice Button -->
+          @if (orderId()) {
+            <button
+              (click)="downloadInvoice()"
+              [disabled]="isDownloadingInvoice()"
+              class="bg-amber-500 text-white px-8 py-4 rounded-2xl font-bold text-lg hover:bg-amber-600 transition-all transform hover:scale-105 shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+              @if (isDownloadingInvoice()) {
+                <svg class="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+                Generating...
+              } @else {
+                {{ invoiceButtonText() }}
+              }
+            </button>
+          }
+          
           <a routerLink="/profile" 
              class="bg-primary text-white px-8 py-4 rounded-2xl font-bold text-lg hover:bg-primary-dark transition-all transform hover:scale-105 shadow-xl">
             📋 View My Orders
@@ -155,9 +174,18 @@ export class CheckoutSuccess implements OnInit {
   private router = inject(Router);
   private toastService = inject(ToastService);
   private authService = inject(AuthService);
+  private invoiceService = inject(InvoiceService);
 
   readonly orderId = signal<string>('');
+  readonly orderStatus = signal<string>('');
   readonly userFullName = computed(() => this.authService.getFullName() || 'Valued Customer');
+  readonly isDownloadingInvoice = signal(false);
+
+  // Invoice button text based on order status
+  readonly invoiceButtonText = computed(() => {
+    const status = this.orderStatus();
+    return status === 'PAID' ? '📄 Download Invoice' : '📄 Download Proforma Invoice';
+  });
 
   // Confetti animation data
   readonly confettiPieces = Array.from({ length: 20 }, (_, i) => ({
@@ -176,6 +204,10 @@ export class CheckoutSuccess implements OnInit {
       if (params['highlight']) {
         this.orderId.set(params['highlight']);
       }
+      
+      if (params['status']) {
+        this.orderStatus.set(params['status']);
+      }
     });
 
     // Show success message
@@ -184,5 +216,41 @@ export class CheckoutSuccess implements OnInit {
     // Clear any checkout-related session data
     sessionStorage.removeItem('pendingPurchase');
     sessionStorage.removeItem('checkoutData');
+  }
+
+  /**
+   * Download invoice PDF for the order
+   */
+  downloadInvoice(): void {
+    const orderIdValue = this.orderId();
+    
+    if (!orderIdValue) {
+      this.toastService.error('Order ID not found');
+      return;
+    }
+
+    this.isDownloadingInvoice.set(true);
+    this.toastService.info('Generating your invoice...', 2000);
+
+    this.invoiceService.downloadInvoice(orderIdValue).subscribe({
+      next: (blob) => {
+        this.invoiceService.triggerDownload(blob, `invoice-${orderIdValue}.pdf`);
+        this.toastService.success('Invoice downloaded successfully! 📄');
+        this.isDownloadingInvoice.set(false);
+      },
+      error: (err) => {
+        console.error('Error downloading invoice:', err);
+        if (err.status === 400) {
+          this.toastService.error('Invoice can only be generated for paid orders');
+        } else if (err.status === 403) {
+          this.toastService.error('You do not have permission to download this invoice');
+        } else if (err.status === 404) {
+          this.toastService.error('Order not found');
+        } else {
+          this.toastService.error('Failed to download invoice. Please try again.');
+        }
+        this.isDownloadingInvoice.set(false);
+      }
+    });
   }
 }

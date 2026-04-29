@@ -52,6 +52,12 @@ public class DeliveryController {
         return ResponseEntity.ok(deliveryService.getDeliveriesByCart(cartId));
     }
 
+    @Operation(summary = "Get Deliveries By Status (FR-DEL2)", description = "Get all deliveries with a specific status (e.g., RETURNED for provider view)")
+    @GetMapping("/status/{status}")
+    public ResponseEntity<List<DeliveryResponseDTO>> getDeliveriesByStatus(@PathVariable String status) {
+        return ResponseEntity.ok(deliveryService.getDeliveriesByStatus(status));
+    }
+
     @Operation(summary = "Update Delivery Details (FR-DEL3)")
     @PutMapping("/{id}")
     public ResponseEntity<DeliveryResponseDTO> updateDelivery(@PathVariable String id,
@@ -108,6 +114,18 @@ public class DeliveryController {
             @PathVariable String id,
             @RequestParam String driverId) {
         return ResponseEntity.ok(deliveryService.markAsDelivered(id, driverId));
+    }
+
+    @Operation(
+        summary = "Driver marks delivery as returned (FR-DEL5)",
+        description = "Sets status to RETURNED when delivery fails. Package must be returned to shop for provider verification."
+    )
+    @PatchMapping("/{id}/mark-returned")
+    public ResponseEntity<DeliveryResponseDTO> markAsReturned(
+            @PathVariable String id,
+            @RequestParam String driverId,
+            @RequestParam(required = false, defaultValue = "Delivery failed") String reason) {
+        return ResponseEntity.ok(deliveryService.markAsReturned(id, driverId, reason));
     }
 
     @Operation(

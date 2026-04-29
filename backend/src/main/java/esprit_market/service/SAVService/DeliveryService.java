@@ -70,9 +70,33 @@ public class DeliveryService implements IDeliveryService {
 
     @Override
     public List<DeliveryResponseDTO> getAllDeliveries() {
-        return deliveryRepository.findAll().stream()
-                .map(savMapper::toDeliveryResponse)
-                .collect(Collectors.toList());
+        try {
+            List<Delivery> deliveries = deliveryRepository.findAll();
+            System.out.println("📦 Found " + deliveries.size() + " deliveries in database");
+            
+            return deliveries.stream()
+                    .map(delivery -> {
+                        try {
+                            return savMapper.toDeliveryResponse(delivery);
+                        } catch (Exception e) {
+                            System.err.println("❌ Error mapping delivery with ID: " + 
+                                (delivery.getId() != null ? delivery.getId().toHexString() : "null"));
+                            System.err.println("   Delivery data: userId=" + delivery.getUserId() + 
+                                ", cartId=" + delivery.getCartId() + 
+                                ", status=" + delivery.getStatus());
+                            System.err.println("   Error: " + e.getMessage());
+                            e.printStackTrace();
+                            // Return null for problematic deliveries, filter them out later
+                            return null;
+                        }
+                    })
+                    .filter(dto -> dto != null)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            System.err.println("❌ Fatal error in getAllDeliveries: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Failed to fetch deliveries: " + e.getMessage(), e);
+        }
     }
 
     @Override
@@ -85,6 +109,13 @@ public class DeliveryService implements IDeliveryService {
     @Override
     public List<DeliveryResponseDTO> getDeliveriesByCart(String cartId) {
         return deliveryRepository.findByCartId(new ObjectId(cartId)).stream()
+                .map(savMapper::toDeliveryResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<DeliveryResponseDTO> getDeliveriesByStatus(String status) {
+        return deliveryRepository.findByStatus(status).stream()
                 .map(savMapper::toDeliveryResponse)
                 .collect(Collectors.toList());
     }
@@ -280,6 +311,40 @@ public class DeliveryService implements IDeliveryService {
         notificationService.notifyAllAdmins(
             "📦 Order Delivered — " + orderNumber,
             "Order " + orderNumber + " was successfully delivered by " + driverName + ".",
+            NotificationType.INTERNAL_NOTIFICATION,
+            deliveryId
+        );
+
+        return savMapper.toDeliveryResponse(delivery);
+    }
+
+    /**
+     * ÉTAPE 4B — Livreur marque la livraison comme retournée (échec de livraison).
+     */
+    @Override
+    public DeliveryResponseDTO markAsReturned(String deliveryId, String driverId, String reason) {
+        Delivery delivery = deliveryRepository.findById(new ObjectId(deliveryId))
+                .orElseThrow(() -> new RuntimeException("Livraison introuvable: " + deliveryId));
+
+        User driver = userRepository.findById(new ObjectId(driverId))
+                .orElseThrow(() -> new RuntimeException("Livreur introuvable: " + driverId));
+
+        // Verify this driver is assigned to this delivery
+        if (delivery.getUserId() == null || !delivery.getUserId().toHexString().equals(driverId)) {
+            throw new RuntimeException("Ce livreur n'est pas assigné à cette livraison.");
+        }
+
+        delivery.setStatus("RETURNED");
+        deliveryRepository.save(delivery);
+
+        String orderNumber = formatOrderNumber(delivery);
+        String driverName = getDriverFullName(driver).trim();
+        String returnReason = (reason != null && !reason.isEmpty()) ? reason : "Delivery failed";
+
+        // Notify all admins — urgent attention needed
+        notificationService.notifyAllAdmins(
+            "↩️ Delivery Returned — " + orderNumber,
+            "Order " + orderNumber + " was returned by " + driverName + ". Reason: " + returnReason + " — Provider must verify and restock.",
             NotificationType.INTERNAL_NOTIFICATION,
             deliveryId
         );

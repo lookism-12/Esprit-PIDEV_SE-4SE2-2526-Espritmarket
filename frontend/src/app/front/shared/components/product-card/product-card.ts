@@ -283,7 +283,7 @@ export class ProductCard implements OnInit, OnDestroy {
    * Enhanced action button classes with stock-based styling
    */
   getActionButtonClasses(): string {
-    const baseClasses = 'w-12 h-12 rounded-2xl flex items-center justify-center transition-all transform active:scale-90 shadow-lg';
+    const baseClasses = 'relative px-4 py-2.5 rounded-xl flex items-center justify-center transition-all transform active:scale-95 shadow-lg font-bold whitespace-nowrap';
     
     if (this.isOutOfStock()) {
       return `${baseClasses} bg-gray-300 text-gray-500 cursor-not-allowed`;
@@ -291,13 +291,13 @@ export class ProductCard implements OnInit, OnDestroy {
     
     if (!this.isAuthenticated()) {
       // Visitor - checkout button with urgency styling for low stock
-      const urgentClass = this.isLowStock() ? 'ring-2 ring-orange-400 ring-opacity-75' : '';
+      const urgentClass = this.isLowStock() ? 'ring-2 ring-orange-400 ring-opacity-75 animate-pulse' : '';
       return `${baseClasses} bg-primary text-white hover:bg-primary-dark ${urgentClass}`;
     }
     
     if (this.isClient()) {
       // Client - add to cart with urgency styling for low stock
-      const urgentClass = this.isLowStock() ? 'ring-2 ring-orange-400 ring-opacity-75' : '';
+      const urgentClass = this.isLowStock() ? 'ring-2 ring-orange-400 ring-opacity-75 animate-pulse' : '';
       return `${baseClasses} bg-accent text-dark hover:bg-accent-dark ${urgentClass}`;
     }
     

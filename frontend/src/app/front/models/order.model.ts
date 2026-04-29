@@ -1,8 +1,8 @@
 /**
  * Order Models - Aligned with Backend Order Entity
  * 
- * These models match the backend OrderResponse and OrderItemResponse DTOs.
- * Order lifecycle: PENDING → PAID → PROCESSING → SHIPPED → DELIVERED
+ * Order lifecycle: PENDING → CONFIRMED → OUT_FOR_DELIVERY → DELIVERED
+ * Payment status: UNPAID or PAID (separate from order status)
  */
 
 export interface OrderResponse {
@@ -14,6 +14,7 @@ export interface OrderResponse {
     email: string;
   };
   status: OrderStatus;
+  paymentStatus?: PaymentStatus;
   totalAmount: number;
   discountAmount: number;
   finalAmount: number;
@@ -26,6 +27,9 @@ export interface OrderResponse {
   createdAt: string;
   paidAt?: string;
   lastUpdated: string;
+  confirmedAt?: string;
+  deliveryStartedAt?: string;
+  deliveredAt?: string;
   cancellationReason?: string;
   cancelledAt?: string;
   items: OrderItemResponse[];
@@ -39,7 +43,7 @@ export interface OrderItemResponse {
   productPrice: number;
   quantity: number;
   subtotal: number;
-  status: OrderItemStatus;
+  status: string; // ACTIVE, CANCELLED, etc.
   cancelledQuantity?: number;
   refundedAmount?: number;
 }
@@ -47,33 +51,19 @@ export interface OrderItemResponse {
 export enum OrderStatus {
   PENDING = 'PENDING',
   CONFIRMED = 'CONFIRMED',
-  PAID = 'PAID',
-  DECLINED = 'DECLINED'
-}
-
-export enum OrderItemStatus {
-  ACTIVE = 'ACTIVE',
-  CANCELLED = 'CANCELLED',
-  PARTIALLY_CANCELLED = 'PARTIALLY_CANCELLED',
-  REFUNDED = 'REFUNDED'
-}
-
-export enum PaymentMethod {
-  CREDIT_CARD = 'CREDIT_CARD',
-  DEBIT_CARD = 'DEBIT_CARD',
-  PAYPAL = 'PAYPAL',
-  CASH_ON_DELIVERY = 'CASH_ON_DELIVERY',
-  BANK_TRANSFER = 'BANK_TRANSFER',
-  MOBILE_PAYMENT = 'MOBILE_PAYMENT'
+  DELIVERED = 'DELIVERED',
+  CANCELLED = 'CANCELLED'
 }
 
 export enum PaymentStatus {
-  PENDING = 'PENDING',
-  PROCESSING = 'PROCESSING',
-  COMPLETED = 'COMPLETED',
-  FAILED = 'FAILED',
-  REFUNDED = 'REFUNDED',
-  CANCELLED = 'CANCELLED'
+  PENDING_PAYMENT = 'PENDING_PAYMENT',
+  PAID = 'PAID',
+  FAILED = 'FAILED'
+}
+
+export enum PaymentMethod {
+  CARD = 'CARD',
+  CASH = 'CASH'
 }
 
 export interface CreateOrderRequest {

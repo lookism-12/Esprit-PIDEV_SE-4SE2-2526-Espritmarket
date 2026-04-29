@@ -85,6 +85,10 @@ export class SavService {
     return this.http.get<Delivery[]>(`${this.deliveryUrl}/cart/${cartId}`);
   }
 
+  getDeliveriesByStatus(status: DeliveryStatus): Observable<Delivery[]> {
+    return this.http.get<Delivery[]>(`${this.deliveryUrl}/status/${status}`);
+  }
+
   updateDelivery(id: string, request: DeliveryRequest): Observable<Delivery> {
     return this.http.put<Delivery>(`${this.deliveryUrl}/${id}`, request);
   }
@@ -119,6 +123,13 @@ export class SavService {
   markAsDelivered(deliveryId: string, driverId: string): Observable<Delivery> {
     return this.http.patch<Delivery>(`${this.deliveryUrl}/${deliveryId}/mark-delivered`, null, {
       params: { driverId }
+    });
+  }
+
+  /** Driver marks delivery as returned (failed delivery) */
+  markAsReturned(deliveryId: string, driverId: string, reason: string = 'Delivery failed'): Observable<Delivery> {
+    return this.http.patch<Delivery>(`${this.deliveryUrl}/${deliveryId}/mark-returned`, null, {
+      params: { driverId, reason }
     });
   }
 

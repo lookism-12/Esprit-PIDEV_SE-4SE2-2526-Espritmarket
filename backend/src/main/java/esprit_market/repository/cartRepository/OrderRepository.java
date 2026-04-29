@@ -16,6 +16,8 @@ public interface OrderRepository extends MongoRepository<Order, ObjectId> {
     
     List<Order> findByUser(User user);
     
+    org.springframework.data.domain.Page<Order> findByUser(User user, org.springframework.data.domain.Pageable pageable);
+    
     List<Order> findByUserOrderByCreatedAtDesc(User user);
     
     List<Order> findByStatus(OrderStatus status);
@@ -31,5 +33,8 @@ public interface OrderRepository extends MongoRepository<Order, ObjectId> {
     long countByStatus(OrderStatus status);
     
     long countByUser(User user);
+    
     List<Order> findByStatusAndCreatedAtBefore(OrderStatus status, LocalDateTime time);
+    
+    Optional<Order> findByCartId(ObjectId cartId);
 }

@@ -2,6 +2,7 @@ package esprit_market.service.cartService;
 
 import esprit_market.Enum.cartEnum.OrderItemStatus;
 import esprit_market.Enum.cartEnum.OrderStatus;
+import esprit_market.Enum.cartEnum.PaymentStatus;
 import esprit_market.dto.cartDto.*;
 import esprit_market.entity.cart.*;
 import esprit_market.entity.marketplace.Product;
@@ -25,9 +26,11 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -47,6 +50,8 @@ public class OrderServiceImpl implements IOrderService {
     private final ILoyaltyCardService loyaltyCardService;
     private final StockManagementService stockManagementService;
     private final DeliveryRepository deliveryRepository;
+    private final PromotionEngineService promotionEngineService;
+    private final OrderStatusValidator orderStatusValidator;
     
     @Override
     @Transactional
@@ -69,26 +74,121 @@ public class OrderServiceImpl implements IOrderService {
             stockManagementService.validateStockAvailability(item.getProductId(), item.getQuantity());
         }
         
+        // ==================== PROMOTION ENGINE INTEGRATION ====================
+        // Group cart items by shop and calculate promotions per shop
+        log.info("🎯 Starting promotion evaluation for cart {}", cart.getId().toHexString());
+        
+        Map<ObjectId, List<CartItem>> itemsByShop = new java.util.HashMap<>();
+        Map<ObjectId, AppliedPromotionDTO> promotionsByShop = new java.util.HashMap<>();
+        double totalPromotionDiscount = 0.0;
+        
+        // Group items by shop
+        for (CartItem item : cartItems) {
+            Product product = productRepository.findById(item.getProductId())
+                    .orElseThrow(() -> new IllegalStateException("Product not found: " + item.getProductId()));
+            
+            if (product.getShopId() == null) {
+                throw new IllegalStateException("Product '" + product.getName() + "' has no shopId");
+            }
+            
+            itemsByShop.computeIfAbsent(product.getShopId(), k -> new java.util.ArrayList<>()).add(item);
+        }
+        
+        // Evaluate promotions for each shop
+        for (Map.Entry<ObjectId, List<CartItem>> entry : itemsByShop.entrySet()) {
+            ObjectId shopId = entry.getKey();
+            List<CartItem> shopItems = entry.getValue();
+            
+            // Calculate shop subtotal and quantity
+            double shopSubtotal = shopItems.stream()
+                    .mapToDouble(CartItem::getSubTotal)
+                    .sum();
+            
+            int shopQuantity = shopItems.stream()
+                    .mapToInt(CartItem::getQuantity)
+                    .sum();
+            
+            log.info("📦 Shop {} | Subtotal: {} TND | Quantity: {}", 
+                    shopId.toHexString(), shopSubtotal, shopQuantity);
+            
+            // Evaluate best promotion for this shop
+            AppliedPromotionDTO bestPromotion = promotionEngineService.evaluateBestPromotion(
+                    shopId, 
+                    userId, 
+                    shopSubtotal, 
+                    shopQuantity, 
+                    LocalDate.now()
+            );
+            
+            if (bestPromotion != null && bestPromotion.getDiscountAmount() > 0) {
+                promotionsByShop.put(shopId, bestPromotion);
+                totalPromotionDiscount += bestPromotion.getDiscountAmount();
+                
+                log.info("✅ Promotion applied for shop {}: {} TND ({})", 
+                        shopId.toHexString(), 
+                        bestPromotion.getDiscountAmount(),
+                        bestPromotion.getDescription());
+            } else {
+                log.info("❌ No promotion applicable for shop {}", shopId.toHexString());
+            }
+        }
+        
+        // Calculate final amounts with promotions
+        double originalTotal = cart.getSubtotal();
+        double couponDiscount = cart.getDiscountAmount() != null ? cart.getDiscountAmount() : 0.0;
+        double finalTotal = originalTotal - couponDiscount - totalPromotionDiscount;
+        finalTotal = Math.max(finalTotal, 0.0); // Never go below 0
+        
+        log.info("💰 Order Summary | Original: {} TND | Coupon: -{} TND | Promotions: -{} TND | Final: {} TND",
+                originalTotal, couponDiscount, totalPromotionDiscount, finalTotal);
+        
+        // ==================== END PROMOTION ENGINE ====================
+        
         // Generate order number
         String orderNumber = generateOrderNumber();
+        
+        // ==================== NEW WORKFLOW: PAYMENT & ORDER STATUS ====================
+        // Determine payment and order status based on payment method
+        PaymentStatus paymentStatus;
+        OrderStatus orderStatus;
+        LocalDateTime paidAt = null;
+        
+        if ("CARD".equalsIgnoreCase(request.getPaymentMethod())) {
+            // CARD PAYMENT: Payment received immediately, order starts as PENDING
+            paymentStatus = PaymentStatus.PAID;
+            orderStatus = OrderStatus.PENDING;  // Provider must confirm
+            paidAt = LocalDateTime.now();
+            log.info("💳 CARD PAYMENT - Order created as PENDING, payment received, awaiting provider confirmation");
+        } else {
+            // CASH ON DELIVERY: Payment pending, order starts as PENDING
+            paymentStatus = PaymentStatus.PENDING_PAYMENT;
+            orderStatus = OrderStatus.PENDING;  // Provider must confirm
+            log.info("💵 CASH ON DELIVERY - Order created as PENDING, payment pending, awaiting provider confirmation");
+        }
         
         // Create Order entity
         Order order = Order.builder()
                 .user(user)
-                .status(OrderStatus.PENDING)
-                .totalAmount(cart.getSubtotal())
-                .discountAmount(cart.getDiscountAmount())
-                .finalAmount(cart.getTotal())
+                .status(orderStatus)
+                .paymentStatus(paymentStatus)
+                .totalAmount(originalTotal)
+                .discountAmount(couponDiscount + totalPromotionDiscount)  // Combined discounts
+                .finalAmount(finalTotal)
                 .couponCode(cart.getAppliedCouponCode())
                 .discountId(cart.getAppliedDiscountId())
                 .shippingAddress(request.getShippingAddress())
                 .paymentMethod(request.getPaymentMethod())
                 .orderNumber(orderNumber)
+                .cartId(cart.getId())  // ✅ Link order to cart for backward compatibility
                 .createdAt(LocalDateTime.now())
+                .paidAt(paidAt)
                 .lastUpdated(LocalDateTime.now())
                 .build();
         
         Order savedOrder = orderRepository.save(order);
+        
+        // ✅ CRITICAL: Do NOT reduce stock yet - wait for provider confirmation
+        log.info("⏳ Stock will be reduced when provider confirms order");
         
         // Convert CartItems to OrderItems
         for (CartItem cartItem : cartItems) {
@@ -141,12 +241,16 @@ public class OrderServiceImpl implements IOrderService {
             couponService.incrementCouponUsage(order.getCouponCode());
         }
         
+        // ✅ CRITICAL: Loyalty points will be granted when provider confirms order (for CARD) or when delivered (for CASH)
+        log.info("⏳ Loyalty points will be granted when order is confirmed/delivered");
+        
         // 🚚 CREATE DELIVERY RECORD FOR ADMIN DASHBOARD
         Delivery delivery = Delivery.builder()
+                .orderId(savedOrder.getId())  // ✅ Link delivery to order
                 .cartId(cart.getId()) 
                 .address(request.getShippingAddress())
                 .deliveryDate(LocalDateTime.now())
-                .status("PREPARING")
+                .status("PENDING")  // Changed from PREPARING to PENDING
                 .build();
         deliveryRepository.save(delivery);
         
@@ -166,31 +270,37 @@ public class OrderServiceImpl implements IOrderService {
             throw new IllegalStateException("Order does not belong to user");
         }
         
-        // Payment can be confirmed from PENDING or CONFIRMED status
-        if (order.getStatus() != OrderStatus.PENDING && order.getStatus() != OrderStatus.CONFIRMED) {
-            throw new IllegalStateException("Order must be PENDING or CONFIRMED to process payment");
+        // ⚠️ DEPRECATED: This method is for legacy workflow
+        // New workflow: Orders are auto-confirmed on creation
+        // This is kept for backward compatibility only
+        
+        if (order.getPaymentStatus() == PaymentStatus.PAID) {
+            log.warn("⚠️  Payment already confirmed for order {}", orderId);
+            return buildOrderResponse(order);
         }
         
-        // ✅ CRITICAL: Reduce stock ONLY after payment confirmed
-        List<OrderItem> items = orderItemRepository.findByOrderId(orderId);
-        for (OrderItem item : items) {
-            stockManagementService.reduceStock(item.getProductId(), item.getQuantity());
-        }
-        
-        // Update order status to PAID (payment completed)
-        order.setStatus(OrderStatus.PAID);
+        // Update payment status to PAID
+        order.setPaymentStatus(PaymentStatus.PAID);
         order.setPaymentId(paymentId);
         order.setPaidAt(LocalDateTime.now());
         order.setLastUpdated(LocalDateTime.now());
-        Order updated = orderRepository.save(order);
         
-        // ✅ CRITICAL: Add loyalty points ONLY after payment confirmed (PAID status)
-        // This is the ONLY place where loyalty points should be awarded
-        if (items != null && !items.isEmpty() && order.getFinalAmount() != null && order.getFinalAmount() > 0) {
-            System.out.println("🏆 LOYALTY DEBUG - Adding points for PAID order: " + orderId);
-            loyaltyCardService.addPointsForOrder(userId, items, order.getFinalAmount());
+        // ✅ CRITICAL: Reduce stock when payment confirmed (for CASH orders)
+        if (order.getPaymentStatus() == PaymentStatus.PENDING_PAYMENT) {
+            log.info("📦 Reducing stock for CASH payment confirmation");
+            List<OrderItem> items = orderItemRepository.findByOrderId(orderId);
+            for (OrderItem item : items) {
+                stockManagementService.reduceStock(item.getProductId(), item.getQuantity());
+            }
+            
+            // ✅ CRITICAL: Grant loyalty points when payment confirmed
+            if (!items.isEmpty() && order.getFinalAmount() != null && order.getFinalAmount() > 0) {
+                log.info("🏆 Granting loyalty points for CASH payment confirmation");
+                loyaltyCardService.addPointsForOrder(userId, items, order.getFinalAmount());
+            }
         }
         
+        Order updated = orderRepository.save(order);
         return buildOrderResponse(updated);
     }
     
@@ -214,6 +324,43 @@ public class OrderServiceImpl implements IOrderService {
         
         System.out.println("🔍 ORDER SERVICE DEBUG - Returning " + responses.size() + " order responses");
         return responses;
+    }
+    
+    @Override
+    public org.springframework.data.domain.Page<OrderResponse> getUserOrdersPaginated(ObjectId userId, org.springframework.data.domain.Pageable pageable) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        
+        log.info("🔍 PAGINATED ORDERS - Getting orders for user: {} (ID: {})", user.getEmail(), userId.toHexString());
+        log.info("🔍 PAGINATED ORDERS - Page: {}, Size: {}", pageable.getPageNumber(), pageable.getPageSize());
+        
+        // Debug: Check total orders for this user
+        List<Order> allUserOrders = orderRepository.findByUser(user);
+        log.info("🔍 PAGINATED ORDERS - Total orders for user in DB: {}", allUserOrders.size());
+        
+        if (!allUserOrders.isEmpty()) {
+            log.info("🔍 PAGINATED ORDERS - Sample order: {} | Status: {} | Created: {}", 
+                    allUserOrders.get(0).getOrderNumber(),
+                    allUserOrders.get(0).getStatus(),
+                    allUserOrders.get(0).getCreatedAt());
+        }
+        
+        org.springframework.data.domain.Page<Order> ordersPage = orderRepository.findByUser(user, pageable);
+        
+        log.info("🔍 PAGINATED ORDERS - Page results: {} orders (total elements: {}, total pages: {})", 
+                ordersPage.getNumberOfElements(), ordersPage.getTotalElements(), ordersPage.getTotalPages());
+        
+        if (ordersPage.hasContent()) {
+            Order firstOrder = ordersPage.getContent().get(0);
+            log.info("🔍 PAGINATED ORDERS - First order in page: {} | Status: {}", 
+                    firstOrder.getOrderNumber(), firstOrder.getStatus());
+        }
+        
+        org.springframework.data.domain.Page<OrderResponse> responsePage = ordersPage.map(this::buildOrderResponse);
+        
+        log.info("🔍 PAGINATED ORDERS - Returning {} order responses", responsePage.getNumberOfElements());
+        
+        return responsePage;
     }
     
     @Override
@@ -242,15 +389,257 @@ public class OrderServiceImpl implements IOrderService {
     @Override
     @Transactional
     public OrderResponse updateOrderStatus(ObjectId orderId, String statusStr) {
+        return updateOrderStatus(orderId, statusStr, "SYSTEM");
+    }
+    
+    /**
+     * Update order status with actor validation
+     * @param orderId Order ID
+     * @param statusStr New status string
+     * @param actor Who is making the change: PROVIDER, DELIVERY, CLIENT, SYSTEM, ADMIN
+     * @return Updated order response
+     */
+    @Override
+    @Transactional
+    public OrderResponse updateOrderStatus(ObjectId orderId, String statusStr, String actor) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
         
         OrderStatus newStatus = OrderStatus.valueOf(statusStr.toUpperCase());
+        
+        log.info("🔄 Order {} status change: {} → {} (by {})", 
+                order.getOrderNumber(), order.getStatus(), newStatus, actor);
+        
+        // Validate transition
+        orderStatusValidator.validateTransition(order, newStatus, actor);
+        
+        // Store old status for stock logic
+        OrderStatus oldStatus = order.getStatus();
+        boolean wasConfirmedOrLater = (oldStatus == OrderStatus.CONFIRMED || 
+                                       oldStatus == OrderStatus.PREPARING || 
+                                       oldStatus == OrderStatus.IN_TRANSIT);
+        
+        // Update status
         order.setStatus(newStatus);
         order.setLastUpdated(LocalDateTime.now());
         
+        // Handle status-specific logic
+        switch (newStatus) {
+            case CONFIRMED:
+                order.setConfirmedAt(LocalDateTime.now());
+                // ✅ CRITICAL: Reduce stock when provider confirms order
+                reduceStockForOrder(order);
+                log.info("✅ Order {} confirmed by provider, stock reduced", order.getOrderNumber());
+                
+                // Grant loyalty points for CARD payments (already paid)
+                if (order.getPaymentStatus() == PaymentStatus.PAID) {
+                    grantLoyaltyPointsForOrder(order);
+                    log.info("🏆 Loyalty points granted for CARD payment order {}", order.getOrderNumber());
+                }
+                break;
+                
+            case PREPARING:
+                order.setPreparingAt(LocalDateTime.now());
+                log.info("📦 Order {} being prepared by delivery", order.getOrderNumber());
+                break;
+                
+            case IN_TRANSIT:
+                order.setDeliveryStartedAt(LocalDateTime.now());
+                log.info("🚚 Order {} in transit", order.getOrderNumber());
+                break;
+                
+            case DELIVERED:
+                order.setDeliveredAt(LocalDateTime.now());
+                
+                // For Cash on Delivery, mark as PAID when delivered
+                if (order.getPaymentStatus() == PaymentStatus.PENDING_PAYMENT && 
+                    "CASH".equalsIgnoreCase(order.getPaymentMethod())) {
+                    order.setPaymentStatus(PaymentStatus.PAID);
+                    order.setPaidAt(LocalDateTime.now());
+                    
+                    // Grant loyalty points for CASH payments (now paid)
+                    grantLoyaltyPointsForOrder(order);
+                    log.info("💰 Cash on Delivery payment completed for order {}, loyalty points granted", 
+                            order.getOrderNumber());
+                }
+                log.info("📦 Order {} delivered successfully", order.getOrderNumber());
+                break;
+                
+            case RETURNED:
+                order.setReturnedAt(LocalDateTime.now());
+                
+                // ❌ DO NOT restore stock here - provider must verify and restock first
+                // Stock will be restored when status changes to RESTOCKED
+                
+                // Deduct loyalty points if they were granted
+                if (order.getPaymentStatus() == PaymentStatus.PAID) {
+                    deductLoyaltyPointsForOrder(order);
+                    log.info("🏆 Loyalty points deducted for returned order {}", order.getOrderNumber());
+                }
+                
+                log.info("📦 Order {} marked as RETURNED, waiting for provider verification", 
+                        order.getOrderNumber());
+                break;
+                
+            case RESTOCKED:
+                order.setRestockedAt(LocalDateTime.now());
+                
+                // ✅ CRITICAL: Restore stock when provider verifies and restocks
+                if (wasConfirmedOrLater) {
+                    restoreStockForOrder(order);
+                    log.info("📦 Order {} restocked by provider, stock restored", order.getOrderNumber());
+                }
+                break;
+                
+            case CANCELLED:
+                order.setCancelledAt(LocalDateTime.now());
+                
+                // ✅ CRITICAL: Restore stock when order is cancelled (only if was confirmed)
+                if (wasConfirmedOrLater) {
+                    restoreStockForOrder(order);
+                    log.info("❌ Order {} cancelled, stock restored", order.getOrderNumber());
+                }
+                
+                // Deduct loyalty points if they were granted
+                if (order.getPaymentStatus() == PaymentStatus.PAID) {
+                    deductLoyaltyPointsForOrder(order);
+                    log.info("🏆 Loyalty points deducted for cancelled order {}", order.getOrderNumber());
+                }
+                break;
+        }
+        
         Order updated = orderRepository.save(order);
         return buildOrderResponse(updated);
+    }
+    
+    /**
+     * Provider confirms physical verification and restocking of returned order
+     * Changes status to RESTOCKED which triggers stock restoration.
+     * 
+     * Works when order is RETURNED or CONFIRMED (delivery was returned but order
+     * status was never updated — common with legacy deliveries).
+     * Also handles PENDING orders (delivery returned before provider confirmed).
+     */
+    @Override
+    @Transactional
+    public OrderResponse confirmPickup(ObjectId orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+        
+        log.info("🔄 confirmPickup called for order {} with status {}", order.getOrderNumber(), order.getStatus());
+        
+        // Accept any non-final status — delivery was returned, provider is restocking
+        if (order.getStatus() == OrderStatus.RESTOCKED) {
+            throw new IllegalStateException(
+                    String.format("Order %s is already RESTOCKED.", order.getOrderNumber()));
+        }
+        if (order.getStatus() == OrderStatus.DELIVERED) {
+            throw new IllegalStateException(
+                    String.format("Order %s was already DELIVERED successfully — cannot restock.", order.getOrderNumber()));
+        }
+        if (order.getStatus() == OrderStatus.CANCELLED) {
+            throw new IllegalStateException(
+                    String.format("Order %s is CANCELLED — cannot restock.", order.getOrderNumber()));
+        }
+        
+        // For RETURNED: normal path via updateOrderStatus (restores stock)
+        if (order.getStatus() == OrderStatus.RETURNED) {
+            log.info("📦 Order {} is RETURNED — restocking via normal path", order.getOrderNumber());
+            return updateOrderStatus(orderId, "RESTOCKED", "PROVIDER");
+        }
+        
+        // For CONFIRMED or PENDING: delivery was returned but order status was never updated
+        // Restore stock only if order was CONFIRMED (stock was reduced at confirmation)
+        boolean stockWasReduced = (order.getStatus() == OrderStatus.CONFIRMED ||
+                                   order.getStatus() == OrderStatus.PREPARING ||
+                                   order.getStatus() == OrderStatus.IN_TRANSIT);
+        
+        log.info("📦 Order {} has status {} — restocking directly (stockWasReduced={})",
+                order.getOrderNumber(), order.getStatus(), stockWasReduced);
+        
+        order.setStatus(OrderStatus.RESTOCKED);
+        order.setRestockedAt(LocalDateTime.now());
+        order.setLastUpdated(LocalDateTime.now());
+        
+        if (stockWasReduced) {
+            restoreStockForOrder(order);
+            log.info("✅ Stock restored for order {}", order.getOrderNumber());
+        } else {
+            log.info("ℹ️ Stock was not reduced for order {} (was PENDING) — no restoration needed", order.getOrderNumber());
+        }
+        
+        Order updated = orderRepository.save(order);
+        return buildOrderResponse(updated);
+    }
+    
+    /**
+     * Reduce stock for order items
+     */
+    private void reduceStockForOrder(Order order) {
+        List<OrderItem> items = orderItemRepository.findByOrderId(order.getId());
+        for (OrderItem item : items) {
+            try {
+                stockManagementService.reduceStock(item.getProductId(), item.getQuantity());
+                log.info("✅ Reduced {} units of product {}", item.getQuantity(), item.getProductId());
+            } catch (Exception e) {
+                log.error("❌ Failed to reduce stock for product {}: {}", item.getProductId(), e.getMessage());
+                throw new IllegalStateException("Failed to reduce stock for product " + item.getProductId(), e);
+            }
+        }
+    }
+    
+    /**
+     * Restore stock for cancelled or returned orders
+     */
+    private void restoreStockForOrder(Order order) {
+        List<OrderItem> items = orderItemRepository.findByOrderId(order.getId());
+        for (OrderItem item : items) {
+            try {
+                stockManagementService.restoreStock(item.getProductId(), item.getQuantity());
+                log.info("✅ Restored {} units of product {}", item.getQuantity(), item.getProductId());
+            } catch (Exception e) {
+                log.error("❌ Failed to restore stock for product {}: {}", item.getProductId(), e.getMessage());
+            }
+        }
+    }
+    
+    /**
+     * Grant loyalty points for order
+     */
+    private void grantLoyaltyPointsForOrder(Order order) {
+        try {
+            List<OrderItem> items = orderItemRepository.findByOrderId(order.getId());
+            if (!items.isEmpty() && order.getFinalAmount() != null && order.getFinalAmount() > 0) {
+                loyaltyCardService.addPointsForOrder(
+                        order.getUser().getId(), 
+                        items, 
+                        order.getFinalAmount()
+                );
+            }
+        } catch (Exception e) {
+            log.error("❌ Failed to grant loyalty points for order {}: {}", 
+                    order.getOrderNumber(), e.getMessage());
+        }
+    }
+    
+    /**
+     * Deduct loyalty points for returned or cancelled orders
+     */
+    private void deductLoyaltyPointsForOrder(Order order) {
+        try {
+            List<OrderItem> items = orderItemRepository.findByOrderId(order.getId());
+            if (!items.isEmpty() && order.getFinalAmount() != null && order.getFinalAmount() > 0) {
+                int pointsToDeduct = loyaltyCardService.calculatePointsForOrder(
+                        order.getUser().getId(), 
+                        items, 
+                        order.getFinalAmount()
+                );
+                loyaltyCardService.deductPoints(order.getUser().getId(), pointsToDeduct);
+            }
+        } catch (Exception e) {
+            log.error("❌ Failed to deduct loyalty points for order {}: {}", 
+                    order.getOrderNumber(), e.getMessage());
+        }
     }
     
     @Override
@@ -297,7 +686,7 @@ public class OrderServiceImpl implements IOrderService {
         }
         
         if (order.getStatus() != OrderStatus.PENDING && order.getStatus() != OrderStatus.CONFIRMED) {
-            throw new IllegalStateException("Only PENDING or CONFIRMED orders can be declined");
+            throw new IllegalStateException("Only PENDING or CONFIRMED orders can be cancelled");
         }
         
         // ✅ CRITICAL: Check 7-day cancellation window for clients
@@ -316,9 +705,9 @@ public class OrderServiceImpl implements IOrderService {
             }
         }
         
-        // Update order status to DECLINED
-        order.setStatus(OrderStatus.DECLINED);
-        order.setCancellationReason(request != null ? request.getReason() : "Order declined by client");
+        // Update order status to CANCELLED
+        order.setStatus(OrderStatus.CANCELLED);
+        order.setCancellationReason(request != null ? request.getReason() : "Order cancelled by client");
         order.setCancelledAt(LocalDateTime.now());
         order.setLastUpdated(LocalDateTime.now());
         orderRepository.save(order);
@@ -342,7 +731,7 @@ public class OrderServiceImpl implements IOrderService {
      * Check if client can cancel order (within 7 days of creation)
      */
     private boolean canClientCancelOrder(Order order) {
-        // Can cancel PENDING or CONFIRMED orders (but not PAID or DECLINED)
+        // Can cancel PENDING or CONFIRMED orders (but not CANCELLED)
         if (order.getStatus() != OrderStatus.PENDING && order.getStatus() != OrderStatus.CONFIRMED) {
             System.out.println("🔍 ORDER SERVICE DEBUG - Cannot cancel: status is " + order.getStatus() + " (only PENDING/CONFIRMED allowed)");
             return false;
@@ -373,8 +762,8 @@ public class OrderServiceImpl implements IOrderService {
             throw new IllegalStateException("Order does not belong to user");
         }
         
-        if (order.getStatus() == OrderStatus.DECLINED) {
-            throw new IllegalStateException("Order is already declined");
+        if (order.getStatus() == OrderStatus.CANCELLED) {
+            throw new IllegalStateException("Order is already cancelled");
         }
         
         // Restore stock for all items
@@ -389,7 +778,7 @@ public class OrderServiceImpl implements IOrderService {
         }
         
         // Update order status
-        order.setStatus(OrderStatus.DECLINED);
+        order.setStatus(OrderStatus.CANCELLED);
         order.setCancellationReason(request != null ? request.getReason() : "User cancelled");
         order.setCancelledAt(LocalDateTime.now());
         order.setLastUpdated(LocalDateTime.now());
@@ -429,8 +818,8 @@ public class OrderServiceImpl implements IOrderService {
             throw new IllegalStateException("Order does not belong to user");
         }
         
-        if (order.getStatus() == OrderStatus.DECLINED) {
-            throw new IllegalStateException("Order is already declined");
+        if (order.getStatus() == OrderStatus.CANCELLED) {
+            throw new IllegalStateException("Order is already cancelled");
         }
         
         // Find the order item to cancel
@@ -475,7 +864,7 @@ public class OrderServiceImpl implements IOrderService {
                 .allMatch(i -> i.getStatus() == OrderItemStatus.CANCELLED);
         
         if (allCancelled) {
-            order.setStatus(OrderStatus.DECLINED);
+            order.setStatus(OrderStatus.CANCELLED);
         } else {
             // Keep as PENDING since we only have 3 statuses now
             order.setStatus(OrderStatus.PENDING);
@@ -596,6 +985,9 @@ public class OrderServiceImpl implements IOrderService {
     // Helper methods
     
     private OrderResponse buildOrderResponse(Order order) {
+        // ✅ CRITICAL: Normalize legacy status values for backward compatibility
+        order = normalizeLegacyStatus(order);
+        
         OrderResponse response = orderMapper.toResponse(order);
         
         // Load order items
@@ -606,6 +998,70 @@ public class OrderServiceImpl implements IOrderService {
         
         response.setItems(itemResponses);
         return response;
+    }
+    
+    /**
+     * Normalize legacy order statuses to current status system.
+     * This ensures backward compatibility with old MongoDB data.
+     * 
+     * Legacy mappings:
+     * - PAID → PENDING (payment status, not order status - needs provider confirmation)
+     * - ACCEPTED → CONFIRMED
+     * - PROCESSING → PREPARING
+     * - DECLINED → CANCELLED
+     * - SHIPPED → IN_TRANSIT
+     * - OUT_FOR_DELIVERY → IN_TRANSIT
+     */
+    private Order normalizeLegacyStatus(Order order) {
+        if (order.getStatus() == null) {
+            log.warn("⚠️  Order {} has null status, defaulting to PENDING", order.getOrderNumber());
+            order.setStatus(OrderStatus.PENDING);
+            return order;
+        }
+        
+        OrderStatus currentStatus = order.getStatus();
+        OrderStatus normalizedStatus = null;
+        
+        switch (currentStatus) {
+            case PAID:
+                normalizedStatus = OrderStatus.PENDING;
+                // Also ensure paymentStatus is PAID
+                if (order.getPaymentStatus() != PaymentStatus.PAID) {
+                    order.setPaymentStatus(PaymentStatus.PAID);
+                }
+                log.info("🔄 Normalizing legacy status PAID → PENDING for order {}", order.getOrderNumber());
+                break;
+            case ACCEPTED:
+                normalizedStatus = OrderStatus.CONFIRMED;
+                log.info("🔄 Normalizing legacy status ACCEPTED → CONFIRMED for order {}", order.getOrderNumber());
+                break;
+            case PROCESSING:
+                normalizedStatus = OrderStatus.PREPARING;
+                log.info("🔄 Normalizing legacy status PROCESSING → PREPARING for order {}", order.getOrderNumber());
+                break;
+            case DECLINED:
+                normalizedStatus = OrderStatus.CANCELLED;
+                log.info("🔄 Normalizing legacy status DECLINED → CANCELLED for order {}", order.getOrderNumber());
+                break;
+            case SHIPPED:
+            case OUT_FOR_DELIVERY:
+                normalizedStatus = OrderStatus.IN_TRANSIT;
+                log.info("🔄 Normalizing legacy status {} → IN_TRANSIT for order {}", currentStatus, order.getOrderNumber());
+                break;
+            default:
+                // Status is already current, no normalization needed
+                return order;
+        }
+        
+        // Update the order with normalized status
+        if (normalizedStatus != null) {
+            order.setStatus(normalizedStatus);
+            // Persist the normalized status to database
+            orderRepository.save(order);
+            log.info("✅ Persisted normalized status {} for order {}", normalizedStatus, order.getOrderNumber());
+        }
+        
+        return order;
     }
     
     private String generateOrderNumber() {
@@ -633,7 +1089,7 @@ public class OrderServiceImpl implements IOrderService {
 
                 // filter cancelled orders
                 Aggregation.match(
-                        Criteria.where("status").is("DECLINED")
+                        Criteria.where("status").is("CANCELLED")
                 ),
 
                 Aggregation.project()
@@ -656,9 +1112,11 @@ public class OrderServiceImpl implements IOrderService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         
-        // Get all completed orders for the user (CONFIRMED and PAID)
+        // Get all completed orders for the user (CONFIRMED or with PAID payment status)
         List<Order> orders = orderRepository.findByUser(user).stream()
-                .filter(o -> o.getStatus() == OrderStatus.CONFIRMED || o.getStatus() == OrderStatus.PAID)
+                .filter(o -> o.getStatus() == OrderStatus.CONFIRMED || 
+                            o.getStatus() == OrderStatus.DELIVERED ||
+                            o.getPaymentStatus() == PaymentStatus.PAID)
                 .collect(Collectors.toList());
         
         // Collect all order items from these orders

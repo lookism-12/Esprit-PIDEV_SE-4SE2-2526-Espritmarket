@@ -6,6 +6,7 @@ import { CartService } from '../../core/cart.service';
 import { CartResponse, CartItemResponse } from '../../models/cart.model';
 import { CouponService } from '../../core/coupon.service';
 import { LoyaltyService } from '../../core/loyalty.service';
+import { InvoiceService } from '../../core/invoice.service';
 import { ToastService } from '../../core/toast.service';
 import { ImageUrlHelper } from '../../../shared/utils/image-url.helper';
 import { LoyaltyLevel } from '../../models/loyalty.model';
@@ -41,6 +42,7 @@ export class Cart implements OnInit {
   private loyaltyService = inject(LoyaltyService);
   private toastService = inject(ToastService);
   private authService = inject(AuthService);
+  private invoiceService = inject(InvoiceService);
   private route = inject(ActivatedRoute);
 
   // New Wizard Flow State
@@ -64,6 +66,9 @@ export class Cart implements OnInit {
 
   // Complete Step Data
   readonly orderNumber = signal<string | null>(null);
+  readonly orderId = signal<string | null>(null);
+  readonly orderStatus = signal<string | null>(null);
+  readonly isDownloadingInvoice = signal<boolean>(false);
 
   // Backend-connected state
   readonly cart = this.cartService.cart;
@@ -98,6 +103,12 @@ export class Cart implements OnInit {
   });
 
   readonly isEmpty = computed(() => this.cartItems().length === 0);
+
+  // Invoice button text based on order status
+  readonly invoiceButtonText = computed(() => {
+    const status = this.orderStatus();
+    return status === 'PAID' ? '📄 Download Invoice' : '📄 Download Proforma Invoice';
+  });
 
   readonly shipping = computed(() => {
     if (this.loyaltyLevel() === LoyaltyLevel.GOLD || this.loyaltyLevel() === LoyaltyLevel.PLATINUM) {
@@ -247,26 +258,39 @@ export class Cart implements OnInit {
 
     this.cartService.checkout(checkoutData).subscribe({
       next: (order) => {
-        // ✅ CRITICAL FIX: Confirm payment to reduce stock
-        const paymentId = this.paymentMethod() === 'CARD' 
-          ? `PAY-${Date.now()}-${Math.floor(Math.random() * 10000)}`
-          : 'CASH_ON_DELIVERY';
-        
-        this.cartService.confirmPayment(order.id, paymentId).subscribe({
-          next: (confirmedOrder) => {
-            this.isProcessingPayment.set(false);
-            this.orderNumber.set(confirmedOrder.orderNumber || confirmedOrder.id || `ORD-${Math.floor(Math.random() * 1000000)}`);
-            this.goToStep('COMPLETE');
-            this.toastService.success('🎉 Order placed successfully!', 4000);
-            this.triggerConfetti();
-            sessionStorage.removeItem('pendingPurchase');
-          },
-          error: (error) => {
-            this.isProcessingPayment.set(false);
-            console.error('❌ Payment confirmation failed:', error);
-            this.toastService.error('Payment confirmation failed. Please contact support.');
-          }
-        });
+        // For CARD payment: confirm payment immediately (mark as PAID)
+        // For CASH payment: keep as PENDING (payment on delivery)
+        if (this.paymentMethod() === 'CARD') {
+          const paymentId = `PAY-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+          
+          this.cartService.confirmPayment(order.id, paymentId).subscribe({
+            next: (confirmedOrder) => {
+              this.isProcessingPayment.set(false);
+              this.orderNumber.set(confirmedOrder.orderNumber || confirmedOrder.id || `ORD-${Math.floor(Math.random() * 1000000)}`);
+              this.orderId.set(confirmedOrder.id);
+              this.orderStatus.set(confirmedOrder.status || 'PAID');
+              this.goToStep('COMPLETE');
+              this.toastService.success('🎉 Order placed successfully!', 4000);
+              this.triggerConfetti();
+              sessionStorage.removeItem('pendingPurchase');
+            },
+            error: (error) => {
+              this.isProcessingPayment.set(false);
+              console.error('❌ Payment confirmation failed:', error);
+              this.toastService.error('Payment confirmation failed. Please contact support.');
+            }
+          });
+        } else {
+          // Cash on Delivery - order stays PENDING
+          this.isProcessingPayment.set(false);
+          this.orderNumber.set(order.orderNumber || order.id || `ORD-${Math.floor(Math.random() * 1000000)}`);
+          this.orderId.set(order.id);
+          this.orderStatus.set(order.status || 'PENDING');
+          this.goToStep('COMPLETE');
+          this.toastService.success('🎉 Order placed successfully! Payment on delivery.', 4000);
+          this.triggerConfetti();
+          sessionStorage.removeItem('pendingPurchase');
+        }
       },
       error: (error) => {
         this.isProcessingPayment.set(false);
@@ -305,6 +329,42 @@ export class Cart implements OnInit {
       // Cleanup
       setTimeout(() => document.body.removeChild(conf), duration * 1000 + 100);
     }
+  }
+
+  /**
+   * Download invoice PDF for the completed order
+   */
+  downloadInvoice(): void {
+    const orderIdValue = this.orderId();
+    
+    if (!orderIdValue) {
+      this.toastService.error('Order ID not found');
+      return;
+    }
+
+    this.isDownloadingInvoice.set(true);
+    this.toastService.info('Generating your invoice...', 2000);
+
+    this.invoiceService.downloadInvoice(orderIdValue).subscribe({
+      next: (blob) => {
+        this.invoiceService.triggerDownload(blob, `invoice-${orderIdValue}.pdf`);
+        this.toastService.success('Invoice downloaded successfully! 📄');
+        this.isDownloadingInvoice.set(false);
+      },
+      error: (err) => {
+        console.error('Error downloading invoice:', err);
+        if (err.status === 400) {
+          this.toastService.error('Invoice can only be generated for paid orders');
+        } else if (err.status === 403) {
+          this.toastService.error('You do not have permission to download this invoice');
+        } else if (err.status === 404) {
+          this.toastService.error('Order not found');
+        } else {
+          this.toastService.error('Failed to download invoice. Please try again.');
+        }
+        this.isDownloadingInvoice.set(false);
+      }
+    });
   }
 
   // ============== EXISTING CART LOGIC ==============

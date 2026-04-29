@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, tap, catchError, throwError } from 'rxjs';
+import { Observable, tap, catchError, throwError, map } from 'rxjs';
 import { ProviderOrder, ProviderStats } from '../pages/provider-dashboard/provider-dashboard';
 import { environment } from '../../../environment';
 
@@ -126,5 +126,76 @@ export class ProviderService {
    */
   getCouponRequests(): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/coupon-requests`);
+  }
+
+  /**
+   * Get returned orders waiting for provider verification and restocking
+   * Returns orders with status=RETURNED (not yet RESTOCKED)
+   * 
+   * IMPORTANT: Filters by Delivery.status = RETURNED (not Order.status)
+   * Backend returns OrderResponse[], frontend needs ProviderOrder[]
+   */
+  getReturnedOrders(): Observable<ProviderOrder[]> {
+    console.log('🔄 ProviderService.getReturnedOrders() called');
+    console.log('📍 URL:', `${this.apiUrl}/orders/returned`);
+    
+    return this.http.get<any[]>(`${this.apiUrl}/orders/returned`).pipe(
+      tap((response) => {
+        console.log('✅ Returned orders response received:', response.length, 'orders');
+      }),
+      // Transform OrderResponse[] to ProviderOrder[] (flatten items)
+      map((orderResponses: any[]) => {
+        const providerOrders: ProviderOrder[] = [];
+        
+        orderResponses.forEach((orderResponse) => {
+          // Each OrderResponse has multiple items
+          if (orderResponse.items && orderResponse.items.length > 0) {
+            orderResponse.items.forEach((item: any) => {
+              const providerOrder: ProviderOrder = {
+                id: orderResponse.id,
+                orderId: orderResponse.id,
+                cartItemId: item.id,
+                clientName: 'Customer', // Will be populated by backend
+                clientEmail: orderResponse.userEmail || 'unknown@example.com',
+                clientAvatar: undefined,
+                productName: item.productName,
+                quantity: item.quantity,
+                unitPrice: item.productPrice,
+                subTotal: item.subtotal,
+                orderStatus: orderResponse.status,
+                orderDate: new Date(orderResponse.createdAt)
+              };
+              providerOrders.push(providerOrder);
+            });
+          }
+        });
+        
+        console.log('🔄 Transformed to', providerOrders.length, 'ProviderOrder objects');
+        return providerOrders;
+      }),
+      catchError((error) => {
+        console.error('❌ Failed to get returned orders:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * Provider confirms physical verification and restocking of returned order
+   * Changes status from RETURNED to RESTOCKED and restores stock
+   */
+  restockOrder(orderId: string): Observable<ProviderOrder> {
+    console.log('📦 ProviderService.restockOrder() called for:', orderId);
+    console.log('📍 URL:', `${this.apiUrl}/orders/${orderId}/pickup`);
+    
+    return this.http.post<ProviderOrder>(`${this.apiUrl}/orders/${orderId}/pickup`, {}).pipe(
+      tap(() => {
+        console.log('✅ Order restocked successfully');
+      }),
+      catchError((error) => {
+        console.error('❌ Failed to restock order:', error);
+        return throwError(() => error);
+      })
+    );
   }
 }

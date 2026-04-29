@@ -10,4 +10,5 @@ import java.util.List;
 public interface DeliveryRepository extends MongoRepository<Delivery, ObjectId> {
     List<Delivery> findByUserId(ObjectId userId);
     List<Delivery> findByCartId(ObjectId cartId);
+    List<Delivery> findByStatus(String status);
 }

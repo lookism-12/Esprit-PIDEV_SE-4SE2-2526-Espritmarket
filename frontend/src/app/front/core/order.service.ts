@@ -1,5 +1,5 @@
 import { Injectable, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of, tap, catchError, throwError } from 'rxjs';
 import { environment } from '../../../environment';
 import { OrderResponse, OrderStatus, ConfirmPaymentRequest, CancelOrderRequest, RefundSummaryDTO } from '../models/order.model';
@@ -17,6 +17,14 @@ export interface OrderListResponse {
   total: number;
   page: number;
   totalPages: number;
+}
+
+export interface PagedOrderResponse {
+  content: OrderResponse[];
+  totalPages: number;
+  totalElements: number;
+  number: number;
+  size: number;
 }
 
 export interface UpdateOrderStatusRequest {
@@ -54,6 +62,32 @@ export class OrderService {
         this.orders.set(orders);
         this.isLoading.set(false);
         console.log('✅ Orders loaded:', orders.length);
+      }),
+      catchError(error => {
+        this.error.set('Failed to load orders');
+        this.isLoading.set(false);
+        console.error('❌ Failed to load orders:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * Get paginated orders for the current user
+   */
+  getMyOrdersPaginated(page: number = 0, size: number = 5): Observable<PagedOrderResponse> {
+    this.isLoading.set(true);
+    this.error.set(null);
+
+    const params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString());
+
+    return this.http.get<PagedOrderResponse>(`${this.apiUrl}/paginated`, { params }).pipe(
+      tap(response => {
+        this.orders.set(response.content);
+        this.isLoading.set(false);
+        console.log(`✅ Orders loaded: ${response.content.length} of ${response.totalElements} (page ${response.number + 1}/${response.totalPages})`);
       }),
       catchError(error => {
         this.error.set('Failed to load orders');
@@ -214,20 +248,33 @@ export class OrderService {
 
   /**
    * Process order (start preparation)
+   * @deprecated Use confirmOrder() instead. PROCESSING status is deprecated.
    */
   processOrder(orderId: string): Observable<OrderResponse> {
-    return this.updateOrderStatus(orderId, 'PROCESSING');
+    console.warn('⚠️ DEPRECATED: processOrder() uses deprecated PROCESSING status. Use confirmOrder() instead.');
+    return this.updateOrderStatus(orderId, 'CONFIRMED');
   }
 
   /**
    * Ship order
+   * @deprecated Removed from workflow. Orders go directly from CONFIRMED to DELIVERED.
    */
   shipOrder(orderId: string): Observable<OrderResponse> {
-    return this.updateOrderStatus(orderId, 'SHIPPED');
+    console.warn('⚠️ DEPRECATED: shipOrder() is deprecated. Orders go directly from CONFIRMED to DELIVERED.');
+    return this.updateOrderStatus(orderId, 'DELIVERED');
   }
 
   /**
-   * Deliver order
+   * Mark order as out for delivery (delivery driver picked up)
+   * @deprecated Removed from workflow. Orders go directly from CONFIRMED to DELIVERED.
+   */
+  markOutForDelivery(orderId: string): Observable<OrderResponse> {
+    console.warn('⚠️ DEPRECATED: markOutForDelivery() is deprecated. Orders go directly from CONFIRMED to DELIVERED.');
+    return this.updateOrderStatus(orderId, 'DELIVERED');
+  }
+
+  /**
+   * Deliver order (mark as delivered)
    */
   deliverOrder(orderId: string): Observable<OrderResponse> {
     return this.updateOrderStatus(orderId, 'DELIVERED');
@@ -238,16 +285,10 @@ export class OrderService {
    */
   getOrderStatusDisplay(status: string): string {
     const statusMap: { [key: string]: string } = {
-      'DRAFT': 'Draft',
-      'PENDING': 'Pending Payment',
-      'PAID': 'Paid',
-      'PROCESSING': 'Processing',
-      'SHIPPED': 'Shipped',
-      'DELIVERED': 'Delivered',
+      'PENDING': 'Pending Confirmation',
+      'CONFIRMED': 'Confirmed',
       'CANCELLED': 'Cancelled',
-      'PARTIALLY_CANCELLED': 'Partially Cancelled',
-      'PARTIALLY_REFUNDED': 'Partially Refunded',
-      'REFUNDED': 'Refunded'
+      'DELIVERED': 'Delivered'
     };
     return statusMap[status] || status;
   }
@@ -259,8 +300,32 @@ export class OrderService {
     const statusClasses: { [key: string]: string } = {
       'PENDING': 'bg-yellow-100 text-yellow-800',
       'CONFIRMED': 'bg-blue-100 text-blue-800',
+      'CANCELLED': 'bg-red-100 text-red-800',
+      'DELIVERED': 'bg-green-100 text-green-800'
+    };
+    return statusClasses[status] || 'bg-gray-100 text-gray-700';
+  }
+  
+  /**
+   * Get payment status display text
+   */
+  getPaymentStatusDisplay(status: string): string {
+    const statusMap: { [key: string]: string } = {
+      'PENDING_PAYMENT': 'Pending Payment',
+      'PAID': 'Paid',
+      'FAILED': 'Failed'
+    };
+    return statusMap[status] || status;
+  }
+  
+  /**
+   * Get payment status color class
+   */
+  getPaymentStatusClass(status: string): string {
+    const statusClasses: { [key: string]: string } = {
+      'PENDING_PAYMENT': 'bg-orange-100 text-orange-800',
       'PAID': 'bg-green-100 text-green-800',
-      'DECLINED': 'bg-red-100 text-red-800'
+      'FAILED': 'bg-red-100 text-red-800'
     };
     return statusClasses[status] || 'bg-gray-100 text-gray-700';
   }

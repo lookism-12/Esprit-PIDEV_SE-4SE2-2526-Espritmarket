@@ -241,23 +241,48 @@ public class ProviderDashboardController {
             log.info("🏪 Shop found - ID: {} | Name: {}", 
                     shop.getId().toHexString(), shop.getName());
 
-            // ✅ Primary path: shopId on OrderItems
+            // Get provider's product IDs first (for fallback)
+            List<Product> products = productRepository.findByShopId(shop.getId());
+            List<ObjectId> productIds = products.stream().map(Product::getId).collect(Collectors.toList());
+            log.info("📦 Found {} products in shop", productIds.size());
+            
+            // Log product details for debugging
+            for (Product p : products) {
+                log.info("   📦 Product: {} | ID: {} | ShopId: {}", 
+                        p.getName(), 
+                        p.getId().toHexString(),
+                        p.getShopId() != null ? p.getShopId().toHexString() : "NULL");
+            }
+            
+            if (productIds.isEmpty()) {
+                log.warn("⚠️  No products found for shop {}", shop.getId().toHexString());
+                return ResponseEntity.ok(new ArrayList<>());
+            }
+
+            // ✅ PRIMARY: Try shopId-based query (for new OrderItems)
             List<OrderItem> providerOrderItems = orderItemRepository.findByShopId(shop.getId());
             log.info("📦 Primary query (findByShopId) returned: {} OrderItems", 
                     providerOrderItems.size());
-
-            // ✅ Fallback for legacy OrderItems without shopId: filter by provider's productIds
-            if (providerOrderItems.isEmpty()) {
-                log.warn("⚠️  Primary query returned 0 results. Trying fallback query...");
-                List<ObjectId> productIds = productRepository.findByShopId(shop.getId())
-                        .stream().map(Product::getId).collect(Collectors.toList());
-                log.info("📦 Found {} products in shop", productIds.size());
-                
-                if (!productIds.isEmpty()) {
-                    providerOrderItems = orderItemRepository.findByProductIdIn(productIds);
-                    log.info("📦 Fallback query (findByProductIdIn) returned: {} OrderItems", 
-                            providerOrderItems.size());
+            
+            // DEBUG: Log all OrderItems in system to see what exists
+            List<OrderItem> allOrderItems = orderItemRepository.findAll();
+            log.info("🔍 DEBUG: Total OrderItems in entire system: {}", allOrderItems.size());
+            if (allOrderItems.size() > 0 && allOrderItems.size() <= 10) {
+                for (OrderItem item : allOrderItems) {
+                    log.info("   🔍 OrderItem: {} | ProductId: {} | ShopId: {} | OrderId: {}", 
+                            item.getProductName(),
+                            item.getProductId() != null ? item.getProductId().toHexString() : "NULL",
+                            item.getShopId() != null ? item.getShopId().toHexString() : "NULL",
+                            item.getOrderId() != null ? item.getOrderId().toHexString() : "NULL");
                 }
+            }
+
+            // ✅ FALLBACK: Use productId-based query (for legacy OrderItems without shopId)
+            if (providerOrderItems.isEmpty()) {
+                log.warn("⚠️  Primary query returned 0 results. Using fallback query...");
+                providerOrderItems = orderItemRepository.findByProductIdIn(productIds);
+                log.info("📦 Fallback query (findByProductIdIn) returned: {} OrderItems", 
+                        providerOrderItems.size());
             }
 
             if (providerOrderItems.isEmpty()) {
@@ -397,7 +422,7 @@ public class ProviderDashboardController {
                 emptyStats.put("pendingOrders", 0);
                 emptyStats.put("confirmedOrders", 0);
                 emptyStats.put("paidOrders", 0);
-                emptyStats.put("declinedOrders", 0);
+                emptyStats.put("cancelledOrders", 0);
                 emptyStats.put("totalOrders", 0);
                 emptyStats.put("totalRevenue", 0.0);
                 emptyStats.put("message", "No shop found for provider");
@@ -428,7 +453,7 @@ public class ProviderDashboardController {
                 emptyStats.put("pendingOrders", 0);
                 emptyStats.put("confirmedOrders", 0);
                 emptyStats.put("paidOrders", 0);
-                emptyStats.put("declinedOrders", 0);
+                emptyStats.put("cancelledOrders", 0);
                 emptyStats.put("totalOrders", 0);
                 emptyStats.put("totalRevenue", 0.0);
                 emptyStats.put("message", "No orders found for this shop");
@@ -462,7 +487,7 @@ public class ProviderDashboardController {
                 statusCounts.put(status, statusCounts.getOrDefault(status, 0) + 1);
 
                 // Calculate revenue for paid orders only (sum all provider items in this order)
-                if (order.getStatus() == OrderStatus.PAID) {
+                if (order.getPaymentStatus() == esprit_market.Enum.cartEnum.PaymentStatus.PAID) {
                     for (OrderItem item : orderItems) {
                         if (item.getSubtotal() != null) {
                             totalRevenue += item.getSubtotal();
@@ -478,8 +503,9 @@ public class ProviderDashboardController {
             Map<String, Object> stats = new HashMap<>();
             stats.put("pendingOrders", statusCounts.getOrDefault("PENDING", 0));
             stats.put("confirmedOrders", statusCounts.getOrDefault("CONFIRMED", 0));
-            stats.put("paidOrders", statusCounts.getOrDefault("PAID", 0));
-            stats.put("declinedOrders", statusCounts.getOrDefault("DECLINED", 0));
+            // Legacy compatibility: PAID orders are now CONFIRMED
+            stats.put("paidOrders", statusCounts.getOrDefault("CONFIRMED", 0));
+            stats.put("cancelledOrders", statusCounts.getOrDefault("CANCELLED", 0));
             stats.put("totalOrders", providerOrderCount);
             stats.put("totalRevenue", totalRevenue);
 
@@ -493,7 +519,7 @@ public class ProviderDashboardController {
             emptyStats.put("pendingOrders", 0);
             emptyStats.put("confirmedOrders", 0);
             emptyStats.put("paidOrders", 0);
-            emptyStats.put("declinedOrders", 0);
+            emptyStats.put("cancelledOrders", 0);
             emptyStats.put("totalOrders", 0);
             emptyStats.put("totalRevenue", 0.0);
             emptyStats.put("error", e.getMessage());
@@ -570,6 +596,106 @@ public class ProviderDashboardController {
         } catch (Exception e) {
             System.err.println("❌ Fix failed: " + e.getMessage());
             e.printStackTrace();
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            error.put("stackTrace", Arrays.toString(e.getStackTrace()));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+    
+    /**
+     * MIGRATION: Normalize all legacy order statuses in database
+     * This is a one-time migration to fix backward compatibility issues
+     * 
+     * Legacy mappings:
+     * - PAID → CONFIRMED
+     * - ACCEPTED → CONFIRMED
+     * - PROCESSING → CONFIRMED
+     * - DECLINED → CANCELLED
+     * - SHIPPED → OUT_FOR_DELIVERY
+     * 
+     * @return Map with migration statistics
+     */
+    @PostMapping("/migrate-legacy-statuses")
+    public ResponseEntity<Map<String, Object>> migrateLegacyStatuses(Authentication authentication) {
+        try {
+            User provider = getAuthenticatedProvider(authentication);
+            Map<String, Object> result = new HashMap<>();
+            
+            log.info("🔧 Starting legacy status migration...");
+            
+            // Get all orders
+            List<Order> allOrders = orderRepository.findAll();
+            int totalOrders = allOrders.size();
+            int migratedCount = 0;
+            Map<String, Integer> statusCounts = new HashMap<>();
+            
+            log.info("📊 Total orders in database: {}", totalOrders);
+            
+            for (Order order : allOrders) {
+                if (order.getStatus() == null) {
+                    log.warn("⚠️  Order {} has null status, setting to PENDING", order.getOrderNumber());
+                    order.setStatus(OrderStatus.PENDING);
+                    orderRepository.save(order);
+                    migratedCount++;
+                    statusCounts.put("NULL→PENDING", statusCounts.getOrDefault("NULL→PENDING", 0) + 1);
+                    continue;
+                }
+                
+                OrderStatus currentStatus = order.getStatus();
+                OrderStatus newStatus = null;
+                String migration = null;
+                
+                switch (currentStatus) {
+                    case PAID:
+                        newStatus = OrderStatus.CONFIRMED;
+                        migration = "PAID→CONFIRMED";
+                        break;
+                    case ACCEPTED:
+                        newStatus = OrderStatus.CONFIRMED;
+                        migration = "ACCEPTED→CONFIRMED";
+                        break;
+                    case PROCESSING:
+                        newStatus = OrderStatus.CONFIRMED;
+                        migration = "PROCESSING→CONFIRMED";
+                        break;
+                    case DECLINED:
+                        newStatus = OrderStatus.CANCELLED;
+                        migration = "DECLINED→CANCELLED";
+                        break;
+                    case SHIPPED:
+                        newStatus = OrderStatus.OUT_FOR_DELIVERY;
+                        migration = "SHIPPED→OUT_FOR_DELIVERY";
+                        break;
+                    default:
+                        // Status is already current
+                        break;
+                }
+                
+                if (newStatus != null) {
+                    log.info("🔄 Migrating order {} from {} to {}", 
+                            order.getOrderNumber(), currentStatus, newStatus);
+                    order.setStatus(newStatus);
+                    orderRepository.save(order);
+                    migratedCount++;
+                    statusCounts.put(migration, statusCounts.getOrDefault(migration, 0) + 1);
+                }
+            }
+            
+            log.info("🎉 Migration complete!");
+            log.info("📊 Total orders: {}", totalOrders);
+            log.info("✅ Migrated: {}", migratedCount);
+            log.info("📈 Migration breakdown: {}", statusCounts);
+            
+            result.put("totalOrders", totalOrders);
+            result.put("migratedCount", migratedCount);
+            result.put("alreadyCurrentCount", totalOrders - migratedCount);
+            result.put("statusMigrations", statusCounts);
+            result.put("message", "Migrated " + migratedCount + " orders to current status system");
+            
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("❌ Migration failed: {}", e.getMessage(), e);
             Map<String, Object> error = new HashMap<>();
             error.put("error", e.getMessage());
             error.put("stackTrace", Arrays.toString(e.getStackTrace()));

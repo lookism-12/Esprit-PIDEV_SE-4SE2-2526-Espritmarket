@@ -33,8 +33,10 @@ export class DriverDeliveriesComponent implements OnInit, OnDestroy {
   // Modals state
   readonly isDeclineModalOpen = signal<boolean>(false);
   readonly isDeliverModalOpen = signal<boolean>(false);
+  readonly isReturnModalOpen = signal<boolean>(false);
   readonly selectedDelivery = signal<Delivery | null>(null);
   readonly selectedDeclineReason = signal<string>('');
+  readonly selectedReturnReason = signal<string>('');
 
   private pollingInterval: any;
 
@@ -151,6 +153,42 @@ export class DriverDeliveriesComponent implements OnInit, OnDestroy {
         this.loadAllData();
       },
       error: () => this.toastService.error('Failed to mark delivery as completed.')
+    });
+  }
+
+  openMarkReturnedModal(delivery: Delivery) {
+    this.selectedDelivery.set(delivery);
+    this.selectedReturnReason.set('');
+    this.isReturnModalOpen.set(true);
+  }
+
+  closeReturnModal() {
+    this.isReturnModalOpen.set(false);
+    this.selectedDelivery.set(null);
+  }
+
+  confirmMarkReturned() {
+    const delivery = this.selectedDelivery();
+    
+    if (!delivery) {
+      return;
+    }
+    
+    if (!this.selectedReturnReason()) {
+      this.toastService.warning('Please select a reason.');
+      return;
+    }
+
+    // Use the correct delivery service endpoint (clean architecture)
+    this.savService.markAsReturned(delivery.id, this.myUserId(), this.selectedReturnReason()).subscribe({
+      next: () => {
+        this.toastService.success('Delivery marked as returned. Package must be returned to shop.');
+        this.closeReturnModal();
+        this.loadAllData();
+      },
+      error: (err) => {
+        this.toastService.error('Failed to mark delivery as returned: ' + (err.error?.message || err.message));
+      }
     });
   }
 }

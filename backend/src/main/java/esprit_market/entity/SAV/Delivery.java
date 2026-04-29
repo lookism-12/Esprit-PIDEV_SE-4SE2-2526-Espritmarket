@@ -26,6 +26,7 @@ public class Delivery {
     // Relations (Unidirectional as per standard MongoDB usage)
     private ObjectId userId; // The confirmed delivery driver
     private ObjectId cartId; // The Cart containing items for delivery
+    private ObjectId orderId; // The Order associated with this delivery
 
     // Driver assignment workflow fields
     private ObjectId pendingDriverId;   // Driver assigned but not yet responded

@@ -325,8 +325,31 @@
                         </div>
 
                         <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-                            <!-- In a real app track order redirects to profile orders view -->
+                            <!-- Download Invoice Button -->
+                            @if (orderId()) {
+                                <button
+                                    (click)="downloadInvoice()"
+                                    [disabled]="isDownloadingInvoice()"
+                                    class="bg-amber-500 text-white px-8 py-3 rounded-2xl font-bold text-base hover:bg-amber-600 transition-all transform hover:scale-105 shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 w-full sm:w-auto">
+                                    @if (isDownloadingInvoice()) {
+                                        <svg class="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                        </svg>
+                                        Generating...
+                                    } @else {
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                        {{ invoiceButtonText() }}
+                                    }
+                                </button>
+                            }
+                            
+                            <!-- Track Order Button -->
                             <a routerLink="/profile" class="btn-primary-outline w-full sm:w-auto hover:bg-red-50 hover:border-red-200 font-bold px-8">Track my Order</a>
+                            
+                            <!-- Continue Shopping Button -->
                             <a routerLink="/products" class="btn-primary w-full sm:w-auto shadow-xl shadow-primary/20 hover:scale-105 transition-transform px-8">Continue Shopping</a>
                         </div>
                     </div>
@@ -410,19 +433,19 @@
 
                     <!-- Auto Discount Banner -->
                     @if (autoDiscount() > 0) {
-                    <div class="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-5 shadow-sm animate-fadeIn">
+                    <div class="mb-6 bg-gradient-to-r from-amber-50 to-yellow-50 border-2 border-amber-300 rounded-2xl p-5 shadow-sm animate-fadeIn">
                         <div class="flex items-start gap-4">
                             <div class="flex-shrink-0">
-                                <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center shadow-lg">
+                                <div class="w-12 h-12 bg-amber-500 rounded-full flex items-center justify-center shadow-lg">
                                     <span class="text-2xl">🎉</span>
                                 </div>
                             </div>
                             <div class="flex-1">
-                                <h3 class="text-lg font-black text-blue-900 mb-1">Automatic Promotion Applied!</h3>
-                                <p class="text-sm text-blue-700 font-medium mb-2">You're saving with our shop discount rules</p>
+                                <h3 class="text-lg font-black text-amber-900 mb-1">Automatic Promotion Applied!</h3>
+                                <p class="text-sm text-amber-700 font-medium mb-2">You're saving with our shop discount rules</p>
                                 <div class="flex items-center gap-2">
-                                    <span class="text-2xl font-black text-blue-600">-{{ autoDiscount() | number:'1.2-2' }} TND</span>
-                                    <span class="px-3 py-1 bg-blue-500 text-white text-xs font-bold rounded-full uppercase tracking-wider">Auto Applied</span>
+                                    <span class="text-2xl font-black text-amber-600">-{{ autoDiscount() | number:'1.2-2' }} TND</span>
+                                    <span class="px-3 py-1 bg-amber-500 text-white text-xs font-bold rounded-full uppercase tracking-wider">Auto Applied</span>
                                 </div>
                             </div>
                         </div>
@@ -437,7 +460,7 @@
                         </div>
                         
                         @if (autoDiscount() > 0) {
-                        <div class="flex justify-between text-blue-600 text-sm font-bold animate-pulse">
+                        <div class="flex justify-between text-amber-600 text-sm font-bold animate-pulse">
                             <span class="flex items-center gap-1">
                                 <span>🎉</span>
                                 <span>Auto Discount</span>

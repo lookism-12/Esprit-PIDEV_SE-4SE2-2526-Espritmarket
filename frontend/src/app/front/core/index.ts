@@ -20,7 +20,6 @@ export { UserService } from './user.service';
 export type { UpdateProfileRequest, UserListResponse, UserFilter } from './user.service';
 
 export { InvoiceService } from './invoice.service';
-export type { InvoiceListResponse, GenerateInvoiceRequest } from './invoice.service';
 
 export { CouponService } from './coupon.service';
 export type { CreateCouponRequest, UpdateCouponRequest } from './coupon.service';

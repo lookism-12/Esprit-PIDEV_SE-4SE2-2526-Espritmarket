@@ -24,18 +24,29 @@ public class SAVMapper {
     }
 
     public DeliveryResponseDTO toDeliveryResponse(Delivery entity) {
-        if (entity == null) return null;
-        return DeliveryResponseDTO.builder()
-                .id(entity.getId() != null ? entity.getId().toHexString() : null)
-                .address(entity.getAddress())
-                .deliveryDate(entity.getDeliveryDate())
-                .status(entity.getStatus())
-                .userId(entity.getUserId() != null ? entity.getUserId().toHexString() : null)
-                .cartId(entity.getCartId() != null ? entity.getCartId().toHexString() : null)
-                .pendingDriverId(entity.getPendingDriverId() != null ? entity.getPendingDriverId().toHexString() : null)
-                .declineReason(entity.getDeclineReason())
-                .declinedByDriverId(entity.getDeclinedByDriverId())
-                .build();
+        if (entity == null) {
+            System.err.println("⚠️ SAVMapper: Attempted to map null Delivery entity");
+            return null;
+        }
+        
+        try {
+            return DeliveryResponseDTO.builder()
+                    .id(entity.getId() != null ? entity.getId().toHexString() : null)
+                    .address(entity.getAddress() != null ? entity.getAddress() : "")
+                    .deliveryDate(entity.getDeliveryDate())
+                    .status(entity.getStatus() != null ? entity.getStatus() : "PREPARING")
+                    .userId(entity.getUserId() != null ? entity.getUserId().toHexString() : null)
+                    .cartId(entity.getCartId() != null ? entity.getCartId().toHexString() : null)
+                    .orderId(entity.getOrderId() != null ? entity.getOrderId().toHexString() : null)
+                    .pendingDriverId(entity.getPendingDriverId() != null ? entity.getPendingDriverId().toHexString() : null)
+                    .declineReason(entity.getDeclineReason())
+                    .declinedByDriverId(entity.getDeclinedByDriverId())
+                    .build();
+        } catch (Exception e) {
+            System.err.println("❌ SAVMapper: Error mapping delivery entity: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Failed to map Delivery to DTO: " + e.getMessage(), e);
+        }
     }
 
     public SavFeedback toSavFeedbackEntity(SavFeedbackRequestDTO dto) {

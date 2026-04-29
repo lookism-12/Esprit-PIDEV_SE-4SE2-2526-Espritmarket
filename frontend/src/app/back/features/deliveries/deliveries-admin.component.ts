@@ -134,8 +134,18 @@ export class DeliveriesAdminComponent implements OnInit, AfterViewInit, OnDestro
   fetchDeliveries() {
     this.isLoading.set(true);
     this.savService.getAllDeliveries().subscribe({
-      next: (data) => { this.deliveries.set(data); this.isLoading.set(false); },
-      error: () => { this.toastService.error('Failed to load deliveries'); this.isLoading.set(false); }
+      next: (data) => { 
+        this.deliveries.set(data); 
+        this.isLoading.set(false); 
+      },
+      error: (err) => { 
+        console.error('❌ Failed to load deliveries:', err);
+        this.isLoading.set(false);
+        // Wrap in setTimeout to avoid ExpressionChangedAfterItHasBeenCheckedError
+        setTimeout(() => {
+          this.toastService.error('Failed to load deliveries');
+        }, 0);
+      }
     });
   }
 
