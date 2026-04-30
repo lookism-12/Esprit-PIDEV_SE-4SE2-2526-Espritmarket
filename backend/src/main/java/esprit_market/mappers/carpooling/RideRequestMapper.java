@@ -29,18 +29,26 @@ public class RideRequestMapper {
         if (request == null) return null;
 
         String passengerName = "Passenger";
+        String passengerUserId = null;
         PassengerProfile profile = passengerProfileRepository.findById(request.getPassengerProfileId()).orElse(null);
         if (profile != null) {
             User user = userRepository.findById(profile.getUserId()).orElse(null);
-            if (user != null) passengerName = user.getFirstName() + " " + user.getLastName();
+            if (user != null) {
+                passengerName = user.getFirstName() + " " + user.getLastName();
+                passengerUserId = user.getId().toHexString();
+            }
         }
 
         String driverName = null;
+        String driverUserId = null;
         if (request.getDriverProfileId() != null) {
             DriverProfile driverProfile = driverProfileRepository.findById(request.getDriverProfileId()).orElse(null);
             if (driverProfile != null) {
                 User user = userRepository.findById(driverProfile.getUserId()).orElse(null);
-                if (user != null) driverName = user.getFirstName() + " " + user.getLastName();
+                if (user != null) {
+                    driverName = user.getFirstName() + " " + user.getLastName();
+                    driverUserId = user.getId().toHexString();
+                }
             }
         }
 
@@ -59,6 +67,8 @@ public class RideRequestMapper {
                 .rideId(request.getRideId() != null ? request.getRideId().toHexString() : null)
                 .counterPrice(request.getCounterPrice())
                 .counterPriceNote(request.getCounterPriceNote())
+                .passengerUserId(passengerUserId)
+                .driverUserId(driverUserId)
                 .build();
     }
 }

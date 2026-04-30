@@ -52,13 +52,21 @@ export interface BookingResponseDTO {
   bookingId: string; rideId: string; passengerProfileId: string; passengerName: string;
   numberOfSeats: number; pickupLocation: string; dropoffLocation: string;
   status: string; totalPrice: number;
+  // Actual user ID — used by the frontend to open a chat
+  passengerUserId?: string;
 }
 
 export interface RideRequestResponseDTO {
   id: string; passengerProfileId: string; passengerName: string;
   departureLocation: string; destinationLocation: string; departureTime: string;
   requestedSeats: number; proposedPrice: number; status: string;
+  driverId?: string; driverName?: string;
   rideId?: string; counterPrice?: number; counterPriceNote?: string;
+  aiAcceptanceProbability?: number;
+  aiExplanation?: string[];
+  // Actual user IDs for opening a chat
+  passengerUserId?: string;
+  driverUserId?: string;
 }
 
 export interface PassengerDashboardDTO {
@@ -213,5 +221,9 @@ export class CarpoolingService {
 
   getPassengerDashboard(): Observable<PassengerDashboardDTO> {
     return this.http.get<PassengerDashboardDTO>(`${this.base}/passenger/dashboard`);
+  }
+
+  predictRideAcceptance(payload: any): Observable<RideRequestResponseDTO> {
+    return this.http.post<RideRequestResponseDTO>(`${this.base}/ride-requests/predict`, payload);
   }
 }

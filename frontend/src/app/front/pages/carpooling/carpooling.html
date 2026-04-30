@@ -105,6 +105,16 @@
             <span class="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center">{{ carpoolingService.availableRideRequests().length }}</span>
           }
         </button>
+        <button (click)="passengerTab.set('my-requests')"
+          class="relative px-4 py-2 rounded-xl font-bold text-sm transition-all"
+          [class.bg-primary]="passengerTab()==='my-requests'" [class.text-white]="passengerTab()==='my-requests'"
+          [style.background-color]="passengerTab()!=='my-requests'?'var(--subtle)':''"
+          [style.color]="passengerTab()!=='my-requests'?'var(--muted)':''">
+          📋 My Requests
+          @if (myRideRequests().length > 0) {
+            <span class="ml-1.5 text-[10px] font-black opacity-70">{{ myRideRequests().length }}</span>
+          }
+        </button>
       </div>
       <div class="flex items-center gap-2">
         @for (s of [['cheapest','💰 Cheapest'],['fastest','⚡ Fastest'],['rated','⭐ Rated']]; track s[0]) {
@@ -276,9 +286,100 @@
                   [class.bg-green-100]="req.status === 'ACCEPTED'" [class.text-green-700]="req.status === 'ACCEPTED'">
                   {{ req.status }}
                 </span>
-                <button class="px-4 py-2 bg-primary hover:bg-primary-dark text-white font-bold rounded-xl text-xs transition-all active:scale-95 opacity-0 group-hover:opacity-100">
-                  {{ req.status === 'ACCEPTED' ? '🚗 Join Ride →' : '✋ Accept Request →' }}
-                </button>
+                <div class="flex items-center gap-2">
+                  @if (req.status === 'ACCEPTED' && (req.passengerUserId || req.driverUserId)) {
+                    <button (click)="$event.stopPropagation(); openRideChat(req)"
+                      class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs transition-all active:scale-95 flex items-center gap-1">
+                      💬 Chat
+                    </button>
+                  }
+                  <button class="px-4 py-2 bg-primary hover:bg-primary-dark text-white font-bold rounded-xl text-xs transition-all active:scale-95 opacity-0 group-hover:opacity-100">
+                    {{ req.status === 'ACCEPTED' ? '🚗 Join Ride →' : '✋ Accept Request →' }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    }
+
+    <!-- My Requests Tab (passenger's own requests + chat for accepted ones) -->
+    @if (passengerTab() === 'my-requests') {
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-xl font-black" style="color: var(--text-color)">My Ride Requests</h3>
+        <button (click)="openCreateRideRequestModal()" class="px-5 py-2.5 bg-primary text-white rounded-xl font-bold text-sm hover:bg-primary-dark transition-all">📣 New Request</button>
+      </div>
+      @if (myRideRequests().length === 0) {
+        <div class="rounded-2xl p-12 text-center" style="background-color:var(--card-bg);border:1px solid var(--border)">
+          <span class="text-5xl block mb-3">📋</span>
+          <h3 class="font-black text-lg" style="color:var(--text-color)">No requests yet</h3>
+          <p class="text-sm mt-1 mb-5" style="color:var(--muted)">Post a request and let drivers come to you</p>
+          <button (click)="openCreateRideRequestModal()" class="px-5 py-2.5 bg-primary text-white font-bold rounded-xl text-sm hover:bg-primary-dark transition-all">
+            📣 Request a Ride
+          </button>
+        </div>
+      } @else {
+        <div class="space-y-3">
+          @for (req of myRideRequests(); track req.id) {
+            <div class="premium-card-gold p-6 mb-4">
+              <div class="flex items-start gap-4">
+                <!-- Status icon -->
+                <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-xl shrink-0 shadow-sm"
+                  [class.bg-amber-100]="req.status === 'PENDING'"
+                  [class.bg-green-100]="req.status === 'ACCEPTED'"
+                  [class.bg-red-100]="req.status === 'CANCELLED'">
+                  {{ req.status === 'ACCEPTED' ? '✅' : req.status === 'CANCELLED' ? '❌' : '⏳' }}
+                </div>
+                <!-- Route info -->
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2 mb-2 flex-wrap">
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                      [class.bg-amber-100]="req.status === 'PENDING'" [class.text-amber-700]="req.status === 'PENDING'"
+                      [class.bg-green-100]="req.status === 'ACCEPTED'" [class.text-green-700]="req.status === 'ACCEPTED'"
+                      [class.bg-red-100]="req.status === 'CANCELLED'" [class.text-red-700]="req.status === 'CANCELLED'">
+                      {{ req.status }}
+                    </span>
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">{{ req.departureTime | date:'MMM d, HH:mm' }}</span>
+                    @if (req.driverName) {
+                      <span class="text-[10px] font-bold" style="color:var(--muted)">Driver: {{ req.driverName }}</span>
+                    }
+                  </div>
+                  <div class="flex items-center gap-3">
+                    <div class="flex flex-col items-center gap-1 shrink-0">
+                      <div class="w-2.5 h-2.5 rounded-full bg-primary"></div>
+                      <div class="w-px h-5" style="background-color:var(--border)"></div>
+                      <div class="w-2.5 h-2.5 rounded-full bg-green-500"></div>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <p class="font-bold text-sm truncate" style="color:var(--text-color)">{{ req.departureLocation }}</p>
+                      <p class="font-bold text-sm truncate mt-3" style="color:var(--text-color)">{{ req.destinationLocation }}</p>
+                    </div>
+                  </div>
+                </div>
+                <!-- Price + seats -->
+                <div class="text-right shrink-0">
+                  <p class="text-2xl font-black text-primary">{{ req.proposedPrice || 0 }}</p>
+                  <p class="text-[10px] font-bold" style="color:var(--muted)">TND proposed</p>
+                  <p class="text-[10px] mt-1" style="color:var(--muted)">{{ req.requestedSeats }} seat(s)</p>
+                </div>
+              </div>
+              <!-- Actions row -->
+              <div class="mt-4 pt-3 border-t flex items-center justify-between" style="border-color:var(--border)">
+                <div>
+                  @if (req.counterPrice) {
+                    <span class="text-xs font-bold px-2 py-1 rounded-lg bg-amber-50 text-amber-700">
+                      Counter offer: {{ req.counterPrice }} TND
+                      @if (req.counterPriceNote) { — {{ req.counterPriceNote }} }
+                    </span>
+                  }
+                </div>
+                @if (req.status === 'ACCEPTED' && req.driverUserId) {
+                  <button (click)="openRideChat(req)"
+                    class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm transition-all active:scale-95 flex items-center gap-2 shadow-lg shadow-emerald-600/20">
+                    💬 Chat with Driver
+                  </button>
+                }
               </div>
             </div>
           }
@@ -384,13 +485,54 @@
       <!-- Proposed Price -->
       <div class="space-y-1">
         <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Proposed Price (TND, optional)</label>
-        <input formControlName="proposedPrice" type="number" step="0.5" min="0" placeholder="Proposed Price (TND, optional)"
-          class="dashboard-input"
-          [class.border-red-400]="isFieldInvalid(createRideRequestForm, 'proposedPrice')">
+        <div class="relative">
+          <input formControlName="proposedPrice" type="number" step="0.5" min="0" placeholder="Proposed Price (TND, optional)"
+            class="dashboard-input w-full pr-12"
+            [class.border-red-400]="isFieldInvalid(createRideRequestForm, 'proposedPrice')">
+          @if (isCheckingAI()) {
+            <div class="absolute right-4 top-1/2 -translate-y-1/2">
+              <div class="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          }
+        </div>
         @if (isFieldInvalid(createRideRequestForm, 'proposedPrice')) {
           <p class="text-[10px] text-red-500 font-bold ml-1">Price cannot be negative</p>
         }
       </div>
+
+      <!-- 🤖 AI Prediction Result -->
+      @if (predictionResult()) {
+        <div class="p-4 rounded-2xl border animate-fadeIn"
+          [style.background-color]="predictionResult()!.aiAcceptanceProbability! >= 0.65 ? 'rgba(34,197,94,0.06)' : predictionResult()!.aiAcceptanceProbability! >= 0.35 ? 'rgba(234,179,8,0.06)' : 'rgba(239,68,68,0.06)'"
+          [style.border-color]="predictionResult()!.aiAcceptanceProbability! >= 0.65 ? 'rgba(34,197,94,0.25)' : predictionResult()!.aiAcceptanceProbability! >= 0.35 ? 'rgba(234,179,8,0.25)' : 'rgba(239,68,68,0.25)'">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-[10px] font-black uppercase tracking-widest flex items-center gap-2"
+              [style.color]="predictionResult()!.aiAcceptanceProbability! >= 0.65 ? 'rgb(22,163,74)' : predictionResult()!.aiAcceptanceProbability! >= 0.35 ? 'rgb(161,98,7)' : 'rgb(220,38,38)'">
+              <span>🤖</span> AI Acceptance Likelihood
+            </span>
+            <span class="text-xs font-black"
+              [style.color]="predictionResult()!.aiAcceptanceProbability! >= 0.65 ? 'rgb(22,163,74)' : predictionResult()!.aiAcceptanceProbability! >= 0.35 ? 'rgb(161,98,7)' : 'rgb(220,38,38)'">
+              {{ (predictionResult()!.aiAcceptanceProbability! * 100) | number:'1.0-0' }}%
+            </span>
+          </div>
+          <div class="w-full h-1.5 rounded-full bg-gray-100 overflow-hidden">
+            <div class="h-full rounded-full transition-all duration-700"
+              [style.width.%]="predictionResult()!.aiAcceptanceProbability! * 100"
+              [style.background-color]="predictionResult()!.aiAcceptanceProbability! >= 0.65 ? 'rgb(34,197,94)' : predictionResult()!.aiAcceptanceProbability! >= 0.35 ? 'rgb(234,179,8)' : 'rgb(239,68,68)'">
+            </div>
+          </div>
+          @if (predictionResult()?.aiExplanation && predictionResult()!.aiExplanation!.length > 0) {
+            <ul class="mt-2 space-y-1">
+              @for (reason of predictionResult()!.aiExplanation; track $index) {
+                <li class="text-[10px] text-gray-500 flex items-start gap-2 leading-tight">
+                  <span class="text-primary font-bold">•</span>
+                  {{ reason }}
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      }
 
       <button type="submit" [disabled]="carpoolingService.isLoading() || createRideRequestForm.invalid"
         class="w-full h-14 bg-gray-900 hover:bg-black text-white rounded-2xl font-black text-lg mt-2 shadow-xl transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed">
@@ -402,3 +544,6 @@
 }
 
 </div><!-- end root -->
+
+<!-- CHAT WIDGET (reused from forum) -->
+<app-forum-chat-widget></app-forum-chat-widget>

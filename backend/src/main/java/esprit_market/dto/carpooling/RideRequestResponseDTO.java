@@ -24,4 +24,12 @@ public class RideRequestResponseDTO {
     private String rideId;
     private Float counterPrice;
     private String counterPriceNote;
+
+    // Actual user IDs (not profile IDs) — used by the frontend to open a chat
+    private String passengerUserId;
+    private String driverUserId;
+
+    // AI Intelligence Fields
+    private Double aiAcceptanceProbability;
+    private java.util.List<String> aiExplanation;
 }

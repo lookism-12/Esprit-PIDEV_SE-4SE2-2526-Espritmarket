@@ -25,4 +25,6 @@ public class BookingResponseDTO {
     private Float totalPrice;
     private LocalDateTime createdAt;
     private LocalDateTime cancelledAt;
+    // Actual user ID — used by the frontend to open a chat
+    private String passengerUserId;
 }

@@ -2,6 +2,7 @@ import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import {
   CarpoolingService, RideResponseDTO, VehicleDTO, DriverProfileDTO,
   BookingResponseDTO, RideRequestResponseDTO, DriverStatsDTO
@@ -10,11 +11,13 @@ import { AuthService } from '../../core/auth.service';
 import { UserRole } from '../../models/user.model';
 
 import { CarpoolingMapComponent, MapRide } from '../../shared/components/carpooling-map/carpooling-map.component';
+import { ForumChatWidget } from '../../shared/components/forum-chat-widget/forum-chat-widget';
+import { ChatService } from '../../../core/services/chat.service';
 
 @Component({
   selector: 'app-carpooling',
   standalone: true,
-  imports: [CommonModule, CurrencyPipe, DatePipe, ReactiveFormsModule, RouterModule, CarpoolingMapComponent],
+  imports: [CommonModule, CurrencyPipe, DatePipe, ReactiveFormsModule, RouterModule, CarpoolingMapComponent, ForumChatWidget],
   templateUrl: './carpooling.html',
   styleUrl: './carpooling.scss',
 })
@@ -25,6 +28,7 @@ export class Carpooling implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  readonly chatService = inject(ChatService);
 
   activeView = signal<'passenger' | 'driver'>('passenger');
   isLoading = signal(false);
@@ -37,7 +41,10 @@ export class Carpooling implements OnInit {
   showBookingPanel = signal<string | false>(false);
   showCreateRideRequestModal = signal(false);
   hasPassengerProfile = signal(false);
-  passengerTab = signal<'rides' | 'co-requests'>('rides');
+  passengerTab = signal<'rides' | 'co-requests' | 'my-requests'>('rides');
+  predictionResult = signal<RideRequestResponseDTO | null>(null);
+  isCheckingAI = signal(false);
+  myRideRequests = signal<RideRequestResponseDTO[]>([]);
 
   filteredRides = computed(() => {
     const sort = this.searchSortBy();
@@ -83,6 +90,19 @@ export class Carpooling implements OnInit {
       requestedSeats: [1, [Validators.required, Validators.min(1), Validators.max(7)]],
       proposedPrice: [null, [Validators.min(0)]],
     });
+
+    // Automatically check acceptance probability when form changes
+    this.createRideRequestForm.valueChanges.pipe(
+      debounceTime(300)
+    ).subscribe((v: any) => {
+      // Trigger prediction ONLY if price is entered and form is otherwise valid
+      if (v && v.proposedPrice && v.proposedPrice > 0 && this.createRideRequestForm.valid) {
+        this.checkAcceptance();
+      } else {
+        this.predictionResult.set(null);
+      }
+    });
+
     this.counterForm = this.fb.group({
       price: [0, [Validators.required, Validators.min(0.5)]], note: [''],
     });
@@ -120,16 +140,20 @@ export class Carpooling implements OnInit {
   starsArray(rating: number): boolean[] { return [1, 2, 3, 4, 5].map(i => i <= Math.round(rating)); }
 
   private loadPassengerView(): void {
-    this.carpoolingService.getAllRides().subscribe({ next: rides => this.rides.set(rides), error: () => {} });
+    this.carpoolingService.getAllRides().subscribe({ next: rides => this.rides.set(rides), error: () => { } });
     this.carpoolingService.getPassengerProfile().subscribe({
       next: () => this.hasPassengerProfile.set(true),
       error: () => this.hasPassengerProfile.set(false)
+    });
+    this.carpoolingService.getMyRideRequests().subscribe({
+      next: reqs => this.myRideRequests.set(reqs),
+      error: () => { }
     });
   }
 
   onSearch(): void {
     const { from, to, date, seats, postedSince } = this.searchForm.value;
-    
+
     // Map dropdown to ISO string
     let postedSinceDate: string | undefined;
     if (postedSince) {
@@ -176,8 +200,41 @@ export class Carpooling implements OnInit {
     if (this.createRideRequestForm.invalid) return;
     const v = this.createRideRequestForm.value;
     this.carpoolingService.createRideRequest({ ...v, departureTime: new Date(v.departureTime).toISOString() }).subscribe({
-      next: () => { this.error.set(null); this.closeCreateRideRequestModal(); this.createRideRequestForm.reset(); },
+      next: () => {
+        this.error.set(null);
+        this.success.set('Your ride request has been broadcasted to all drivers!');
+        this.closeCreateRideRequestModal();
+        this.createRideRequestForm.reset();
+        this.predictionResult.set(null);
+        // Refresh my requests so the new one appears in the "My Requests" tab
+        this.carpoolingService.getMyRideRequests().subscribe({
+          next: reqs => this.myRideRequests.set(reqs),
+          error: () => { }
+        });
+      },
       error: e => this.error.set(e.error?.message || 'Request failed')
+    });
+  }
+
+  checkAcceptance(): void {
+    if (this.createRideRequestForm.invalid) {
+      this.createRideRequestForm.markAllAsTouched();
+      return;
+    }
+    this.isCheckingAI.set(true);
+    const v = this.createRideRequestForm.value;
+    this.carpoolingService.predictRideAcceptance({
+      ...v,
+      departureTime: new Date(v.departureTime).toISOString()
+    }).subscribe({
+      next: (res) => {
+        this.predictionResult.set(res);
+        this.isCheckingAI.set(false);
+      },
+      error: () => {
+        this.isCheckingAI.set(false);
+        this.error.set('AI Prediction Service is currently unavailable.');
+      }
     });
   }
 
@@ -192,6 +249,29 @@ export class Carpooling implements OnInit {
     } else {
       this.error.set('This request is still pending or not yet linked to a confirmed ride.');
     }
+  }
+
+  /**
+   * Opens a real-time chat popup between the current user and the other party
+   * on an accepted ride request. Works for both passenger (chatting with driver)
+   * and driver (chatting with passenger).
+   */
+  openRideChat(req: RideRequestResponseDTO): void {
+    const currentUserId = this.auth.userId();
+    if (!currentUserId) {
+      this.error.set('You must be logged in to use the chat.');
+      return;
+    }
+    // Determine the other party's user ID
+    const otherUserId = currentUserId === req.passengerUserId
+      ? req.driverUserId
+      : req.passengerUserId;
+
+    if (!otherUserId) {
+      this.error.set('Chat is only available after the ride request is accepted.');
+      return;
+    }
+    this.chatService.openChatPopup(currentUserId, otherUserId);
   }
 
 

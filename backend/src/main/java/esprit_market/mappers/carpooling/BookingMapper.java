@@ -19,11 +19,15 @@ public class BookingMapper {
         if (booking == null) return null;
 
         String passengerName = null;
+        String passengerUserId = null;
         if (booking.getPassengerProfileId() != null) {
             var pp = passengerProfileRepository.findById(booking.getPassengerProfileId()).orElse(null);
             if (pp != null) {
                 User user = userRepository.findById(pp.getUserId()).orElse(null);
-                if (user != null) passengerName = user.getFirstName() + " " + user.getLastName();
+                if (user != null) {
+                    passengerName = user.getFirstName() + " " + user.getLastName();
+                    passengerUserId = user.getId().toHexString();
+                }
             }
         }
 
@@ -39,6 +43,7 @@ public class BookingMapper {
                 .totalPrice(booking.getTotalPrice())
                 .createdAt(booking.getCreatedAt())
                 .cancelledAt(booking.getCancelledAt())
+                .passengerUserId(passengerUserId)
                 .build();
     }
 }

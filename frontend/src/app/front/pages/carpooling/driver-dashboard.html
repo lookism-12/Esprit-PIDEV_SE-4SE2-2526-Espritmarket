@@ -312,10 +312,15 @@
                        @for (booking of getBookings(ride.rideId); track booking.bookingId) {
                           <div class="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
                             <span class="text-sm font-black">{{ booking.passengerName }}</span>
-                            <div class="flex gap-2">
+                            <div class="flex gap-2 items-center">
                               @if (booking.status === 'PENDING') {
                                 <button (click)="acceptBooking(booking.bookingId)" class="w-8 h-8 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center">✓</button>
                                 <button (click)="rejectBooking(booking.bookingId)" class="w-8 h-8 bg-red-50 text-red-600 rounded-lg flex items-center justify-center">✕</button>
+                              } @else if (booking.status === 'CONFIRMED' && booking.passengerUserId) {
+                                <button (click)="openBookingChat(booking)"
+                                  class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-xs transition-all active:scale-95 flex items-center gap-1">
+                                  💬 Chat
+                                </button>
                               } @else {
                                 <span class="text-[10px] font-black uppercase text-gray-400">{{ booking.status }}</span>
                               }
@@ -465,3 +470,6 @@
     </div>
   }
 </div>
+
+<!-- CHAT WIDGET (reused from forum) -->
+<app-forum-chat-widget></app-forum-chat-widget>

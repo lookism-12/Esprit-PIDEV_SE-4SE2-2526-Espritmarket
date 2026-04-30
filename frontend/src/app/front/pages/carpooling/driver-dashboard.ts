@@ -8,11 +8,13 @@ import {
 } from '../../core/carpooling.service';
 import { AuthService } from '../../core/auth.service';
 import { CarpoolingMapComponent } from '../../shared/components/carpooling-map/carpooling-map.component';
+import { ForumChatWidget } from '../../shared/components/forum-chat-widget/forum-chat-widget';
+import { ChatService } from '../../../core/services/chat.service';
 
 @Component({
   selector: 'app-driver-dashboard',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, CurrencyPipe, DatePipe, CarpoolingMapComponent],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, CurrencyPipe, DatePipe, CarpoolingMapComponent, ForumChatWidget],
   templateUrl: './driver-dashboard.html',
   styleUrls: ['./driver-dashboard.scss']
 })
@@ -21,6 +23,7 @@ export class DriverDashboard implements OnInit {
   private router = inject(Router);
   private fb = inject(FormBuilder);
   private auth = inject(AuthService);
+  readonly chatService = inject(ChatService);
 
   lastSelectedDistance = signal<number | null>(null);
   currentYear = new Date();
@@ -298,5 +301,33 @@ export class DriverDashboard implements OnInit {
     const trend = this.stats()?.monthlyEarningsTrend || [];
     if (trend.length === 0) return 1;
     return Math.max(...trend.map(t => t.earnings));
+  }
+
+  /**
+   * Opens a real-time chat popup with the passenger of an accepted ride request.
+   */
+  openRideChat(req: RideRequestResponseDTO): void {
+    const currentUserId = this.auth.userId();
+    if (!currentUserId) return;
+    const otherUserId = req.passengerUserId;
+    if (!otherUserId) {
+      this.error.set('Chat is only available after the ride request is accepted.');
+      return;
+    }
+    this.chatService.openChatPopup(currentUserId, otherUserId);
+  }
+
+  /**
+   * Opens a real-time chat popup with the passenger of a confirmed booking.
+   */
+  openBookingChat(booking: BookingResponseDTO): void {
+    const currentUserId = this.auth.userId();
+    if (!currentUserId) return;
+    const otherUserId = booking.passengerUserId;
+    if (!otherUserId) {
+      this.error.set('Chat is only available for confirmed bookings.');
+      return;
+    }
+    this.chatService.openChatPopup(currentUserId, otherUserId);
   }
 }
