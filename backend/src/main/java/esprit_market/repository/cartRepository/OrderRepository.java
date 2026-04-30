@@ -37,4 +37,10 @@ public interface OrderRepository extends MongoRepository<Order, ObjectId> {
     List<Order> findByStatusAndCreatedAtBefore(OrderStatus status, LocalDateTime time);
     
     Optional<Order> findByCartId(ObjectId cartId);
+
+    List<Order> findAllByCartId(ObjectId cartId);
+
+    List<Order> findByPaymentMethodIn(List<String> paymentMethods);
+
+    List<Order> findByPaymentMethodInAndStatus(List<String> paymentMethods, OrderStatus status);
 }

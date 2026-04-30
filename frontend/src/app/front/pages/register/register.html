@@ -161,11 +161,21 @@
                   </div>
                 }
                 <div class="rp-input-row">
-                  <select formControlName="vehicleType" class="rp-input rp-select">
+                  <select formControlName="vehicleType" class="rp-input rp-select"
+                    [class.rp-input-err]="isFieldInvalid('vehicleType')">
                     <option value="">Vehicle type</option>
                     @for (v of vehicleTypes; track v) { <option [value]="v">{{ v }}</option> }
                   </select>
                 </div>
+                @if (selectedSubRole() === 'DELIVERY') {
+                  <div class="rp-input-row">
+                    <select formControlName="deliveryZone" class="rp-input rp-select"
+                      [class.rp-input-err]="isFieldInvalid('deliveryZone')">
+                      <option value="">Delivery zone</option>
+                      @for (zone of deliveryZones; track zone) { <option [value]="zone">{{ zone }}</option> }
+                    </select>
+                  </div>
+                }
               </div>
             }
 

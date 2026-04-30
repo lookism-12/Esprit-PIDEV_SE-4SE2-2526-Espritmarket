@@ -184,7 +184,7 @@ public class ProviderOrderController {
                         }
                         // Fallback: find order via cartId (legacy deliveries)
                         if (delivery.getCartId() != null) {
-                            Optional<Order> order = orderRepository.findByCartId(delivery.getCartId());
+                            Optional<Order> order = orderRepository.findAllByCartId(delivery.getCartId()).stream().findFirst();
                             if (order.isPresent()) {
                                 System.out.println("✅ Found order via cartId for delivery " + delivery.getId().toHexString());
                                 return order.get();
@@ -195,6 +195,9 @@ public class ProviderOrderController {
                         return null;
                     })
                     .filter(order -> order != null)
+                    .filter(order -> order.getStatus() != OrderStatus.RESTOCKED
+                            && order.getStatus() != OrderStatus.DELIVERED
+                            && order.getStatus() != OrderStatus.CANCELLED)
                     .distinct()
                     .collect(Collectors.toList());
             

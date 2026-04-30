@@ -46,6 +46,9 @@ export interface Delivery {
   userId: string;
   cartId: string;
   orderId?: string;  // Link to Order entity
+  deliveredAt?: string;
+  returnedAt?: string;
+  returnReason?: string;
   // Driver workflow fields
   pendingDriverId?: string;
   declineReason?: string;

@@ -95,6 +95,20 @@ import { OrderResponse, OrderStatus } from '../../../models/order.model';
                 </div>
               }
 
+              @if (order.deliveryConfirmationCode && order.deliveryStatus !== 'DELIVERED' && order.deliveryStatus !== 'RETURNED') {
+                <div class="mt-3 pt-3 rounded-xl px-4 py-3 bg-green-50 border border-green-100">
+                  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <p class="text-xs font-black uppercase tracking-widest text-green-700">Secure delivery code</p>
+                      <p class="text-xs text-green-700/80 mt-1">Give this code only when the package is in your hands.</p>
+                    </div>
+                    <div class="px-4 py-2 bg-white border border-green-200 rounded-xl text-2xl font-black tracking-[0.28em] text-green-800">
+                      {{ order.deliveryConfirmationCode }}
+                    </div>
+                  </div>
+                </div>
+              }
+
               <!-- Order Status Info -->
               @if (order.status === 'PENDING') {
                 <div class="mt-3 pt-3 text-xs" style="border-top:1px solid var(--border);color:var(--muted)">
@@ -294,7 +308,9 @@ export class ProfileOrdersComponent implements OnInit {
       'PENDING': 'bg-yellow-100 text-yellow-800',
       'CONFIRMED': 'bg-blue-100 text-blue-800',
       'CANCELLED': 'bg-red-100 text-red-800',
-      'DELIVERED': 'bg-green-100 text-green-800'
+      'DELIVERED': 'bg-green-100 text-green-800',
+      'RETURNED': 'bg-red-100 text-red-800',
+      'RESTOCKED': 'bg-slate-100 text-slate-700'
     };
     return statusClasses[status] || 'bg-gray-100 text-gray-700';
   }

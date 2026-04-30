@@ -38,6 +38,9 @@ public class UserMapper {
                 .vehicleType(user.getVehicleType())
                 // Delivery fields
                 .deliveryZone(user.getDeliveryZone())
+                .currentLatitude(user.getCurrentLatitude())
+                .currentLongitude(user.getCurrentLongitude())
+                .lastLocationUpdatedAt(user.getLastLocationUpdatedAt() != null ? user.getLastLocationUpdatedAt().toString() : null)
                 .build();
     }
 }

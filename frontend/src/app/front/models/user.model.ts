@@ -5,6 +5,13 @@ export interface User {
   lastName: string;
   phone?: string;
   avatar?: string;
+  deliveryZone?: string;
+  vehicleType?: string;
+  drivingLicenseNumber?: string;
+  currentLatitude?: number;
+  currentLongitude?: number;
+  lastLocationUpdatedAt?: string;
+  isAvailableForDelivery?: boolean;
   roles: UserRole[]; // ✅ Primary roles array (matches backend)
   role: UserRole; // ✅ Keep for backward compatibility (first role)
   isVerified: boolean;

@@ -2,6 +2,8 @@ package esprit_market.controller.SAVController;
 
 import esprit_market.dto.SAV.SavFeedbackRequestDTO;
 import esprit_market.dto.SAV.SavFeedbackResponseDTO;
+import esprit_market.entity.user.User;
+import esprit_market.repository.userRepository.UserRepository;
 import esprit_market.service.SAVService.SavFeedbackService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -31,6 +33,13 @@ import java.util.Map;
 public class SavClaimClientController {
 
     private final SavFeedbackService savFeedbackService;
+    private final UserRepository userRepository;
+
+    private String resolveAuthenticatedUserId(Authentication authentication) {
+        User user = userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("Authenticated user not found: " + authentication.getName()));
+        return user.getId().toHexString();
+    }
 
     /**
      * Create a new SAV claim for a purchased product
@@ -46,9 +55,12 @@ public class SavClaimClientController {
             log.info("Client creating SAV claim for cartItemId: {}", request.getCartItemId());
             
             // Set user ID from authentication
-            String userId = authentication.getName();
+            String userId = resolveAuthenticatedUserId(authentication);
             request.setUserId(userId);
             request.setType("SAV");
+            if (request.getTargetType() == null || request.getTargetType().isBlank()) {
+                request.setTargetType("PRODUCT");
+            }
             
             SavFeedbackResponseDTO response = savFeedbackService.createFeedback(request);
             
@@ -77,7 +89,7 @@ public class SavClaimClientController {
     @Operation(summary = "Get my SAV claims", description = "Retrieve all return requests for the current client")
     public ResponseEntity<List<SavFeedbackResponseDTO>> getMySavClaims(Authentication authentication) {
         try {
-            String userId = authentication.getName();
+            String userId = resolveAuthenticatedUserId(authentication);
             log.info("Fetching SAV claims for user: {}", userId);
             
             List<SavFeedbackResponseDTO> claims = savFeedbackService.getSavClaimsByUserId(userId);
@@ -104,8 +116,8 @@ public class SavClaimClientController {
             SavFeedbackResponseDTO claim = savFeedbackService.getFeedbackById(id);
             
             // Verify ownership
-            String userId = authentication.getName();
-            if (!claim.getUserId().equals(userId)) {
+            String userId = resolveAuthenticatedUserId(authentication);
+            if (claim.getUserId() == null || !claim.getUserId().equals(userId)) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
             }
             
@@ -132,8 +144,8 @@ public class SavClaimClientController {
             SavFeedbackResponseDTO existing = savFeedbackService.getFeedbackById(id);
             
             // Verify ownership
-            String userId = authentication.getName();
-            if (!existing.getUserId().equals(userId)) {
+            String userId = resolveAuthenticatedUserId(authentication);
+            if (existing.getUserId() == null || !existing.getUserId().equals(userId)) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
             }
             
@@ -147,6 +159,9 @@ public class SavClaimClientController {
             
             request.setUserId(userId);
             request.setType("SAV");
+            if (request.getTargetType() == null || request.getTargetType().isBlank()) {
+                request.setTargetType("PRODUCT");
+            }
             SavFeedbackResponseDTO updated = savFeedbackService.updateFeedback(id, request);
             
             Map<String, Object> result = new HashMap<>();
@@ -179,8 +194,8 @@ public class SavClaimClientController {
             SavFeedbackResponseDTO existing = savFeedbackService.getFeedbackById(id);
             
             // Verify ownership
-            String userId = authentication.getName();
-            if (!existing.getUserId().equals(userId)) {
+            String userId = resolveAuthenticatedUserId(authentication);
+            if (existing.getUserId() == null || !existing.getUserId().equals(userId)) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
             }
             

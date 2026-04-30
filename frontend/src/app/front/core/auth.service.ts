@@ -17,6 +17,12 @@ export interface UserDTO {
   email: string;
   phone?: string;
   avatarUrl?: string;
+  deliveryZone?: string;
+  vehicleType?: string;
+  drivingLicenseNumber?: string;
+  currentLatitude?: number;
+  currentLongitude?: number;
+  lastLocationUpdatedAt?: string;
   roles: string[];
   enabled: boolean;
 }
@@ -105,6 +111,7 @@ export class AuthService {
   readonly userEmail = signal<string | null>(null);
   readonly userAvatar = signal<string | null>(null);
   readonly userRole = signal<UserRole | null>(null);
+  readonly userDeliveryZone = signal<string | null>(null);
 
   private http = inject(HttpClient);
 
@@ -220,6 +227,12 @@ export class AuthService {
             ? (userDto.roles[0] as UserRole) 
             : UserRole.CLIENT, // ✅ Keep for backward compatibility
           isVerified: userDto.enabled,
+          deliveryZone: userDto.deliveryZone || '',
+          vehicleType: userDto.vehicleType || '',
+          drivingLicenseNumber: userDto.drivingLicenseNumber || '',
+          currentLatitude: userDto.currentLatitude,
+          currentLongitude: userDto.currentLongitude,
+          lastLocationUpdatedAt: userDto.lastLocationUpdatedAt,
           createdAt: new Date(),
           updatedAt: new Date()
         };
@@ -247,6 +260,7 @@ export class AuthService {
         this.userEmail.set(user.email);
         this.userRole.set(user.role);
         this.userAvatar.set(avatarUrl);
+        this.userDeliveryZone.set(user.deliveryZone || null);
 
         // PERSISTENCE: Store role in localStorage for app initialization
         localStorage.setItem('userRole', user.role);
@@ -352,6 +366,7 @@ export class AuthService {
     this.userEmail.set(null);
     this.userAvatar.set(null);
     this.userRole.set(null);
+    this.userDeliveryZone.set(null);
 
     console.log('✅ Logout: localStorage cleared, all signals reset');
     

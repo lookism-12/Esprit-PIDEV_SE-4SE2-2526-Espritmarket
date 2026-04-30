@@ -81,6 +81,10 @@ export class SavService {
     return this.http.get<Delivery[]>(`${this.deliveryUrl}/user/${userId}`);
   }
 
+  getDriverWorklist(driverId: string): Observable<Delivery[]> {
+    return this.http.get<Delivery[]>(`${this.deliveryUrl}/driver-worklist/${driverId}`);
+  }
+
   getDeliveriesByCart(cartId: string): Observable<Delivery[]> {
     return this.http.get<Delivery[]>(`${this.deliveryUrl}/cart/${cartId}`);
   }
@@ -120,9 +124,9 @@ export class SavService {
   }
 
   /** Driver marks delivery as completed */
-  markAsDelivered(deliveryId: string, driverId: string): Observable<Delivery> {
+  markAsDelivered(deliveryId: string, driverId: string, confirmationCode: string): Observable<Delivery> {
     return this.http.patch<Delivery>(`${this.deliveryUrl}/${deliveryId}/mark-delivered`, null, {
-      params: { driverId }
+      params: { driverId, confirmationCode }
     });
   }
 

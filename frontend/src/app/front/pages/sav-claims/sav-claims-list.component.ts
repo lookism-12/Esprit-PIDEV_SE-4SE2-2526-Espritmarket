@@ -14,12 +14,12 @@ import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner
       <!-- Header -->
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 class="text-3xl font-black text-dark tracking-tight">My Return Requests</h1>
-          <p class="text-secondary font-medium mt-1">Track your return requests and customer claims</p>
+          <h1 class="text-3xl font-black text-dark tracking-tight">My Claims</h1>
+          <p class="text-secondary font-medium mt-1">Track product returns and delivery agent claims</p>
         </div>
         <button (click)="navigateToCreate()" 
                 class="px-6 py-3 bg-primary text-white font-black rounded-xl hover:bg-primary/90 transition-all uppercase tracking-widest text-[10px]">
-          + Create Return Request
+          + Create Claim
         </button>
       </div>
 
@@ -32,11 +32,11 @@ import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner
         <!-- Empty State -->
         <div class="bg-white rounded-3xl shadow-soft border border-gray-100 p-12 text-center">
           <span class="text-6xl mb-4 block">📦</span>
-          <h2 class="text-xl font-black text-dark mb-2">No Return Requests Yet</h2>
-          <p class="text-secondary font-medium mb-6">You haven't submitted any return requests yet.</p>
+          <h2 class="text-xl font-black text-dark mb-2">No Claims Yet</h2>
+          <p class="text-secondary font-medium mb-6">You haven't submitted any product or delivery claims yet.</p>
           <button (click)="navigateToCreate()" 
                   class="px-6 py-3 bg-primary text-white font-black rounded-xl hover:bg-primary/90 transition-all">
-            Create Your First Return Request
+            Create Your First Claim
           </button>
         </div>
       } @else {
@@ -50,6 +50,11 @@ import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner
                 <div class="flex-1">
                   <div class="flex items-center gap-3 mb-2">
                     <h3 class="font-black text-dark text-lg">{{ claim.reason }}</h3>
+                    @if (claim.targetType === 'DELIVERY_AGENT') {
+                      <span class="px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider bg-amber-100 text-amber-700">
+                        Delivery Agent
+                      </span>
+                    }
                     <span [ngClass]="getStatusBadgeClass(claim.status)" class="px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider">
                       {{ claim.status }}
                     </span>

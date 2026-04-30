@@ -226,11 +226,24 @@
         </div>
         
         <h3 class="text-2xl font-black text-dark mb-2">Confirm Delivery</h3>
-        <p class="text-gray-500 mb-6">You are about to mark <strong>{{ formatOrderNumber(selectedDelivery()!.cartId, selectedDelivery()!.deliveryDate) }}</strong> as successfully delivered to the client.</p>
+        <p class="text-gray-500 mb-5">Ask the client for the security code shown in their order profile before closing <strong>{{ formatOrderNumber(selectedDelivery()!.cartId, selectedDelivery()!.deliveryDate) }}</strong>.</p>
+
+        <div class="text-left mb-5 rounded-2xl border border-green-100 bg-green-50/60 p-4">
+            <label class="block text-xs font-bold text-green-700 uppercase tracking-widest mb-2">Client delivery code</label>
+            <input type="text"
+                   inputmode="numeric"
+                   maxlength="6"
+                   autocomplete="one-time-code"
+                   class="w-full px-4 py-4 bg-white border border-green-200 rounded-xl text-dark text-center text-2xl font-black tracking-[0.35em] focus:ring-2 focus:ring-green-500 focus:outline-none"
+                   placeholder="000000"
+                   [value]="deliverySecurityCode()"
+                   (input)="deliverySecurityCode.set($any($event.target).value.split(' ').join(''))">
+            <p class="mt-2 text-[11px] text-green-700 font-semibold">Only confirm after the package is physically handed to the client.</p>
+        </div>
         
         <div class="flex gap-3 mt-4">
             <button (click)="closeDeliverModal()" class="flex-1 py-3.5 text-gray-500 font-bold hover:bg-gray-50 rounded-xl transition">Cancel</button>
-            <button (click)="confirmMarkDelivered()" class="flex-[2] py-3.5 bg-primary shadow-lg shadow-primary/30 text-white font-bold rounded-xl hover:bg-red-700 transition transform hover:-translate-y-0.5">Yes, I Delivered It!</button>
+            <button (click)="confirmMarkDelivered()" [disabled]="deliverySecurityCode().trim().length === 0" class="flex-[2] py-3.5 bg-primary shadow-lg shadow-primary/30 text-white font-bold rounded-xl hover:bg-red-700 transition transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed">Confirm with Code</button>
         </div>
     </div>
 </div>

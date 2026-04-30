@@ -7,8 +7,10 @@ import esprit_market.mappers.SAVMapper;
 import esprit_market.repository.SAVRepository.SavFeedbackRepository;
 import esprit_market.repository.cartRepository.OrderItemRepository;
 import esprit_market.repository.cartRepository.OrderRepository;
+import esprit_market.repository.userRepository.UserRepository;
 import esprit_market.entity.cart.OrderItem;
 import esprit_market.entity.cart.Order;
+import esprit_market.entity.user.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
@@ -25,6 +27,7 @@ public class SavFeedbackService implements ISavFeedbackService {
     private final SavFeedbackRepository savFeedbackRepository;
     private final OrderItemRepository orderItemRepository;
     private final OrderRepository orderRepository;
+    private final UserRepository userRepository;
     private final SAVMapper savMapper;
 
     /**
@@ -34,9 +37,7 @@ public class SavFeedbackService implements ISavFeedbackService {
     public SavFeedbackResponseDTO createFeedback(SavFeedbackRequestDTO request) {
         log.info("Creating SAV feedback for cartItemId: {}", request.getCartItemId());
         
-        if (!orderItemRepository.existsById(new ObjectId(request.getCartItemId()))) {
-            throw new RuntimeException("OrderItem not found: " + request.getCartItemId());
-        }
+        validateClaimTarget(request);
         
         SavFeedback feedback = savMapper.toSavFeedbackEntity(request);
         feedback.setReadByAdmin(false);
@@ -46,7 +47,7 @@ public class SavFeedbackService implements ISavFeedbackService {
         SavFeedback saved = savFeedbackRepository.save(feedback);
         log.info("SAV feedback created with ID: {}", saved.getId());
         
-        return savMapper.toSavFeedbackResponse(saved);
+        return toResponseWithNames(saved);
     }
 
     /**
@@ -56,7 +57,7 @@ public class SavFeedbackService implements ISavFeedbackService {
     public SavFeedbackResponseDTO getFeedbackById(String id) {
         SavFeedback feedback = savFeedbackRepository.findById(new ObjectId(id))
                 .orElseThrow(() -> new RuntimeException("Feedback not found: " + id));
-        return savMapper.toSavFeedbackResponse(feedback);
+        return toResponseWithNames(feedback);
     }
 
     /**
@@ -65,7 +66,7 @@ public class SavFeedbackService implements ISavFeedbackService {
     @Override
     public List<SavFeedbackResponseDTO> getAllFeedbacks() {
         return savFeedbackRepository.findAll().stream()
-                .map(savMapper::toSavFeedbackResponse)
+                .map(this::toResponseWithNames)
                 .collect(Collectors.toList());
     }
 
@@ -75,7 +76,7 @@ public class SavFeedbackService implements ISavFeedbackService {
     @Override
     public List<SavFeedbackResponseDTO> getFeedbacksByCartItem(String cartItemId) {
         return savFeedbackRepository.findByCartItemId(new ObjectId(cartItemId)).stream()
-                .map(savMapper::toSavFeedbackResponse)
+                .map(this::toResponseWithNames)
                 .collect(Collectors.toList());
     }
 
@@ -85,7 +86,7 @@ public class SavFeedbackService implements ISavFeedbackService {
     @Override
     public List<SavFeedbackResponseDTO> getFeedbacksByType(String type) {
         return savFeedbackRepository.findByType(type).stream()
-                .map(savMapper::toSavFeedbackResponse)
+                .map(this::toResponseWithNames)
                 .collect(Collectors.toList());
     }
 
@@ -111,7 +112,7 @@ public class SavFeedbackService implements ISavFeedbackService {
     }
 
     private SavFeedbackResponseDTO toResponseWithUserName(SavFeedback feedback) {
-        SavFeedbackResponseDTO dto = savMapper.toSavFeedbackResponse(feedback);
+        SavFeedbackResponseDTO dto = toResponseWithNames(feedback);
         try {
             if (feedback.getCartItemId() != null) {
                 OrderItem orderItem = orderItemRepository.findById(feedback.getCartItemId()).orElse(null);
@@ -128,13 +129,55 @@ public class SavFeedbackService implements ISavFeedbackService {
         return dto;
     }
 
+    private void validateClaimTarget(SavFeedbackRequestDTO request) {
+        boolean deliveryAgentClaim = "DELIVERY_AGENT".equalsIgnoreCase(request.getTargetType());
+
+        if (deliveryAgentClaim) {
+            if (request.getDeliveryAgentId() == null || request.getDeliveryAgentId().isBlank()) {
+                throw new RuntimeException("Delivery agent is required for delivery-agent claims");
+            }
+            if (!userRepository.existsById(new ObjectId(request.getDeliveryAgentId()))) {
+                throw new RuntimeException("Delivery agent not found: " + request.getDeliveryAgentId());
+            }
+            if (request.getCartItemId() != null && !request.getCartItemId().isBlank()
+                    && !orderItemRepository.existsById(new ObjectId(request.getCartItemId()))) {
+                throw new RuntimeException("OrderItem not found: " + request.getCartItemId());
+            }
+            return;
+        }
+
+        if (request.getCartItemId() == null || request.getCartItemId().isBlank()) {
+            throw new RuntimeException("OrderItem is required for product claims");
+        }
+        if (!orderItemRepository.existsById(new ObjectId(request.getCartItemId()))) {
+            throw new RuntimeException("OrderItem not found: " + request.getCartItemId());
+        }
+    }
+
+    private SavFeedbackResponseDTO toResponseWithNames(SavFeedback feedback) {
+        SavFeedbackResponseDTO dto = savMapper.toSavFeedbackResponse(feedback);
+        try {
+            if (feedback.getUserId() != null) {
+                userRepository.findById(feedback.getUserId())
+                        .ifPresent(user -> dto.setUserName((user.getFirstName() + " " + user.getLastName()).trim()));
+            }
+            if (feedback.getDeliveryAgentId() != null) {
+                userRepository.findById(feedback.getDeliveryAgentId())
+                        .ifPresent(agent -> dto.setDeliveryAgentName((agent.getFirstName() + " " + agent.getLastName()).trim()));
+            }
+        } catch (Exception e) {
+            log.warn("Failed to enrich SAV feedback {}: {}", feedback.getId(), e.getMessage());
+        }
+        return dto;
+    }
+
     /**
      * Get SAV claims by user ID (client's own claims)
      */
     public List<SavFeedbackResponseDTO> getSavClaimsByUserId(String userId) {
         log.info("Fetching SAV claims for user: {}", userId);
         return savFeedbackRepository.findByUserIdAndType(new ObjectId(userId), "SAV").stream()
-                .map(savMapper::toSavFeedbackResponse)
+                .map(this::toResponseWithNames)
                 .collect(Collectors.toList());
     }
 
@@ -143,7 +186,7 @@ public class SavFeedbackService implements ISavFeedbackService {
      */
     public List<SavFeedbackResponseDTO> getSavClaimsByStatus(String status) {
         return savFeedbackRepository.findByTypeAndStatus("SAV", status).stream()
-                .map(savMapper::toSavFeedbackResponse)
+                .map(this::toResponseWithNames)
                 .collect(Collectors.toList());
     }
 
@@ -155,13 +198,11 @@ public class SavFeedbackService implements ISavFeedbackService {
         SavFeedback feedback = savFeedbackRepository.findById(new ObjectId(id))
                 .orElseThrow(() -> new RuntimeException("Feedback not found: " + id));
         
-        if (!orderItemRepository.existsById(new ObjectId(request.getCartItemId()))) {
-            throw new RuntimeException("OrderItem not found: " + request.getCartItemId());
-        }
+        validateClaimTarget(request);
         
         feedback.setType(request.getType());
         feedback.setMessage(request.getMessage());
-        feedback.setRating(request.getRating());
+        feedback.setRating(request.getRating() != null ? request.getRating() : feedback.getRating());
         feedback.setReason(request.getReason());
         feedback.setProblemNature(request.getProblemNature());
         feedback.setPriority(request.getPriority());
@@ -169,6 +210,8 @@ public class SavFeedbackService implements ISavFeedbackService {
         feedback.setPositiveTags(request.getPositiveTags());
         feedback.setRecommendsProduct(request.getRecommendsProduct());
         feedback.setImageUrls(request.getImageUrls());
+        feedback.setTargetType(request.getTargetType() != null && !request.getTargetType().isBlank() ? request.getTargetType() : "PRODUCT");
+        feedback.setDeliveryAgentId(request.getDeliveryAgentId() != null && !request.getDeliveryAgentId().isBlank() ? new ObjectId(request.getDeliveryAgentId()) : null);
         feedback.setLastUpdatedDate(LocalDateTime.now());
         
         if (request.getStatus() != null) {
@@ -181,9 +224,11 @@ public class SavFeedbackService implements ISavFeedbackService {
             feedback.setReadByAdmin(request.getReadByAdmin());
         }
         
-        feedback.setCartItemId(new ObjectId(request.getCartItemId()));
+        feedback.setCartItemId(request.getCartItemId() != null && !request.getCartItemId().isBlank()
+                ? new ObjectId(request.getCartItemId())
+                : null);
         
-        return savMapper.toSavFeedbackResponse(savFeedbackRepository.save(feedback));
+        return toResponseWithNames(savFeedbackRepository.save(feedback));
     }
 
     /**
@@ -207,7 +252,7 @@ public class SavFeedbackService implements ISavFeedbackService {
             feedback.setResolvedDate(LocalDateTime.now());
         }
         
-        return savMapper.toSavFeedbackResponse(savFeedbackRepository.save(feedback));
+        return toResponseWithNames(savFeedbackRepository.save(feedback));
     }
 
     /**
@@ -222,7 +267,7 @@ public class SavFeedbackService implements ISavFeedbackService {
         feedback.setReadByAdmin(true);
         feedback.setLastUpdatedDate(LocalDateTime.now());
         
-        return savMapper.toSavFeedbackResponse(savFeedbackRepository.save(feedback));
+        return toResponseWithNames(savFeedbackRepository.save(feedback));
     }
 
     /**
@@ -237,7 +282,7 @@ public class SavFeedbackService implements ISavFeedbackService {
         feedback.setAiRecommendation(recommendation);
         feedback.setLastUpdatedDate(LocalDateTime.now());
         
-        return savMapper.toSavFeedbackResponse(savFeedbackRepository.save(feedback));
+        return toResponseWithNames(savFeedbackRepository.save(feedback));
     }
 
     /**

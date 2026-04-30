@@ -81,6 +81,9 @@ public class User {
 
     // Delivery fields
     private String deliveryZone;
+    private Double currentLatitude;
+    private Double currentLongitude;
+    private LocalDateTime lastLocationUpdatedAt;
 
     @Builder.Default
     private boolean notificationsEnabled = true;

@@ -113,8 +113,17 @@ public class UserController {
     @GetMapping
     @Operation(summary = "Get all users with pagination")
     public ResponseEntity<Page<UserDTO>> getAllUsers(
-            @PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(userService.findAll(pageable));
+            @PageableDefault(size = 20) Pageable pageable,
+            @RequestParam(required = false) String role) {
+        Role roleFilter = null;
+        if (role != null && !role.isBlank()) {
+            try {
+                roleFilter = Role.valueOf(role.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                throw new BadRequestException("Invalid role filter: " + role);
+            }
+        }
+        return ResponseEntity.ok(userService.findAll(pageable, roleFilter));
     }
 
     @GetMapping("/{id}")
@@ -184,6 +193,10 @@ public class UserController {
             String firstName = request.get("firstName") != null ? request.get("firstName").toString() : null;
             String lastName = request.get("lastName") != null ? request.get("lastName").toString() : null;
             String phone = request.get("phone") != null ? request.get("phone").toString() : null;
+            String deliveryZone = request.get("deliveryZone") != null ? request.get("deliveryZone").toString() : null;
+            String vehicleType = request.get("vehicleType") != null ? request.get("vehicleType").toString() : null;
+            Double currentLatitude = parseOptionalDouble(request.get("currentLatitude"));
+            Double currentLongitude = parseOptionalDouble(request.get("currentLongitude"));
             
             // Validate only non-null fields
             if (firstName != null && !firstName.isEmpty()) {
@@ -207,7 +220,8 @@ public class UserController {
             String userId = userService.resolveUserId(userEmail).toHexString();
             log.debug("User ID: {}", userId);
             
-            UserDTO updated = userService.updateProfile(userId, firstName, lastName, phone);
+            UserDTO updated = userService.updateProfile(userId, firstName, lastName, phone,
+                    deliveryZone, vehicleType, currentLatitude, currentLongitude);
             log.info("Profile updated successfully for user: {}", userEmail);
             
             return ResponseEntity.ok(updated);
@@ -218,6 +232,17 @@ public class UserController {
         } catch (Exception e) {
             log.error("Error updating profile for user {}", userEmail, e);
             throw e;
+        }
+    }
+
+    private Double parseOptionalDouble(Object value) {
+        if (value == null) {
+            return null;
+        }
+        try {
+            return Double.parseDouble(value.toString());
+        } catch (NumberFormatException e) {
+            throw new BadRequestException("Invalid numeric coordinate value");
         }
     }
 

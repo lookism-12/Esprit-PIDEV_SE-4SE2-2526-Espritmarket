@@ -31,6 +31,8 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 @Service
@@ -52,6 +54,84 @@ public class OrderServiceImpl implements IOrderService {
     private final DeliveryRepository deliveryRepository;
     private final PromotionEngineService promotionEngineService;
     private final OrderStatusValidator orderStatusValidator;
+
+    private void ensureDeliveryRecordForOrder(Order order) {
+        if (order == null || order.getId() == null) {
+            return;
+        }
+
+        if (order.getDeliveryId() != null && deliveryRepository.existsById(order.getDeliveryId())) {
+            return;
+        }
+
+        var existingDelivery = deliveryRepository.findByOrderId(order.getId());
+        if (existingDelivery.isPresent()) {
+            order.setDeliveryId(existingDelivery.get().getId());
+            orderRepository.save(order);
+            return;
+        }
+
+        Delivery delivery = Delivery.builder()
+                .orderId(order.getId())
+                .cartId(order.getCartId())
+                .address(order.getShippingAddress())
+                .deliveryDate(LocalDateTime.now())
+                .status("PREPARING")
+                .deliveryConfirmationCode(generateDeliveryConfirmationCode())
+                .build();
+
+        Delivery savedDelivery = deliveryRepository.save(delivery);
+        order.setDeliveryId(savedDelivery.getId());
+        orderRepository.save(order);
+    }
+
+    private String generateDeliveryConfirmationCode() {
+        return String.valueOf(ThreadLocalRandom.current().nextInt(100000, 1000000));
+    }
+
+    private Optional<Delivery> findDeliveryForOrderResponse(Order order) {
+        if (order.getDeliveryId() != null) {
+            Optional<Delivery> delivery = deliveryRepository.findById(order.getDeliveryId());
+            if (delivery.isPresent()) {
+                return delivery;
+            }
+        }
+        Optional<Delivery> byOrderId = deliveryRepository.findByOrderId(order.getId());
+        if (byOrderId.isPresent()) {
+            return byOrderId;
+        }
+        if (order.getCartId() != null) {
+            return deliveryRepository.findByCartId(order.getCartId()).stream().findFirst();
+        }
+        return Optional.empty();
+    }
+
+    private Delivery ensureDeliveryCodeForOrderResponse(Order order) {
+        Optional<Delivery> deliveryOpt = findDeliveryForOrderResponse(order);
+        if (deliveryOpt.isEmpty()) {
+            return null;
+        }
+
+        Delivery delivery = deliveryOpt.get();
+        boolean changed = false;
+        if (delivery.getDeliveryConfirmationCode() == null || delivery.getDeliveryConfirmationCode().isBlank()) {
+            delivery.setDeliveryConfirmationCode(generateDeliveryConfirmationCode());
+            changed = true;
+        }
+        if (delivery.getOrderId() == null && order.getId() != null) {
+            delivery.setOrderId(order.getId());
+            changed = true;
+        }
+        if (delivery.getCartId() == null && order.getCartId() != null) {
+            delivery.setCartId(order.getCartId());
+            changed = true;
+        }
+        if (order.getDeliveryId() == null && delivery.getId() != null) {
+            order.setDeliveryId(delivery.getId());
+            orderRepository.save(order);
+        }
+        return changed ? deliveryRepository.save(delivery) : delivery;
+    }
     
     @Override
     @Transactional
@@ -153,7 +233,7 @@ public class OrderServiceImpl implements IOrderService {
         OrderStatus orderStatus;
         LocalDateTime paidAt = null;
         
-        if ("CARD".equalsIgnoreCase(request.getPaymentMethod())) {
+        if (OrderDeliveryEligibility.isCardPaymentMethod(request.getPaymentMethod())) {
             // CARD PAYMENT: Payment received immediately, order starts as PENDING
             paymentStatus = PaymentStatus.PAID;
             orderStatus = OrderStatus.PENDING;  // Provider must confirm
@@ -245,14 +325,9 @@ public class OrderServiceImpl implements IOrderService {
         log.info("⏳ Loyalty points will be granted when order is confirmed/delivered");
         
         // 🚚 CREATE DELIVERY RECORD FOR ADMIN DASHBOARD
-        Delivery delivery = Delivery.builder()
-                .orderId(savedOrder.getId())  // ✅ Link delivery to order
-                .cartId(cart.getId()) 
-                .address(request.getShippingAddress())
-                .deliveryDate(LocalDateTime.now())
-                .status("PENDING")  // Changed from PREPARING to PENDING
-                .build();
-        deliveryRepository.save(delivery);
+        if (OrderDeliveryEligibility.isCardPaymentMethod(savedOrder.getPaymentMethod())) {
+            ensureDeliveryRecordForOrder(savedOrder);
+        }
         
         return buildOrderResponse(savedOrder);
     }
@@ -436,6 +511,9 @@ public class OrderServiceImpl implements IOrderService {
                     grantLoyaltyPointsForOrder(order);
                     log.info("🏆 Loyalty points granted for CARD payment order {}", order.getOrderNumber());
                 }
+                if (OrderDeliveryEligibility.isEligibleForDelivery(order)) {
+                    ensureDeliveryRecordForOrder(order);
+                }
                 break;
                 
             case PREPARING:
@@ -452,8 +530,8 @@ public class OrderServiceImpl implements IOrderService {
                 order.setDeliveredAt(LocalDateTime.now());
                 
                 // For Cash on Delivery, mark as PAID when delivered
-                if (order.getPaymentStatus() == PaymentStatus.PENDING_PAYMENT && 
-                    "CASH".equalsIgnoreCase(order.getPaymentMethod())) {
+                if (order.getPaymentStatus() == PaymentStatus.PENDING_PAYMENT &&
+                    OrderDeliveryEligibility.isCashPaymentMethod(order.getPaymentMethod())) {
                     order.setPaymentStatus(PaymentStatus.PAID);
                     order.setPaidAt(LocalDateTime.now());
                     
@@ -987,8 +1065,17 @@ public class OrderServiceImpl implements IOrderService {
     private OrderResponse buildOrderResponse(Order order) {
         // ✅ CRITICAL: Normalize legacy status values for backward compatibility
         order = normalizeLegacyStatus(order);
+        if (OrderDeliveryEligibility.isEligibleForDelivery(order)) {
+            ensureDeliveryRecordForOrder(order);
+        }
         
         OrderResponse response = orderMapper.toResponse(order);
+        Delivery delivery = ensureDeliveryCodeForOrderResponse(order);
+        if (delivery != null) {
+            response.setDeliveryId(delivery.getId() != null ? delivery.getId().toHexString() : null);
+            response.setDeliveryStatus(delivery.getStatus());
+            response.setDeliveryConfirmationCode(delivery.getDeliveryConfirmationCode());
+        }
         
         // Load order items
         List<OrderItem> items = orderItemRepository.findByOrderId(order.getId());

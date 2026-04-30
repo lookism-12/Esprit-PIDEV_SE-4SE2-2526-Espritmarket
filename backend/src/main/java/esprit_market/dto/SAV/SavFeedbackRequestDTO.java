@@ -21,7 +21,7 @@ public class SavFeedbackRequestDTO {
 
     @Min(value = 1, message = "Minimum rating is 1")
     @Max(value = 5, message = "Maximum rating is 5")
-    private int rating;
+    private Integer rating;
 
     private String reason; // Return reason
     private String status; // PENDING, INVESTIGATING, RESOLVED, ARCHIVED, REJECTED
@@ -37,8 +37,12 @@ public class SavFeedbackRequestDTO {
     // Images uploaded by client
     private List<String> imageUrls;
 
-    @NotBlank(message = "CartItem ID (purchased product) is required")
+    // Required only for product claims. Delivery-agent claims may leave it empty.
     private String cartItemId;
+
+    // Claim target: PRODUCT or DELIVERY_AGENT
+    private String targetType;
+    private String deliveryAgentId;
     
     // User ID (client who created the claim)
     private String userId;

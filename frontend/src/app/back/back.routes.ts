@@ -197,7 +197,28 @@ export const BACK_ROUTES: Routes = [
             },
             {
                 path: 'deliveries',
-                loadComponent: () => import('./features/deliveries/deliveries-admin.component').then(m => m.DeliveriesAdminComponent)
+                children: [
+                    {
+                        path: '',
+                        loadComponent: () => import('./features/deliveries/deliveries-admin.component').then(m => m.DeliveriesAdminComponent)
+                    },
+                    {
+                        path: 'agents',
+                        loadComponent: () => import('./features/deliveries/delivery-management.component').then(m => m.DeliveryAgentsAdminComponent)
+                    },
+                    {
+                        path: 'performance',
+                        loadComponent: () => import('./features/deliveries/delivery-management.component').then(m => m.AgentPerformanceComponent)
+                    },
+                    {
+                        path: 'reviews',
+                        loadComponent: () => import('./features/deliveries/delivery-management.component').then(m => m.AgentReviewsComponent)
+                    },
+                    {
+                        path: 'warnings-rewards',
+                        loadComponent: () => import('./features/deliveries/delivery-management.component').then(m => m.WarningsRewardsComponent)
+                    }
+                ]
             },
             {
                 path: 'analytics',

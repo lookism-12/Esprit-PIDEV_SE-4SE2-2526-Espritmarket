@@ -17,7 +17,11 @@ export interface SavClaim {
   readByAdmin?: boolean;
   imageUrls?: string[];
   cartItemId: string;
+  targetType?: 'PRODUCT' | 'DELIVERY_AGENT';
+  deliveryAgentId?: string;
+  deliveryAgentName?: string;
   userId?: string;
+  userName?: string;
   creationDate?: Date;
   lastUpdatedDate?: Date;
   resolvedDate?: Date;
@@ -37,27 +41,7 @@ export class SavClaimService {
    * Create a new SAV claim
    */
   createSavClaim(claim: SavClaim, images?: File[]): Observable<any> {
-    const formData = new FormData();
-    
-    // Add claim data
-    formData.append('type', claim.type);
-    formData.append('message', claim.message);
-    formData.append('reason', claim.reason);
-    formData.append('problemNature', claim.problemNature);
-    formData.append('desiredSolution', claim.desiredSolution);
-    formData.append('cartItemId', claim.cartItemId);
-    
-    if (claim.rating) formData.append('rating', claim.rating.toString());
-    if (claim.priority) formData.append('priority', claim.priority);
-    
-    // Add images
-    if (images && images.length > 0) {
-      images.forEach((image, index) => {
-        formData.append(`images`, image, image.name);
-      });
-    }
-    
-    return this.http.post(`${this.apiUrl}`, formData);
+    return this.http.post(`${this.apiUrl}`, this.toPayload(claim, images));
   }
 
   /**
@@ -78,25 +62,16 @@ export class SavClaimService {
    * Update a SAV claim
    */
   updateMySavClaim(id: string, claim: SavClaim, images?: File[]): Observable<any> {
-    const formData = new FormData();
-    
-    formData.append('type', claim.type);
-    formData.append('message', claim.message);
-    formData.append('reason', claim.reason);
-    formData.append('problemNature', claim.problemNature);
-    formData.append('desiredSolution', claim.desiredSolution);
-    formData.append('cartItemId', claim.cartItemId);
-    
-    if (claim.rating) formData.append('rating', claim.rating.toString());
-    if (claim.priority) formData.append('priority', claim.priority);
-    
-    if (images && images.length > 0) {
-      images.forEach((image) => {
-        formData.append(`images`, image, image.name);
-      });
-    }
-    
-    return this.http.put(`${this.apiUrl}/my/${id}`, formData);
+    return this.http.put(`${this.apiUrl}/my/${id}`, this.toPayload(claim, images));
+  }
+
+  private toPayload(claim: SavClaim, images?: File[]): SavClaim {
+    return {
+      ...claim,
+      targetType: claim.targetType || 'PRODUCT',
+      rating: claim.rating && claim.rating > 0 ? claim.rating : 1,
+      imageUrls: images?.map(image => image.name) || claim.imageUrls || []
+    };
   }
 
   /**

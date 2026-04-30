@@ -43,4 +43,7 @@ public class SavFeedbackResponseDTO {
     private String cartItemId;
     private String userId;
     private String userName; // Client name for reviews
+    private String targetType;
+    private String deliveryAgentId;
+    private String deliveryAgentName;
 }

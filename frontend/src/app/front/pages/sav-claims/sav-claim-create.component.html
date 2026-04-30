@@ -2,22 +2,53 @@
   
   <!-- Header -->
   <div>
-    <h1 class="text-3xl font-black text-dark tracking-tight">Create Return Request</h1>
-    <p class="text-secondary font-medium mt-1">Submit a return request for a purchased product</p>
+    <h1 class="text-3xl font-black text-dark tracking-tight">
+      {{ isDeliveryAgentMode() ? 'Claim Delivery Agent' : 'Create Claim' }}
+    </h1>
+    <p class="text-secondary font-medium mt-1">
+      {{ isDeliveryAgentMode() ? 'Report a delivery experience focused only on the assigned courier.' : 'Submit a product return or report a delivery agent issue' }}
+    </p>
   </div>
 
   <!-- Form -->
   <form [formGroup]="form" (ngSubmit)="submit()" class="bg-white rounded-3xl shadow-soft border border-gray-100 p-8 space-y-6">
     
+    <!-- Claim Target -->
+    @if (!isDeliveryAgentMode()) {
+    <div class="space-y-4">
+      <h3 class="text-sm font-black text-dark uppercase tracking-wider flex items-center gap-2">
+        <span class="text-lg">🎯</span>
+        Claim Target
+      </h3>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <label class="cursor-pointer rounded-2xl border-2 p-4 transition-all"
+               [ngClass]="form.value.targetType === 'PRODUCT' ? 'border-primary bg-primary/5 shadow-sm' : 'border-gray-200 hover:border-primary/40'">
+          <input type="radio" formControlName="targetType" value="PRODUCT" class="sr-only">
+          <span class="text-xs font-black uppercase tracking-widest text-secondary">Product Issue</span>
+          <p class="font-black text-dark mt-1">Return, exchange, repair, or product support</p>
+        </label>
+
+        <label class="cursor-pointer rounded-2xl border-2 p-4 transition-all"
+               [ngClass]="form.value.targetType === 'DELIVERY_AGENT' ? 'border-primary bg-primary/5 shadow-sm' : 'border-gray-200 hover:border-primary/40'">
+          <input type="radio" formControlName="targetType" value="DELIVERY_AGENT" class="sr-only">
+          <span class="text-xs font-black uppercase tracking-widest text-secondary">Delivery Agent Issue</span>
+          <p class="font-black text-dark mt-1">Delay, behavior, damaged delivery, or handoff problem</p>
+        </label>
+      </div>
+    </div>
+    }
+
     <!-- Product Info -->
+    @if (form.value.targetType !== 'DELIVERY_AGENT') {
     <div class="space-y-4">
       <h3 class="text-sm font-black text-dark uppercase tracking-wider flex items-center gap-2">
         <span class="text-lg">📦</span>
-        Product Information
+        Order Context
       </h3>
       
       <div>
-        <label class="block text-xs font-black text-secondary uppercase tracking-widest mb-2">Product *</label>
+          <label class="block text-xs font-black text-secondary uppercase tracking-widest mb-2">Purchased product *</label>
         @if (isLoadingItems()) {
           <div class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-gray-50 text-gray-500">
             Loading your purchased items...
@@ -30,7 +61,7 @@
         }
         @if (!isLoadingItems() && purchasedItems().length > 0) {
           <select formControlName="cartItemId" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm font-medium bg-white">
-            <option value="">— Select a purchased product —</option>
+            <option value="">— Select the related purchased product —</option>
             @for (item of purchasedItems(); track item.id) {
               <option [value]="item.id">
                 {{ item.productName }} ({{ item.quantity }}x) - ${{ item.price }}
@@ -43,24 +74,62 @@
         }
       </div>
     </div>
+    }
+
+    @if (form.value.targetType === 'DELIVERY_AGENT') {
+      <div class="space-y-4 rounded-3xl border border-amber-200 bg-amber-50/60 p-5">
+        <h3 class="text-sm font-black text-dark uppercase tracking-wider flex items-center gap-2">
+          <span class="text-lg">🚚</span>
+          Delivery Agent
+        </h3>
+        <div>
+          <label class="block text-xs font-black text-secondary uppercase tracking-widest mb-2">Delivery Agent *</label>
+          <select formControlName="deliveryAgentId" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm font-medium bg-white">
+            <option value="">— Select the delivery agent —</option>
+            @for (agent of deliveryAgents(); track agent.id) {
+              <option [value]="agent.id">
+                {{ agent.firstName }} {{ agent.lastName }} @if (agent.deliveryZone) { - {{ agent.deliveryZone }} }
+              </option>
+            }
+          </select>
+          @if (deliveryAgents().length === 0) {
+            <p class="text-amber-600 text-xs mt-1">No delivery agents loaded yet. You can retry after refresh.</p>
+          }
+          @if (form.get('deliveryAgentId')?.invalid && form.get('deliveryAgentId')?.touched) {
+            <p class="text-red-600 text-xs mt-1">Delivery agent is required</p>
+          }
+        </div>
+        <p class="text-xs text-amber-800 font-semibold">
+          This claim is linked to the courier only. Product return details are handled by the existing SAV claim area below.
+        </p>
+      </div>
+    }
 
     <!-- Return Details -->
     <div class="space-y-4">
       <h3 class="text-sm font-black text-dark uppercase tracking-wider flex items-center gap-2">
         <span class="text-lg">🔍</span>
-        Return Details
+        {{ form.value.targetType === 'DELIVERY_AGENT' ? 'Delivery Agent Details' : 'Return Details' }}
       </h3>
       
       <div class="grid grid-cols-2 gap-4">
         <div>
-          <label class="block text-xs font-black text-secondary uppercase tracking-widest mb-2">Reason for Return *</label>
+          <label class="block text-xs font-black text-secondary uppercase tracking-widest mb-2">Reason *</label>
           <select formControlName="reason" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm font-medium bg-white">
             <option value="">— Select reason —</option>
-            <option value="defective">Defective/Broken</option>
-            <option value="not_as_described">Not as Described</option>
-            <option value="wrong_item">Wrong Item Received</option>
-            <option value="damaged">Damaged in Shipping</option>
-            <option value="changed_mind">Changed Mind</option>
+            @if (form.value.targetType === 'DELIVERY_AGENT') {
+              <option value="late_delivery">Late Delivery</option>
+              <option value="agent_behavior">Delivery Agent Behavior</option>
+              <option value="handoff_issue">Handoff Issue</option>
+              <option value="unreachable_agent">Agent Unreachable</option>
+              <option value="delivery_damage">Package Handling Problem</option>
+            } @else {
+              <option value="defective">Defective/Broken</option>
+              <option value="not_as_described">Not as Described</option>
+              <option value="wrong_item">Wrong Item Received</option>
+              <option value="damaged">Damaged in Shipping</option>
+              <option value="changed_mind">Changed Mind</option>
+            }
             <option value="other">Other</option>
           </select>
           @if (form.get('reason')?.invalid && form.get('reason')?.touched) {
@@ -70,7 +139,7 @@
         
         <div>
           <label class="block text-xs font-black text-secondary uppercase tracking-widest mb-2">Problem Nature *</label>
-          <input formControlName="problemNature" type="text" placeholder="e.g., Screen not working, Color mismatch"
+          <input formControlName="problemNature" type="text" [placeholder]="form.value.targetType === 'DELIVERY_AGENT' ? 'e.g., late handoff, rude behavior, unreachable courier' : 'e.g., package damaged, item mismatch'"
             class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm font-medium">
           @if (form.get('problemNature')?.invalid && form.get('problemNature')?.touched) {
             <p class="text-red-600 text-xs mt-1">Problem nature is required</p>
@@ -83,10 +152,17 @@
           <label class="block text-xs font-black text-secondary uppercase tracking-widest mb-2">Desired Solution *</label>
           <select formControlName="desiredSolution" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm font-medium bg-white">
             <option value="">— Select solution —</option>
-            <option value="refund">Refund</option>
-            <option value="exchange">Exchange</option>
-            <option value="repair">Repair</option>
-            <option value="support">Support/Help</option>
+            @if (form.value.targetType === 'DELIVERY_AGENT') {
+              <option value="investigate_agent">Investigate Agent</option>
+              <option value="contact_agent">Contact Agent</option>
+              <option value="reassign_delivery">Reassign Future Deliveries</option>
+              <option value="apology_followup">Apology & Follow-up</option>
+            } @else {
+              <option value="refund">Refund</option>
+              <option value="exchange">Exchange</option>
+              <option value="repair">Repair</option>
+              <option value="support">Support/Help</option>
+            }
             <option value="other">Other</option>
           </select>
           @if (form.get('desiredSolution')?.invalid && form.get('desiredSolution')?.touched) {
@@ -115,7 +191,7 @@
       
       <div>
         <label class="block text-xs font-black text-secondary uppercase tracking-widest mb-2">Detailed Message *</label>
-        <textarea formControlName="message" rows="4" placeholder="Please describe the issue in detail..."
+        <textarea formControlName="message" rows="4" [placeholder]="form.value.targetType === 'DELIVERY_AGENT' ? 'Describe what happened with the courier: timing, behavior, communication, handoff...' : 'Please describe the issue in detail...'"
           class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm font-medium resize-none"></textarea>
         @if (form.get('message')?.invalid && form.get('message')?.touched) {
           <p class="text-red-600 text-xs mt-1">Message is required</p>
@@ -140,7 +216,7 @@
     <div class="space-y-4">
       <h3 class="text-sm font-black text-dark uppercase tracking-wider flex items-center gap-2">
         <span class="text-lg">📸</span>
-        Product Images *
+        Evidence Images
       </h3>
       
       <div class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center cursor-pointer hover:border-primary transition-colors"
@@ -148,7 +224,7 @@
         <input #fileInput type="file" multiple accept="image/*" (change)="onFilesSelected($event)" hidden>
         <span class="text-4xl block mb-2">📷</span>
         <p class="font-bold text-dark mb-1">Click to upload or drag and drop</p>
-        <p class="text-xs text-secondary">PNG, JPG, GIF up to 10MB</p>
+        <p class="text-xs text-secondary">Optional evidence. PNG, JPG, GIF up to 10MB</p>
       </div>
 
       @if (selectedImages().length > 0) {
@@ -166,15 +242,15 @@
       }
 
       @if (selectedImages().length === 0) {
-        <p class="text-red-600 text-xs">At least one image is required</p>
+        <p class="text-xs text-secondary">You can submit without images if the claim is about delivery behavior or timing.</p>
       }
     </div>
 
     <!-- Actions -->
     <div class="flex gap-3 pt-4 border-t border-gray-200">
-      <button type="submit" [disabled]="form.invalid || selectedImages().length === 0 || isSubmitting()"
+      <button type="submit" [disabled]="form.invalid || isSubmitting()"
         class="flex-1 py-3 bg-primary text-white font-black rounded-xl hover:bg-primary/90 transition-all disabled:opacity-50 text-sm uppercase tracking-widest">
-        {{ isSubmitting() ? 'Submitting...' : 'Submit Return Request' }}
+        {{ isSubmitting() ? 'Submitting...' : 'Submit Claim' }}
       </button>
       <button type="button" (click)="cancel()"
         class="px-6 py-3 bg-gray-100 text-dark font-black rounded-xl hover:bg-gray-200 transition-all text-sm">

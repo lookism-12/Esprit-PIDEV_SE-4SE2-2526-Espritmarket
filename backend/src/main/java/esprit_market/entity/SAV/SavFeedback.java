@@ -56,6 +56,10 @@ public class SavFeedback {
     
     // CartItem relationship (OneToMany UNIDIRECTIONAL SavFeedback -> CartItem)
     private ObjectId cartItemId;
+
+    // Claim target: PRODUCT or DELIVERY_AGENT
+    private String targetType;
+    private ObjectId deliveryAgentId;
     
     // User relationship
     private ObjectId userId; // Client who created the claim

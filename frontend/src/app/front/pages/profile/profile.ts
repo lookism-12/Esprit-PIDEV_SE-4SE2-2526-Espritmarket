@@ -19,6 +19,7 @@ import { OrderResponse } from '../../models/order.model';
 import { AvatarUploadModal } from './avatar-upload-modal';
 import { ProfileEditModal } from './profile-edit-modal';
 import { PasswordChangeModal } from './password-change-modal';
+import { WrRegistryService, AgentWrStats } from '../../../back/core/services/wr-registry.service';
 
 type ProfileTab = 'orders' | 'loyalty' | 'preferences' | 'settings' | 'deliveries' | 'negotiations' | 'claims';
 
@@ -42,6 +43,7 @@ export class Profile implements OnInit {
   private carpoolingService = inject(CarpoolingService);
   private savService = inject(SavService);
   private favoriteService = inject(FavoriteService);
+  private wrRegistry = inject(WrRegistryService);
 
   // ── Auth ──────────────────────────────────────────────────────────────────
   user = computed(() => ({
@@ -51,6 +53,7 @@ export class Profile implements OnInit {
     email: this.authService.userEmail() || '',
     phone: '—',
     avatarUrl: this.authService.userAvatar() || '',
+    deliveryZone: this.authService.userDeliveryZone() || '',
     isVerified: true,
     role: this.authService.userRole() || UserRole.CLIENT
   }));
@@ -71,6 +74,7 @@ export class Profile implements OnInit {
     return r === UserRole.PROVIDER || r === UserRole.SELLER || (r as string) === 'SELLER' || (r as string) === 'PROVIDER';
   });
   isDelivery  = computed(() => this.role() === UserRole.DELIVERY);
+  deliveryZone = computed(() => this.user().deliveryZone?.trim() || 'Not configured');
 
   // ── Tabs ──────────────────────────────────────────────────────────────────
   // Removed activeTab signal - using router instead
@@ -109,6 +113,17 @@ export class Profile implements OnInit {
 
   // ── DELIVERY specific ─────────────────────────────────────────────────────
   myDeliveries    = signal<any[]>([]);
+  myWrStats       = signal<AgentWrStats | null>(null);
+  isFlagged       = computed(() => this.myWrStats()?.flagged ?? false);
+  isElite         = computed(() => this.myWrStats()?.elite ?? false);
+  deliveryPendingCount = computed(() => this.myDeliveries().filter(d => d.pendingDriverId === this.user().id).length);
+  deliveryActiveCount = computed(() => this.myDeliveries().filter(d => d.userId === this.user().id && (d.status === 'IN_TRANSIT' || d.status === 'PREPARING')).length);
+  deliveryCompletedCount = computed(() => this.myDeliveries().filter(d => d.status === 'DELIVERED').length);
+  deliverySuccessRate = computed(() => {
+    const done = this.myDeliveries().filter(d => d.status === 'DELIVERED' || d.status === 'RETURNED');
+    if (done.length === 0) return 100;
+    return Math.round((done.filter(d => d.status === 'DELIVERED').length / done.length) * 100);
+  });
 
   // ── Preferences ───────────────────────────────────────────────────────────
   preferences = signal({
@@ -203,10 +218,13 @@ export class Profile implements OnInit {
         this.shopOrders.set(orders as OrderResponse[]);
       });
     } else if (role === UserRole.DELIVERY) {
-      const userId = this.authService.getUserId();
+      const userId = this.authService.userId() || this.authService.getUserId();
       if (userId) {
-        this.savService.getDeliveriesByUser(userId).pipe(catchError(() => of([]))).subscribe(d => {
+        this.savService.getDriverWorklist(userId).pipe(catchError(() => of([]))).subscribe(d => {
           this.myDeliveries.set(d as any[]);
+        });
+        this.wrRegistry.getStats(userId).pipe(catchError(() => of(null))).subscribe(s => {
+          if (s) this.myWrStats.set(s as AgentWrStats);
         });
       }
     }

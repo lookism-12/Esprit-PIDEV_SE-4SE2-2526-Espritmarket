@@ -46,6 +46,12 @@ public class DeliveryController {
         return ResponseEntity.ok(deliveryService.getDeliveriesByUser(userId));
     }
 
+    @Operation(summary = "Get driver delivery worklist", description = "Returns pending assignments, active deliveries, and history for one delivery agent.")
+    @GetMapping("/driver-worklist/{driverId}")
+    public ResponseEntity<List<DeliveryResponseDTO>> getDriverWorklist(@PathVariable String driverId) {
+        return ResponseEntity.ok(deliveryService.getDriverWorklist(driverId));
+    }
+
     @Operation(summary = "Get Deliveries By Cart (FR-DEL2)")
     @GetMapping("/cart/{cartId}")
     public ResponseEntity<List<DeliveryResponseDTO>> getDeliveriesByCart(@PathVariable String cartId) {
@@ -112,8 +118,9 @@ public class DeliveryController {
     @PatchMapping("/{id}/mark-delivered")
     public ResponseEntity<DeliveryResponseDTO> markAsDelivered(
             @PathVariable String id,
-            @RequestParam String driverId) {
-        return ResponseEntity.ok(deliveryService.markAsDelivered(id, driverId));
+            @RequestParam String driverId,
+            @RequestParam String confirmationCode) {
+        return ResponseEntity.ok(deliveryService.markAsDelivered(id, driverId, confirmationCode));
     }
 
     @Operation(

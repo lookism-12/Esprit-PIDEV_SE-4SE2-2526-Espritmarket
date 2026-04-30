@@ -21,15 +21,20 @@ import java.util.Collections;
  * Service for integrating with ML Recommendation System
  */
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class RecommendationService {
 
-    @Qualifier("recommendationWebClient")
     private final WebClient webClient;
-    
     private final RecommendationConfig config;
     private final MockRecommendationService mockService;
+
+    public RecommendationService(@Qualifier("recommendationWebClient") WebClient webClient,
+                                 RecommendationConfig config,
+                                 MockRecommendationService mockService) {
+        this.webClient = webClient;
+        this.config = config;
+        this.mockService = mockService;
+    }
 
     /**
      * Get product recommendations for a user

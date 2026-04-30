@@ -71,6 +71,32 @@ export class Register implements OnInit {
 
   // Vehicle types for driver/delivery
   readonly vehicleTypes = ['Car', 'Motorcycle', 'Bicycle', 'Van', 'Truck'];
+  readonly deliveryZones = [
+    'Grand Tunis',
+    'Ariana',
+    'Ben Arous',
+    'Manouba',
+    'Nabeul',
+    'Bizerte',
+    'Sousse',
+    'Monastir',
+    'Mahdia',
+    'Sfax',
+    'Kairouan',
+    'Sidi Bouzid',
+    'Kasserine',
+    'Gafsa',
+    'Gabes',
+    'Medenine',
+    'Tataouine',
+    'Kebili',
+    'Tozeur',
+    'Beja',
+    'Jendouba',
+    'Kef',
+    'Siliana',
+    'Zaghouan'
+  ];
   
   // Business types for provider
   readonly businessTypes = ['Retail', 'Wholesale', 'Services', 'Food & Beverage', 'Electronics', 'Fashion', 'Other'];
@@ -133,7 +159,8 @@ export class Register implements OnInit {
       
       // Logistics fields
       drivingLicenseNumber: [''],
-      vehicleType: ['']
+      vehicleType: [''],
+      deliveryZone: ['']
     }, {
       validators: this.passwordMatchValidator
     });
@@ -227,6 +254,7 @@ export class Register implements OnInit {
     this.registerForm.get('taxId')?.clearValidators();
     this.registerForm.get('drivingLicenseNumber')?.clearValidators();
     this.registerForm.get('vehicleType')?.clearValidators();
+    this.registerForm.get('deliveryZone')?.clearValidators();
     
     // Add validators based on role
     if (group === 'provider') {
@@ -239,6 +267,9 @@ export class Register implements OnInit {
       const subRole = this.selectedSubRole();
       if (subRole === 'DRIVER') {
         this.registerForm.get('drivingLicenseNumber')?.setValidators([Validators.required]);
+      }
+      if (subRole === 'DELIVERY') {
+        this.registerForm.get('deliveryZone')?.setValidators([Validators.required]);
       }
       this.registerForm.get('vehicleType')?.setValidators([Validators.required]);
     }
@@ -321,7 +352,8 @@ export class Register implements OnInit {
       taxId: formValue.taxId || undefined,
       description: formValue.description || undefined,
       drivingLicenseNumber: formValue.drivingLicenseNumber || undefined,
-      vehicleType: formValue.vehicleType || undefined
+      vehicleType: formValue.vehicleType || undefined,
+      deliveryZone: role === UserRole.DELIVERY ? formValue.deliveryZone || undefined : undefined
     };
     
     // Submit registration

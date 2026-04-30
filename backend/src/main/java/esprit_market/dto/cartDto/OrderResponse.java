@@ -30,6 +30,10 @@ public class OrderResponse {
     private String shippingAddress;
     private String paymentMethod;
     private String paymentId;
+    private String cartId;
+    private String deliveryId;
+    private String deliveryStatus;
+    private String deliveryConfirmationCode;
     
     private LocalDateTime createdAt;
     private LocalDateTime paidAt;

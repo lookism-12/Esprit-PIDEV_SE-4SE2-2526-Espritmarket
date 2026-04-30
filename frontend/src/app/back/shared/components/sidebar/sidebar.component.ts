@@ -135,6 +135,7 @@ export class SidebarComponent {
     isProviderOpen = signal(false);
     isForumOpen = signal(false);
     isCarpoolingOpen = signal(false);
+    isDeliveryManagementOpen = signal(false);
     isPlatformManagementOpen = signal(false);
     
     menuItems: MenuItem[] = [
@@ -145,8 +146,15 @@ export class SidebarComponent {
         { label: 'Notification Center', icon: '🔔', route: '/admin/notifications', badge: 5 },
         { label: 'Negotiations', icon: '🤝', route: '/admin/negotiations' },
         { label: 'After Sales Service', icon: '🛠️', route: '/admin/sav' },
-        { label: 'Deliveries', icon: '🚚', route: '/admin/deliveries' },
         { label: 'System Settings', icon: '⚙️', route: '/admin/settings' }
+    ];
+
+    deliveryManagementItems = [
+        { label: 'Deliveries', icon: '🚚', route: '/admin/deliveries' },
+        { label: 'Delivery Agents', icon: '🧑‍✈️', route: '/admin/deliveries/agents' },
+        { label: 'Agent Performance', icon: '📈', route: '/admin/deliveries/performance' },
+        { label: 'Agent Reviews', icon: '⭐', route: '/admin/deliveries/reviews' },
+        { label: 'Warnings & Rewards', icon: '🏅', route: '/admin/deliveries/warnings-rewards' }
     ];
 
     carpoolingItems = [
@@ -210,6 +218,10 @@ export class SidebarComponent {
 
     toggleCarpooling(): void {
         this.isCarpoolingOpen.update(open => !open);
+    }
+
+    toggleDeliveryManagement(): void {
+        this.isDeliveryManagementOpen.update(open => !open);
     }
 
     togglePlatformManagement(): void {

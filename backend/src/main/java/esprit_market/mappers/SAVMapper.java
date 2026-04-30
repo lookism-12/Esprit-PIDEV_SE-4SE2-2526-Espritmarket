@@ -38,6 +38,9 @@ public class SAVMapper {
                     .userId(entity.getUserId() != null ? entity.getUserId().toHexString() : null)
                     .cartId(entity.getCartId() != null ? entity.getCartId().toHexString() : null)
                     .orderId(entity.getOrderId() != null ? entity.getOrderId().toHexString() : null)
+                    .deliveredAt(entity.getDeliveredAt())
+                    .returnedAt(entity.getReturnedAt())
+                    .returnReason(entity.getReturnReason())
                     .pendingDriverId(entity.getPendingDriverId() != null ? entity.getPendingDriverId().toHexString() : null)
                     .declineReason(entity.getDeclineReason())
                     .declinedByDriverId(entity.getDeclinedByDriverId())
@@ -54,7 +57,7 @@ public class SAVMapper {
         return SavFeedback.builder()
                 .type(dto.getType())
                 .message(dto.getMessage())
-                .rating(dto.getRating())
+                .rating(dto.getRating() != null ? dto.getRating() : 0)
                 .reason(dto.getReason())
                 .status(dto.getStatus() != null ? dto.getStatus() : "PENDING")
                 .problemNature(dto.getProblemNature())
@@ -65,7 +68,10 @@ public class SAVMapper {
                 .adminResponse(dto.getAdminResponse())
                 .readByAdmin(dto.getReadByAdmin() != null ? dto.getReadByAdmin() : false)
                 .imageUrls(dto.getImageUrls())
-                .cartItemId(new ObjectId(dto.getCartItemId()))
+                .cartItemId(hasText(dto.getCartItemId()) ? new ObjectId(dto.getCartItemId()) : null)
+                .targetType(dto.getTargetType() != null && !dto.getTargetType().isBlank() ? dto.getTargetType() : "PRODUCT")
+                .deliveryAgentId(hasText(dto.getDeliveryAgentId()) ? new ObjectId(dto.getDeliveryAgentId()) : null)
+                .userId(hasText(dto.getUserId()) ? new ObjectId(dto.getUserId()) : null)
                 .build();
     }
 
@@ -86,8 +92,20 @@ public class SAVMapper {
                 .adminResponse(entity.getAdminResponse())
                 .readByAdmin(entity.getReadByAdmin())
                 .creationDate(entity.getCreationDate())
+                .lastUpdatedDate(entity.getLastUpdatedDate())
+                .resolvedDate(entity.getResolvedDate())
                 .imageUrls(entity.getImageUrls())
+                .aiSimilarityScore(entity.getAiSimilarityScore())
+                .aiDecision(entity.getAiDecision())
+                .aiRecommendation(entity.getAiRecommendation())
                 .cartItemId(entity.getCartItemId() != null ? entity.getCartItemId().toHexString() : null)
+                .userId(entity.getUserId() != null ? entity.getUserId().toHexString() : null)
+                .targetType(entity.getTargetType() != null ? entity.getTargetType() : "PRODUCT")
+                .deliveryAgentId(entity.getDeliveryAgentId() != null ? entity.getDeliveryAgentId().toHexString() : null)
                 .build();
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 }

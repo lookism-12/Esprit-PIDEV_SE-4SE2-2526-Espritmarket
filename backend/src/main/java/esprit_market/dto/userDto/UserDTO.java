@@ -38,4 +38,7 @@ public class UserDTO {
 
     // Delivery fields
     private String deliveryZone;
+    private Double currentLatitude;
+    private Double currentLongitude;
+    private String lastLocationUpdatedAt;
 }

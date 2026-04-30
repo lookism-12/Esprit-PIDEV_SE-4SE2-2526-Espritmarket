@@ -18,6 +18,8 @@ public interface SavFeedbackRepository extends MongoRepository<SavFeedback, Obje
     
     // Get SAV claims by status
     List<SavFeedback> findByTypeAndStatus(String type, String status);
+
+    List<SavFeedback> findByTypeAndTargetType(String type, String targetType);
     
     // Get unread SAV claims
     List<SavFeedback> findByTypeAndReadByAdminFalse(String type);

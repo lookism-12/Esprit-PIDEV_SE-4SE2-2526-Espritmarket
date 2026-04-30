@@ -44,6 +44,16 @@ public class UserService implements IUserService {
     }
 
     @Override
+    public Page<UserDTO> findAll(Pageable pageable, Role role) {
+        if (role == null) {
+            return findAll(pageable);
+        }
+        log.info("Fetching users by role {} with pagination: page={}, size={}",
+                role, pageable.getPageNumber(), pageable.getPageSize());
+        return userRepository.findByRolesContaining(role, pageable).map(userMapper::toDTO);
+    }
+
+    @Override
     public UserDTO findById(String id) {
         log.info("Fetching user by id: {}", id);
         User user = userRepository.findById(new ObjectId(id))
@@ -144,6 +154,14 @@ public class UserService implements IUserService {
     @Override
     @Transactional
     public UserDTO updateProfile(String userId, String firstName, String lastName, String phone) {
+        return updateProfile(userId, firstName, lastName, phone, null, null, null, null);
+    }
+
+    @Override
+    @Transactional
+    public UserDTO updateProfile(String userId, String firstName, String lastName, String phone,
+                                 String deliveryZone, String vehicleType,
+                                 Double currentLatitude, Double currentLongitude) {
         log.info("Updating profile for user: {}", userId);
         
         User user = userRepository.findById(new ObjectId(userId))
@@ -162,6 +180,20 @@ public class UserService implements IUserService {
         if (phone != null && !phone.isBlank()) {
             user.setPhone(phone);
             log.debug("Phone updated to: {}", phone);
+        }
+        if (deliveryZone != null && !deliveryZone.isBlank()) {
+            user.setDeliveryZone(deliveryZone);
+            log.debug("Delivery zone updated to: {}", deliveryZone);
+        }
+        if (vehicleType != null && !vehicleType.isBlank()) {
+            user.setVehicleType(vehicleType);
+            log.debug("Vehicle type updated to: {}", vehicleType);
+        }
+        if (currentLatitude != null && currentLongitude != null) {
+            user.setCurrentLatitude(currentLatitude);
+            user.setCurrentLongitude(currentLongitude);
+            user.setLastLocationUpdatedAt(java.time.LocalDateTime.now());
+            log.debug("Courier location updated to: {}, {}", currentLatitude, currentLongitude);
         }
 
         try {

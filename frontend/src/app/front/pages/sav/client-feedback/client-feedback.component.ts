@@ -15,13 +15,16 @@ import { finalize, forkJoin } from 'rxjs';
 
 interface CartItemOption {
   id: string;
+  productId?: string;
   name: string;
   quantity: number;
   unitPrice: number;
+  sourceIds?: string[];
 }
 
 interface CartItemApiResponse {
   id: string;
+  productId?: string;
   productName: string;
   quantity: number;
   unitPrice: number;
@@ -64,6 +67,7 @@ export class ClientFeedbackComponent {
 
   // ── Cart items signals ───────────────────────────────────────────────────
   cartItems          = signal<CartItemOption[]>([]);
+  private allPurchasedItems = signal<CartItemOption[]>([]);
   isLoadingCartItems = signal<boolean>(false);
   cartItemsError     = signal<string | null>(null);
 
@@ -160,22 +164,45 @@ export class ClientFeedbackComponent {
       next: (items) => {
         const mapped = (items ?? []).map(item => ({
           id:        item.id,
+          productId: item.productId,
           name:      item.productName || 'Unnamed product',
           quantity:  item.quantity ?? 1,
           unitPrice: item.unitPrice ?? 0
         }));
-        this.cartItems.set(mapped);
+        this.allPurchasedItems.set(mapped);
+        this.cartItems.set(this.dedupeOrderedItems(mapped));
         this.loadMyFeedbacks(mapped);
         this.isLoadingCartItems.set(false);
       },
       error: (err) => {
         console.error('Failed to load purchased items:', err);
         this.cartItems.set([]);
+        this.allPurchasedItems.set([]);
         this.myFeedbacks.set([]);
         this.cartItemsError.set('Unable to load your ordered items right now.');
         this.isLoadingCartItems.set(false);
       }
     });
+  }
+
+  private dedupeOrderedItems(items: CartItemOption[]): CartItemOption[] {
+    const byProduct = new Map<string, CartItemOption>();
+    for (const item of items) {
+      const key = this.orderedItemKey(item);
+      const existing = byProduct.get(key);
+      if (existing) {
+        existing.quantity += item.quantity || 0;
+        existing.sourceIds = [...(existing.sourceIds || [existing.id]), item.id];
+      } else {
+        byProduct.set(key, { ...item, sourceIds: [item.id] });
+      }
+    }
+    return Array.from(byProduct.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  private orderedItemKey(item: CartItemOption): string {
+    const productKey = item.productId || item.name;
+    return `${productKey}`.toLowerCase().trim() + `|${Number(item.unitPrice || 0).toFixed(2)}`;
   }
 
   private loadMyFeedbacks(items: CartItemOption[]): void {
@@ -237,7 +264,9 @@ export class ClientFeedbackComponent {
     const q = this.searchItemId().trim();
     if (!q) return;
     this.errorMsg.set(null);
-    if (!this.cartItems().some(item => item.id === q)) {
+    const displayCartItemId = this.toDisplayCartItemId(q);
+    const selectedItem = this.cartItems().find(item => item.id === displayCartItemId);
+    if (!selectedItem) {
       this.errorMsg.set('Please use an item from your orders.');
       this.hasSearched.set(true);
       this.feedbacks.set([]);
@@ -245,9 +274,12 @@ export class ClientFeedbackComponent {
     }
     this.hasSearched.set(true);
     this.isSearching.set(true);
-    this.savService.getFeedbacksByCartItem(q).subscribe({
-      next: (data) => {
-        this.feedbacks.set([...(data ?? [])].sort(
+    const sourceIds = selectedItem.sourceIds?.length ? selectedItem.sourceIds : [selectedItem.id];
+    forkJoin(sourceIds.map(id => this.savService.getFeedbacksByCartItem(id))).subscribe({
+      next: (groups) => {
+        const byId = new Map<string, SavFeedback>();
+        for (const feedback of (groups ?? []).flat()) byId.set(feedback.id, feedback);
+        this.feedbacks.set(Array.from(byId.values()).sort(
           (a, b) => new Date(b.creationDate).getTime() - new Date(a.creationDate).getTime()
         ));
         this.isSearching.set(false);
@@ -280,7 +312,7 @@ export class ClientFeedbackComponent {
     this.editingFeedback.set(feedback);
     this.showCreateForm.set(true);
     this.feedbackForm.patchValue({
-      cartItemId:       feedback.cartItemId,
+      cartItemId:       this.toDisplayCartItemId(feedback.cartItemId),
       type:             feedback.type,
       rating:           feedback.rating,
       reason:           feedback.reason || '',
@@ -306,7 +338,7 @@ export class ClientFeedbackComponent {
     this.savService.deleteFeedback(feedback.id).subscribe({
       next: () => {
         this.successMsg.set('Request deleted successfully.');
-        this.loadMyFeedbacks(this.cartItems());
+        this.loadMyFeedbacks(this.allPurchasedItems());
         if (this.hasSearched() && this.searchItemId().trim()) this.trackFeedback();
       },
       error: () => this.errorMsg.set('Unable to delete this request right now.')
@@ -364,7 +396,7 @@ export class ClientFeedbackComponent {
     }
     this.editingFeedback.set(null);
     this.resetForm();
-    this.loadMyFeedbacks(this.cartItems());
+    this.loadMyFeedbacks(this.allPurchasedItems());
     setTimeout(() => this.toggleMode(), 1500);
   }
 
@@ -387,9 +419,10 @@ export class ClientFeedbackComponent {
     const v           = this.feedbackForm.getRawValue();
     const isComplaint = this.isComplaintType();
     const fd          = new FormData();
+    const cartItemId  = this.toPayloadCartItemId(v.cartItemId);
 
     fd.append('type',       v.type);
-    fd.append('cartItemId', v.cartItemId);
+    fd.append('cartItemId', cartItemId);
     fd.append('message',    v.message);
     fd.append('rating',     String(isComplaint ? 3 : Number(v.rating || 5)));
     if (v.reason) fd.append('reason', v.reason);
@@ -414,9 +447,10 @@ export class ClientFeedbackComponent {
     const v           = this.feedbackForm.getRawValue();
     const isComplaint = v.type === 'SAV';
     const existing    = this.editingFeedback();
+    const cartItemId  = this.toPayloadCartItemId(v.cartItemId);
     return {
       type:             v.type,
-      cartItemId:       v.cartItemId,
+      cartItemId,
       reason:           v.reason || '',
       message:          v.message,
       rating:           isComplaint ? 3 : Number(v.rating || 5),
@@ -451,6 +485,21 @@ export class ClientFeedbackComponent {
   messageRemaining(): number             { return Math.max(0, this.messageLimit() - this.messageLength()); }
   canEdit(feedback: SavFeedback): boolean{ return feedback.status === 'PENDING'; }
 
+  private toDisplayCartItemId(cartItemId?: string): string {
+    if (!cartItemId) return '';
+    const visibleItem = this.cartItems().find(item => item.id === cartItemId || item.sourceIds?.includes(cartItemId));
+    return visibleItem?.id || cartItemId;
+  }
+
+  private toPayloadCartItemId(selectedCartItemId: string): string {
+    const selectedItem = this.cartItems().find(item => item.id === selectedCartItemId);
+    const currentFeedback = this.editingFeedback();
+    if (currentFeedback?.cartItemId && selectedItem?.sourceIds?.includes(currentFeedback.cartItemId)) {
+      return currentFeedback.cartItemId;
+    }
+    return selectedCartItemId;
+  }
+
   displayedFeedbacks(): SavFeedback[] {
     return this.hasSearched() ? (this.feedbacks() ?? []) : this.myFeedbacks();
   }
@@ -481,7 +530,8 @@ export class ClientFeedbackComponent {
 
   getItemName(cartItemId: string | undefined): string {
     if (!cartItemId) return 'Unknown Item';
-    const item = this.cartItems().find(i => i.id === cartItemId);
+    const item = this.allPurchasedItems().find(i => i.id === cartItemId)
+      || this.cartItems().find(i => i.id === cartItemId || i.sourceIds?.includes(cartItemId));
     return item ? item.name : 'Item (Load pending...)';
   }
 

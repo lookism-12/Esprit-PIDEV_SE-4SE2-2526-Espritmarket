@@ -10,6 +10,10 @@ export interface UpdateProfileRequest {
   lastName?: string;
   phone?: string;
   avatar?: string;
+  deliveryZone?: string;
+  vehicleType?: string;
+  currentLatitude?: number;
+  currentLongitude?: number;
   preferences?: Partial<UserPreferences>;
 }
 
@@ -153,7 +157,10 @@ export class UserService {
     if (filter?.search) params = params.set('search', filter.search);
     if (filter?.isVerified !== undefined) params = params.set('isVerified', filter.isVerified.toString());
     if (filter?.page) params = params.set('page', filter.page.toString());
-    if (filter?.limit) params = params.set('limit', filter.limit.toString());
+    if (filter?.limit) {
+      params = params.set('limit', filter.limit.toString());
+      params = params.set('size', filter.limit.toString());
+    }
     
     return this.http.get<UserListResponse>(this.apiUrl, { params });
   }

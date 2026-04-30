@@ -27,6 +27,8 @@ public class OrderMapper {
                 .shippingAddress(order.getShippingAddress())
                 .paymentMethod(order.getPaymentMethod())
                 .paymentId(order.getPaymentId())
+                .cartId(order.getCartId() != null ? order.getCartId().toHexString() : null)
+                .deliveryId(order.getDeliveryId() != null ? order.getDeliveryId().toHexString() : null)
                 .createdAt(order.getCreatedAt())
                 .paidAt(order.getPaidAt())
                 .lastUpdated(order.getLastUpdated())

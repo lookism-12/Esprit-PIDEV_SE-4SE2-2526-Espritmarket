@@ -37,11 +37,12 @@ export class DriverDeliveriesComponent implements OnInit, OnDestroy {
   readonly selectedDelivery = signal<Delivery | null>(null);
   readonly selectedDeclineReason = signal<string>('');
   readonly selectedReturnReason = signal<string>('');
+  readonly deliverySecurityCode = signal<string>('');
 
   private pollingInterval: any;
 
   ngOnInit() {
-    const userId = this.authService.getUserId();
+    const userId = this.authService.userId() || this.authService.getUserId();
     if (!userId) {
       this.toastService.error('User not logged in.');
       this.isLoading.set(false);
@@ -62,23 +63,18 @@ export class DriverDeliveriesComponent implements OnInit, OnDestroy {
 
   loadAllData(showLoader = true) {
     if (showLoader) this.isLoading.set(true);
-    
-    // 1. Get Pending assignments
-    this.savService.getPendingForDriver(this.myUserId()).subscribe({
-      next: (data) => this.pendingDeliveries.set(data),
-      error: () => console.error('Failed to load pending deliveries')
-    });
 
-    // 2. Get All User deliveries to filter Active vs History
-    this.savService.getDeliveriesByUser(this.myUserId()).subscribe({
+    this.savService.getDriverWorklist(this.myUserId()).subscribe({
       next: (data) => {
-        this.activeDeliveries.set(data.filter(d => d.status === 'IN_TRANSIT'));
+        this.pendingDeliveries.set(data.filter(d => d.pendingDriverId === this.myUserId()));
+        this.activeDeliveries.set(data.filter(d => d.userId === this.myUserId() && (d.status === 'IN_TRANSIT' || d.status === 'PREPARING')));
         this.historyDeliveries.set(data.filter(d => d.status === 'DELIVERED' || d.status === 'RETURNED').sort((a,b) => {
           return new Date(b.deliveryDate || 0).getTime() - new Date(a.deliveryDate || 0).getTime();
         }));
         if (showLoader) this.isLoading.set(false);
       },
       error: () => {
+        console.error('Failed to load driver worklist');
         if (showLoader) this.isLoading.set(false);
       }
     });
@@ -134,25 +130,32 @@ export class DriverDeliveriesComponent implements OnInit, OnDestroy {
 
   openMarkDeliveredModal(delivery: Delivery) {
     this.selectedDelivery.set(delivery);
+    this.deliverySecurityCode.set('');
     this.isDeliverModalOpen.set(true);
   }
 
   closeDeliverModal() {
     this.isDeliverModalOpen.set(false);
     this.selectedDelivery.set(null);
+    this.deliverySecurityCode.set('');
   }
 
   confirmMarkDelivered() {
     const delivery = this.selectedDelivery();
     if (!delivery) return;
+    const code = this.deliverySecurityCode().replace(/\s+/g, '');
+    if (!code) {
+      this.toastService.warning('Ask the client for the delivery security code.');
+      return;
+    }
 
-    this.savService.markAsDelivered(delivery.id, this.myUserId()).subscribe({
+    this.savService.markAsDelivered(delivery.id, this.myUserId(), code).subscribe({
       next: () => {
         this.toastService.success('Great job! Delivery marked as completed.');
         this.closeDeliverModal();
         this.loadAllData();
       },
-      error: () => this.toastService.error('Failed to mark delivery as completed.')
+      error: (err) => this.toastService.error(err.error?.message || 'Invalid code. Delivery not confirmed.')
     });
   }
 

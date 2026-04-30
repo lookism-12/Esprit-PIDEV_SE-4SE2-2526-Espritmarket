@@ -1,219 +1,208 @@
-<div class="max-w-4xl mx-auto">
-  <div class="dm-card shadow-sm overflow-hidden">
-
-    <!-- Header -->
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 p-6 border-b dm-divider">
-      <div>
-        <h2 class="text-xl font-bold dm-title">Support Services</h2>
-        <p class="text-sm dm-muted mt-1">Track an existing request or open a new support ticket.</p>
+<section class="grid gap-5 lg:grid-cols-[380px_1fr]">
+  <aside class="space-y-4">
+    <div class="dm-card p-4 shadow-sm">
+      <div class="flex items-center justify-between gap-3">
+        <div>
+          <p class="text-[11px] font-black uppercase tracking-[0.18em] text-primary">Requests</p>
+          <h2 class="mt-1 text-xl font-black dm-title">{{ showCreateForm() ? 'New Request' : 'My SAV' }}</h2>
+        </div>
+        <button type="button"
+                (click)="toggleMode()"
+                class="rounded-xl border px-4 py-2 text-sm font-black transition active:scale-95"
+                [class]="showCreateForm() ? 'dm-toggle-idle' : 'border-primary bg-primary text-white'">
+          {{ showCreateForm() ? 'Back' : 'New' }}
+        </button>
       </div>
-      <button (click)="toggleMode()"
-        class="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border-2 transition-all active:scale-95 shrink-0"
-        [class]="showCreateForm() ? 'dm-toggle-idle' : 'border-primary text-primary bg-transparent'">
-        @if (showCreateForm()) {
-          Back
-        } @else {
-          New Request
-        }
-      </button>
+
+      @if (!showCreateForm()) {
+        <div class="mt-5 grid grid-cols-2 gap-3">
+          <div class="rounded-xl border border-gray-100 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-800/40">
+            <p class="text-[10px] font-black uppercase dm-muted">Total</p>
+            <p class="mt-1 text-2xl font-black dm-title">{{ myFeedbacks().length }}</p>
+          </div>
+          <div class="rounded-xl border border-primary/10 bg-primary/5 p-3">
+            <p class="text-[10px] font-black uppercase text-primary">Replies</p>
+            <p class="mt-1 text-2xl font-black text-primary">{{ countFeedbacksWithAdminResponse() }}</p>
+          </div>
+        </div>
+      }
     </div>
 
-    <div class="p-6">
-
-      <!-- ===== LIST / SEARCH MODE ===== -->
-      @if (!showCreateForm()) {
-
-        <!-- Stats -->
-        <div class="grid grid-cols-3 gap-3 mb-6">
-          <div class="dm-stat">
-            <p class="text-[10px] uppercase tracking-wider dm-muted">My Requests</p>
-            <p class="text-2xl font-bold dm-title mt-0.5">{{ myFeedbacks().length }}</p>
+    @if (!showCreateForm()) {
+      <div class="dm-card p-3 shadow-sm">
+        @if (isSearching() || isLoadingMyFeedbacks()) {
+          <div class="flex items-center justify-center py-10">
+            <div class="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
           </div>
-          <div class="rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 px-4 py-3">
-            <p class="text-[10px] uppercase tracking-wider text-blue-600 dark:text-blue-400">Admin Replied</p>
-            <p class="text-2xl font-bold text-blue-900 dark:text-blue-300 mt-0.5">{{ countFeedbacksWithAdminResponse() }}</p>
-          </div>
-          <div class="rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 px-4 py-3">
-            <p class="text-[10px] uppercase tracking-wider text-emerald-600 dark:text-emerald-400">View Mode</p>
-            <p class="text-xs font-semibold text-emerald-900 dark:text-emerald-300 mt-1.5">{{ hasSearched() ? 'Filtered' : 'All requests' }}</p>
-          </div>
-        </div>
-
-        <!-- Search -->
-        <div class="flex gap-2 mb-4">
-          <div class="relative flex-1">
-            <input [ngModel]="searchItemId()" (ngModelChange)="searchItemId.set($event)" (keyup.enter)="trackFeedback()"
-              type="text" placeholder="Item Reference (e.g., 65f0a000)"
-              class="dm-input pl-4 pr-4">
-          </div>
-          <button (click)="trackFeedback()" class="px-5 py-2.5 bg-primary hover:bg-primary-dark text-white text-sm font-semibold rounded-xl transition-all active:scale-95">Search</button>
-        </div>
-
-        @if (hasSearched()) {
-          <div class="flex items-center gap-2 mb-4">
-            <button (click)="clearSearch()" class="px-3 py-1.5 rounded-lg text-xs font-semibold border dm-divider dm-body hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">Show all</button>
-            <span class="text-xs dm-muted">Filter: {{ searchItemId() }}</span>
-          </div>
-        }
-
-        @if (errorMsg()) {
-          <div class="dm-alert-red p-3 rounded-xl text-sm mb-4">{{ errorMsg() }}</div>
-        }
-
-        @if (isSearching() || (isLoadingMyFeedbacks() && !hasSearched())) {
-          <div class="flex justify-center py-10">
-            <div class="animate-spin rounded-full h-8 w-8 border-4 border-primary border-t-transparent"></div>
-          </div>
+        } @else if (myFeedbacksError()) {
+          <div class="dm-alert-red rounded-xl p-4 text-sm">{{ myFeedbacksError() }}</div>
+        } @else if (displayedFeedbacks().length === 0) {
+          <button type="button" (click)="toggleMode()" class="w-full rounded-xl border border-dashed dm-divider p-8 text-center transition hover:border-primary hover:bg-primary/5">
+            <p class="font-black dm-title">No requests</p>
+            <p class="mt-1 text-sm dm-muted">Create your first SAV request.</p>
+          </button>
         } @else {
-          @if (myFeedbacksError() && !hasSearched()) {
-            <div class="dm-alert-red p-4 rounded-xl text-sm">{{ myFeedbacksError() }}</div>
-          }
-          @if (displayedFeedbacks().length === 0) {
-            <div class="text-center py-12 dm-card-inner border-dashed">
-              <p class="font-semibold dm-title">No requests found.</p>
-              <p class="text-sm dm-muted mt-1">Open a new request using the button above.</p>
-            </div>
-          }
-          <div class="space-y-3">
+          <div class="max-h-[680px] space-y-2 overflow-y-auto pr-1">
             @for (fb of displayedFeedbacks(); track fb.id) {
-              <div class="dm-row">
-                <div class="flex flex-col md:flex-row gap-5">
-                  <!-- Left meta -->
-                  <div class="md:w-40 shrink-0 flex flex-col gap-2.5">
-                    <span [class]="'px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border w-fit ' + getStatusInfo(fb.status).color">{{ getStatusInfo(fb.status).label }}</span>
-                    <div>
-                      <p class="text-[10px] uppercase tracking-widest dm-muted mb-0.5">Type</p>
-                      <p class="text-sm font-bold dm-title">{{ fb.type === 'SAV' ? 'Claim' : 'Feedback' }}</p>
-                    </div>
-                    <div>
-                      <p class="text-[10px] uppercase tracking-widest dm-muted mb-0.5">Item</p>
-                      <p class="text-xs font-bold text-gray-700 dark:text-gray-300 line-clamp-2" [title]="getItemName(fb.cartItemId)">{{ getItemName(fb.cartItemId) }}</p>
-                    </div>
-                    <div>
-                      <p class="text-[10px] uppercase tracking-widest dm-muted mb-0.5">Date</p>
-                      <p class="text-sm dm-body">{{ formatDate(fb.creationDate) }}</p>
-                    </div>
-                    @if (fb.priority) {
-                      <p class="text-xs dm-muted">Priority: <span class="font-semibold dm-body">{{ fb.priority }}</span></p>
-                    }
+              <article class="rounded-xl border dm-divider bg-white p-3 transition hover:border-primary/30 hover:bg-primary/5 dark:bg-gray-900">
+                <div class="flex items-start justify-between gap-3">
+                  <div class="min-w-0">
+                    <span [class]="'inline-flex rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-wide ' + getStatusInfo(fb.status).color">
+                      {{ getStatusInfo(fb.status).label }}
+                    </span>
+                    <h3 class="mt-3 truncate text-sm font-black dm-title">{{ fb.reason || (fb.type === 'SAV' ? 'Claim' : 'Feedback') }}</h3>
+                    <p class="mt-1 line-clamp-2 text-xs font-semibold leading-5 dm-muted">{{ fb.message }}</p>
                   </div>
-                  <!-- Right content -->
-                  <div class="flex-1 border-t md:border-t-0 md:border-l dm-divider pt-4 md:pt-0 md:pl-5">
-                    <div class="flex items-center justify-between mb-2">
-                      <h4 class="font-bold dm-title text-sm">{{ fb.reason || 'Request Details' }}</h4>
-                      @if (fb.type === 'FEEDBACK') {
-                        <span class="text-base tracking-[0.15em]">{{ getRatingStars(fb.rating) }}</span>
-                      }
-                    </div>
-                    <p class="dm-quote">"{{ fb.message }}"</p>
-                    @if (fb.imageUrls && fb.imageUrls.length > 0) {
-                      <div class="mt-4 flex gap-2 overflow-x-auto">
-                        @for (img of fb.imageUrls; track img) {
-                          <a [href]="img" target="_blank" class="block w-24 h-24 rounded-lg overflow-hidden border dm-divider shrink-0">
-                            <img [src]="img" alt="Attached evidence" class="w-full h-full object-cover hover:scale-105 transition-transform duration-300">
-                          </a>
-                        }
-                      </div>
-                    }
-                    <!-- Timeline dots -->
-                    <div class="flex items-center gap-1.5 mt-3">
-                      @for (step of timelineSteps(fb.status); track step.label) {
-                        <div class="h-1.5 w-1.5 rounded-full" [class]="step.active ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'"></div>
-                        <span class="text-[10px]" [class]="step.active ? 'text-primary' : 'dm-muted'">{{ step.label }}</span>
-                      }
-                    </div>
-                    @if (fb.adminResponse) {
-                      <div class="dm-alert-blue mt-3 rounded-lg px-3 py-2 text-sm">
-                        <span class="font-semibold">Admin reply:</span> {{ fb.adminResponse }}
-                      </div>
-                    }
-                    @if (!fb.adminResponse && (fb.status === 'INVESTIGATING' || fb.status === 'PENDING')) {
-                      <div class="dm-alert-amber mt-3 rounded-lg px-3 py-2 text-xs">
-                        Your request is being processed. Admin reply will appear here.
-                      </div>
-                    }
-                    @if (canEdit(fb)) {
-                      <div class="mt-3 flex gap-2">
-                        <button (click)="openEditPending(fb)" class="px-3 py-1.5 text-xs rounded-lg border border-primary text-primary hover:bg-primary/5 transition-colors">Edit</button>
-                        <button (click)="removePending(fb)" class="px-3 py-1.5 text-xs rounded-lg border border-red-400 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">Delete</button>
-                      </div>
-                    }
-                  </div>
+                  <span class="shrink-0 rounded-lg bg-gray-50 px-2 py-1 text-[10px] font-black uppercase dm-muted dark:bg-gray-800">
+                    {{ fb.type === 'SAV' ? 'Claim' : 'Feedback' }}
+                  </span>
                 </div>
-              </div>
+
+                <div class="mt-3 flex flex-wrap items-center gap-2 text-[11px] font-bold dm-muted">
+                  <span>{{ getItemName(fb.cartItemId) }}</span>
+                  <span>-</span>
+                  <span>{{ formatDate(fb.creationDate) }}</span>
+                </div>
+
+                @if (fb.adminResponse) {
+                  <div class="dm-alert-blue mt-3 rounded-lg px-3 py-2 text-xs">
+                    <span class="font-black">Admin:</span> {{ fb.adminResponse }}
+                  </div>
+                }
+
+                @if (canEdit(fb)) {
+                  <div class="mt-3 flex gap-2">
+                    <button type="button" (click)="openEditPending(fb)" class="rounded-lg border border-primary px-3 py-1.5 text-xs font-black text-primary transition hover:bg-primary/5">Edit</button>
+                    <button type="button" (click)="removePending(fb)" class="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-black text-red-600 transition hover:bg-red-50">Delete</button>
+                  </div>
+                }
+              </article>
             }
           </div>
         }
-      }
+      </div>
+    }
+  </aside>
 
-      <!-- ===== CREATE / EDIT MODE ===== -->
-      @if (showCreateForm()) {
-        @if (successMsg()) {
-          <div class="dm-alert-green flex items-center gap-3 p-4 rounded-xl mb-5">
-            <p class="font-semibold text-sm">{{ successMsg() }}</p>
+  <div class="dm-card overflow-hidden shadow-sm">
+    @if (!showCreateForm()) {
+      <div class="border-b dm-divider p-5">
+        <h2 class="text-xl font-black dm-title">Request Timeline</h2>
+      </div>
+
+      <div class="p-5">
+        @if (displayedFeedbacks().length === 0 && !isLoadingMyFeedbacks()) {
+          <div class="rounded-2xl border border-dashed dm-divider p-10 text-center">
+            <p class="font-black dm-title">No active timeline</p>
+          </div>
+        } @else {
+          <div class="space-y-4">
+            @for (fb of displayedFeedbacks(); track fb.id) {
+              <article class="rounded-2xl border dm-divider bg-gray-50/70 p-4 dark:bg-gray-800/30">
+                <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                  <div class="min-w-0">
+                    <div class="flex flex-wrap items-center gap-2">
+                      <span [class]="'rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-wide ' + getStatusInfo(fb.status).color">
+                        {{ getStatusInfo(fb.status).label }}
+                      </span>
+                      @if (fb.priority) {
+                        <span class="rounded-full border border-gray-200 bg-white px-3 py-1 text-[10px] font-black uppercase dm-muted dark:border-gray-700 dark:bg-gray-900">
+                          {{ fb.priority }}
+                        </span>
+                      }
+                    </div>
+                    <h3 class="mt-3 text-base font-black dm-title">{{ fb.reason || 'Request Details' }}</h3>
+                    <p class="mt-1 text-sm font-semibold leading-6 dm-muted">{{ fb.message }}</p>
+                  </div>
+
+                  @if (fb.type === 'FEEDBACK') {
+                    <span class="shrink-0 text-sm tracking-[0.12em]">{{ getRatingStars(fb.rating) }}</span>
+                  }
+                </div>
+
+                @if (fb.imageUrls && fb.imageUrls.length > 0) {
+                  <div class="mt-4 flex gap-2 overflow-x-auto">
+                    @for (img of fb.imageUrls; track img) {
+                      <a [href]="img" target="_blank" class="block h-20 w-20 shrink-0 overflow-hidden rounded-xl border dm-divider bg-white">
+                        <img [src]="img" alt="Attached evidence" class="h-full w-full object-cover transition duration-300 hover:scale-105">
+                      </a>
+                    }
+                  </div>
+                }
+
+                <div class="mt-4 flex flex-wrap items-center gap-2">
+                  @for (step of timelineSteps(fb.status); track step.label) {
+                    <span class="h-2 w-2 rounded-full" [class]="step.active ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'"></span>
+                    <span class="text-[11px] font-black" [class]="step.active ? 'text-primary' : 'dm-muted'">{{ step.label }}</span>
+                  }
+                </div>
+              </article>
+            }
           </div>
         }
+      </div>
+    }
+
+    @if (showCreateForm()) {
+      <div class="border-b dm-divider p-5">
+        <h2 class="text-xl font-black dm-title">{{ editingFeedback() ? 'Edit Request' : 'Create Request' }}</h2>
+      </div>
+
+      <div class="p-5">
+        @if (successMsg()) {
+          <div class="dm-alert-green mb-5 rounded-xl p-4 text-sm font-bold">{{ successMsg() }}</div>
+        }
         @if (errorMsg()) {
-          <div class="dm-alert-red flex items-center gap-3 p-4 rounded-xl mb-5">
-            <p class="text-sm font-medium">{{ errorMsg() }}</p>
-          </div>
+          <div class="dm-alert-red mb-5 rounded-xl p-4 text-sm font-bold">{{ errorMsg() }}</div>
         }
 
         <form [formGroup]="feedbackForm" (ngSubmit)="submitFeedback()" class="space-y-5">
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <!-- Ordered Item -->
+          <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
             <div class="space-y-1.5">
-              <label class="dm-label">Ordered Item <span class="text-red-500">*</span></label>
+              <label class="dm-label">Order Item <span class="text-red-500">*</span></label>
 
               @if (isLoadingCartItems()) {
                 <div class="dm-input flex items-center gap-2 text-sm dm-muted">
-                  <div class="w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin shrink-0"></div>
-                  Loading your ordered items...
+                  <div class="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+                  Loading items
                 </div>
               } @else if (cartItemsError()) {
-                <div class="rounded-xl border border-amber-300 bg-amber-50 dark:bg-amber-900/20 px-4 py-3 text-sm text-amber-700 dark:text-amber-400">
-                  Unable to load your ordered items right now.
+                <div class="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:bg-amber-900/20 dark:text-amber-400">
+                  Items unavailable.
                 </div>
               } @else if (cartItems().length === 0) {
-                <div class="rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/40 px-4 py-3 text-sm dm-muted">
-                  No purchased items available for after-sales service.
+                <div class="rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 text-sm dm-muted dark:border-gray-600 dark:bg-gray-800/40">
+                  No purchased items.
                 </div>
               } @else {
-                <select formControlName="cartItemId" class="dm-input appearance-none cursor-pointer"
-                  [class.border-red-400]="isFieldInvalid('cartItemId')">
-                  <option value="" disabled selected>Select an item from your orders...</option>
+                <select formControlName="cartItemId" class="dm-input cursor-pointer appearance-none" [class.border-red-400]="isFieldInvalid('cartItemId')">
+                  <option value="" disabled selected>Select item</option>
                   @for (item of cartItems(); track item.id) {
                     <option [value]="item.id">
-                      {{ item.name }} — x{{ item.quantity }} — {{ item.unitPrice | number:'1.2-2' }} TND
+                      {{ item.name }} - x{{ item.quantity }} - {{ item.unitPrice | number:'1.2-2' }} TND
                     </option>
                   }
                 </select>
-                @if (isFieldInvalid('cartItemId')) {
-                  <p class="text-xs text-red-500">Please select an ordered item.</p>
-                }
               }
             </div>
 
-            <!-- Request Type -->
             <div class="space-y-1.5">
-              <label class="dm-label">Request Type <span class="text-red-500">*</span></label>
+              <label class="dm-label">Type <span class="text-red-500">*</span></label>
               <div class="grid grid-cols-2 gap-2">
                 <button type="button" (click)="feedbackForm.patchValue({ type: 'SAV' })"
-                  class="py-2.5 rounded-xl border-2 font-semibold text-sm transition-all"
-                  [class]="isComplaintType() ? 'dm-toggle-active-red' : 'dm-toggle-idle'">Claim</button>
+                        class="rounded-xl border-2 py-2.5 text-sm font-black transition"
+                        [class]="isComplaintType() ? 'border-primary bg-primary text-white' : 'dm-toggle-idle'">Claim</button>
                 <button type="button" (click)="feedbackForm.patchValue({ type: 'FEEDBACK' })"
-                  class="py-2.5 rounded-xl border-2 font-semibold text-sm transition-all"
-                  [class]="!isComplaintType() ? 'dm-toggle-active-blue' : 'dm-toggle-idle'">Feedback</button>
+                        class="rounded-xl border-2 py-2.5 text-sm font-black transition"
+                        [class]="!isComplaintType() ? 'border-primary bg-primary text-white' : 'dm-toggle-idle'">Feedback</button>
               </div>
             </div>
           </div>
 
-          <!-- SAV-specific fields -->
           @if (isComplaintType()) {
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
               <div class="space-y-1.5">
-                <label class="dm-label">Problem Nature</label>
+                <label class="dm-label">Problem</label>
                 <select formControlName="problemNature" class="dm-input appearance-none">
                   @for (p of complaintNatures; track p.value) {
                     <option [value]="p.value">{{ p.label }}</option>
@@ -221,7 +210,7 @@
                 </select>
               </div>
               <div class="space-y-1.5">
-                <label class="dm-label">Desired Solution</label>
+                <label class="dm-label">Solution</label>
                 <select formControlName="desiredSolution" class="dm-input appearance-none">
                   @for (s of desiredSolutions; track s.value) {
                     <option [value]="s.value">{{ s.label }}</option>
@@ -229,112 +218,100 @@
                 </select>
               </div>
             </div>
+
             <div class="space-y-1.5">
-              <label class="dm-label">Urgency Level</label>
-              <div class="flex gap-2">
+              <label class="dm-label">Priority</label>
+              <div class="grid grid-cols-3 gap-2">
                 @for (p of priorityOptions; track p.value) {
                   <button type="button" (click)="setPriority(p.value)"
-                    class="flex-1 py-2 rounded-xl border-2 text-sm font-semibold transition-all"
-                    [class]="feedbackForm.value.priority === p.value ? p.className : 'dm-toggle-idle'">{{ p.label }}</button>
+                          class="rounded-xl border-2 py-2 text-sm font-black transition"
+                          [class]="feedbackForm.value.priority === p.value ? p.className : 'dm-toggle-idle'">{{ p.label }}</button>
                 }
               </div>
             </div>
           } @else {
-            <!-- Feedback-specific fields -->
-            <div class="dm-card-inner p-4 space-y-2">
-              <label class="dm-label">Product Rating</label>
-              <div class="flex gap-1.5">
-                @for (star of ratingArray; track star) {
-                  <button type="button" (click)="setRating(star)" class="text-2xl transition-transform hover:scale-110 active:scale-90 outline-none"
-                    [class.grayscale]="feedbackForm.value.rating < star" [class.opacity-40]="feedbackForm.value.rating < star">⭐</button>
-                }
+            <div class="grid gap-5 md:grid-cols-2">
+              <div class="dm-card-inner p-4">
+                <label class="dm-label">Rating</label>
+                <div class="mt-2 flex gap-1.5">
+                  @for (star of ratingArray; track star) {
+                    <button type="button" (click)="setRating(star)"
+                            class="flex h-10 w-10 items-center justify-center rounded-xl border text-sm font-black transition hover:scale-105 active:scale-95"
+                            [class]="feedbackForm.value.rating >= star ? 'border-primary bg-primary text-white' : 'dm-toggle-idle'">{{ star }}</button>
+                  }
+                </div>
+              </div>
+
+              <div class="space-y-1.5">
+                <label class="dm-label">Recommend?</label>
+                <div class="grid grid-cols-2 gap-2">
+                  <button type="button" (click)="setRecommend(true)" class="rounded-xl border-2 py-2.5 text-sm font-black transition"
+                          [class]="feedbackForm.value.recommendsProduct ? 'border-primary bg-primary text-white' : 'dm-toggle-idle'">Yes</button>
+                  <button type="button" (click)="setRecommend(false)" class="rounded-xl border-2 py-2.5 text-sm font-black transition"
+                          [class]="feedbackForm.value.recommendsProduct === false ? 'border-primary bg-primary text-white' : 'dm-toggle-idle'">No</button>
+                </div>
               </div>
             </div>
+
             <div class="space-y-1.5">
-              <label class="dm-label">Positive Tags</label>
+              <label class="dm-label">Tags</label>
               <div class="flex flex-wrap gap-2">
                 @for (tag of positiveTagOptions; track tag) {
                   <button type="button" (click)="togglePositiveTag(tag)"
-                    class="px-3 py-1.5 rounded-full text-xs border transition-all"
-                    [class]="selectedTags().includes(tag)
-                      ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-300 dark:border-blue-700'
-                      : 'dm-toggle-idle'">{{ tag }}</button>
+                          class="rounded-full border px-3 py-1.5 text-xs font-bold transition"
+                          [class]="selectedTags().includes(tag) ? 'border-primary bg-primary/10 text-primary' : 'dm-toggle-idle'">{{ tag }}</button>
                 }
-              </div>
-            </div>
-            <div class="space-y-1.5">
-              <label class="dm-label">Would you recommend this product?</label>
-              <div class="flex gap-2">
-                <button type="button" (click)="setRecommend(true)" class="flex-1 py-2 rounded-xl border-2 font-semibold text-sm transition-all"
-                  [class]="feedbackForm.value.recommendsProduct ? 'dm-toggle-active-blue' : 'dm-toggle-idle'">Yes</button>
-                <button type="button" (click)="setRecommend(false)" class="flex-1 py-2 rounded-xl border-2 font-semibold text-sm transition-all"
-                  [class]="feedbackForm.value.recommendsProduct === false ? 'dm-toggle-active-blue' : 'dm-toggle-idle'">No</button>
               </div>
             </div>
           }
 
-          <!-- Subject -->
           <div class="space-y-1.5">
             <label class="dm-label">Subject</label>
-            <input formControlName="reason" type="text" placeholder="e.g. Item damaged upon arrival" class="dm-input">
+            <input formControlName="reason" type="text" placeholder="Short title" class="dm-input">
           </div>
 
-          <!-- Details -->
           <div class="space-y-1.5">
             <label class="dm-label">Details <span class="text-red-500">*</span></label>
-            <textarea formControlName="message" rows="4" placeholder="Describe your issue in detail..."
-              class="dm-input resize-none"
-              [class.border-red-400]="isFieldInvalid('message')"></textarea>
+            <textarea formControlName="message" rows="4" placeholder="Write details..."
+                      class="dm-input resize-none"
+                      [class.border-red-400]="isFieldInvalid('message')"></textarea>
             <div class="flex justify-between text-xs dm-muted">
               @if (isFieldInvalid('message')) {
-                <span class="text-red-500">Message must be 10–{{ messageLimit() }} characters.</span>
+                <span class="text-red-500">10 to {{ messageLimit() }} characters.</span>
               } @else {
-                <span>{{ messageRemaining() }} characters remaining</span>
+                <span>{{ messageRemaining() }} left</span>
               }
               <span>{{ messageLength() }}/{{ messageLimit() }}</span>
             </div>
           </div>
 
-          <!-- ── Product Image upload ────────────────────────────────── -->
           <div class="space-y-2">
             <label class="dm-label">
-              Product Image
+              Photo
               @if (isComplaintType() && !editingFeedback()) {
                 <span class="text-red-500">*</span>
-              } @else {
-                <span class="text-xs dm-muted font-normal ml-1">(optional)</span>
               }
             </label>
-            <p class="text-xs dm-muted">Upload a clear image of the received product. Accepted: JPG, JPEG, PNG, WEBP — max 5 MB.</p>
 
             @if (!imagePreviewUrl()) {
-              <!-- Drop zone / picker -->
               <label for="sav-image-upload"
-                class="flex flex-col items-center justify-center gap-2 w-full h-36 rounded-xl border-2 border-dashed cursor-pointer transition-colors"
-                [class]="imageError()
-                  ? 'border-red-400 bg-red-50 dark:bg-red-900/10'
-                  : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/40 hover:border-primary hover:bg-primary/5'">
-                <span class="text-sm dm-muted">Click to select an image</span>
-                <span class="text-xs dm-muted">JPG · JPEG · PNG · WEBP · max 5 MB</span>
-                <input id="sav-image-upload" type="file" accept="image/jpeg,image/jpg,image/png,image/webp"
-                  class="hidden" (change)="onImageSelected($event)">
+                     class="flex h-32 w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed transition-colors"
+                     [class]="imageError()
+                       ? 'border-red-400 bg-red-50 dark:bg-red-900/10'
+                       : 'border-gray-300 bg-gray-50 hover:border-primary hover:bg-primary/5 dark:border-gray-600 dark:bg-gray-800/40'">
+                <span class="text-sm font-bold dm-title">Choose image</span>
+                <span class="text-xs dm-muted">JPG, PNG, WEBP - max 5 MB</span>
+                <input id="sav-image-upload" type="file" accept="image/jpeg,image/jpg,image/png,image/webp" class="hidden" (change)="onImageSelected($event)">
               </label>
             } @else {
-              <!-- Preview -->
-              <div class="relative w-full rounded-xl overflow-hidden border dm-divider">
-                <img [src]="imagePreviewUrl()" alt="Product image preview"
-                  class="w-full max-h-56 object-contain bg-gray-100 dark:bg-gray-800">
-                <div class="absolute top-2 right-2 flex gap-2">
-                  <!-- Replace -->
-                  <label for="sav-image-replace"
-                    class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-gray-800 border dm-divider dm-body cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+              <div class="relative overflow-hidden rounded-xl border dm-divider">
+                <img [src]="imagePreviewUrl()" alt="Product image preview" class="max-h-56 w-full bg-gray-100 object-contain dark:bg-gray-800">
+                <div class="absolute right-2 top-2 flex gap-2">
+                  <label for="sav-image-replace" class="cursor-pointer rounded-lg border bg-white px-3 py-1.5 text-xs font-bold dm-divider dm-body transition hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700">
                     Replace
-                    <input id="sav-image-replace" type="file" accept="image/jpeg,image/jpg,image/png,image/webp"
-                      class="hidden" (change)="onImageSelected($event)">
+                    <input id="sav-image-replace" type="file" accept="image/jpeg,image/jpg,image/png,image/webp" class="hidden" (change)="onImageSelected($event)">
                   </label>
-                  <!-- Remove -->
-                  <button type="button" (click)="removeImage()"
-                    class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-gray-800 border border-red-300 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                  <button type="button" (click)="removeImage()" class="rounded-lg border border-red-300 bg-white px-3 py-1.5 text-xs font-bold text-red-500 transition hover:bg-red-50 dark:bg-gray-800 dark:hover:bg-red-900/20">
                     Remove
                   </button>
                 </div>
@@ -346,26 +323,16 @@
               <p class="text-xs text-red-500">{{ imageError() }}</p>
             }
           </div>
-          <!-- ──────────────────────────────────────────────────────── -->
 
-          <!-- Submit -->
           <div class="flex justify-end pt-2">
             <button type="submit"
-              [disabled]="isSubmitting() || isLoadingCartItems() || cartItems().length === 0"
-              class="flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm text-white transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-              [class]="isComplaintType() ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'">
-              @if (isSubmitting()) {
-                <span class="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin"></span>
-                Submitting...
-              } @else {
-                {{ editingFeedback() ? 'Update Request' : (isComplaintType() ? 'Submit Claim' : 'Publish Review') }}
-              }
+                    [disabled]="isSubmitting() || isLoadingCartItems() || cartItems().length === 0"
+                    class="rounded-xl bg-primary px-6 py-3 text-sm font-black text-white shadow-sm transition hover:bg-primary-dark active:scale-95 disabled:cursor-not-allowed disabled:opacity-50">
+              {{ isSubmitting() ? 'Submitting...' : (editingFeedback() ? 'Update' : 'Submit') }}
             </button>
           </div>
-
         </form>
-      }
-
-    </div>
+      </div>
+    }
   </div>
-</div>
+</section>

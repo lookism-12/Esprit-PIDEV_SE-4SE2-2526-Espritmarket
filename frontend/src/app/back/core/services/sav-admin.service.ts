@@ -17,7 +17,11 @@ export interface SavClaim {
   readByAdmin?: boolean;
   imageUrls?: string[];
   cartItemId: string;
+  targetType?: 'PRODUCT' | 'DELIVERY_AGENT';
+  deliveryAgentId?: string;
+  deliveryAgentName?: string;
   userId?: string;
+  userName?: string;
   creationDate?: Date;
   lastUpdatedDate?: Date;
   resolvedDate?: Date;

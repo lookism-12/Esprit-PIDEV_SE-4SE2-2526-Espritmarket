@@ -98,7 +98,18 @@
               <div class="flex items-center gap-3"><span class="text-base">❤️</span><span>{{ favoriteCount() }} saved items</span></div>
             } @else {
               <div class="flex items-center gap-3"><span class="text-base">🚀</span><span class="text-amber-600 font-bold">Active Courier</span></div>
-              <div class="flex items-center gap-3"><span class="text-base">🛵</span><span>Zone: Grand Tunis</span></div>
+              <div class="flex items-center gap-3"><span class="text-base">🛵</span><span>Zone: {{ deliveryZone() }}</span></div>
+              @if (isFlagged()) {
+                <div class="flex items-center gap-2 mt-1 px-3 py-2 rounded-xl bg-red-50 border border-red-200">
+                  <span class="text-red-500 text-sm">🔴</span>
+                  <span class="text-xs font-black text-red-600">Flagged — {{ myWrStats()?.warningCount }} warnings</span>
+                </div>
+              } @else if (isElite()) {
+                <div class="flex items-center gap-2 mt-1 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200">
+                  <span class="text-amber-500 text-sm">⭐</span>
+                  <span class="text-xs font-black text-amber-600">Elite Courier — {{ myWrStats()?.rewardCount }} rewards</span>
+                </div>
+              }
             }
             <div class="flex items-center gap-3"><span class="text-base">🔔</span><span>{{ unreadNotifCount() }} unread notifications</span></div>
           </div>
@@ -109,11 +120,11 @@
           <div class="grid grid-cols-2 gap-2">
             @if (isDelivery()) {
               <div class="rounded-xl p-3 text-center bg-amber-500/10 border border-amber-500/20">
-                <p class="text-xl font-black text-amber-600">{{ myDeliveries().length }}</p>
-                <p class="text-[9px] font-black uppercase tracking-widest mt-0.5" style="color:var(--muted)">Deliveries</p>
+                <p class="text-xl font-black text-amber-600">{{ deliveryPendingCount() }}</p>
+                <p class="text-[9px] font-black uppercase tracking-widest mt-0.5" style="color:var(--muted)">Pending</p>
               </div>
               <div class="rounded-xl p-3 text-center bg-primary/10 border border-primary/20">
-                <p class="text-xl font-black text-primary">100%</p>
+                <p class="text-xl font-black text-primary">{{ deliverySuccessRate() }}%</p>
                 <p class="text-[9px] font-black uppercase tracking-widest mt-0.5" style="color:var(--muted)">Success</p>
               </div>
             } @else {

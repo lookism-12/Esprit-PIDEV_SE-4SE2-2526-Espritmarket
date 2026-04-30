@@ -5,21 +5,22 @@ import esprit_market.Enum.cartEnum.PaymentStatus;
 import esprit_market.dto.cartDto.OrderResponse;
 import esprit_market.entity.cart.Order;
 import esprit_market.repository.cartRepository.OrderRepository;
-import esprit_market.repository.SAVRepository.DeliveryRepository;
 import esprit_market.service.cartService.IOrderService;
+import esprit_market.service.cartService.OrderDeliveryEligibility;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * Delivery Order Controller
  * 
  * NEW WORKFLOW (Simplified):
- * - Delivery sees all CONFIRMED orders
+ * - Delivery sees card-payment orders immediately
+ * - Delivery sees cash-on-delivery orders after provider confirmation
  * - Delivery marks orders as DELIVERED (CONFIRMED → DELIVERED)
  * - For CASH orders: Delivery collects payment (PENDING_PAYMENT → PAID)
  * 
@@ -122,14 +123,21 @@ public class DeliveryOrderController {
     }
     
     /**
-     * Get all confirmed orders ready for delivery
+     * Get all orders eligible for delivery.
      */
     @GetMapping("/available")
     public ResponseEntity<?> getAvailableOrders() {
         try {
-            // Find all orders with status CONFIRMED
-            var orders = orderRepository.findAll().stream()
-                    .filter(o -> o.getStatus() == OrderStatus.CONFIRMED)
+            var cardOrders = orderRepository.findByPaymentMethodIn(
+                    OrderDeliveryEligibility.cardPaymentMethods()
+            );
+            var confirmedCashOrders = orderRepository.findByPaymentMethodInAndStatus(
+                    OrderDeliveryEligibility.cashPaymentMethods(),
+                    OrderStatus.CONFIRMED
+            );
+
+            var orders = Stream.concat(cardOrders.stream(), confirmedCashOrders.stream())
+                    .distinct()
                     .map(order -> orderService.getOrderByIdAdmin(order.getId()))
                     .toList();
             

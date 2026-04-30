@@ -14,6 +14,9 @@ public class DeliveryResponseDTO {
     private String userId;
     private String cartId;
     private String orderId;
+    private LocalDateTime deliveredAt;
+    private LocalDateTime returnedAt;
+    private String returnReason;
     // Driver workflow fields
     private String pendingDriverId;
     private String declineReason;

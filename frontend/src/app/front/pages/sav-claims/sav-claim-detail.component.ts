@@ -28,7 +28,7 @@ import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner
           <div class="bg-white rounded-3xl shadow-soft border border-gray-100 p-8">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
               <div>
-                <h1 class="text-3xl font-black text-dark tracking-tight">Return Request Details</h1>
+                <h1 class="text-3xl font-black text-dark tracking-tight">Claim Details</h1>
                 <p class="text-secondary font-medium mt-1">{{ claim()!.reason }}</p>
               </div>
               <span [ngClass]="getStatusBadgeClass(claim()!.status)" class="px-4 py-2 rounded-lg text-sm font-bold uppercase tracking-wider w-fit">
@@ -77,6 +77,14 @@ import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner
               <div class="bg-white rounded-3xl shadow-soft border border-gray-100 p-6 space-y-4">
                 <h3 class="text-sm font-black text-dark uppercase tracking-wider">Details</h3>
                 
+                <div>
+                  <p class="text-xs font-black text-secondary uppercase tracking-widest">Target</p>
+                  <p class="text-dark font-medium">
+                    {{ claim()!.targetType === 'DELIVERY_AGENT' ? 'Delivery Agent' : 'Product' }}
+                    @if (claim()!.deliveryAgentName) { - {{ claim()!.deliveryAgentName }} }
+                  </p>
+                </div>
+
                 <div>
                   <p class="text-xs font-black text-secondary uppercase tracking-widest">Reason</p>
                   <p class="text-dark font-medium">{{ claim()!.reason }}</p>

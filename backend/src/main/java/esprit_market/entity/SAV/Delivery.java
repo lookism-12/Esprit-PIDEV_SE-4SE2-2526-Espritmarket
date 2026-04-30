@@ -28,6 +28,11 @@ public class Delivery {
     private ObjectId cartId; // The Cart containing items for delivery
     private ObjectId orderId; // The Order associated with this delivery
 
+    private String deliveryConfirmationCode; // Code shared with the client and required from the driver on handoff
+    private LocalDateTime deliveredAt;
+    private LocalDateTime returnedAt;
+    private String returnReason;
+
     // Driver assignment workflow fields
     private ObjectId pendingDriverId;   // Driver assigned but not yet responded
     private String declineReason;       // Reason provided by driver on decline

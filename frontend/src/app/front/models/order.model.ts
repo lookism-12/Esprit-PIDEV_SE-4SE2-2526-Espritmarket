@@ -23,6 +23,10 @@ export interface OrderResponse {
   shippingAddress: string;
   paymentMethod: string;
   paymentId?: string;
+  cartId?: string;
+  deliveryId?: string;
+  deliveryStatus?: string;
+  deliveryConfirmationCode?: string;
   orderNumber: string;
   createdAt: string;
   paidAt?: string;
