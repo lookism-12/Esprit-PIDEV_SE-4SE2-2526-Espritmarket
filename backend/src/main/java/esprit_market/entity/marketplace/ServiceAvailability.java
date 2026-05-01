@@ -1,5 +1,6 @@
 package esprit_market.entity.marketplace;
 
+import esprit_market.Enum.marketplaceEnum.AvailabilityMode;
 import lombok.*;
 
 import java.time.DayOfWeek;
@@ -44,6 +45,9 @@ public class ServiceAvailability {
     public static class TimeRange {
         private LocalTime startTime;
         private LocalTime endTime;
+        
+        @Builder.Default
+        private AvailabilityMode availableMode = AvailabilityMode.BOTH;
         
         /**
          * Check if a time falls within this range

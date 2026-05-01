@@ -3,7 +3,9 @@ import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ServiceService, Service } from '../../../core/services/service.service';
-import { BookingService, TimeSlot, BookingRequest } from '../../../core/services/booking.service';
+import { BookingService, TimeSlot, BookingRequest, MeetingMode } from '../../../core/services/booking.service';
+import { BookingResponse } from '../../../core/services/booking.service';
+import { ChatService as RealtimeChatService } from '../../../core/services/chat.service';
 import { AuthService } from '../../core/auth.service';
 import { ToastService } from '../../core/toast.service';
 import { BookingCalendarComponent } from '../../../shared/components/booking-calendar.component';
@@ -21,6 +23,7 @@ export class ServiceDetails implements OnInit {
   private router = inject(Router);
   private serviceService = inject(ServiceService);
   private bookingService = inject(BookingService);
+  private realtimeChatService = inject(RealtimeChatService);
   private authService = inject(AuthService);
   private toastService = inject(ToastService);
 
@@ -32,11 +35,13 @@ export class ServiceDetails implements OnInit {
   hasService = computed(() => this.service() !== null);
 
   relatedServices = signal<Service[]>([]);
+  myServiceBookings = signal<BookingResponse[]>([]);
 
   // Booking state
   showBookingModal = signal(false);
   selectedDate = signal<Date | null>(null);
   selectedSlot = signal<TimeSlot | null>(null);
+  selectedMeetingMode = signal<MeetingMode | null>(null);
   availableSlots = signal<TimeSlot[]>([]);
   isLoadingSlots = signal(false);
   isBooking = signal(false);
@@ -59,6 +64,7 @@ export class ServiceDetails implements OnInit {
         console.log('✅ Service loaded:', data);
         this.service.set(data);
         this.loadRelatedServices(data.categoryIds);
+        this.loadMyServiceBookings(data.id);
         this.isLoading.set(false);
       },
       error: (err) => {
@@ -116,6 +122,7 @@ export class ServiceDetails implements OnInit {
     this.showBookingModal.set(true);
     this.selectedDate.set(null);
     this.selectedSlot.set(null);
+    this.selectedMeetingMode.set(null);
     this.availableSlots.set([]);
     this.bookingNotes.set('');
   }
@@ -127,11 +134,24 @@ export class ServiceDetails implements OnInit {
   onDateSelected(date: Date): void {
     this.selectedDate.set(date);
     this.selectedSlot.set(null);
+    this.selectedMeetingMode.set(null);
     this.loadAvailableSlots(date);
+  }
+
+  private loadMyServiceBookings(serviceId: string): void {
+    if (!this.authService.isAuthenticated()) return;
+    this.bookingService.getMyBookings().subscribe({
+      next: (bookings) => {
+        this.myServiceBookings.set(bookings.filter(booking => booking.serviceId === serviceId));
+      },
+      error: () => this.myServiceBookings.set([])
+    });
   }
 
   onSlotSelected(slot: TimeSlot): void {
     this.selectedSlot.set(slot);
+    const modes = slot.availableModes || ['ONLINE', 'IN_PERSON'];
+    this.selectedMeetingMode.set(modes.length === 1 ? modes[0] : null);
   }
 
   private loadAvailableSlots(date: Date): void {
@@ -160,8 +180,10 @@ export class ServiceDetails implements OnInit {
     const date = this.selectedDate();
     const slot = this.selectedSlot();
 
-    if (!service || !date || !slot) {
-      this.toastService.error('Please select a date and time slot');
+    const meetingMode = this.selectedMeetingMode();
+
+    if (!service || !date || !slot || !meetingMode) {
+      this.toastService.error('Please select a date, time slot, and meeting mode');
       return;
     }
 
@@ -171,13 +193,15 @@ export class ServiceDetails implements OnInit {
       serviceId: service.id,
       bookingDate: date.toISOString().split('T')[0],
       startTime: slot.startTime,
+      meetingMode,
       notes: this.bookingNotes() || undefined
     };
 
     this.bookingService.createBooking(request).subscribe({
       next: (booking) => {
         console.log('✅ Booking created:', booking);
-        this.toastService.success('Service booked successfully!');
+        this.toastService.success('Booking request sent to the provider');
+        this.loadMyServiceBookings(service.id);
         this.closeBookingModal();
         this.isBooking.set(false);
       },
@@ -190,8 +214,31 @@ export class ServiceDetails implements OnInit {
   }
 
   canConfirmBooking = computed(() => {
-    return this.selectedDate() !== null && this.selectedSlot() !== null && !this.isBooking();
+    return this.selectedDate() !== null && this.selectedSlot() !== null && this.selectedMeetingMode() !== null && !this.isBooking();
   });
+
+  canUseMode(mode: MeetingMode): boolean {
+    const slot = this.selectedSlot();
+    if (!slot) return false;
+    return (slot.availableModes || ['ONLINE', 'IN_PERSON']).includes(mode);
+  }
+
+  openBookingChat(booking: BookingResponse): void {
+    const currentUserId = this.authService.getUserId() || localStorage.getItem('userId') || '';
+    const providerId = booking.providerId;
+    if (!currentUserId || !providerId) {
+      this.toastService.error('Unable to open chat');
+      return;
+    }
+    this.bookingService.openBookingChat(booking.id).subscribe({
+      next: () => {
+        this.realtimeChatService.openChatPopup(currentUserId, providerId);
+      },
+      error: (err) => {
+        this.toastService.error(err.error?.message || 'Chat is available after acceptance');
+      }
+    });
+  }
 
   getAllowedDays(): string[] {
     const service = this.service();
@@ -226,6 +273,7 @@ export class ServiceDetails implements OnInit {
     switch (status) {
       case 'APPROVED': return 'bg-green-100 text-green-700';
       case 'AVAILABLE': return 'bg-green-100 text-green-700';
+      case 'CONFIRMED': return 'bg-green-100 text-green-700';
       case 'PARTIALLY_BOOKED': return 'bg-yellow-100 text-yellow-700';
       case 'FULLY_BOOKED': return 'bg-red-100 text-red-700';
       case 'PENDING': return 'bg-yellow-100 text-yellow-700';

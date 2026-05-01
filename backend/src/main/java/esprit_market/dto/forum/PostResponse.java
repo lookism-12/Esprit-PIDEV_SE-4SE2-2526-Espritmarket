@@ -2,6 +2,7 @@ package esprit_market.dto.forum;
 
 import lombok.*;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -23,4 +24,6 @@ public class PostResponse {
     private boolean approved;
     private List<String> commentIds;
     private List<String> reactionIds;
+    @Builder.Default
+    private List<RecommendedForumPost> recommendedPosts = new ArrayList<>();
 }

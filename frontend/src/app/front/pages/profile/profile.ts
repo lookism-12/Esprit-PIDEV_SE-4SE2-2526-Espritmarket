@@ -177,11 +177,41 @@ export class Profile implements OnInit {
     forkJoin({
       orders:  this.orderService.getMyOrders().pipe(catchError(() => of([]))),
       notifs:  this.notificationService.getMy().pipe(catchError(() => of([]))),
-      loyalty: this.loyaltyService.getAccount().pipe(catchError(() => of(null)))
+      loyalty: this.loyaltyService.getDashboard().pipe(catchError(() => of(null)))
     }).subscribe(({ orders, notifs, loyalty }) => {
       this.realOrders.set(orders as OrderResponse[]);
       this.notifications.set(notifs as any[]);
-      if (loyalty) this.loyaltyAccount.set(loyalty as LoyaltyAccount);
+      if (loyalty) {
+        // Map dashboard to loyalty account format
+        this.loyaltyAccount.set({
+          id: '',
+          userId: '',
+          points: loyalty.totalPoints,
+          lifetimePoints: loyalty.totalPointsEarned,
+          level: loyalty.loyaltyLevel as LoyaltyLevel,
+          nextLevelPoints: 0,
+          pointsToNextLevel: loyalty.pointsToNextReward || 0,
+          benefits: [],
+          history: [],
+          memberSince: new Date(),
+          updatedAt: new Date()
+        });
+      } else {
+        // Set default values if loyalty dashboard fails
+        this.loyaltyAccount.set({
+          id: '',
+          userId: '',
+          points: 0,
+          lifetimePoints: 0,
+          level: LoyaltyLevel.BRONZE,
+          nextLevelPoints: 1000,
+          pointsToNextLevel: 1000,
+          benefits: [],
+          history: [],
+          memberSince: new Date(),
+          updatedAt: new Date()
+        });
+      }
       this.isLoading.set(false);
     });
     this.favoriteService.loadMyFavorites();

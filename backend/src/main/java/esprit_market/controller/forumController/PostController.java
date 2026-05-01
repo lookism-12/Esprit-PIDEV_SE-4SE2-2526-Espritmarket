@@ -3,9 +3,11 @@ package esprit_market.controller.forumController;
 import esprit_market.dto.forum.PostRequest;
 import esprit_market.dto.forum.PostResponse;
 import esprit_market.dto.forum.ReactionRequest;
+import esprit_market.dto.forum.RecommendedForumPost;
 import esprit_market.entity.forum.Post;
 import esprit_market.entity.forum.Reaction;
 import esprit_market.mappers.ForumMapper;
+import esprit_market.service.forumService.ForumRecommendationService;
 import esprit_market.service.forumService.PostService;
 import esprit_market.service.forumService.ReactionService;
 import esprit_market.repository.userRepository.UserRepository;
@@ -26,6 +28,7 @@ import java.util.stream.Collectors;
 public class PostController {
     private final PostService service;
     private final ReactionService reactionService;
+    private final ForumRecommendationService recommendationService;
     private final UserRepository userRepository;
 
     private boolean isAdmin() {
@@ -57,7 +60,16 @@ public class PostController {
     public ResponseEntity<PostResponse> create(@Valid @RequestBody PostRequest dto) {
         Post entity = service.create(dto);
         if (entity == null) return ResponseEntity.badRequest().build();
-        return ResponseEntity.status(HttpStatus.CREATED).body(ForumMapper.toPostResponse(entity));
+        PostResponse response = ForumMapper.toPostResponse(entity);
+        response.setRecommendedPosts(recommendationService.getRecommendations(entity));
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @GetMapping("/{id}/recommendations")
+    public ResponseEntity<List<RecommendedForumPost>> getRecommendations(@PathVariable String id) {
+        Post entity = service.findById(new ObjectId(id));
+        if (entity == null) return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(recommendationService.getRecommendations(entity));
     }
 
     @PutMapping("/{id}")

@@ -8,12 +8,16 @@ export interface TimeSlot {
   endTime: string;
   available: boolean;
   label: string;
+  availableModes?: MeetingMode[];
 }
+
+export type MeetingMode = 'ONLINE' | 'IN_PERSON';
 
 export interface BookingRequest {
   serviceId: string;
   bookingDate: string;
   startTime: string;
+  meetingMode: MeetingMode;
   notes?: string;
 }
 
@@ -23,10 +27,14 @@ export interface BookingResponse {
   serviceName: string;
   userId: string;
   userName: string;
+  clientId?: string;
+  clientName?: string;
+  providerId?: string;
   shopId: string;
   bookingDate: string;
   startTime: string;
   endTime: string;
+  meetingMode?: MeetingMode;
   status: 'PENDING' | 'CONFIRMED' | 'REJECTED' | 'CANCELLED' | 'COMPLETED' | 'NO_SHOW';
   createdAt: string;
   notes?: string;
@@ -35,6 +43,13 @@ export interface BookingResponse {
   rejectionReason?: string;
   rejectedAt?: string;
   approvedAt?: string;
+  conversationId?: string;
+}
+
+export interface ChatConversationResponse {
+  conversationId: string;
+  user1Id: string;
+  user2Id: string;
 }
 
 @Injectable({
@@ -101,5 +116,19 @@ export class BookingService {
    */
   getPendingBookings(): Observable<BookingResponse[]> {
     return this.http.get<BookingResponse[]>(`${this.apiUrl}/pending`);
+  }
+
+  /**
+   * Get all service requests received by current provider
+   */
+  getProviderRequests(): Observable<BookingResponse[]> {
+    return this.http.get<BookingResponse[]>(`${this.apiUrl}/provider/requests`);
+  }
+
+  /**
+   * Open or create chat for an accepted booking
+   */
+  openBookingChat(bookingId: string): Observable<ChatConversationResponse> {
+    return this.http.post<ChatConversationResponse>(`${this.apiUrl}/${bookingId}/chat`, {});
   }
 }

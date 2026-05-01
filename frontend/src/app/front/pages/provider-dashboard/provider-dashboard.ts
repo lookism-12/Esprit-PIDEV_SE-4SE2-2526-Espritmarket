@@ -10,6 +10,9 @@ import { AutoDiscountRuleService, AutoDiscountRuleRequest, AutoDiscountRuleRespo
 import { EventPromotionService, EventPromotionRequest, EventPromotionResponse } from '../../core/event-promotion.service';
 import { InvoiceService } from '../../core/invoice.service';
 import { ToastService } from '../../core/toast.service';
+import { AuthService } from '../../core/auth.service';
+import { BookingService, BookingResponse } from '../../../core/services/booking.service';
+import { ChatService as RealtimeChatService } from '../../../core/services/chat.service';
 import { Product, ProductStatus } from '../../models/product';
 import { environment } from '../../../../environment';
 
@@ -52,6 +55,9 @@ export class ProviderDashboard implements OnInit {
   private autoDiscountRuleService = inject(AutoDiscountRuleService);
   private eventPromotionService = inject(EventPromotionService);
   private toastService = inject(ToastService);
+  private authService = inject(AuthService);
+  private bookingService = inject(BookingService);
+  private realtimeChatService = inject(RealtimeChatService);
   private router = inject(Router);
   private invoiceService = inject(InvoiceService);
 
@@ -66,7 +72,7 @@ export class ProviderDashboard implements OnInit {
   readonly error = signal<string | null>(null);
   readonly selectedStatus = signal<string>('ALL');
   readonly searchText = signal<string>('');
-  readonly activeTab = signal<'orders' | 'products' | 'services' | 'coupons' | 'discountRules' | 'eventPromotions' | 'returnedOrders'>('orders');
+  readonly activeTab = signal<'orders' | 'products' | 'services' | 'serviceRequests' | 'coupons' | 'discountRules' | 'eventPromotions' | 'returnedOrders'>('orders');
   readonly showCouponForm = signal(false);
   readonly editingCoupon = signal<ProviderCoupon | null>(null);
   readonly isSavingCoupon = signal(false);
@@ -77,6 +83,9 @@ export class ProviderDashboard implements OnInit {
   readonly isSavingEventPromotion = signal(false);
   readonly downloadingInvoiceId = signal<string | null>(null);
   readonly returnedOrders = signal<ProviderOrder[]>([]);
+  readonly serviceRequests = signal<BookingResponse[]>([]);
+  readonly isLoadingServiceRequests = signal(false);
+  readonly updatingServiceRequestId = signal<string | null>(null);
   readonly isLoadingReturned = signal(false);
   readonly restockingOrderId = signal<string | null>(null);
 
@@ -112,6 +121,9 @@ export class ProviderDashboard implements OnInit {
   });
 
   readonly isEmpty = computed(() => this.filteredOrders().length === 0);
+  readonly pendingServiceRequestsCount = computed(() =>
+    this.serviceRequests().filter(request => request.status === 'PENDING').length
+  );
 
   readonly pendingCount = computed(() =>
     this.orders().filter(o => o.orderStatus === 'PENDING').length
@@ -158,6 +170,7 @@ export class ProviderDashboard implements OnInit {
     this.loadStatistics();
     this.loadProducts();
     this.loadServices();
+    this.loadServiceRequests();
     this.loadCoupons();
     this.loadDiscountRules();
     this.loadEventPromotion();
@@ -223,6 +236,88 @@ export class ProviderDashboard implements OnInit {
           this.toastService.error('Failed to delete service');
         }
       });
+    }
+  }
+
+  loadServiceRequests() {
+    this.isLoadingServiceRequests.set(true);
+    this.bookingService.getProviderRequests().subscribe({
+      next: (requests) => {
+        this.serviceRequests.set(requests);
+        this.isLoadingServiceRequests.set(false);
+      },
+      error: (err) => {
+        console.error('Failed to load service requests:', err);
+        this.serviceRequests.set([]);
+        this.isLoadingServiceRequests.set(false);
+      }
+    });
+  }
+
+  acceptServiceRequest(request: BookingResponse) {
+    if (!confirm(`Accept service request from ${request.clientName || request.userName}?`)) return;
+    this.updatingServiceRequestId.set(request.id);
+    this.bookingService.approveBooking(request.id).subscribe({
+      next: () => {
+        this.toastService.success('Service request accepted');
+        this.updatingServiceRequestId.set(null);
+        this.loadServiceRequests();
+      },
+      error: (err) => {
+        console.error('Failed to accept service request:', err);
+        this.toastService.error(err.error?.message || 'Failed to accept service request');
+        this.updatingServiceRequestId.set(null);
+      }
+    });
+  }
+
+  rejectServiceRequest(request: BookingResponse) {
+    const reason = prompt('Rejection reason:');
+    if (!reason?.trim()) return;
+    this.updatingServiceRequestId.set(request.id);
+    this.bookingService.rejectBooking(request.id, reason.trim()).subscribe({
+      next: () => {
+        this.toastService.success('Service request rejected');
+        this.updatingServiceRequestId.set(null);
+        this.loadServiceRequests();
+      },
+      error: (err) => {
+        console.error('Failed to reject service request:', err);
+        this.toastService.error(err.error?.message || 'Failed to reject service request');
+        this.updatingServiceRequestId.set(null);
+      }
+    });
+  }
+
+  openServiceRequestChat(request: BookingResponse) {
+    const currentUserId = this.authService.getUserId() || localStorage.getItem('userId') || '';
+    const clientId = request.clientId || request.userId;
+    if (!currentUserId || !clientId) {
+      this.toastService.error('Unable to open chat');
+      return;
+    }
+    this.bookingService.openBookingChat(request.id).subscribe({
+      next: () => {
+        this.realtimeChatService.openChatPopup(currentUserId, clientId);
+        this.toastService.success('Chat opened');
+      },
+      error: (err) => {
+        this.toastService.error(err.error?.message || 'Chat is available after acceptance');
+      }
+    });
+  }
+
+  getRequestStatusBadgeClass(status: string): string {
+    switch (status) {
+      case 'PENDING':
+        return 'badge-yellow';
+      case 'CONFIRMED':
+        return 'badge-green';
+      case 'REJECTED':
+      case 'CANCELLED':
+        return 'badge-red';
+      default:
+        return 'badge-gray';
     }
   }
 

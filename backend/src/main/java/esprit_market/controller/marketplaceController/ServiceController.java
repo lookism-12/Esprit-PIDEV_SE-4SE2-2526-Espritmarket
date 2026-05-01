@@ -33,7 +33,7 @@ public class ServiceController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN') or ((hasAnyRole('SELLER', 'PROVIDER')) and @marketplaceSecurity.isShopOwner(authentication, #dto.shopId))")
+    @PreAuthorize("hasRole('ADMIN') or (hasAnyRole('SELLER', 'PROVIDER') and (#dto.shopId == null or #dto.shopId == '' or @marketplaceSecurity.isShopOwner(authentication, #dto.shopId)))")
     @Operation(summary = "Create a new service (SELLER/PROVIDER/ADMIN)")
     public ServiceResponseDTO create(@RequestBody ServiceRequestDTO dto) {
         return service.create(dto);

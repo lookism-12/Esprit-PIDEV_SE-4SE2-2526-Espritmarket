@@ -6,6 +6,7 @@ import { environment } from '../../../environment';
 export interface TimeRangeDTO {
   startTime: string;
   endTime: string;
+  availableMode?: 'ONLINE' | 'IN_PERSON' | 'BOTH';
 }
 
 export interface ServiceAvailabilityDTO {
@@ -21,6 +22,7 @@ export interface ServiceDto {
   price: number;
   shopId: string;
   categoryIds: string[];
+  createdByUserId?: string;
   status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'AVAILABLE' | 'PARTIALLY_BOOKED' | 'FULLY_BOOKED' | 'UNAVAILABLE';
   createdAt?: Date;
   updatedAt?: Date;

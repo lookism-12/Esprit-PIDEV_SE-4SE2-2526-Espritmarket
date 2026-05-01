@@ -188,11 +188,13 @@ export const providerGuard: CanActivateFn = (
   // Check both role (singular) and roles (array)
   const hasRoleInSingular = currentUser && allowedRoles.includes(currentUser.role);
   const hasRoleInArray = currentUser && currentUser.roles && currentUser.roles.some(r => allowedRoles.includes(r));
+  const storedRole = localStorage.getItem('userRole') as UserRole | null;
+  const hasStoredRole = storedRole ? allowedRoles.includes(storedRole) : false;
   
   console.log('🔍 Has role in singular field:', hasRoleInSingular);
   console.log('🔍 Has role in array field:', hasRoleInArray);
   
-  if (hasRoleInSingular || hasRoleInArray) {
+  if (hasRoleInSingular || hasRoleInArray || hasStoredRole) {
     console.log('✅ PROVIDER ACCESS GRANTED');
     console.log('========================================');
     return true;

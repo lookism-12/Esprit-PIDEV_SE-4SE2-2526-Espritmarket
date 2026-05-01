@@ -43,4 +43,14 @@ public interface OrderRepository extends MongoRepository<Order, ObjectId> {
     List<Order> findByPaymentMethodIn(List<String> paymentMethods);
 
     List<Order> findByPaymentMethodInAndStatus(List<String> paymentMethods, OrderStatus status);
+    
+    /**
+     * Count orders for a user after a certain date, excluding cancelled orders
+     */
+    long countByUserIdAndCreatedAtAfterAndStatusNot(ObjectId userId, LocalDateTime after, OrderStatus excludeStatus);
+    
+    /**
+     * Find orders for a user after a certain date, excluding a specific status
+     */
+    List<Order> findByUserIdAndCreatedAtAfterAndStatusNot(ObjectId userId, LocalDateTime after, OrderStatus excludeStatus);
 }

@@ -119,6 +119,27 @@
             <version>1.38.0</version>
         </dependency>
 
+        <!-- Local development .env loading -->
+        <dependency>
+            <groupId>io.github.cdimascio</groupId>
+            <artifactId>dotenv-java</artifactId>
+            <version>3.0.0</version>
+        </dependency>
+
+        <!-- Force newer httpclient for Twilio (resolves conflict with cloudinary-http44) -->
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>4.5.14</version>
+        </dependency>
+
+        <!-- Twilio SDK -->
+        <dependency>
+            <groupId>com.twilio.sdk</groupId>
+            <artifactId>twilio</artifactId>
+            <version>10.1.2</version>
+        </dependency>
+
         <!-- iText PDF Generation -->
         <dependency>
             <groupId>com.itextpdf</groupId>

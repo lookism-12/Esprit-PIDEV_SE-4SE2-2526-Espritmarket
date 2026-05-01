@@ -3,6 +3,7 @@ package esprit_market.controller.marketplaceController;
 import esprit_market.dto.marketplace.ServiceBookingRequestDTO;
 import esprit_market.dto.marketplace.ServiceBookingResponseDTO;
 import esprit_market.dto.marketplace.TimeSlotDTO;
+import esprit_market.entity.chat.ChatConversation;
 import esprit_market.service.marketplaceService.ServiceBookingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -11,6 +12,7 @@ import org.bson.types.ObjectId;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -139,5 +141,36 @@ public class ServiceBookingController {
     public ResponseEntity<List<ServiceBookingResponseDTO>> getPendingBookings() {
         List<ServiceBookingResponseDTO> bookings = bookingService.getPendingBookingsForProvider();
         return ResponseEntity.ok(bookings);
+    }
+
+    /**
+     * Get all service requests received by the authenticated provider.
+     */
+    @GetMapping("/provider/requests")
+    @Operation(summary = "Get provider service requests",
+               description = "Get all bookings and requests for the authenticated provider")
+    public ResponseEntity<List<ServiceBookingResponseDTO>> getProviderRequests() {
+        return ResponseEntity.ok(bookingService.getBookingsForProvider());
+    }
+
+    /**
+     * Get all service booking requests for admins.
+     */
+    @GetMapping("/admin/all")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Get all service booking requests",
+               description = "Get all service booking requests for the admin dashboard")
+    public ResponseEntity<List<ServiceBookingResponseDTO>> getAllAdminBookings() {
+        return ResponseEntity.ok(bookingService.getAllBookingsForAdmin());
+    }
+
+    /**
+     * Open or create a chat conversation after acceptance.
+     */
+    @PostMapping("/{bookingId}/chat")
+    @Operation(summary = "Open booking chat",
+               description = "Open or create a chat conversation for an accepted booking")
+    public ResponseEntity<ChatConversation> openBookingChat(@PathVariable String bookingId) {
+        return ResponseEntity.ok(bookingService.openConversationForBooking(new ObjectId(bookingId)));
     }
 }

@@ -22,6 +22,7 @@ public class ServiceEntity {
     private double price;
     private ObjectId shopId;
     private ObjectId categoryId;
+    private ObjectId createdByUserId;
     
     // ========================================
     // SERVICE BOOKING SYSTEM FIELDS

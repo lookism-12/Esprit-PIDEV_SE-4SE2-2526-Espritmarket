@@ -45,9 +45,10 @@ public class InvoiceService {
     
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
-    
-    private static final double TVA_RATE = 0.19; // 19% TVA
-    private static final double SHIPPING_COST = 7.0; // Fixed shipping cost
+    private final TaxConfigService taxConfigService;
+
+    private static final double DEFAULT_TVA_RATE = 0.19; // fallback
+    private static final double SHIPPING_COST = 7.0;
     
     /**
      * Generate PDF invoice for a paid order
@@ -75,9 +76,10 @@ public class InvoiceService {
         }
         
         try {
+            double tvaRate = taxConfigService.getEffectiveRate();
             // Generate FINAL invoice for PAID orders, PROFORMA for others
             boolean isProforma = order.getPaymentStatus() != esprit_market.Enum.cartEnum.PaymentStatus.PAID;
-            return createPDF(order, items, isProforma);
+            return createPDF(order, items, isProforma, tvaRate);
         } catch (Exception e) {
             log.error("Error generating PDF invoice: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to generate invoice: " + e.getMessage());
@@ -91,7 +93,7 @@ public class InvoiceService {
      * @param items Order items
      * @param isProforma True for proforma invoice (unpaid), false for final invoice (paid)
      */
-    private byte[] createPDF(Order order, List<OrderItem> items, boolean isProforma) throws Exception {
+    private byte[] createPDF(Order order, List<OrderItem> items, boolean isProforma, double tvaRate) throws Exception {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         PdfWriter writer = new PdfWriter(baos);
         PdfDocument pdfDoc = new PdfDocument(writer);
@@ -302,8 +304,9 @@ public class InvoiceService {
         summaryTable.addCell(createSummaryCell(String.format("%.2f TND", netAmount), false));
         
         // TVA
-        double tva = netAmount * TVA_RATE;
-        summaryTable.addCell(createSummaryCell("TVA (19%):", false));
+        double tva = netAmount * tvaRate;
+        int tvaPct = (int) Math.round(tvaRate * 100);
+        summaryTable.addCell(createSummaryCell("TVA (" + tvaPct + "%):", false));
         summaryTable.addCell(createSummaryCell(String.format("%.2f TND", tva), false));
         
         // Shipping

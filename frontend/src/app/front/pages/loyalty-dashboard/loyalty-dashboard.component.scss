@@ -1,0 +1,929 @@
+.loyalty-dashboard {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  min-height: 100vh;
+}
+
+// ==================== HEADER ====================
+.dashboard-header {
+  text-align: center;
+  margin-bottom: 3rem;
+
+  h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 0.5rem;
+  }
+
+  .subtitle {
+    font-size: 1.1rem;
+    color: #718096;
+  }
+}
+
+// ==================== POINTS SUMMARY CARD ====================
+.points-summary-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 20px;
+  padding: 2.5rem;
+  color: white;
+  box-shadow: 0 20px 60px rgba(102, 126, 234, 0.4);
+  margin-bottom: 3rem;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    animation: pulse 3s ease-in-out infinite;
+  }
+
+  .points-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  .points-display {
+    display: flex;
+    flex-direction: column;
+
+    .points-value {
+      font-size: 4rem;
+      font-weight: 800;
+      line-height: 1;
+      text-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+
+    .points-label {
+      font-size: 1.1rem;
+      opacity: 0.9;
+      margin-top: 0.5rem;
+    }
+  }
+
+  .level-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 1.2rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+
+    &.level-bronze {
+      background: linear-gradient(135deg, #cd7f32 0%, #8b5a2b 100%);
+    }
+
+    &.level-silver {
+      background: linear-gradient(135deg, #c0c0c0 0%, #808080 100%);
+    }
+
+    &.level-gold {
+      background: linear-gradient(135deg, #ffd700 0%, #daa520 100%);
+    }
+
+    &.level-platinum {
+      background: linear-gradient(135deg, #e5e4e2 0%, #b0b0b0 100%);
+    }
+
+    .level-icon {
+      font-size: 1.5rem;
+    }
+  }
+
+  .points-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1.5rem;
+    position: relative;
+    z-index: 1;
+
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      padding: 1rem;
+      background: rgba(255,255,255,0.15);
+      border-radius: 12px;
+      backdrop-filter: blur(10px);
+
+      .stat-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+        margin-bottom: 0.5rem;
+      }
+
+      .stat-value {
+        font-size: 1.8rem;
+        font-weight: 700;
+      }
+    }
+  }
+
+  .boost-badge {
+    margin-top: 1.5rem;
+    padding: 1.25rem;
+    background: rgba(255,255,255,0.2);
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(255,255,255,0.3);
+    position: relative;
+    z-index: 1;
+
+    &.boost-high {
+      background: rgba(255, 107, 107, 0.3);
+      border-color: rgba(255, 107, 107, 0.5);
+    }
+
+    &.boost-medium {
+      background: rgba(255, 184, 77, 0.3);
+      border-color: rgba(255, 184, 77, 0.5);
+    }
+
+    .boost-icon {
+      font-size: 2rem;
+    }
+
+    .boost-info {
+      display: flex;
+      flex-direction: column;
+
+      .boost-title {
+        font-weight: 700;
+        font-size: 1.1rem;
+      }
+
+      .boost-details {
+        font-size: 0.9rem;
+        opacity: 0.9;
+        margin-top: 0.25rem;
+      }
+    }
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.1); opacity: 0.8; }
+}
+
+// ==================== SECTIONS ====================
+.section {
+  background: white;
+  border-radius: 20px;
+  padding: 2.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+
+  .section-header {
+    margin-bottom: 2rem;
+
+    h2 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #2d3748;
+      margin-bottom: 0.5rem;
+    }
+
+    .section-subtitle {
+      color: #718096;
+      font-size: 1rem;
+    }
+  }
+}
+
+// ==================== TOP SHOPS ====================
+.shops-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.shop-card {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  border-radius: 15px;
+  padding: 2rem;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(245, 87, 108, 0.4);
+  }
+
+  .shop-rank {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+
+    .rank-badge {
+      background: rgba(255,255,255,0.3);
+      padding: 0.5rem 1rem;
+      border-radius: 50px;
+      font-weight: 700;
+      font-size: 1.2rem;
+    }
+  }
+
+  .shop-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+  }
+
+  .shop-name {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+  }
+
+  .shop-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+
+    .shop-stat {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 1rem;
+
+      .stat-icon {
+        font-size: 1.2rem;
+      }
+    }
+  }
+
+  .shop-badge {
+    background: rgba(255,255,255,0.25);
+    padding: 0.5rem 1rem;
+    border-radius: 50px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+}
+
+// ==================== REWARDS ====================
+.rewards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.5rem;
+}
+
+.reward-card {
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 15px;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+
+  &.affordable {
+    border-color: #48bb78;
+    box-shadow: 0 4px 15px rgba(72, 187, 120, 0.2);
+
+    &:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 25px rgba(72, 187, 120, 0.3);
+    }
+  }
+
+  &.locked {
+    opacity: 0.6;
+    background: #f7fafc;
+  }
+
+  .reward-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    margin-bottom: 1rem;
+
+    .reward-name {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #2d3748;
+    }
+
+    .reward-value {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 50px;
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+  }
+
+  .reward-description {
+    color: #718096;
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+  }
+
+  .reward-details {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+
+    .detail-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.9rem;
+      color: #4a5568;
+
+      .detail-icon {
+        font-size: 1.1rem;
+      }
+    }
+  }
+
+  .convert-btn {
+    width: 100%;
+    padding: 1rem;
+    border: none;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+
+    &:not(:disabled) {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+      }
+    }
+
+    &:disabled {
+      background: #e2e8f0;
+      color: #a0aec0;
+      cursor: not-allowed;
+    }
+  }
+}
+
+// ==================== COUPONS ====================
+.coupons-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 1.5rem;
+}
+
+.coupon-card {
+  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+  border-radius: 15px;
+  padding: 2rem;
+  color: #2d3748;
+  box-shadow: 0 4px 20px rgba(250, 112, 154, 0.3);
+
+  .coupon-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+
+    .coupon-badge {
+      background: white;
+      padding: 0.5rem 1rem;
+      border-radius: 50px;
+      font-weight: 700;
+      font-size: 1.2rem;
+      color: #fa709a;
+    }
+
+    .coupon-status {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      border-radius: 50px;
+      font-weight: 600;
+      font-size: 0.9rem;
+
+      &.expiry-normal {
+        background: rgba(72, 187, 120, 0.2);
+        color: #2f855a;
+      }
+
+      &.expiry-warning {
+        background: rgba(237, 137, 54, 0.2);
+        color: #c05621;
+      }
+
+      &.expiry-urgent {
+        background: rgba(245, 101, 101, 0.2);
+        color: #c53030;
+      }
+    }
+  }
+
+  .coupon-name {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: white;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+
+  .coupon-code-container {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+
+    .coupon-code {
+      flex: 1;
+      background: white;
+      padding: 1rem;
+      border-radius: 10px;
+      font-family: 'Courier New', monospace;
+      font-size: 1.3rem;
+      font-weight: 700;
+      text-align: center;
+      letter-spacing: 2px;
+      color: #2d3748;
+    }
+
+    .copy-btn {
+      background: white;
+      border: none;
+      padding: 1rem;
+      border-radius: 10px;
+      font-size: 1.5rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+
+      &:hover {
+        transform: scale(1.1);
+      }
+    }
+  }
+
+  .coupon-details {
+    background: rgba(255,255,255,0.3);
+    padding: 1rem;
+    border-radius: 10px;
+    margin-bottom: 1rem;
+
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      .detail-label {
+        font-weight: 600;
+      }
+
+      .detail-value {
+        font-weight: 700;
+      }
+    }
+  }
+
+  .coupon-shops {
+    margin-bottom: 1.5rem;
+
+    .shops-label {
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+      color: white;
+    }
+
+    .shops-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+
+      .shop-tag {
+        background: rgba(255,255,255,0.3);
+        padding: 0.5rem 1rem;
+        border-radius: 50px;
+        font-size: 0.9rem;
+        font-weight: 600;
+      }
+    }
+  }
+
+  .coupon-actions {
+    .use-btn {
+      width: 100%;
+      padding: 1rem;
+      background: white;
+      color: #fa709a;
+      border: none;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+      }
+    }
+  }
+}
+
+// ==================== HOW IT WORKS ====================
+.steps-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2rem;
+}
+
+.step-card {
+  text-align: center;
+  padding: 2rem;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  border-radius: 15px;
+  position: relative;
+
+  .step-number {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.2rem;
+  }
+
+  .step-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+  }
+
+  .step-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 0.75rem;
+  }
+
+  .step-description {
+    color: #718096;
+    line-height: 1.6;
+  }
+}
+
+// ==================== EMPTY STATE ====================
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+  color: #718096;
+
+  .empty-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+  }
+
+  p {
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .empty-hint {
+    font-size: 0.95rem;
+    color: #a0aec0;
+  }
+}
+
+// ==================== MODAL ====================
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 1rem;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 20px;
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  animation: modalSlideIn 0.3s ease;
+
+  .modal-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: #f7fafc;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+
+    &:hover {
+      background: #e2e8f0;
+      transform: rotate(90deg);
+    }
+  }
+
+  .modal-header {
+    padding: 2rem 2rem 1rem;
+    border-bottom: 2px solid #e2e8f0;
+
+    h2 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #2d3748;
+    }
+  }
+
+  .modal-body {
+    padding: 2rem;
+
+    .reward-preview {
+      text-align: center;
+      padding: 2rem;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 15px;
+      color: white;
+      margin-bottom: 2rem;
+
+      h3 {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+      }
+
+      .reward-value-large {
+        font-size: 3rem;
+        font-weight: 800;
+        margin-bottom: 1rem;
+      }
+
+      .reward-desc {
+        opacity: 0.9;
+      }
+    }
+
+    .conversion-details {
+      background: #f7fafc;
+      padding: 1.5rem;
+      border-radius: 10px;
+      margin-bottom: 1.5rem;
+
+      .detail-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #e2e8f0;
+
+        &:last-child {
+          border-bottom: none;
+        }
+
+        &.highlight {
+          background: #edf2f7;
+          padding: 0.75rem 1rem;
+          margin: 0 -1rem;
+          border-radius: 8px;
+          font-weight: 700;
+          color: #2d3748;
+        }
+
+        .label {
+          color: #718096;
+        }
+
+        .value {
+          font-weight: 600;
+          color: #2d3748;
+        }
+      }
+    }
+
+    .reward-info {
+      margin-bottom: 1.5rem;
+
+      h4 {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #2d3748;
+        margin-bottom: 1rem;
+      }
+
+      ul {
+        list-style: none;
+        padding: 0;
+
+        li {
+          padding: 0.75rem;
+          background: #f7fafc;
+          border-radius: 8px;
+          margin-bottom: 0.5rem;
+          color: #4a5568;
+
+          strong {
+            color: #2d3748;
+          }
+        }
+      }
+    }
+
+    .shop-restriction-notice {
+      display: flex;
+      gap: 1rem;
+      padding: 1rem;
+      background: #bee3f8;
+      border-radius: 10px;
+      border-left: 4px solid #3182ce;
+
+      .notice-icon {
+        font-size: 1.5rem;
+      }
+
+      p {
+        color: #2c5282;
+        line-height: 1.6;
+        margin: 0;
+      }
+    }
+  }
+
+  .modal-footer {
+    padding: 1.5rem 2rem;
+    border-top: 2px solid #e2e8f0;
+    display: flex;
+    gap: 1rem;
+
+    button {
+      flex: 1;
+      padding: 1rem;
+      border: none;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+
+      &.cancel-btn {
+        background: #e2e8f0;
+        color: #4a5568;
+
+        &:hover:not(:disabled) {
+          background: #cbd5e0;
+        }
+      }
+
+      &.confirm-btn {
+        background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+        color: white;
+
+        &:hover:not(:disabled) {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(72, 187, 120, 0.4);
+        }
+
+        &:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+      }
+    }
+  }
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// ==================== LOADING & ERROR ====================
+.loading-container,
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+
+  .spinner {
+    width: 60px;
+    height: 60px;
+    border: 4px solid #e2e8f0;
+    border-top-color: #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1rem;
+  }
+
+  .error-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+  }
+
+  p {
+    font-size: 1.2rem;
+    color: #718096;
+    margin-bottom: 1rem;
+  }
+
+  .retry-btn {
+    padding: 0.75rem 2rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+// ==================== RESPONSIVE ====================
+@media (max-width: 768px) {
+  .loyalty-dashboard {
+    padding: 1rem;
+  }
+
+  .dashboard-header h1 {
+    font-size: 2rem;
+  }
+
+  .points-summary-card {
+    padding: 1.5rem;
+
+    .points-main {
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .points-display .points-value {
+      font-size: 3rem;
+    }
+  }
+
+  .shops-grid,
+  .rewards-grid,
+  .coupons-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .steps-grid {
+    grid-template-columns: 1fr;
+  }
+}

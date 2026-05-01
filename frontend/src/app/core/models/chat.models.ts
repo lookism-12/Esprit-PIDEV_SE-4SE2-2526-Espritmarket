@@ -11,6 +11,9 @@ export interface ChatMessage {
   receiverId: string;
   content: string;
   timestamp: string;
+  status?: 'SENT' | 'DELIVERED' | 'SEEN';
+  messageType?: 'text' | 'voice';
+  voiceDuration?: number;
 }
 
 export interface ChatConversation {
@@ -35,4 +38,6 @@ export interface ChatMessagePayload {
   content: string;
   conversationId?: string;
   timestamp?: string;
+  messageType?: 'text' | 'voice';
+  voiceDuration?: number;
 }

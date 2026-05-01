@@ -35,7 +35,7 @@ export class AddService implements OnInit {
   
   // Availability configuration
   selectedDays = signal<string[]>([]);
-  timeRanges = signal<TimeRangeDTO[]>([{ startTime: '09:00', endTime: '17:00' }]);
+  timeRanges = signal<TimeRangeDTO[]>([{ startTime: '09:00', endTime: '17:00', availableMode: 'BOTH' }]);
   breaks = signal<TimeRangeDTO[]>([]);
   
   // Shop ID
@@ -125,7 +125,7 @@ export class AddService implements OnInit {
   }
 
   addTimeRange(): void {
-    this.timeRanges.update(ranges => [...ranges, { startTime: '09:00', endTime: '17:00' }]);
+    this.timeRanges.update(ranges => [...ranges, { startTime: '09:00', endTime: '17:00', availableMode: 'BOTH' }]);
   }
 
   removeTimeRange(index: number): void {

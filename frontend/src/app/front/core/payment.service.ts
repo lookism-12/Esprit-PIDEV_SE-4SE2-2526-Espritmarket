@@ -1,7 +1,8 @@
 import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
-import { PaymentMethod, PaymentStatus } from '../models/order.model';
+import { Observable } from 'rxjs';
+import { OrderResponse, PaymentMethod, PaymentStatus } from '../models/order.model';
+import { environment } from '../../../environment';
 
 export interface PaymentRequest {
   orderId: string;
@@ -47,11 +48,54 @@ export interface RefundResponse {
   processedAt: Date;
 }
 
+export interface StripePaymentIntentResponse {
+  paymentIntentId: string;
+  clientSecret: string;
+  publishableKey: string;
+  amount: number;
+  displayAmount: number;
+  currency: string;
+  status: string;
+}
+
+export interface StripePaymentConfirmationRequest {
+  orderId: string;
+  paymentIntentId: string;
+}
+
+export interface CardOtpRequest {
+  cardLast4: string;
+  cardBrand?: string;
+  expiryMonth: string;
+  expiryYear: string;
+  cardholderName: string;
+}
+
+export interface CardOtpResponse {
+  verificationId: string;
+  maskedCard: string;
+  maskedPhone: string;
+  expiresAt: string;
+  status: string;
+  message: string;
+}
+
+export interface CardOtpConfirmationRequest {
+  verificationId: string;
+  otpCode: string;
+}
+
+export interface CardOtpConfirmationResponse {
+  transactionId: string;
+  status: string;
+  message: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class PaymentService {
-  private readonly apiUrl = '/api/payments'; // TODO: Configure environment
+  private readonly apiUrl = `${environment.apiUrl}/payments`;
 
   // Reactive state
   readonly isProcessing = signal<boolean>(false);
@@ -60,16 +104,29 @@ export class PaymentService {
 
   constructor(private http: HttpClient) {}
 
+  createStripeCartIntent(): Observable<StripePaymentIntentResponse> {
+    return this.http.post<StripePaymentIntentResponse>(`${this.apiUrl}/stripe/create-cart-intent`, {});
+  }
+
+  confirmStripePayment(request: StripePaymentConfirmationRequest): Observable<OrderResponse> {
+    return this.http.post<OrderResponse>(`${this.apiUrl}/stripe/confirm`, request);
+  }
+
+  requestCardOtp(request: CardOtpRequest): Observable<CardOtpResponse> {
+    return this.http.post<CardOtpResponse>(`${this.apiUrl}/card/request-otp`, request);
+  }
+
+  confirmCardOtp(request: CardOtpConfirmationRequest): Observable<CardOtpConfirmationResponse> {
+    return this.http.post<CardOtpConfirmationResponse>(`${this.apiUrl}/card/confirm-otp`, request);
+  }
+
   /**
    * Process a payment for an order
    * @param request - Payment request with order and payment details
    * @returns Observable with payment response
    */
   processPayment(request: PaymentRequest): Observable<PaymentResponse> {
-    // TODO: Implement actual HTTP call
-    // return this.http.post<PaymentResponse>(`${this.apiUrl}/process`, request);
-    console.log('PaymentService.processPayment() called with:', request);
-    return of({} as PaymentResponse);
+    return this.http.post<PaymentResponse>(`${this.apiUrl}/process`, request);
   }
 
   /**
@@ -78,10 +135,7 @@ export class PaymentService {
    * @returns Observable with refund response
    */
   refundPayment(request: RefundRequest): Observable<RefundResponse> {
-    // TODO: Implement actual HTTP call
-    // return this.http.post<RefundResponse>(`${this.apiUrl}/refund`, request);
-    console.log('PaymentService.refundPayment() called with:', request);
-    return of({} as RefundResponse);
+    return this.http.post<RefundResponse>(`${this.apiUrl}/refund`, request);
   }
 
   /**
@@ -90,10 +144,7 @@ export class PaymentService {
    * @returns Observable with payment response
    */
   getPaymentStatus(transactionId: string): Observable<PaymentResponse> {
-    // TODO: Implement actual HTTP call
-    // return this.http.get<PaymentResponse>(`${this.apiUrl}/${transactionId}`);
-    console.log('PaymentService.getPaymentStatus() called with:', transactionId);
-    return of({} as PaymentResponse);
+    return this.http.get<PaymentResponse>(`${this.apiUrl}/${transactionId}`);
   }
 
   /**
@@ -101,10 +152,7 @@ export class PaymentService {
    * @returns Observable with list of payments
    */
   getPaymentHistory(): Observable<PaymentResponse[]> {
-    // TODO: Implement actual HTTP call
-    // return this.http.get<PaymentResponse[]>(`${this.apiUrl}/history`);
-    console.log('PaymentService.getPaymentHistory() called');
-    return of([]);
+    return this.http.get<PaymentResponse[]>(`${this.apiUrl}/history`);
   }
 
   /**
@@ -113,9 +161,16 @@ export class PaymentService {
    * @returns boolean indicating if card is valid
    */
   validateCard(card: CardDetails): boolean {
-    // TODO: Implement card validation logic (Luhn algorithm, expiry check, etc.)
-    console.log('PaymentService.validateCard() called');
-    return false;
+    const digits = card.cardNumber.replace(/\D/g, '');
+    if (digits.length < 12 || digits.length > 19) return false;
+    if (!/^\d{3,4}$/.test(card.cvv)) return false;
+
+    const month = Number(card.expiryMonth);
+    const year = Number(card.expiryYear.length === 2 ? `20${card.expiryYear}` : card.expiryYear);
+    if (month < 1 || month > 12 || !year) return false;
+
+    const expiresAt = new Date(year, month, 0, 23, 59, 59);
+    return expiresAt >= new Date() && this.passesLuhn(digits);
   }
 
   /**
@@ -123,9 +178,23 @@ export class PaymentService {
    * @returns Observable with available methods
    */
   getAvailableMethods(): Observable<PaymentMethod[]> {
-    // TODO: Implement actual HTTP call or return static list
-    // return this.http.get<PaymentMethod[]>(`${this.apiUrl}/methods`);
-    console.log('PaymentService.getAvailableMethods() called');
-    return of([]);
+    return this.http.get<PaymentMethod[]>(`${this.apiUrl}/methods`);
+  }
+
+  private passesLuhn(digits: string): boolean {
+    let sum = 0;
+    let shouldDouble = false;
+
+    for (let i = digits.length - 1; i >= 0; i--) {
+      let value = Number(digits.charAt(i));
+      if (shouldDouble) {
+        value *= 2;
+        if (value > 9) value -= 9;
+      }
+      sum += value;
+      shouldDouble = !shouldDouble;
+    }
+
+    return sum % 10 === 0;
   }
 }

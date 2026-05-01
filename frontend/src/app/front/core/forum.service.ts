@@ -46,6 +46,18 @@ export interface PostDto {
   approved: boolean;
   commentIds: string[];
   reactionIds: string[];
+  recommendedPosts?: RecommendedForumPostDto[];
+}
+
+export interface RecommendedForumPostDto {
+  postId: string;
+  title: string;
+  excerpt: string;
+  content: string;
+  categoryId?: string;
+  category?: string;
+  score: number;
+  source: string;
 }
 
 export interface CommentDto {
@@ -146,6 +158,12 @@ export class ForumService {
     // TODO: Implement HTTP call
     console.log('ForumService.getPostBySlug() called with:', slug);
     return of({} as Post);
+  }
+
+  getPostRecommendations(id: string): Observable<RecommendedForumPostDto[]> {
+    return this.http.get<RecommendedForumPostDto[]>(
+      `${this.apiUrl}/forum/posts/${id}/recommendations`
+    );
   }
 
   createPost(request: CreatePostRequest): Observable<PostDto> {

@@ -316,9 +316,9 @@ export class AuthService {
         break;
       case UserRole.PROVIDER:
       case 'SELLER' as any: // Legacy SELLER role
-        // ✅ CRITICAL: Providers MUST use front-end interface, NOT admin
-        console.log('🏪 PROVIDER detected - redirecting to front-end profile (NOT admin)');
-        this.router.navigate(['/profile']);
+        // Providers use the front provider workspace, not the admin back office.
+        console.log('🏪 PROVIDER detected - redirecting to provider dashboard');
+        this.router.navigate(['/provider/dashboard']);
         break;
       case UserRole.DRIVER:
         console.log('🚗 DRIVER detected - redirecting to driver cockpit');

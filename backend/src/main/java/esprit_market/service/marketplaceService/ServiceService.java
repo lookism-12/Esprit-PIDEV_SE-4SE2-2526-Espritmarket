@@ -55,13 +55,13 @@ public class ServiceService implements IServiceService {
 
     @Override
     public ServiceResponseDTO create(ServiceRequestDTO dto) {
-        // Validate Shop existence
-        if (dto.getShopId() == null) {
-            throw new IllegalArgumentException("Shop ID is mandatory");
-        }
-        ObjectId shopId = new ObjectId(dto.getShopId());
+        esprit_market.entity.user.User creator = getCurrentUser();
+        String resolvedShopId = resolveShopId(dto.getShopId());
+        dto.setShopId(resolvedShopId);
+
+        ObjectId shopId = new ObjectId(resolvedShopId);
         shopRepository.findById(shopId)
-                .orElseThrow(() -> new ResourceNotFoundException("Shop not found with id: " + dto.getShopId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Shop not found with id: " + resolvedShopId));
 
         // Validate Category existence (if provided)
         if (dto.getCategoryId() != null) {
@@ -72,7 +72,30 @@ public class ServiceService implements IServiceService {
         }
 
         ServiceEntity service = mapper.toEntity(dto);
+        service.setCreatedByUserId(creator.getId());
         return mapper.toDTO(repository.save(service));
+    }
+
+    private String resolveShopId(String requestedShopId) {
+        if (requestedShopId != null && !requestedShopId.isBlank()) {
+            return requestedShopId;
+        }
+
+        esprit_market.entity.user.User user = getCurrentUser();
+        esprit_market.entity.marketplace.Shop shop = shopRepository.findByOwnerId(user.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("No shop found for the connected user"));
+        return shop.getId().toHexString();
+    }
+
+    private esprit_market.entity.user.User getCurrentUser() {
+        org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder
+                .getContext()
+                .getAuthentication();
+        if (auth == null || auth.getName() == null) {
+            throw new IllegalStateException("Not authenticated");
+        }
+        return userRepository.findByEmail(auth.getName())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
     }
 
     @Override
@@ -83,6 +106,9 @@ public class ServiceService implements IServiceService {
         existingService.setName(dto.getName());
         existingService.setDescription(dto.getDescription());
         existingService.setPrice(dto.getPrice());
+        if (existingService.getCreatedByUserId() == null) {
+            existingService.setCreatedByUserId(getCurrentUser().getId());
+        }
 
         // Update duration if provided
         if (dto.getDurationMinutes() != null) {

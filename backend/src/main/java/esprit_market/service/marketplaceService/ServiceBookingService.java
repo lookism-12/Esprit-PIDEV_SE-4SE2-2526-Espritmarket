@@ -1,18 +1,24 @@
 package esprit_market.service.marketplaceService;
 
 import esprit_market.Enum.marketplaceEnum.BookingStatus;
+import esprit_market.Enum.marketplaceEnum.AvailabilityMode;
+import esprit_market.Enum.marketplaceEnum.MeetingMode;
 import esprit_market.Enum.marketplaceEnum.ServiceStatus;
 import esprit_market.config.Exceptions.ResourceNotFoundException;
 import esprit_market.dto.marketplace.ServiceBookingRequestDTO;
 import esprit_market.dto.marketplace.ServiceBookingResponseDTO;
 import esprit_market.dto.marketplace.TimeSlotDTO;
+import esprit_market.entity.chat.ChatConversation;
 import esprit_market.entity.marketplace.ServiceAvailability;
 import esprit_market.entity.marketplace.ServiceBooking;
 import esprit_market.entity.marketplace.ServiceEntity;
+import esprit_market.entity.marketplace.Shop;
 import esprit_market.entity.user.User;
 import esprit_market.repository.marketplaceRepository.ServiceBookingRepository;
 import esprit_market.repository.marketplaceRepository.ServiceRepository;
+import esprit_market.repository.marketplaceRepository.ShopRepository;
 import esprit_market.repository.userRepository.UserRepository;
+import esprit_market.service.chat.ChatService;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
 import org.springframework.security.core.Authentication;
@@ -34,7 +40,9 @@ public class ServiceBookingService {
     
     private final ServiceBookingRepository bookingRepository;
     private final ServiceRepository serviceRepository;
+    private final ShopRepository shopRepository;
     private final UserRepository userRepository;
+    private final ChatService chatService;
     
     /**
      * Generate available time slots for a service on a specific date
@@ -105,6 +113,7 @@ public class ServiceBookingService {
                             .endTime(slotEnd)
                             .available(isAvailable)
                             .label(formatTimeRange(slotStart, slotEnd))
+                            .availableModes(toMeetingModes(timeRange.getAvailableMode()))
                             .build();
                     
                     slots.add(slot);
@@ -146,6 +155,7 @@ public class ServiceBookingService {
                     .endTime(slotEnd)
                     .available(isAvailable)
                     .label(formatTimeRange(slotStart, slotEnd))
+                    .availableModes(List.of(MeetingMode.ONLINE, MeetingMode.IN_PERSON))
                     .build();
             
             slots.add(slot);
@@ -189,9 +199,20 @@ public class ServiceBookingService {
         ObjectId serviceId = new ObjectId(dto.getServiceId());
         ServiceEntity service = serviceRepository.findById(serviceId)
                 .orElseThrow(() -> new ResourceNotFoundException("Service not found"));
+        Shop shop = shopRepository.findById(service.getShopId())
+                .orElseThrow(() -> new ResourceNotFoundException("Shop not found"));
+        ObjectId requestOwnerId = service.getCreatedByUserId() != null ? service.getCreatedByUserId() : shop.getOwnerId();
         
         // Calculate end time
         LocalTime endTime = dto.getStartTime().plusMinutes(service.getDurationMinutes());
+
+        if (dto.getMeetingMode() == null) {
+            throw new IllegalStateException("Meeting mode is required");
+        }
+
+        if (!isSlotAllowedForMode(service, dto.getBookingDate(), dto.getStartTime(), endTime, dto.getMeetingMode())) {
+            throw new IllegalStateException("Selected meeting mode is not available for this time slot");
+        }
         
         // Check for overlaps
         List<ServiceBooking> existingBookings = bookingRepository
@@ -206,10 +227,12 @@ public class ServiceBookingService {
                 .serviceId(serviceId)
                 .userId(user.getId())
                 .shopId(service.getShopId())
+                .providerId(requestOwnerId)
                 .bookingDate(dto.getBookingDate())
                 .startTime(dto.getStartTime())
                 .endTime(endTime)
-                .status(BookingStatus.CONFIRMED)
+                .meetingMode(dto.getMeetingMode())
+                .status(BookingStatus.PENDING)
                 .notes(dto.getNotes())
                 .build();
         
@@ -298,19 +321,21 @@ public class ServiceBookingService {
         ServiceBooking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
         
-        // Verify user is the provider (shop owner)
         User user = getCurrentUser();
         ServiceEntity service = serviceRepository.findById(booking.getServiceId())
                 .orElseThrow(() -> new ResourceNotFoundException("Service not found"));
-        
-        // Get shop and verify ownership
-        // Note: You may need to add a method to verify shop ownership
+        ensureProviderOwnsBooking(user, booking);
         
         if (booking.getStatus() != BookingStatus.PENDING) {
             throw new IllegalStateException("Only pending bookings can be approved");
         }
         
-        // Update booking status
+        List<ServiceBooking> existingBookings = bookingRepository
+                .findByServiceIdAndBookingDateAndStatus(booking.getServiceId(), booking.getBookingDate(), BookingStatus.CONFIRMED);
+        if (hasOverlap(booking.getStartTime(), booking.getEndTime(), existingBookings)) {
+            throw new IllegalStateException("This time slot is already accepted for another request");
+        }
+
         booking.setStatus(BookingStatus.CONFIRMED);
         booking.setApprovedAt(java.time.LocalDateTime.now());
         
@@ -332,10 +357,10 @@ public class ServiceBookingService {
         ServiceBooking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
         
-        // Verify user is the provider (shop owner)
         User user = getCurrentUser();
         ServiceEntity service = serviceRepository.findById(booking.getServiceId())
                 .orElseThrow(() -> new ResourceNotFoundException("Service not found"));
+        ensureProviderOwnsBooking(user, booking);
         
         if (booking.getStatus() != BookingStatus.PENDING) {
             throw new IllegalStateException("Only pending bookings can be rejected");
@@ -360,14 +385,19 @@ public class ServiceBookingService {
      * Get pending bookings for provider's services
      */
     public List<ServiceBookingResponseDTO> getPendingBookingsForProvider() {
+        return getBookingsForProvider().stream()
+                .filter(booking -> booking.getStatus() == BookingStatus.PENDING)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Get all bookings for the authenticated provider.
+     */
+    public List<ServiceBookingResponseDTO> getBookingsForProvider() {
         User user = getCurrentUser();
+        List<ServiceBooking> bookings = bookingRepository.findByProviderId(user.getId());
         
-        // Get all services for this provider's shop
-        // Note: You may need to implement this based on your shop structure
-        List<ServiceBooking> pendingBookings = bookingRepository.findByShopIdAndStatus(
-                user.getId(), BookingStatus.PENDING);
-        
-        return pendingBookings.stream()
+        return bookings.stream()
                 .map(booking -> {
                     ServiceEntity service = serviceRepository.findById(booking.getServiceId())
                             .orElse(null);
@@ -375,6 +405,48 @@ public class ServiceBookingService {
                     return toResponseDTO(booking, serviceName);
                 })
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Get all service booking requests for admin dashboards.
+     */
+    public List<ServiceBookingResponseDTO> getAllBookingsForAdmin() {
+        User user = getCurrentUser();
+        if (!isAdmin(user)) {
+            throw new IllegalStateException("Only admins can view all service requests");
+        }
+
+        return bookingRepository.findAll().stream()
+                .map(booking -> {
+                    ServiceEntity service = serviceRepository.findById(booking.getServiceId())
+                            .orElse(null);
+                    String serviceName = service != null ? service.getName() : "Unknown Service";
+                    return toResponseDTO(booking, serviceName);
+                })
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Open or create a chat conversation for an accepted booking.
+     */
+    public ChatConversation openConversationForBooking(ObjectId bookingId) {
+        ServiceBooking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
+        User user = getCurrentUser();
+
+        if (booking.getStatus() != BookingStatus.CONFIRMED) {
+            throw new IllegalStateException("Chat is available only after the booking is accepted");
+        }
+
+        boolean isClient = booking.getUserId().equals(user.getId());
+        boolean isProvider = booking.getProviderId() != null && booking.getProviderId().equals(user.getId());
+        if (!isClient && !isProvider) {
+            throw new IllegalStateException("You are not allowed to open this conversation");
+        }
+
+        return chatService.getOrCreateConversation(
+                booking.getUserId().toHexString(),
+                booking.getProviderId().toHexString());
     }
     
     /**
@@ -430,10 +502,14 @@ public class ServiceBookingService {
                 .serviceName(serviceName)
                 .userId(booking.getUserId().toHexString())
                 .userName(userName)
+                .clientId(booking.getUserId().toHexString())
+                .clientName(userName)
+                .providerId(booking.getProviderId() != null ? booking.getProviderId().toHexString() : null)
                 .shopId(booking.getShopId().toHexString())
                 .bookingDate(booking.getBookingDate())
                 .startTime(booking.getStartTime())
                 .endTime(booking.getEndTime())
+                .meetingMode(booking.getMeetingMode())
                 .status(booking.getStatus())
                 .createdAt(booking.getCreatedAt())
                 .notes(booking.getNotes())
@@ -442,7 +518,61 @@ public class ServiceBookingService {
                 .rejectionReason(booking.getRejectionReason())
                 .rejectedAt(booking.getRejectedAt())
                 .approvedAt(booking.getApprovedAt())
+                .conversationId(buildConversationId(booking))
                 .build();
+    }
+
+    private boolean isSlotAllowedForMode(ServiceEntity service, LocalDate bookingDate, LocalTime startTime,
+                                         LocalTime endTime, MeetingMode meetingMode) {
+        ServiceAvailability availability = service.getAvailability();
+        if (availability == null || availability.getWorkingDays() == null || availability.getWorkingDays().isEmpty()) {
+            return true;
+        }
+        if (!availability.getWorkingDays().contains(bookingDate.getDayOfWeek())) {
+            return false;
+        }
+        if (availability.getTimeRanges() == null || availability.getTimeRanges().isEmpty()) {
+            return true;
+        }
+
+        return availability.getTimeRanges().stream().anyMatch(range -> {
+            AvailabilityMode mode = range.getAvailableMode() != null ? range.getAvailableMode() : AvailabilityMode.BOTH;
+            boolean containsSlot = !startTime.isBefore(range.getStartTime()) && !endTime.isAfter(range.getEndTime());
+            return containsSlot && mode.allows(meetingMode);
+        });
+    }
+
+    private List<MeetingMode> toMeetingModes(AvailabilityMode availabilityMode) {
+        AvailabilityMode mode = availabilityMode != null ? availabilityMode : AvailabilityMode.BOTH;
+        if (mode == AvailabilityMode.ONLINE) {
+            return List.of(MeetingMode.ONLINE);
+        }
+        if (mode == AvailabilityMode.IN_PERSON) {
+            return List.of(MeetingMode.IN_PERSON);
+        }
+        return List.of(MeetingMode.ONLINE, MeetingMode.IN_PERSON);
+    }
+
+    private void ensureProviderOwnsBooking(User user, ServiceBooking booking) {
+        if (isAdmin(user)) {
+            return;
+        }
+        if (booking.getProviderId() == null || !booking.getProviderId().equals(user.getId())) {
+            throw new IllegalStateException("You can only manage requests for your own services");
+        }
+    }
+
+    private boolean isAdmin(User user) {
+        return user.getRoles() != null && user.getRoles().contains(esprit_market.Enum.userEnum.Role.ADMIN);
+    }
+
+    private String buildConversationId(ServiceBooking booking) {
+        if (booking.getUserId() == null || booking.getProviderId() == null || booking.getStatus() != BookingStatus.CONFIRMED) {
+            return null;
+        }
+        String clientId = booking.getUserId().toHexString();
+        String providerId = booking.getProviderId().toHexString();
+        return clientId.compareTo(providerId) < 0 ? clientId + "_" + providerId : providerId + "_" + clientId;
     }
     
     /**

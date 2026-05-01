@@ -20,12 +20,11 @@ public class ChatWebSocketController {
     public void sendMessage(@Payload ChatMessagePayload chatMessagePayload) {
         // Save the message and update the flame system
         ChatMessage savedMessage = chatService.saveMessage(chatMessagePayload);
+        if (savedMessage == null) {
+            return;
+        }
 
-        // Make sure we broadcast with the final conversationId and timestamp
-        chatMessagePayload.setTimestamp(savedMessage.getTimestamp());
-        chatMessagePayload.setConversationId(savedMessage.getConversationId());
-
-        // Broadcast to the specific topic
-        messagingTemplate.convertAndSend("/topic/chat/" + chatMessagePayload.getConversationId(), chatMessagePayload);
+        // Broadcast the saved message so clients receive id, messageType and voiceDuration.
+        messagingTemplate.convertAndSend("/topic/chat/" + savedMessage.getConversationId(), savedMessage);
     }
 }

@@ -1,6 +1,7 @@
 package esprit_market.entity.marketplace;
 
 import esprit_market.Enum.marketplaceEnum.BookingStatus;
+import esprit_market.Enum.marketplaceEnum.MeetingMode;
 import lombok.*;
 import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
@@ -39,6 +40,11 @@ public class ServiceBooking {
     private ObjectId shopId;
     
     /**
+     * Provider owning the shop/service.
+     */
+    private ObjectId providerId;
+    
+    /**
      * Booking date
      */
     private LocalDate bookingDate;
@@ -52,6 +58,11 @@ public class ServiceBooking {
      * End time of the booking (calculated from start + duration)
      */
     private LocalTime endTime;
+    
+    /**
+     * Online or in-person appointment mode requested by the client.
+     */
+    private MeetingMode meetingMode;
     
     /**
      * Booking status

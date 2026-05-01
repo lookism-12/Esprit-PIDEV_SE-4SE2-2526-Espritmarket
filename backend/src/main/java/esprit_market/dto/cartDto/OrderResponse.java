@@ -1,6 +1,7 @@
 package esprit_market.dto.cartDto;
 
 import esprit_market.Enum.cartEnum.OrderStatus;
+import esprit_market.Enum.cartEnum.PaymentStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -19,6 +20,7 @@ public class OrderResponse {
     private String userEmail;
     private String orderNumber;
     private OrderStatus status;
+    private PaymentStatus paymentStatus;
     
     private Double totalAmount;
     private Double discountAmount;

@@ -16,6 +16,7 @@ import org.bson.types.ObjectId;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -86,71 +87,82 @@ public class LoyaltyCardServiceImpl implements ILoyaltyCardService {
     }
     
     /**
-     * Internal method to calculate points based on the requirements:
+     * Internal method to calculate points based on the REDESIGNED requirements:
      * 
-     * 1. Base points = sum(productPrice * quantity * 0.1)
-     * 2. Apply tier multiplier
-     * 3. Add quantity bonus (if total quantity >= 5)
-     * 4. Add price bonus (if total > 200)
+     * 🎯 NEW FORMULA (Realistic & User-Friendly):
+     * 1. Base points = orderAmount * baseRate (1:1 ratio by default)
+     * 2. Apply tier multiplier (Bronze: 1.0x, Silver: 1.2x, Gold: 1.5x, Platinum: 2.0x)
+     * 3. Add quantity bonus (50 points for 5+ items)
+     * 4. Add high-value bonus (100 points for 200+ TND orders)
+     * 
+     * Examples with default config:
+     * - 100 TND order (Bronze): 100 * 1.0 = 100 points
+     * - 500 TND order (Gold): 500 * 1.5 + 100 = 850 points
+     * - 1000 TND order (Platinum): 1000 * 2.0 + 100 + 50 = 2150 points
      */
     private int calculatePointsForOrderInternal(String level, List<OrderItem> orderItems, Double totalAmount) {
         // ==================== LOAD DYNAMIC CONFIGURATION ====================
         LoyaltyConfig config = configService.getActiveConfig();
         
-        // ==================== STEP 1: Calculate Base Points ====================
-        // ✅ DYNAMIC: Load base rate from database configuration
-        double basePoints = 0.0;
+        // Use BigDecimal for high precision calculations
+        BigDecimal baseRate = BigDecimal.valueOf(config.getBaseRate() != null ? config.getBaseRate() : 1.0);
+        BigDecimal orderAmountDecimal = BigDecimal.valueOf(totalAmount);
         int totalQuantity = 0;
         
+        // Count total quantity for bonus calculation
         for (OrderItem item : orderItems) {
-            if (item.getProductPrice() != null && item.getQuantity() != null) {
-                double itemPoints = item.getProductPrice() * item.getQuantity() * config.getBaseRate();
-                basePoints += itemPoints;
+            if (item.getQuantity() != null) {
                 totalQuantity += item.getQuantity();
-                
-                log.debug("📦 Item: {} x {} @ ${} = {:.2f} base points", 
-                        item.getProductName(), item.getQuantity(), 
-                        item.getProductPrice(), itemPoints);
             }
         }
         
-        // ✅ Ensure minimum 1 point for any purchase
-        basePoints = Math.max(1.0, basePoints);
+        // ==================== STEP 1: Calculate Base Points ====================
+        // Simple formula: orderAmount * baseRate (e.g., 100 TND * 1.0 = 100 points)
+        BigDecimal basePoints = orderAmountDecimal.multiply(baseRate);
         
-        log.debug("💰 Total base points ({}% of ${}): {:.2f}", 
-                config.getBaseRate() * 100, totalAmount, basePoints);
+        log.debug("💰 Order Amount: {} TND", totalAmount);
+        log.debug("📊 Base Rate: {}", baseRate.toPlainString());
+        log.debug("🎯 Base Points: {}", basePoints.toPlainString());
         
         // ==================== STEP 2: Add Fixed Bonuses ====================
-        // ✅ DYNAMIC: Load bonus values from configuration
-        int bonusPoints = 0;
+        BigDecimal bonusPoints = BigDecimal.ZERO;
         
         if (totalQuantity >= config.getBonusQuantityThreshold()) {
-            bonusPoints += config.getBonusQuantity();
+            bonusPoints = bonusPoints.add(BigDecimal.valueOf(config.getBonusQuantity()));
             log.debug("🎁 Quantity bonus ({}+ items): +{} points", 
                     config.getBonusQuantityThreshold(), config.getBonusQuantity());
         }
         
         if (totalAmount > config.getBonusHighOrderThreshold()) {
-            bonusPoints += config.getBonusHighOrder();
-            log.debug("🎁 Price bonus (>${} order): +{} points", 
+            bonusPoints = bonusPoints.add(BigDecimal.valueOf(config.getBonusHighOrder()));
+            log.debug("🎁 High-value bonus ({}+ TND): +{} points", 
                     config.getBonusHighOrderThreshold(), config.getBonusHighOrder());
         }
         
-        // ==================== STEP 3: Apply Multiplier ONCE ====================
-        // ✅ DYNAMIC: Load multiplier from configuration based on level
-        double multiplier = getPointsMultiplierFromConfig(level, config);
-        double totalBeforeMultiplier = basePoints + bonusPoints;
-        double finalPoints = totalBeforeMultiplier * multiplier;
+        // ==================== STEP 3: Apply Tier Multiplier ====================
+        BigDecimal multiplier = BigDecimal.valueOf(getPointsMultiplierFromConfig(level, config));
+        BigDecimal totalBeforeMultiplier = basePoints.add(bonusPoints);
         
-        log.info("🏆 LOYALTY POINTS EARNED - Order: ${} | Base: {:.2f} pts | Bonuses: {} pts | Level: {} ({}x) | FINAL: {} pts", 
+        // Final Points = (Base + Bonuses) * Multiplier
+        BigDecimal finalPointsDecimal = totalBeforeMultiplier.multiply(multiplier);
+        
+        // Round to nearest integer (HALF_UP is standard financial rounding)
+        int finalPoints = finalPointsDecimal.setScale(0, java.math.RoundingMode.HALF_UP).intValue();
+        
+        // Ensure minimum 1 point for any non-empty order
+        if (!orderItems.isEmpty() && finalPoints < 1) {
+            finalPoints = 1;
+        }
+        
+        log.info("🏆 LOYALTY CALCULATION - Order: {} TND | Base: {} pts | Bonuses: {} pts | Level: {} ({}x) | FINAL: {} pts", 
                 String.format("%.2f", totalAmount),
-                basePoints,
-                bonusPoints,
+                basePoints.setScale(0, java.math.RoundingMode.HALF_UP).toPlainString(),
+                bonusPoints.toPlainString(),
                 level, 
-                multiplier,
-                Math.round(finalPoints));
+                multiplier.toPlainString(),
+                finalPoints);
         
-        return (int) Math.round(finalPoints);
+        return finalPoints;
     }
 
     // ==================== LEGACY METHODS (Backward Compatibility) ====================
@@ -344,7 +356,7 @@ public class LoyaltyCardServiceImpl implements ILoyaltyCardService {
             return 0;
         }
         
-        // ✅ DYNAMIC: Load configuration from database
+        // ✅ REDESIGNED: Load configuration from database
         LoyaltyConfig config = configService.getActiveConfig();
         
         User user = userRepository.findById(userId).orElse(null);
@@ -357,11 +369,80 @@ public class LoyaltyCardServiceImpl implements ILoyaltyCardService {
             }
         }
         
-        // Calculate points using dynamic configuration
-        double basePoints = Math.max(1.0, amount * config.getBaseRate());
-        double multiplier = getPointsMultiplierFromConfig(level, config);
+        // ✅ NEW CALCULATION: Simple and realistic
+        // Base points = amount * baseRate (e.g., 100 TND * 1.0 = 100 points)
+        BigDecimal basePoints = BigDecimal.valueOf(amount).multiply(BigDecimal.valueOf(config.getBaseRate()));
+        BigDecimal multiplier = BigDecimal.valueOf(getPointsMultiplierFromConfig(level, config));
         
-        return (int) Math.round(basePoints * multiplier);
+        // Apply tier multiplier
+        BigDecimal finalPoints = basePoints.multiply(multiplier);
+        
+        return Math.max(1, finalPoints.setScale(0, java.math.RoundingMode.HALF_UP).intValue());
+    }
+    
+    /**
+     * ✅ NEW METHOD: Calculate maximum discount available from points
+     */
+    public double calculateMaxDiscountFromPoints(ObjectId userId) {
+        User user = userRepository.findById(userId).orElse(null);
+        if (user == null) return 0.0;
+        
+        LoyaltyCard card = repository.findByUser(user).orElse(null);
+        if (card == null) return 0.0;
+        
+        LoyaltyConfig config = configService.getActiveConfig();
+        int availablePoints = card.getPoints() != null ? card.getPoints() : 0;
+        int maxUsablePoints = config.getMaxPointsPerOrder() != null ? 
+            Math.min(availablePoints, config.getMaxPointsPerOrder()) : availablePoints;
+        
+        // Convert points to currency (e.g., 10 points = 1 TND)
+        double maxDiscount = maxUsablePoints * config.getPointsToCurrencyRate();
+        
+        log.debug("💰 User {} can use {} points for {} TND discount", 
+                userId, maxUsablePoints, String.format("%.2f", maxDiscount));
+        
+        return maxDiscount;
+    }
+    
+    /**
+     * ✅ NEW METHOD: Apply points discount to order
+     */
+    @Transactional
+    public double applyPointsDiscount(ObjectId userId, int pointsToUse, double orderAmount) {
+        if (pointsToUse <= 0) return 0.0;
+        
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        LoyaltyCard card = repository.findByUser(user)
+            .orElseThrow(() -> new ResourceNotFoundException("Loyalty card not found"));
+        
+        LoyaltyConfig config = configService.getActiveConfig();
+        
+        // Validate points usage
+        int availablePoints = card.getPoints() != null ? card.getPoints() : 0;
+        if (pointsToUse > availablePoints) {
+            throw new IllegalArgumentException("Insufficient points. Available: " + availablePoints);
+        }
+        
+        int maxUsablePoints = config.getMaxPointsPerOrder() != null ? config.getMaxPointsPerOrder() : Integer.MAX_VALUE;
+        if (pointsToUse > maxUsablePoints) {
+            throw new IllegalArgumentException("Cannot use more than " + maxUsablePoints + " points per order");
+        }
+        
+        // Calculate discount
+        double discountAmount = pointsToUse * config.getPointsToCurrencyRate();
+        
+        // Ensure discount doesn't exceed order amount
+        discountAmount = Math.min(discountAmount, orderAmount);
+        
+        // Deduct points
+        card.setPoints(availablePoints - pointsToUse);
+        repository.save(card);
+        
+        log.info("✅ Applied {} points discount: {} TND for user {}", 
+                pointsToUse, String.format("%.2f", discountAmount), userId);
+        
+        return discountAmount;
     }
     
     public LoyaltyCard getOrCreateLoyaltyCardEntity(ObjectId userId) {

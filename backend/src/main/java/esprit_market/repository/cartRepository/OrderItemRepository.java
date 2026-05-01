@@ -13,6 +13,8 @@ public interface OrderItemRepository extends MongoRepository<OrderItem, ObjectId
     
     List<OrderItem> findByOrderId(ObjectId orderId);
     
+    List<OrderItem> findByOrderIdIn(List<ObjectId> orderIds);
+    
     Optional<OrderItem> findByOrderIdAndProductId(ObjectId orderId, ObjectId productId);
     
     void deleteByOrderId(ObjectId orderId);

@@ -1,6 +1,7 @@
 package esprit_market.service.cartService;
 
 import esprit_market.Enum.cartEnum.OrderStatus;
+import esprit_market.Enum.cartEnum.PaymentStatus;
 import esprit_market.entity.cart.Order;
 
 import java.util.List;
@@ -30,7 +31,7 @@ public final class OrderDeliveryEligibility {
         }
 
         if (isCardPaymentMethod(order.getPaymentMethod())) {
-            return true;
+            return order.getPaymentStatus() == PaymentStatus.PAID;
         }
 
         return isCashPaymentMethod(order.getPaymentMethod())

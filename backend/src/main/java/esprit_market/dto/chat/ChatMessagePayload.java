@@ -17,4 +17,6 @@ public class ChatMessagePayload {
     private String content;
     private String conversationId;
     private LocalDateTime timestamp;
+    private String messageType;
+    private Integer voiceDuration;
 }

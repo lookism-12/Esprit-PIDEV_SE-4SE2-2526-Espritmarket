@@ -37,6 +37,17 @@ services:
       - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-here-min-256-bits}
       - JWT_EXPIRATION_MS=86400000
       - APP_UPLOAD_DIR=/app/uploads
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-}
+      - STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY:-}
+      - STRIPE_CURRENCY=${STRIPE_CURRENCY:-tnd}
+      - STRIPE_AMOUNT_MULTIPLIER=${STRIPE_AMOUNT_MULTIPLIER:-100}
+      - STRIPE_REQUEST_THREE_D_SECURE=${STRIPE_REQUEST_THREE_D_SECURE:-any}
+      - CARD_OTP_TTL_MINUTES=${CARD_OTP_TTL_MINUTES:-5}
+      - VONAGE_API_KEY=${VONAGE_API_KEY:-}
+      - VONAGE_API_SECRET=${VONAGE_API_SECRET:-}
+      - VONAGE_SMS_FROM=${VONAGE_SMS_FROM:-}
+      - OTP_RECEIVER_PHONE_NUMBER=${OTP_RECEIVER_PHONE_NUMBER:-}
+      - FORUM_AI_BASE_URL=http://forum-ai:8001
     volumes:
       - backend-uploads:/app/uploads
     networks:
@@ -48,6 +59,25 @@ services:
       timeout: 10s
       retries: 3
       start_period: 45s
+
+  # Forum AI Recommendation Service - FastAPI
+  forum-ai:
+    build:
+      context: ../ai-forum-recommendation
+      dockerfile: Dockerfile
+    container_name: esprit-market-forum-ai
+    ports:
+      - "8001:8001"
+    environment:
+      - MONGODB_URI=${MONGODB_URI:-mongodb://mongo:27017/esprit_market}
+      - MONGODB_DATABASE=esprit_market
+      - FORUM_AI_ARTIFACT_DIR=artifacts
+      - FORUM_AI_EMBEDDING_MODEL=${FORUM_AI_EMBEDDING_MODEL:-sentence-transformers/all-MiniLM-L6-v2}
+    depends_on:
+      - mongo
+    networks:
+      - esprit-market-network
+    restart: unless-stopped
 
   # MongoDB (optional - for local dev only)
   mongo:

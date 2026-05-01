@@ -57,6 +57,57 @@ spec:
           value: "86400000"
         - name: APP_UPLOAD_DIR
           value: "/app/uploads"
+        # Stripe payment gateway
+        - name: STRIPE_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: esprit-market-secrets
+              key: stripe-secret-key
+        - name: STRIPE_PUBLISHABLE_KEY
+          valueFrom:
+            secretKeyRef:
+              name: esprit-market-secrets
+              key: stripe-publishable-key
+        - name: STRIPE_CURRENCY
+          valueFrom:
+            configMapKeyRef:
+              name: esprit-market-config
+              key: stripe-currency
+        - name: STRIPE_AMOUNT_MULTIPLIER
+          valueFrom:
+            configMapKeyRef:
+              name: esprit-market-config
+              key: stripe-amount-multiplier
+        - name: STRIPE_REQUEST_THREE_D_SECURE
+          valueFrom:
+            configMapKeyRef:
+              name: esprit-market-config
+              key: stripe-request-three-d-secure
+        - name: CARD_OTP_TTL_MINUTES
+          valueFrom:
+            configMapKeyRef:
+              name: esprit-market-config
+              key: card-otp-ttl-minutes
+        - name: VONAGE_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: esprit-market-secrets
+              key: vonage-api-key
+        - name: VONAGE_API_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: esprit-market-secrets
+              key: vonage-api-secret
+        - name: VONAGE_SMS_FROM
+          valueFrom:
+            secretKeyRef:
+              name: esprit-market-secrets
+              key: vonage-sms-from
+        - name: OTP_RECEIVER_PHONE_NUMBER
+          valueFrom:
+            secretKeyRef:
+              name: esprit-market-secrets
+              key: otp-receiver-phone-number
         # CORS configuration
         - name: CORS_ORIGINS
           valueFrom:

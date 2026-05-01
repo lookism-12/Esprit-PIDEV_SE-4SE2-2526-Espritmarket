@@ -177,7 +177,7 @@ import { Subscription, of, catchError, take, interval, filter, Subject, debounce
             <div class="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50/50 custom-scrollbar" [id]="'scroll-' + popup.conversationId">
               @for (msg of getMessages(popup.conversationId); track msg.id) {
                 <div [class]="msg.senderId === currentUserId ? 'flex justify-end' : 'flex justify-start'">
-                  @if (msg.messageType === 'voice') {
+                  @if (isVoiceMessage(msg)) {
                     <!-- Voice message bubble -->
                     <div [class]="msg.senderId === currentUserId
                         ? 'voice-bubble-sent group'
@@ -207,6 +207,7 @@ import { Subscription, of, catchError, take, interval, filter, Subject, debounce
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/>
                         </svg>
                       </div>
+                      <audio [src]="getAudioSource(msg)" controls preload="metadata" class="voice-audio-player"></audio>
                       <div class="flex items-center gap-2 justify-end mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <span class="text-[9px] font-black tracking-widest uppercase">{{ msg.timestamp | date:'HH:mm' }}</span>
                         @if (msg.senderId === currentUserId) {
@@ -524,6 +525,12 @@ import { Subscription, of, catchError, take, interval, filter, Subject, debounce
       padding: 12px 16px; max-width: 75%; min-width: 180px;
       border: 1px solid #f1f5f9;
     }
+    .voice-audio-player {
+      width: 100%;
+      height: 34px;
+      margin-top: 10px;
+      display: block;
+    }
   `]
 })
 export class ForumChatWidget implements OnInit, OnDestroy {
@@ -589,20 +596,21 @@ export class ForumChatWidget implements OnInit, OnDestroy {
     // ── Incoming messages ──────────────────────────────────────────────────
     this.subs.add(
       this.chatService.incomingMessage$.subscribe(msg => {
+        const normalizedMsg = this.normalizeChatMessage(msg);
         this.messagesMap.update(map => {
-          const currentList = map[msg.conversationId] || [];
+          const currentList = map[normalizedMsg.conversationId] || [];
           const tmpIdx = currentList.findIndex(
-            m => m.id?.startsWith('tmp-') && m.senderId === msg.senderId && m.content === msg.content
+            m => m.id?.startsWith('tmp-') && m.senderId === normalizedMsg.senderId && m.content === normalizedMsg.content
           );
           if (tmpIdx !== -1) {
             const updated = [...currentList];
-            updated[tmpIdx] = msg;
-            return { ...map, [msg.conversationId]: updated };
+            updated[tmpIdx] = normalizedMsg;
+            return { ...map, [normalizedMsg.conversationId]: updated };
           }
-          if (currentList.some(m => m.id === msg.id)) return map;
-          return { ...map, [msg.conversationId]: [...currentList, msg] };
+          if (currentList.some(m => m.id === normalizedMsg.id)) return map;
+          return { ...map, [normalizedMsg.conversationId]: [...currentList, normalizedMsg] };
         });
-        this.scrollPopup(msg.conversationId);
+        this.scrollPopup(normalizedMsg.conversationId);
         this.loadInbox();
         if (!this.chatService.isInboxOpen()) {
           this.chatService.unreadTotal.update(v => v + 1);
@@ -709,7 +717,7 @@ export class ForumChatWidget implements OnInit, OnDestroy {
     this.chatService.getChatHistory(conversationId)
       .pipe(catchError(() => of([])))
       .subscribe(hist => {
-        this.messagesMap.update(m => ({ ...m, [conversationId]: hist }));
+        this.messagesMap.update(m => ({ ...m, [conversationId]: hist.map(msg => this.normalizeChatMessage(msg)) }));
         this.scrollPopup(conversationId);
         this.chatService.markAsSeen(conversationId, this.currentUserId);
         this.cdr.detectChanges();
@@ -732,6 +740,29 @@ export class ForumChatWidget implements OnInit, OnDestroy {
       case 'DELIVERED': return '✓✓';
       default: return '✓';
     }
+  }
+
+  isVoiceMessage(msg: ChatMessage): boolean {
+    return msg.messageType === 'voice' || this.isAudioContent(msg.content);
+  }
+
+  getAudioSource(msg: ChatMessage): string {
+    return msg.content || '';
+  }
+
+  private normalizeChatMessage(msg: ChatMessage): ChatMessage {
+    if (this.isAudioContent(msg.content)) {
+      return { ...msg, messageType: 'voice' };
+    }
+    return msg;
+  }
+
+  private isAudioContent(content?: string): boolean {
+    if (!content) return false;
+    const value = content.trim();
+    return value.startsWith('data:audio/')
+      || /^https?:\/\/.+\.(webm|ogg|mp3|wav|m4a)(\?.*)?$/i.test(value)
+      || /^\/.+\.(webm|ogg|mp3|wav|m4a)(\?.*)?$/i.test(value);
   }
 
   getAvatarUrl(avatar: string | undefined): string {
@@ -928,7 +959,7 @@ export class ForumChatWidget implements OnInit, OnDestroy {
       if (player.paused) { player.play(); } else { player.pause(); }
       return;
     }
-    const audio = new Audio(msg.content);
+    const audio = new Audio(this.getAudioSource(msg));
     this.audioPlayers[id] = audio;
     audio.ontimeupdate = () => {
       this.voiceProgress[id] = audio.duration

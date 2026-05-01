@@ -23,6 +23,11 @@ public interface ServiceBookingRepository extends MongoRepository<ServiceBooking
     List<ServiceBooking> findByUserId(ObjectId userId);
     
     /**
+     * Find all bookings for a provider.
+     */
+    List<ServiceBooking> findByProviderId(ObjectId providerId);
+    
+    /**
      * Find bookings for a service on a specific date
      */
     List<ServiceBooking> findByServiceIdAndBookingDate(ObjectId serviceId, LocalDate date);
@@ -32,6 +37,12 @@ public interface ServiceBookingRepository extends MongoRepository<ServiceBooking
      */
     List<ServiceBooking> findByServiceIdAndBookingDateAndStatus(
             ObjectId serviceId, LocalDate date, BookingStatus status);
+    
+    /**
+     * Find active bookings that can block a slot.
+     */
+    List<ServiceBooking> findByServiceIdAndBookingDateAndStatusIn(
+            ObjectId serviceId, LocalDate date, List<BookingStatus> statuses);
     
     /**
      * Find all bookings for a shop

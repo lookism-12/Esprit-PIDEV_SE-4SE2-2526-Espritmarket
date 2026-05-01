@@ -22,6 +22,8 @@ public class ChatMessage {
     private String senderId;
     private String receiverId;
     private String content;
+    private String messageType;
+    private Integer voiceDuration;
 
     private LocalDateTime timestamp;
 }

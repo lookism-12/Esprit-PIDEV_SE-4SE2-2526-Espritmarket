@@ -4,7 +4,7 @@ import { RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { forkJoin, of, switchMap } from 'rxjs';
 import { ForumCategory, ModerationBadge, ReactionType, CreatePostRequest, CreateCommentRequest } from '../../models/forum.model';
-import { ForumService, UserNameDto, PostDto, CategoryForumDto, CommentDto, ReactionDto, ReplyDto } from '../../core/forum.service';
+import { ForumService, UserNameDto, PostDto, CategoryForumDto, CommentDto, ReactionDto, ReplyDto, RecommendedForumPostDto } from '../../core/forum.service';
 
 interface SimplePost {
   id: string;
@@ -86,6 +86,7 @@ export class Forum implements OnInit {
   expandedComments = signal<ForumCommentUI[]>([]);
   expandedPostCommentsLoading = signal<boolean>(false);
   updatePostTarget = signal<SimplePost | null>(null);
+  latestRecommendations = signal<RecommendedForumPostDto[]>([]);
 
   // Admin category management modal
   showManageCategoriesModal = signal(false);
@@ -385,7 +386,8 @@ export class Forum implements OnInit {
     };
 
     this.forumService.createPost(request).subscribe({
-      next: () => {
+      next: (createdPost) => {
+        this.latestRecommendations.set(createdPost.recommendedPosts ?? []);
         this.isCreatingPost.set(false);
         this.closeCreatePostModal();
         this.loadForumData();
@@ -395,6 +397,22 @@ export class Forum implements OnInit {
         this.isCreatingPost.set(false);
       }
     });
+  }
+
+  openRecommendedPost(recommendation: RecommendedForumPostDto): void {
+    const existing = this.posts().find((post) => post.id === recommendation.postId);
+    if (existing) {
+      this.activeCategory.set('all');
+      this.searchQuery.set('');
+      this.togglePostExpansion(existing.id);
+      return;
+    }
+
+    this.searchQuery.set(recommendation.title);
+  }
+
+  recommendationScore(recommendation: RecommendedForumPostDto): number {
+    return Math.round((recommendation.score ?? 0) * 100);
   }
 
   togglePostExpansion(postId: string): void {

@@ -1,5 +1,6 @@
 package esprit_market.dto.marketplace;
 
+import esprit_market.Enum.marketplaceEnum.MeetingMode;
 import lombok.*;
 
 import java.time.LocalDate;
@@ -28,6 +29,11 @@ public class ServiceBookingRequestDTO {
      * Start time of the booking
      */
     private LocalTime startTime;
+    
+    /**
+     * Requested meeting mode.
+     */
+    private MeetingMode meetingMode;
     
     /**
      * Optional notes from customer

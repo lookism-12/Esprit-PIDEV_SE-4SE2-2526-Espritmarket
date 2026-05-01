@@ -19,6 +19,7 @@ public class OrderMapper {
                 .userEmail(order.getUser() != null ? order.getUser().getEmail() : null)
                 .orderNumber(order.getOrderNumber())
                 .status(order.getStatus())
+                .paymentStatus(order.getPaymentStatus())
                 .totalAmount(order.getTotalAmount())
                 .discountAmount(order.getDiscountAmount())
                 .finalAmount(order.getFinalAmount())

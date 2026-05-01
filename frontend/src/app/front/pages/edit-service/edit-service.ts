@@ -38,7 +38,7 @@ export class EditService implements OnInit {
   
   // Availability configuration
   selectedDays = signal<string[]>([]);
-  timeRanges = signal<TimeRangeDTO[]>([{ startTime: '09:00', endTime: '17:00' }]);
+  timeRanges = signal<TimeRangeDTO[]>([{ startTime: '09:00', endTime: '17:00', availableMode: 'BOTH' }]);
   breaks = signal<TimeRangeDTO[]>([]);
 
   // UI State
@@ -79,7 +79,8 @@ export class EditService implements OnInit {
         
         if (service.availability) {
           this.selectedDays.set(service.availability.workingDays || []);
-          this.timeRanges.set(service.availability.timeRanges || [{ startTime: '09:00', endTime: '17:00' }]);
+          this.timeRanges.set((service.availability.timeRanges || [{ startTime: '09:00', endTime: '17:00', availableMode: 'BOTH' }])
+            .map(range => ({ ...range, availableMode: range.availableMode || 'BOTH' })));
           this.breaks.set(service.availability.breaks || []);
         }
         
@@ -134,7 +135,7 @@ export class EditService implements OnInit {
   }
 
   addTimeRange(): void {
-    this.timeRanges.update(ranges => [...ranges, { startTime: '09:00', endTime: '17:00' }]);
+    this.timeRanges.update(ranges => [...ranges, { startTime: '09:00', endTime: '17:00', availableMode: 'BOTH' }]);
   }
 
   removeTimeRange(index: number): void {

@@ -138,16 +138,16 @@ import { AdminAuthService } from '../../core/services/admin-auth.service';
     <!-- Modal -->
     @if (showModal()) {
       <div class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto" (click)="closeModal()">
-        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl p-8 space-y-6 my-8" (click)="$event.stopPropagation()">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xl p-5 space-y-4 my-4 max-h-[90vh] overflow-y-auto" (click)="$event.stopPropagation()">
           <div class="flex items-center justify-between">
             <div>
               <h2 class="text-xl font-black text-dark">{{ editingId() ? 'Edit Service' : 'Add Service' }}</h2>
-              <p class="text-xs text-secondary mt-1">Configure service details and booking availability</p>
+              <p class="text-xs text-secondary mt-1">Compact service setup</p>
             </div>
             <button (click)="closeModal()" class="text-secondary hover:text-dark transition-colors text-xl">✕</button>
           </div>
           
-          <form [formGroup]="form" (ngSubmit)="save()" class="space-y-6">
+          <form [formGroup]="form" (ngSubmit)="save()" class="space-y-4">
             
             <!-- Basic Information -->
             <div class="space-y-4">
@@ -156,7 +156,7 @@ import { AdminAuthService } from '../../core/services/admin-auth.service';
                 Basic Information
               </h3>
               
-              <div class="grid grid-cols-2 gap-4">
+              <div class="grid grid-cols-3 gap-3">
                 <div class="col-span-2">
                   <label class="block text-xs font-black text-secondary uppercase tracking-widest mb-1">Service Name *</label>
                   <input formControlName="name" type="text" placeholder="e.g., Haircut, Massage, Consultation"
@@ -181,23 +181,21 @@ import { AdminAuthService } from '../../core/services/admin-auth.service';
                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm font-medium">
                 </div>
                 
-                <!-- Shop Field - Auto-filled for sellers, selectable for admins -->
-                @if (isSeller() && currentUserShop()) {
+                @if (currentUserShop()) {
                   <div class="col-span-2">
                     <label class="block text-xs font-black text-secondary uppercase tracking-widest mb-1">Shop</label>
-                    <div class="w-full px-4 py-3 border-2 border-gray-200 bg-gray-50 rounded-xl text-sm font-medium flex items-center gap-2">
+                    <div class="w-full px-4 py-2.5 border-2 border-gray-200 bg-gray-50 rounded-xl text-sm font-medium flex items-center gap-2">
                       <span class="text-lg">🏪</span>
-                      <span class="font-bold text-dark">{{ currentUserShop()!.name || 'My Shop' }}</span>
-                      <span class="ml-auto text-xs text-green-600 font-bold px-2 py-1 bg-green-50 rounded-lg">✓ Auto-selected</span>
+                      <span class="font-bold text-dark">{{ selectedShopLabel() }}</span>
+                      <span class="ml-auto text-xs text-green-600 font-bold px-2 py-1 bg-green-50 rounded-lg">Auto</span>
                     </div>
-                    <p class="text-xs text-secondary mt-1">This service will be added to your shop automatically</p>
                   </div>
                 } @else {
                   <div class="col-span-2">
                     <label class="block text-xs font-black text-secondary uppercase tracking-widest mb-1">Shop</label>
                     <select formControlName="shopId"
                       class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm font-medium bg-white">
-                      <option value="">— Select shop —</option>
+                      <option value="">Select shop</option>
                       @for (shop of shops(); track shop.id) {
                         <option [value]="shop.id">{{ shop.name || 'Shop ' + shop.id.slice(0, 8) }}</option>
                       }
@@ -228,24 +226,24 @@ import { AdminAuthService } from '../../core/services/admin-auth.service';
               <!-- Available Days -->
               <div>
                 <label class="block text-xs font-black text-secondary uppercase tracking-widest mb-2">Available Days *</label>
-                <div class="grid grid-cols-4 gap-2">
+                <div class="grid grid-cols-7 gap-2">
                   @for (day of daysOfWeek; track day.value) {
                     <button type="button" (click)="toggleDay(day.value)"
                       [class.bg-primary]="isDaySelected(day.value)"
                       [class.text-white]="isDaySelected(day.value)"
                       [class.bg-gray-100]="!isDaySelected(day.value)"
                       [class.text-secondary]="!isDaySelected(day.value)"
-                      class="px-3 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all hover:scale-105 flex items-center justify-center gap-1">
+                      class="px-2 py-1.5 rounded-lg font-bold text-[10px] uppercase tracking-wider transition-all hover:scale-105 flex items-center justify-center gap-1">
                       <span>{{ day.emoji }}</span>
                       <span class="hidden sm:inline">{{ day.label.slice(0, 3) }}</span>
                     </button>
                   }
                 </div>
-                <p class="text-xs text-secondary mt-2">Select the days when this service is available for booking</p>
+                <p class="text-xs text-secondary mt-2">Select available booking days</p>
               </div>
               
               <!-- Time Range -->
-              <div class="grid grid-cols-2 gap-4">
+              <div class="grid grid-cols-3 gap-3">
                 <div>
                   <label class="block text-xs font-black text-secondary uppercase tracking-widest mb-1">Start Time *</label>
                   <input formControlName="startTime" type="time"
@@ -257,22 +255,17 @@ import { AdminAuthService } from '../../core/services/admin-auth.service';
                   <input formControlName="endTime" type="time"
                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm font-medium">
                 </div>
-              </div>
-              
-              <!-- Booking Summary -->
-              <div class="bg-primary/5 border border-primary/20 rounded-xl p-4">
-                <div class="flex items-start gap-3">
-                  <span class="text-2xl">ℹ️</span>
-                  <div class="flex-1">
-                    <p class="text-xs font-bold text-primary uppercase tracking-wider mb-1">Booking Configuration Summary</p>
-                    <ul class="text-xs text-dark space-y-1">
-                      <li>• Duration: <strong>{{ form.value.duration || 60 }} minutes</strong> per session</li>
-                      <li>• Available: <strong>{{ form.value.availableDays?.length || 0 }} days</strong> per week</li>
-                      <li>• Hours: <strong>{{ form.value.startTime || '09:00' }} - {{ form.value.endTime || '18:00' }}</strong></li>
-                    </ul>
-                  </div>
+                <div>
+                  <label class="block text-xs font-black text-secondary uppercase tracking-widest mb-1">Mode</label>
+                  <select formControlName="availableMode"
+                    class="w-full px-3 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm font-medium bg-white">
+                    <option value="BOTH">Both</option>
+                    <option value="ONLINE">Online</option>
+                    <option value="IN_PERSON">In person</option>
+                  </select>
                 </div>
               </div>
+              
             </div>
 
             <!-- Actions -->
@@ -328,7 +321,8 @@ export class ServicesAdminComponent implements OnInit {
     duration: [60, [Validators.required, Validators.min(15)]], // Duration in minutes
     availableDays: [['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY']], // Available days
     startTime: ['09:00', Validators.required], // Start time
-    endTime: ['18:00', Validators.required] // End time
+    endTime: ['18:00', Validators.required], // End time
+    availableMode: ['BOTH']
   });
 
   // Days of week for selection
@@ -361,10 +355,10 @@ export class ServicesAdminComponent implements OnInit {
 
   ngOnInit(): void {
     this.isAdmin.set(this.authService.isAdmin());
-    this.isSeller.set(this.authService.isSeller());
+    this.isSeller.set(this.hasSellerRole());
     console.log('👤 User role - Admin:', this.isAdmin(), 'Seller:', this.isSeller());
     
-    // ✅ Load current user's shop if seller
+    // Load the connected user's shop so services are attached automatically.
     if (this.isSeller()) {
       console.log('🔄 Loading seller shop...');
       this.svc.getMyShop().subscribe({
@@ -455,17 +449,28 @@ export class ServicesAdminComponent implements OnInit {
     return this.categories().find(c => c.id === id)?.name || '';
   }
 
+  private hasSellerRole(): boolean {
+    const storedRole = localStorage.getItem('userRole');
+    return this.authService.isSeller() || storedRole === 'PROVIDER' || storedRole === 'SELLER';
+  }
+
+  selectedShopLabel(): string {
+    const selectedId = this.form.value.shopId;
+    const selectedShop = selectedId ? this.shops().find(shop => shop.id === selectedId) : null;
+    return selectedShop?.name || this.currentUserShop()?.name || 'Assigned from your account';
+  }
+
   openModal(s?: ServiceAdminDto): void {
     this.editingId.set(s?.id ?? null);
     
-    // ✅ Auto-set shopId for sellers - prioritize current user shop
+    // Auto-set shopId from the current user's shop when creating a service.
     let shopId = '';
-    if (this.isSeller() && this.currentUserShop()) {
-      shopId = this.currentUserShop()!.id;
-      console.log('✅ Auto-selecting seller shop:', shopId, this.currentUserShop()!.name);
-    } else if (s?.shopId) {
+    if (s?.shopId) {
       shopId = s.shopId;
-      console.log('✅ Using existing service shop:', shopId);
+      console.log('Using existing service shop:', shopId);
+    } else if (this.currentUserShop()) {
+      shopId = this.currentUserShop()!.id;
+      console.log('Auto-selecting connected user shop:', shopId, this.currentUserShop()!.name);
     }
     
     this.form.reset({ 
@@ -474,10 +479,11 @@ export class ServicesAdminComponent implements OnInit {
       price: s?.price ?? 0, 
       shopId: shopId,
       categoryId: s?.categoryId ?? '',
-      duration: (s as any)?.duration ?? 60,
-      availableDays: (s as any)?.availableDays ?? ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'],
-      startTime: (s as any)?.startTime ?? '09:00',
-      endTime: (s as any)?.endTime ?? '18:00'
+      duration: s?.durationMinutes ?? 60,
+      availableDays: s?.availability?.workingDays ?? ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'],
+      startTime: s?.availability?.timeRanges?.[0]?.startTime ?? '09:00',
+      endTime: s?.availability?.timeRanges?.[0]?.endTime ?? '18:00',
+      availableMode: s?.availability?.timeRanges?.[0]?.availableMode ?? 'BOTH'
     });
     
     console.log('📝 Form initialized with values:', this.form.value);
@@ -498,7 +504,6 @@ export class ServicesAdminComponent implements OnInit {
       if (this.form.get('duration')?.invalid) errors.push('Duration must be at least 15 minutes');
       if (this.form.get('startTime')?.invalid) errors.push('Start time is required');
       if (this.form.get('endTime')?.invalid) errors.push('End time is required');
-      if (!this.form.value.shopId && !this.isSeller()) errors.push('Shop selection is required');
       
       alert('Please fix the following errors:\n• ' + errors.join('\n• '));
       return;
@@ -518,37 +523,47 @@ export class ServicesAdminComponent implements OnInit {
       alert('End time must be after start time');
       return;
     }
+    if (!this.currentUserShop() && !this.form.value.shopId) {
+      alert('Please select a shop');
+      return;
+    }
     
     this.isSaving.set(true);
     const v = this.form.value;
+    const id = this.editingId();
     
     // ✅ Ensure shopId is set for sellers
-    const finalShopId = this.isSeller() && this.currentUserShop() 
-      ? this.currentUserShop()!.id 
-      : v.shopId;
+    const finalShopId = id
+      ? v.shopId
+      : (this.currentUserShop() ? this.currentUserShop()!.id : v.shopId);
     
     const payload: any = {
       name: v.name,
       description: v.description || '',
       price: Number(v.price) || 0,
-      shopId: finalShopId,
+      shopId: finalShopId || null,
       categoryId: v.categoryId || null,
       // ✅ Booking configuration
-      duration: Number(v.duration) || 60,
-      availableDays: availableDays,
-      startTime: v.startTime || '09:00',
-      endTime: v.endTime || '18:00'
+      durationMinutes: Number(v.duration) || 60,
+      availability: {
+        workingDays: availableDays,
+        timeRanges: [{
+          startTime: v.startTime || '09:00',
+          endTime: v.endTime || '18:00',
+          availableMode: v.availableMode || 'BOTH'
+        }],
+        breaks: []
+      }
     };
     
     console.log('🚀 Saving service with booking config:', payload);
     console.log('📊 Booking summary:', {
-      duration: payload.duration + ' minutes',
-      days: payload.availableDays.length + ' days/week',
-      hours: payload.startTime + ' - ' + payload.endTime,
-      shop: this.isSeller() ? 'Auto-selected' : 'Manual selection'
+      duration: payload.durationMinutes + ' minutes',
+      days: payload.availability.workingDays.length + ' days/week',
+      hours: payload.availability.timeRanges[0].startTime + ' - ' + payload.availability.timeRanges[0].endTime,
+      shop: this.currentUserShop() ? 'Auto-selected' : 'Manual selection'
     });
     
-    const id = this.editingId();
     const req = id ? this.svc.updateService(id, payload) : this.svc.createService(payload);
     
     req.subscribe({

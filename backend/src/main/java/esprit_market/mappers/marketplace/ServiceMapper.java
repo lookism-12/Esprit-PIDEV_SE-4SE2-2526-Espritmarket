@@ -1,5 +1,6 @@
 package esprit_market.mappers.marketplace;
 
+import esprit_market.Enum.marketplaceEnum.AvailabilityMode;
 import esprit_market.dto.marketplace.ServiceAvailabilityDTO;
 import esprit_market.dto.marketplace.ServiceRequestDTO;
 import esprit_market.dto.marketplace.ServiceResponseDTO;
@@ -23,6 +24,7 @@ public class ServiceMapper {
                 .price(service.getPrice())
                 .shopId(service.getShopId() != null ? service.getShopId().toHexString() : null)
                 .categoryId(service.getCategoryId() != null ? service.getCategoryId().toHexString() : null)
+                .createdByUserId(service.getCreatedByUserId() != null ? service.getCreatedByUserId().toHexString() : null)
                 .durationMinutes(service.getDurationMinutes())
                 .status(service.getStatus())
                 .workingHoursStart(service.getWorkingHoursStart())
@@ -66,6 +68,7 @@ public class ServiceMapper {
                         .map(tr -> ServiceAvailabilityDTO.TimeRangeDTO.builder()
                                 .startTime(tr.getStartTime())
                                 .endTime(tr.getEndTime())
+                                .availableMode(tr.getAvailableMode() != null ? tr.getAvailableMode() : AvailabilityMode.BOTH)
                                 .build())
                         .collect(Collectors.toList()))
                 .breaks(availability.getBreaks().stream()
@@ -88,6 +91,7 @@ public class ServiceMapper {
                         .map(tr -> ServiceAvailability.TimeRange.builder()
                                 .startTime(tr.getStartTime())
                                 .endTime(tr.getEndTime())
+                                .availableMode(tr.getAvailableMode() != null ? tr.getAvailableMode() : AvailabilityMode.BOTH)
                                 .build())
                         .collect(Collectors.toList()))
                 .breaks(dto.getBreaks().stream()

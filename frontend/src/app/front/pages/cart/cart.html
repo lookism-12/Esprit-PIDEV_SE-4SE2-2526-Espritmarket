@@ -201,7 +201,7 @@
                                             <div class="w-2h-2 rounded-full bg-white" *ngIf="paymentMethod() === 'CARD'"></div>
                                         </div>
                                     </div>
-                                    <p class="text-sm text-gray-500">Secure encrypted transaction via Stripe.</p>
+                                    <p class="text-sm text-gray-500">Card details with SMS verification.</p>
                                 </div>
                             </label>
 
@@ -241,6 +241,19 @@
                             </div>
                         </div>
 
+                        <div class="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="rounded-2xl bg-gray-50 border border-gray-100 p-4">
+                                <p class="text-xs font-bold text-gray-500 uppercase tracking-widest">Amount</p>
+                                <p class="mt-1 text-lg font-black text-dark">
+                                    {{ paymentDisplayAmount() || total() | number:'1.2-2' }} {{ paymentCurrency() }}
+                                </p>
+                            </div>
+                            <div class="rounded-2xl bg-gray-50 border border-gray-100 p-4 md:col-span-2">
+                                <p class="text-xs font-bold text-gray-500 uppercase tracking-widest">SMS verification</p>
+                                <p class="mt-1 text-sm font-semibold text-gray-700">{{ paymentGatewayMessage() }}</p>
+                            </div>
+                        </div>
+
                         <!-- Credit Card Visual -->
                         <div class="relative w-full max-w-sm mx-auto mb-8 h-48 rounded-2xl p-6 text-white shadow-2xl overflow-hidden bg-gradient-to-br from-gray-800 to-black">
                             <div class="absolute top-0 right-0 -m-8 w-32 h-32 rounded-full bg-white/10"></div>
@@ -248,11 +261,11 @@
                             <div class="relative z-10 h-full flex flex-col justify-between">
                                 <div class="flex justify-between items-start">
                                     <svg class="w-10 h-10 text-white/80" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5"/></svg>
-                                    <div class="font-bold text-xl tracking-widest">{{ cardExpiry() || 'MM/YY' }}</div>
+                                    <div class="font-bold text-xl tracking-widest">OTP</div>
                                 </div>
                                 <div>
-                                    <div class="text-xl tracking-[0.2em] font-mono mb-2 shadow-sm">{{ cardNumber() || '#### #### #### ####' }}</div>
-                                    <div class="uppercase tracking-widest text-sm font-bold text-white/80 truncate">{{ cardName() || 'CARDHOLDER NAME' }}</div>
+                                    <div class="text-xl tracking-[0.2em] font-mono mb-2 shadow-sm">{{ maskedCard() || '**** **** **** 0000' }}</div>
+                                    <div class="uppercase tracking-widest text-sm font-bold text-white/80 truncate">{{ cardholderName() || 'CARD HOLDER' }}</div>
                                 </div>
                             </div>
                         </div>
@@ -260,33 +273,49 @@
                         <div class="space-y-5">
                             <div class="space-y-2">
                                 <label class="text-xs font-bold text-gray-500 uppercase tracking-widest">Card Number</label>
-                                <input type="text" [value]="cardNumber()" (input)="cardNumber.set($any($event.target).value)" maxlength="19"
+                                <input type="text" [value]="cardNumber()" (input)="formatCardNumber($any($event.target).value)" maxlength="19" [disabled]="!!cardVerificationId()" autocomplete="new-password"
                                        class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:bg-white text-dark font-mono text-lg transition-all" placeholder="0000 0000 0000 0000">
                             </div>
                             
                             <div class="grid grid-cols-2 gap-4">
                                 <div class="space-y-2">
                                     <label class="text-xs font-bold text-gray-500 uppercase tracking-widest">Expiry Date</label>
-                                    <input type="text" [value]="cardExpiry()" (input)="cardExpiry.set($any($event.target).value)" maxlength="5"
+                                    <input type="text" [value]="expiryDate()" (input)="formatExpiryDate($any($event.target).value)" maxlength="5" [disabled]="!!cardVerificationId()" autocomplete="new-password"
                                            class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:bg-white text-dark font-mono text-lg transition-all" placeholder="MM/YY">
                                 </div>
                                 <div class="space-y-2">
                                     <label class="text-xs font-bold text-gray-500 uppercase tracking-widest">CVV</label>
-                                    <input type="password" [value]="cardCvv()" (input)="cardCvv.set($any($event.target).value)" maxlength="4"
-                                           class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:bg-white text-dark font-mono text-lg transition-all tracking-widest" placeholder="•••">
+                                    <input type="password" [value]="cvv()" (input)="formatCvv($any($event.target).value)" maxlength="3" [disabled]="!!cardVerificationId()" autocomplete="new-password"
+                                           class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:bg-white text-dark font-mono text-lg transition-all tracking-widest" placeholder="123">
                                 </div>
                             </div>
                             
                             <div class="space-y-2">
                                 <label class="text-xs font-bold text-gray-500 uppercase tracking-widest">Name on Card</label>
-                                <input type="text" [value]="cardName()" (input)="cardName.set($any($event.target).value)" 
-                                       class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:bg-white text-dark font-medium uppercase transition-all" placeholder="AHMED BEN ALI">
+                                <input type="text" [value]="cardholderName()" (input)="cardholderName.set($any($event.target).value.toUpperCase())" [disabled]="!!cardVerificationId()" autocomplete="new-password"
+                                       class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:bg-white text-dark font-medium uppercase transition-all" placeholder="Nom on card">
                             </div>
+
+                            @if (cardVerificationId()) {
+                                <div class="rounded-2xl border border-green-200 bg-green-50 p-5 space-y-3">
+                                    <div class="flex items-center justify-between gap-4">
+                                        <div>
+                                            <p class="text-xs font-bold text-green-700 uppercase tracking-widest">SMS sent</p>
+                                            <p class="text-sm font-semibold text-green-800">{{ maskedPhone() }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="space-y-2">
+                                        <label class="text-xs font-bold text-gray-500 uppercase tracking-widest">SMS Code</label>
+                                        <input type="text" [value]="otpCode()" (input)="formatOtp($any($event.target).value)" maxlength="6"
+                                               class="w-full px-4 py-3 bg-white border border-green-200 rounded-xl focus:ring-2 focus:ring-primary text-dark font-mono text-lg tracking-[0.4em]" placeholder="000000">
+                                    </div>
+                                </div>
+                            }
                         </div>
 
                         <div class="mt-8 pt-6 border-t border-gray-100 flex items-center justify-center gap-2 text-green-600 text-sm font-bold bg-green-50/50 py-3 rounded-lg">
                             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                            256-bit Secure Encrypted Transaction
+                            SMS protected Esprit Market transaction
                         </div>
                     </div>
                 }
@@ -535,14 +564,14 @@
                     }
 
                     @else if (currentStep() === 'PAY') {
-                        <button (click)="processCardPayment()" [disabled]="isProcessingPayment()"
-                                class="w-full py-4 rounded-xl text-lg font-bold bg-primary text-white hover:bg-red-700 shadow-xl shadow-primary/30 transform hover:-translate-y-1 transition-all mb-4 flex justify-center items-center gap-2">
+                        <button (click)="processCardPayment()" [disabled]="!canSubmitCardPayment()"
+                                class="w-full py-4 rounded-xl text-lg font-bold bg-primary text-white hover:bg-red-700 shadow-xl shadow-primary/30 transform hover:-translate-y-1 transition-all mb-4 flex justify-center items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
                             @if (isProcessingPayment()) {
                                 <svg class="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
                                 Processing...
                             } @else {
                                 <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                                Pay {{ total() | number:'1.2-2' }} TND
+                                @if (cardVerificationId()) { Validate Payment } @else { Send SMS Code }
                             }
                         </button>
                         <button (click)="goToStep('PLACE_ORDER')" [disabled]="isProcessingPayment()" class="w-full py-3 text-sm font-bold text-gray-500 hover:text-dark transition-colors">

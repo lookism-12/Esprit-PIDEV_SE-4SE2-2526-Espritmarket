@@ -37,6 +37,12 @@ public class ChatRestController {
         return ResponseEntity.ok(results);
     }
 
+    @PostMapping("/conversations/open")
+    public ResponseEntity<ChatConversation> openConversation(@RequestParam("user1Id") String user1Id,
+                                                            @RequestParam("user2Id") String user2Id) {
+        return ResponseEntity.ok(chatService.getOrCreateConversation(user1Id, user2Id));
+    }
+
     @GetMapping("/ping")
     public ResponseEntity<String> ping() {
         return ResponseEntity.ok("Chat API is alive");

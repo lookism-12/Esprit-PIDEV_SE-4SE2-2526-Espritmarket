@@ -22,20 +22,56 @@ public class LoyaltyConfigServiceImpl implements ILoyaltyConfigService {
     
     private final LoyaltyConfigRepository repository;
     
-    // ==================== DEFAULT VALUES (FALLBACK) ====================
+    // ==================== REDESIGNED DEFAULT VALUES ====================
+    // 🎯 REALISTIC POINTS SYSTEM: 1 TND = 1 Point (1:1 ratio)
+    // This creates intuitive, user-friendly values that customers can easily understand
     
-    private static final double DEFAULT_BASE_RATE = 0.002;
-    private static final int DEFAULT_SILVER_THRESHOLD = 5000;
-    private static final int DEFAULT_GOLD_THRESHOLD = 20000;
-    private static final int DEFAULT_PLATINUM_THRESHOLD = 50000;
+    /**
+     * Base rate: 1 point per 1 TND spent (100% conversion)
+     * Range: 0.5 - 2.0 (50% to 200% conversion)
+     * Default: 1.0 (1:1 ratio - easy to understand)
+     */
+    private static final double DEFAULT_BASE_RATE = 1.0;
+    
+    /**
+     * Tier thresholds based on realistic spending patterns
+     * SILVER: 1,000 points (≈ 1,000 TND spent)
+     * GOLD: 5,000 points (≈ 5,000 TND spent) 
+     * PLATINUM: 15,000 points (≈ 15,000 TND spent)
+     */
+    private static final int DEFAULT_SILVER_THRESHOLD = 1000;
+    private static final int DEFAULT_GOLD_THRESHOLD = 5000;
+    private static final int DEFAULT_PLATINUM_THRESHOLD = 15000;
+    
+    /**
+     * Tier multipliers - progressive rewards for loyalty
+     * BRONZE: 1.0x (baseline)
+     * SILVER: 1.2x (+20% bonus)
+     * GOLD: 1.5x (+50% bonus)
+     * PLATINUM: 2.0x (+100% bonus)
+     */
     private static final double DEFAULT_BRONZE_MULTIPLIER = 1.0;
-    private static final double DEFAULT_SILVER_MULTIPLIER = 1.1;
-    private static final double DEFAULT_GOLD_MULTIPLIER = 1.25;
-    private static final double DEFAULT_PLATINUM_MULTIPLIER = 1.5;
-    private static final int DEFAULT_BONUS_QUANTITY = 10;
-    private static final int DEFAULT_BONUS_QUANTITY_THRESHOLD = 10;
-    private static final int DEFAULT_BONUS_HIGH_ORDER = 5;
-    private static final double DEFAULT_BONUS_HIGH_ORDER_THRESHOLD = 500.0;
+    private static final double DEFAULT_SILVER_MULTIPLIER = 1.2;
+    private static final double DEFAULT_GOLD_MULTIPLIER = 1.5;
+    private static final double DEFAULT_PLATINUM_MULTIPLIER = 2.0;
+    
+    /**
+     * Bonus rewards for engagement
+     * Quantity bonus: 50 points for 5+ items (encourages bulk purchases)
+     * High-value bonus: 100 points for 200+ TND orders (rewards big spenders)
+     */
+    private static final int DEFAULT_BONUS_QUANTITY = 50;
+    private static final int DEFAULT_BONUS_QUANTITY_THRESHOLD = 5;
+    private static final int DEFAULT_BONUS_HIGH_ORDER = 100;
+    private static final double DEFAULT_BONUS_HIGH_ORDER_THRESHOLD = 200.0;
+    
+    /**
+     * Usage limits and conversion rates
+     * Max points per order: 500 points (prevents abuse)
+     * Conversion rate: 0.1 (10 points = 1 TND discount)
+     */
+    private static final int DEFAULT_MAX_POINTS_PER_ORDER = 500;
+    private static final double DEFAULT_POINTS_TO_CURRENCY_RATE = 0.1;
     
     // ==================== INITIALIZATION ====================
     
@@ -89,6 +125,8 @@ public class LoyaltyConfigServiceImpl implements ILoyaltyConfigService {
         // Create new config
         LoyaltyConfig newConfig = LoyaltyConfig.builder()
                 .baseRate(dto.getBaseRate())
+                .maxPointsPerOrder(dto.getMaxPointsPerOrder())
+                .pointsToCurrencyRate(dto.getPointsToCurrencyRate())
                 .silverThreshold(dto.getSilverThreshold())
                 .goldThreshold(dto.getGoldThreshold())
                 .platinumThreshold(dto.getPlatinumThreshold())
@@ -119,6 +157,8 @@ public class LoyaltyConfigServiceImpl implements ILoyaltyConfigService {
         
         LoyaltyConfig defaultConfig = LoyaltyConfig.builder()
                 .baseRate(DEFAULT_BASE_RATE)
+                .maxPointsPerOrder(DEFAULT_MAX_POINTS_PER_ORDER)
+                .pointsToCurrencyRate(DEFAULT_POINTS_TO_CURRENCY_RATE)
                 .silverThreshold(DEFAULT_SILVER_THRESHOLD)
                 .goldThreshold(DEFAULT_GOLD_THRESHOLD)
                 .platinumThreshold(DEFAULT_PLATINUM_THRESHOLD)
@@ -147,6 +187,23 @@ public class LoyaltyConfigServiceImpl implements ILoyaltyConfigService {
     
     @Override
     public void validateConfig(LoyaltyConfigDTO dto) {
+        // Validate base rate range
+        if (dto.getBaseRate() < 0.5 || dto.getBaseRate() > 2.0) {
+            throw new IllegalArgumentException("Base rate must be between 0.5 and 2.0");
+        }
+        
+        // Validate points to currency rate
+        if (dto.getPointsToCurrencyRate() != null && 
+            (dto.getPointsToCurrencyRate() < 0.05 || dto.getPointsToCurrencyRate() > 0.2)) {
+            throw new IllegalArgumentException("Points to currency rate must be between 0.05 and 0.2");
+        }
+        
+        // Validate max points per order
+        if (dto.getMaxPointsPerOrder() != null && 
+            (dto.getMaxPointsPerOrder() < 100 || dto.getMaxPointsPerOrder() > 2000)) {
+            throw new IllegalArgumentException("Max points per order must be between 100 and 2000");
+        }
+        
         // Validate thresholds are increasing
         if (dto.getSilverThreshold() >= dto.getGoldThreshold()) {
             throw new IllegalArgumentException("Gold threshold must be greater than Silver threshold");
@@ -178,6 +235,8 @@ public class LoyaltyConfigServiceImpl implements ILoyaltyConfigService {
         return LoyaltyConfigDTO.builder()
                 .id(config.getId() != null ? config.getId().toHexString() : null)
                 .baseRate(config.getBaseRate())
+                .maxPointsPerOrder(config.getMaxPointsPerOrder())
+                .pointsToCurrencyRate(config.getPointsToCurrencyRate())
                 .silverThreshold(config.getSilverThreshold())
                 .goldThreshold(config.getGoldThreshold())
                 .platinumThreshold(config.getPlatinumThreshold())

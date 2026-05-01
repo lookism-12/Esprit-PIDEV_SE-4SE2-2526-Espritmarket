@@ -1,8 +1,10 @@
 package esprit_market.dto.marketplace;
 
+import esprit_market.Enum.marketplaceEnum.MeetingMode;
 import lombok.*;
 
 import java.time.LocalTime;
+import java.util.List;
 
 /**
  * DTO representing an available time slot
@@ -32,4 +34,9 @@ public class TimeSlotDTO {
      * Display label (e.g., "09:00 - 10:00")
      */
     private String label;
+    
+    /**
+     * Meeting modes allowed for this slot.
+     */
+    private List<MeetingMode> availableModes;
 }

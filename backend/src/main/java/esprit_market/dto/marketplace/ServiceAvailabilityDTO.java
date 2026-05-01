@@ -1,5 +1,6 @@
 package esprit_market.dto.marketplace;
 
+import esprit_market.Enum.marketplaceEnum.AvailabilityMode;
 import lombok.*;
 
 import java.time.DayOfWeek;
@@ -41,5 +42,6 @@ public class ServiceAvailabilityDTO {
     public static class TimeRangeDTO {
         private LocalTime startTime;
         private LocalTime endTime;
+        private AvailabilityMode availableMode;
     }
 }

@@ -17,6 +17,7 @@ public class ServiceResponseDTO {
     private double price;
     private String shopId;
     private String categoryId;
+    private String createdByUserId;
     
     // Booking system fields
     private int durationMinutes;

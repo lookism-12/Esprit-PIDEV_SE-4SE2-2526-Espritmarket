@@ -53,7 +53,7 @@ public class ChatService {
         // BUG 4 FIX: Use proper FlameService logic
         conversation.setMessageCount(conversation.getMessageCount() + 1);
         conversation.setLastMessageDate(now);
-        conversation.setLastMessageContent(payload.getContent());
+        conversation.setLastMessageContent("voice".equalsIgnoreCase(payload.getMessageType()) ? "Voice message" : payload.getContent());
         
         // NEW LOGIC: Increase flame every 10 messages
         conversation.setFlameLevel(conversation.getMessageCount() / 10);
@@ -66,6 +66,8 @@ public class ChatService {
                 .senderId(payload.getSenderId())
                 .receiverId(payload.getReceiverId())
                 .content(payload.getContent())
+                .messageType(payload.getMessageType())
+                .voiceDuration(payload.getVoiceDuration())
                 .timestamp(now)
                 .build();
 
@@ -91,5 +93,27 @@ public class ChatService {
     public List<ChatConversation> getUserConversations(String userId) {
         if (userId == null || userId.isEmpty() || "null".equals(userId)) return List.of();
         return chatConversationRepository.findByParticipantId(userId);
+    }
+
+    @Transactional
+    public ChatConversation getOrCreateConversation(String firstUserId, String secondUserId) {
+        if (firstUserId == null || secondUserId == null || firstUserId.equals(secondUserId)) {
+            throw new IllegalArgumentException("Two different users are required to open a chat");
+        }
+
+        String conversationId = firstUserId.compareTo(secondUserId) < 0
+                ? firstUserId + "_" + secondUserId
+                : secondUserId + "_" + firstUserId;
+
+        return chatConversationRepository.findByConversationId(conversationId)
+                .orElseGet(() -> chatConversationRepository.save(ChatConversation.builder()
+                        .conversationId(conversationId)
+                        .user1Id(firstUserId.compareTo(secondUserId) < 0 ? firstUserId : secondUserId)
+                        .user2Id(firstUserId.compareTo(secondUserId) < 0 ? secondUserId : firstUserId)
+                        .flameLevel(0)
+                        .messageCount(0)
+                        .user1SentToday(false)
+                        .user2SentToday(false)
+                        .build()));
     }
 }

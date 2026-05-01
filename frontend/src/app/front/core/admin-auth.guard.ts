@@ -69,8 +69,8 @@ export const adminAuthGuard: CanActivateFn = (
   switch(userRole) {
     case 'PROVIDER':
     case 'SELLER':
-      console.log('   → Redirecting PROVIDER to front-end profile');
-      return router.createUrlTree(['/profile']); // ✅ Providers go to front-end
+      console.log('   → Redirecting PROVIDER to provider dashboard');
+      return router.createUrlTree(['/provider/dashboard']);
     case 'DRIVER':
       console.log('   → Redirecting DRIVER to driver dashboard');
       return router.createUrlTree(['/driver/dashboard']);

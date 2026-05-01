@@ -37,11 +37,25 @@ export interface ServiceAdminDto {
   price: number;
   shopId: string;
   shopName?: string;
+  createdByUserId?: string;
   categoryIds: string[];
   categoryId?: string; // ✅ Added for compatibility
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
   createdAt: Date;
   updatedAt?: Date;
+  durationMinutes?: number;
+  availability?: {
+    workingDays: string[];
+    timeRanges: Array<{
+      startTime: string;
+      endTime: string;
+      availableMode?: 'ONLINE' | 'IN_PERSON' | 'BOTH';
+    }>;
+    breaks: Array<{
+      startTime: string;
+      endTime: string;
+    }>;
+  };
 }
 
 export interface ShopAdminDto {

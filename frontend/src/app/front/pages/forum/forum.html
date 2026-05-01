@@ -110,8 +110,27 @@
                                 class="px-2 py-0.5 bg-primary/20 text-primary text-[9px] font-black rounded uppercase">Premium</span>
                         </div>
                     </div>
-                    <p class="text-xs text-gray-500 mb-5 font-bold leading-relaxed">Personalized discussions based on
-                        your academic profile.</p>
+                    @if (latestRecommendations().length > 0) {
+                    <div class="space-y-3">
+                        @for (rec of latestRecommendations(); track rec.postId) {
+                        <button type="button" (click)="openRecommendedPost(rec)"
+                            class="w-full text-left p-4 rounded-2xl bg-white/80 border border-primary/10 hover:border-primary/30 hover:shadow-lg transition-all">
+                            <div class="flex items-center justify-between gap-3 mb-2">
+                                <span class="text-[10px] font-black text-primary uppercase tracking-widest truncate">
+                                    {{ rec.category || 'Forum' }}
+                                </span>
+                                <span class="text-[10px] font-black text-gray-400">
+                                    {{ recommendationScore(rec) }}%
+                                </span>
+                            </div>
+                            <p class="text-sm font-black text-dark leading-snug line-clamp-2">{{ rec.title }}</p>
+                            <p class="text-xs text-gray-500 font-semibold mt-2 line-clamp-2">{{ rec.excerpt }}</p>
+                        </button>
+                        }
+                    </div>
+                    } @else {
+                    <p class="text-xs text-gray-500 mb-5 font-bold leading-relaxed">Similar discussions will appear
+                        here after you launch a post.</p>
                     <a routerLink="/profile" [queryParams]="{tab: 'preferences'}"
                         class="text-primary font-black text-[11px] uppercase tracking-widest hover:underline flex items-center gap-2">
                         Configure Preferences
@@ -120,6 +139,7 @@
                                 d="M17 8l4 4m0 0l-4 4m4-4H3" />
                         </svg>
                     </a>
+                    }
                 </div>
             </aside>
 

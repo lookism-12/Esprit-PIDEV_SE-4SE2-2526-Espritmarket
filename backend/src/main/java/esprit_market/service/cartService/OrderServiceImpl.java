@@ -234,11 +234,10 @@ public class OrderServiceImpl implements IOrderService {
         LocalDateTime paidAt = null;
         
         if (OrderDeliveryEligibility.isCardPaymentMethod(request.getPaymentMethod())) {
-            // CARD PAYMENT: Payment received immediately, order starts as PENDING
-            paymentStatus = PaymentStatus.PAID;
+            // CARD PAYMENT: wait for Stripe/provider confirmation before marking the order paid.
+            paymentStatus = PaymentStatus.PENDING_PAYMENT;
             orderStatus = OrderStatus.PENDING;  // Provider must confirm
-            paidAt = LocalDateTime.now();
-            log.info("💳 CARD PAYMENT - Order created as PENDING, payment received, awaiting provider confirmation");
+            log.info("💳 CARD PAYMENT - Order created as PENDING_PAYMENT, awaiting provider confirmation");
         } else {
             // CASH ON DELIVERY: Payment pending, order starts as PENDING
             paymentStatus = PaymentStatus.PENDING_PAYMENT;
@@ -354,14 +353,17 @@ public class OrderServiceImpl implements IOrderService {
             return buildOrderResponse(order);
         }
         
+        PaymentStatus previousPaymentStatus = order.getPaymentStatus();
+
         // Update payment status to PAID
         order.setPaymentStatus(PaymentStatus.PAID);
         order.setPaymentId(paymentId);
         order.setPaidAt(LocalDateTime.now());
         order.setLastUpdated(LocalDateTime.now());
         
-        // ✅ CRITICAL: Reduce stock when payment confirmed (for CASH orders)
-        if (order.getPaymentStatus() == PaymentStatus.PENDING_PAYMENT) {
+        // ✅ CRITICAL: Keep card stock handling in provider confirmation to avoid double deduction.
+        if (previousPaymentStatus == PaymentStatus.PENDING_PAYMENT
+                && OrderDeliveryEligibility.isCashPaymentMethod(order.getPaymentMethod())) {
             log.info("📦 Reducing stock for CASH payment confirmation");
             List<OrderItem> items = orderItemRepository.findByOrderId(orderId);
             for (OrderItem item : items) {

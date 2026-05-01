@@ -6,7 +6,7 @@ package esprit_market.Enum.cartEnum;
  * Separate from OrderStatus to handle payment independently.
  * 
  * BUSINESS RULES:
- * - Card payment: PAID immediately when order created
+ * - Card payment: PENDING_PAYMENT until the payment provider confirms success
  * - Cash on Delivery: PENDING_PAYMENT until delivery collects payment
  * - Stock is reduced ONLY when paymentStatus = PAID
  * - Loyalty points granted ONLY when paymentStatus = PAID
