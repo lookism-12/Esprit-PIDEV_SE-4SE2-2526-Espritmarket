@@ -24,6 +24,7 @@ export { ProductService } from './front/core/product.service';
 export type { ProductFilter, ProductListResponse, CreateProductRequest, UpdateProductRequest } from './front/core/product.service';
 
 export { CartService } from './front/core/cart.service';
+export type { CartExpirationWarning } from './front/core/cart.service';
 
 export { OrderService } from './front/core/order.service';
 export type { OrderFilter, OrderListResponse, UpdateOrderStatusRequest } from './front/core/order.service';

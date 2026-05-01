@@ -3,6 +3,7 @@ import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { Navbar } from './front/layout/navbar/navbar';
 import { Footer } from './front/layout/footer/footer';
 import { ToastContainer } from './front/shared/components/toast-container/toast-container';
+import { CartExpirationAlertComponent } from './front/shared/components/cart-expiration-alert/cart-expiration-alert.component';
 import { filter } from 'rxjs/operators';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { AuthService } from './front/core/auth.service';
@@ -10,7 +11,7 @@ import { ThemeService } from './front/core/theme.service';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, Navbar, Footer, ToastContainer],
+  imports: [RouterOutlet, Navbar, Footer, ToastContainer, CartExpirationAlertComponent],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })

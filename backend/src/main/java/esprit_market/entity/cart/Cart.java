@@ -70,6 +70,23 @@ public class Cart {
     
     private String notes;
     
+    // ==================== CART EXPIRATION TRACKING ====================
+    
+    /**
+     * Whether the 24h warning notification has been sent for this cart.
+     * Reset to false when user modifies the cart (add/update/remove items).
+     */
+    @Builder.Default
+    private Boolean notification24hSent = false;
+    
+    /**
+     * Whether the 47.5h urgent notification has been sent for this cart.
+     * Reset to false when user modifies the cart.
+     */
+    @Builder.Default
+    private Boolean notification47hSent = false;
+
+    
     @JsonIgnore
     public ObjectId getUserId() {
         // Prefer direct userId field to avoid @DBRef lazy loading issues

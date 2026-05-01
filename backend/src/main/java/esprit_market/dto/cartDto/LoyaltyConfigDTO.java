@@ -23,22 +23,33 @@ public class LoyaltyConfigDTO {
     // ==================== BASE CALCULATION ====================
     
     @NotNull(message = "Base rate is required")
-    @DecimalMin(value = "0.001", message = "Base rate must be at least 0.001 (0.1%)")
-    @DecimalMax(value = "0.01", message = "Base rate must not exceed 0.01 (1%)")
+    @DecimalMin(value = "0.5", message = "Base rate must be at least 0.5 (50% conversion)")
+    @DecimalMax(value = "2.0", message = "Base rate must not exceed 2.0 (200% conversion)")
     private Double baseRate;
+    
+    // ==================== USAGE LIMITS ====================
+    
+    @Min(value = 100, message = "Max points per order must be at least 100")
+    @Max(value = 2000, message = "Max points per order must not exceed 2000")
+    private Integer maxPointsPerOrder;
+    
+    @NotNull(message = "Points to currency rate is required")
+    @DecimalMin(value = "0.05", message = "Points to currency rate must be at least 0.05")
+    @DecimalMax(value = "0.2", message = "Points to currency rate must not exceed 0.2")
+    private Double pointsToCurrencyRate;
     
     // ==================== LEVEL THRESHOLDS ====================
     
     @NotNull(message = "Silver threshold is required")
-    @Min(value = 1000, message = "Silver threshold must be at least 1000")
+    @Min(value = 500, message = "Silver threshold must be at least 500")
     private Integer silverThreshold;
     
     @NotNull(message = "Gold threshold is required")
-    @Min(value = 5000, message = "Gold threshold must be at least 5000")
+    @Min(value = 2000, message = "Gold threshold must be at least 2000")
     private Integer goldThreshold;
     
     @NotNull(message = "Platinum threshold is required")
-    @Min(value = 10000, message = "Platinum threshold must be at least 10000")
+    @Min(value = 8000, message = "Platinum threshold must be at least 8000")
     private Integer platinumThreshold;
     
     // ==================== TIER MULTIPLIERS ====================
@@ -60,14 +71,14 @@ public class LoyaltyConfigDTO {
     
     @NotNull(message = "Platinum multiplier is required")
     @DecimalMin(value = "1.0", message = "Platinum multiplier must be at least 1.0")
-    @DecimalMax(value = "3.0", message = "Platinum multiplier must not exceed 3.0")
+    @DecimalMax(value = "2.5", message = "Platinum multiplier must not exceed 2.5")
     private Double platinumMultiplier;
     
     // ==================== BONUS POINTS ====================
     
     @NotNull(message = "Bonus quantity is required")
     @Min(value = 0, message = "Bonus quantity must be at least 0")
-    @Max(value = 100, message = "Bonus quantity must not exceed 100")
+    @Max(value = 200, message = "Bonus quantity must not exceed 200")
     private Integer bonusQuantity;
     
     @NotNull(message = "Bonus quantity threshold is required")
@@ -76,7 +87,7 @@ public class LoyaltyConfigDTO {
     
     @NotNull(message = "Bonus high order is required")
     @Min(value = 0, message = "Bonus high order must be at least 0")
-    @Max(value = 100, message = "Bonus high order must not exceed 100")
+    @Max(value = 300, message = "Bonus high order must not exceed 300")
     private Integer bonusHighOrder;
     
     @NotNull(message = "Bonus high order threshold is required")

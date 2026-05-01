@@ -80,6 +80,9 @@ public class SecurityConfig {
                         
                         // WebSocket endpoint for STOMP/SockJS
                         .requestMatchers("/ws/**", "/api/chat/**").permitAll()
+
+                        // Public: current TVA rate (used by cart/checkout)
+                        .requestMatchers("GET", "/api/admin/tax-config/effective").permitAll()
                         
                         // Admin endpoints
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")

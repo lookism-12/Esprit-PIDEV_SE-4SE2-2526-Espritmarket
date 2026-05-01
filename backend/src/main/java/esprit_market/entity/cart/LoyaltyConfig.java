@@ -27,29 +27,50 @@ public class LoyaltyConfig {
     // ==================== BASE CALCULATION ====================
     
     /**
-     * Base points rate (percentage of order amount)
-     * Default: 0.002 (0.2%)
-     * Valid range: 0.001 - 0.01
+     * Base points rate (points per 1 TND spent)
+     * Default: 1.0 (1:1 ratio - 1 TND = 1 point)
+     * Valid range: 0.5 - 2.0 (configurable by admin)
+     * 
+     * Examples:
+     * - 0.5 = Conservative (100 TND = 50 points)
+     * - 1.0 = Balanced (100 TND = 100 points) ✅ RECOMMENDED
+     * - 2.0 = Generous (100 TND = 200 points)
      */
     private Double baseRate;
+    
+    // ==================== USAGE LIMITS ====================
+    
+    /**
+     * Maximum points that can be used per order (prevents abuse)
+     * Default: 500 points (≈ 50 TND discount if 1 point = 0.1 TND)
+     * Set to null for unlimited usage
+     */
+    private Integer maxPointsPerOrder;
+    
+    /**
+     * Points to currency conversion rate for discounts
+     * Default: 0.1 (10 points = 1 TND discount)
+     * Valid range: 0.05 - 0.2
+     */
+    private Double pointsToCurrencyRate;
     
     // ==================== LEVEL THRESHOLDS ====================
     
     /**
      * Points required for SILVER level
-     * Default: 5000
+     * Default: 1000 points (≈ 1000 TND spent)
      */
     private Integer silverThreshold;
     
     /**
-     * Points required for GOLD level
-     * Default: 20000
+     * Points required for GOLD level  
+     * Default: 5000 points (≈ 5000 TND spent)
      */
     private Integer goldThreshold;
     
     /**
      * Points required for PLATINUM level
-     * Default: 50000
+     * Default: 15000 points (≈ 15000 TND spent)
      */
     private Integer platinumThreshold;
     
@@ -63,45 +84,45 @@ public class LoyaltyConfig {
     
     /**
      * SILVER tier multiplier
-     * Default: 1.1
+     * Default: 1.2 (+20% bonus)
      */
     private Double silverMultiplier;
     
     /**
      * GOLD tier multiplier
-     * Default: 1.25
+     * Default: 1.5 (+50% bonus)
      */
     private Double goldMultiplier;
     
     /**
      * PLATINUM tier multiplier
-     * Default: 1.5
+     * Default: 2.0 (+100% bonus)
      */
     private Double platinumMultiplier;
     
     // ==================== BONUS POINTS ====================
     
     /**
-     * Bonus points for quantity threshold (10+ items)
-     * Default: 10
+     * Bonus points for quantity threshold (5+ items)
+     * Default: 50 points
      */
     private Integer bonusQuantity;
     
     /**
      * Quantity threshold to trigger bonus
-     * Default: 10
+     * Default: 5 items
      */
     private Integer bonusQuantityThreshold;
     
     /**
-     * Bonus points for high-value orders (>$500)
-     * Default: 5
+     * Bonus points for high-value orders (200+ TND)
+     * Default: 100 points
      */
     private Integer bonusHighOrder;
     
     /**
      * Order amount threshold for high-value bonus
-     * Default: 500.0
+     * Default: 200.0 TND
      */
     private Double bonusHighOrderThreshold;
     

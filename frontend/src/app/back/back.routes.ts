@@ -188,6 +188,10 @@ export const BACK_ROUTES: Routes = [
                     {
                         path: 'system-settings',
                         loadComponent: () => import('./features/platform-management/system-settings.component').then(m => m.SystemSettingsComponent)
+                    },
+                    {
+                        path: 'tax-configuration',
+                        loadComponent: () => import('./features/platform-management/tax-configuration.component').then(m => m.TaxConfigurationComponent)
                     }
                 ]
             },

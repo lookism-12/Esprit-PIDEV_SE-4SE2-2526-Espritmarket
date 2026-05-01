@@ -6,6 +6,26 @@ import { BehaviorSubject, Observable, Subject, take, of } from 'rxjs';
 import { ChatConversation, ChatMessage, ChatMessagePayload, ChatUser } from '../models/chat.models';
 import { ChatUserService } from './chat-user.service';
 
+export interface SignalPayload {
+  type: 'call-request' | 'call-accept' | 'call-reject' | 'call-end' | 'offer' | 'answer' | 'ice-candidate';
+  conversationId: string;
+  senderId: string;
+  receiverId: string;
+  sdp?: string;
+  candidate?: string;
+}
+
+export interface PresenceUpdate {
+  userId: string;
+  status: 'online' | 'away' | 'offline';
+}
+
+export interface TypingIndicator {
+  conversationId: string;
+  userId: string;
+  isTyping: boolean;
+}
+
 export interface ActivePopup {
   conversationId: string;
   targetUser: ChatUser;
@@ -24,6 +44,15 @@ export class ChatService {
 
   private incomingMessageSubject = new Subject<ChatMessage>();
   public incomingMessage$ = this.incomingMessageSubject.asObservable();
+
+  private signalSubject = new Subject<SignalPayload>();
+  public signal$ = this.signalSubject.asObservable();
+
+  private presenceSubject = new Subject<PresenceUpdate>();
+  public presence$ = this.presenceSubject.asObservable();
+
+  private typingSubject = new Subject<TypingIndicator>();
+  public typing$ = this.typingSubject.asObservable();
 
   private connectionStateSubject = new BehaviorSubject<boolean>(false);
   public connectionState$ = this.connectionStateSubject.asObservable();
@@ -63,6 +92,21 @@ export class ChatService {
     this.stompClient.onConnect = () => {
       this.connectionStateSubject.next(true);
       console.log('✅ STOMP connected');
+
+      // Subscribe to global presence topic
+      this.stompClient!.subscribe('/topic/presence', (msg: Message) => {
+        if (msg.body) this.presenceSubject.next(JSON.parse(msg.body));
+      });
+
+      // Subscribe to personal signaling topic
+      this.stompClient!.subscribe(`/user/queue/signal`, (msg: Message) => {
+        if (msg.body) this.signalSubject.next(JSON.parse(msg.body));
+      });
+
+      // Subscribe to typing indicators topic
+      this.stompClient!.subscribe('/topic/typing', (msg: Message) => {
+        if (msg.body) this.typingSubject.next(JSON.parse(msg.body));
+      });
 
       // Drain pending subscription queue
       this.pendingSubscriptions.forEach(convId => this._doSubscribe(convId));
@@ -160,6 +204,50 @@ export class ChatService {
       console.error('Send error:', e);
       this.messageQueue.push(payload); // Retry on reconnect
     }
+  }
+
+  sendSignal(payload: SignalPayload) {
+    const isConnected = this.stompClient?.connected ?? false;
+    if (!isConnected) { console.warn('STOMP not connected — signal dropped'); return; }
+    try {
+      this.stompClient!.publish({
+        destination: '/app/chat.signal',
+        body: JSON.stringify(payload)
+      });
+    } catch (e) { console.error('Signal send error:', e); }
+  }
+
+  sendPresence(userId: string, status: 'online' | 'away' | 'offline') {
+    const isConnected = this.stompClient?.connected ?? false;
+    if (!isConnected) return;
+    try {
+      this.stompClient!.publish({
+        destination: '/app/chat.presence',
+        body: JSON.stringify({ userId, status })
+      });
+    } catch (e) { console.error('Presence send error:', e); }
+  }
+
+  markAsSeen(conversationId: string, userId: string) {
+    const isConnected = this.stompClient?.connected ?? false;
+    if (!isConnected || !conversationId || !userId) return;
+    try {
+      this.stompClient!.publish({
+        destination: '/app/chat.markSeen',
+        body: JSON.stringify({ conversationId, userId })
+      });
+    } catch (e) { console.error('markAsSeen error:', e); }
+  }
+
+  sendTypingIndicator(conversationId: string, userId: string, isTyping: boolean) {
+    const isConnected = this.stompClient?.connected ?? false;
+    if (!isConnected || !conversationId || !userId) return;
+    try {
+      this.stompClient!.publish({
+        destination: '/app/chat.typing',
+        body: JSON.stringify({ conversationId, userId, isTyping })
+      });
+    } catch (e) { console.error('Typing indicator error:', e); }
   }
 
   // ─────────────────────────────────────────────────────────────────────────

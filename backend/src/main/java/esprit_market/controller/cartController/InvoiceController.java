@@ -45,7 +45,7 @@ public class InvoiceController {
      * @return PDF file download
      */
     @GetMapping("/{orderId}/download")
-    @PreAuthorize("hasAnyRole('CLIENT', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('CLIENT', 'ADMIN', 'PROVIDER')")
     @Operation(summary = "Download invoice PDF", 
                description = "Generate and download invoice PDF for a paid order")
     public ResponseEntity<byte[]> downloadInvoice(

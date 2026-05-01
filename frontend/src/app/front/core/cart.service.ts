@@ -413,4 +413,34 @@ export class CartService {
       return error.error?.message || 'An unexpected error occurred';
     }
   }
+
+  // ==================== CART EXPIRATION ====================
+
+  /**
+   * Check if user's cart has an expiration warning.
+   * Called on login and periodically.
+   */
+  checkExpirationWarning(): Observable<CartExpirationWarning> {
+    return this.http.get<CartExpirationWarning>(`${this.apiUrl}/check-expiration-warning`).pipe(
+      tap((warning) => {
+        if (warning.hasWarning) {
+          console.log('⏰ Cart expiration warning:', warning);
+        }
+      }),
+      catchError((error) => {
+        console.error('❌ Failed to check cart expiration:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+}
+
+export interface CartExpirationWarning {
+  hasWarning: boolean;
+  remainingHours?: number;
+  remainingMinutes?: number;
+  itemCount?: number;
+  cartTotal?: number;
+  severity?: 'WARNING' | 'URGENT' | 'CRITICAL';
+  message?: string;
 }

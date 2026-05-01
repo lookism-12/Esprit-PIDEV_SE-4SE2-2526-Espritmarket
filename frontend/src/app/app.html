@@ -10,3 +10,8 @@
 
 <!-- Toast Container -->
 <app-toast-container></app-toast-container>
+
+<!-- Cart Expiration Alert (only for authenticated customers) -->
+@if (!isAdminRoute() && !isAuthRoute()) {
+  <app-cart-expiration-alert></app-cart-expiration-alert>
+}

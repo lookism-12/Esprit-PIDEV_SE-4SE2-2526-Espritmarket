@@ -4,6 +4,7 @@ import esprit_market.dto.cartDto.*;
 import esprit_market.entity.user.User;
 import esprit_market.repository.userRepository.UserRepository;
 import esprit_market.service.cartService.AuthHelperService;
+import esprit_market.service.cartService.CartExpirationService;
 import esprit_market.service.cartService.ICartService;
 import esprit_market.service.cartService.IOrderService;
 import esprit_market.service.cartService.UserNotAuthenticatedException;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/cart")
@@ -26,6 +28,7 @@ public class CartController {
     private final IOrderService orderService;  // ✅ ADDED: For proper order creation
     private final AuthHelperService authHelper;
     private final UserRepository userRepository;
+    private final CartExpirationService cartExpirationService;
 
     // ==================== USER RESOLUTION ====================
 
@@ -211,5 +214,25 @@ public class CartController {
         ObjectId userId = getUserId(authentication);
         List<CartItemResponse> purchasedItems = orderService.getPurchasedItemsForUser(userId);
         return ResponseEntity.ok(purchasedItems);
+    }
+
+    // ==================== CART EXPIRATION ====================
+
+    /**
+     * Check if user's cart has an expiration warning.
+     * Called on login to show popup alert to user.
+     * 
+     * @return Warning info with remaining time, or empty if no warning
+     */
+    @GetMapping("/check-expiration-warning")
+    public ResponseEntity<Map<String, Object>> checkExpirationWarning(Authentication authentication) {
+        ObjectId userId = getUserId(authentication);
+        Map<String, Object> warning = cartExpirationService.checkCartExpirationWarning(userId);
+        
+        if (warning == null) {
+            return ResponseEntity.ok(Map.of("hasWarning", false));
+        }
+        
+        return ResponseEntity.ok(warning);
     }
 }

@@ -11,6 +11,7 @@ import { ToastService } from '../../core/toast.service';
 import { ImageUrlHelper } from '../../../shared/utils/image-url.helper';
 import { LoyaltyLevel } from '../../models/loyalty.model';
 import { AuthService } from '../../core/auth.service';
+import { TaxConfigService } from '../../../back/features/platform-management/tax-config.service';
 import { forkJoin } from 'rxjs';
 
 // Enhanced cart item interface for display
@@ -43,6 +44,7 @@ export class Cart implements OnInit {
   private toastService = inject(ToastService);
   private authService = inject(AuthService);
   private invoiceService = inject(InvoiceService);
+  private taxConfigService = inject(TaxConfigService);
   private route = inject(ActivatedRoute);
 
   // New Wizard Flow State
@@ -85,12 +87,12 @@ export class Cart implements OnInit {
   readonly pointsToRedeem = signal<number>(0);
 
   // Real loyalty data from backend
-  readonly loyaltyAccount = this.loyaltyService.account;
-  readonly loyaltyPoints = computed(() => this.loyaltyAccount()?.points ?? 0);
-  readonly loyaltyLevel = computed(() => this.loyaltyAccount()?.level ?? LoyaltyLevel.BRONZE);
+  readonly loyaltyPoints = signal<number>(0);
+  readonly loyaltyLevel = signal<LoyaltyLevel>(LoyaltyLevel.BRONZE);
 
-  // Tax rate (19% TVA in Tunisia)
-  readonly taxRate = 0.19;
+  // Tax rate — fetched from backend, falls back to 19% TVA Tunisia
+  readonly taxRate = signal<number>(0.19);
+  readonly taxName = signal<string>('TVA 19%');
 
   // Computed values from backend cart
   readonly subtotal = computed(() => this.cart()?.subtotal ?? 0);
@@ -118,11 +120,11 @@ export class Cart implements OnInit {
   });
 
   readonly earnedPoints = computed(() => {
-    const multipliers: Record<LoyaltyLevel, number> = {
-      [LoyaltyLevel.BRONZE]: 1,
-      [LoyaltyLevel.SILVER]: 1.5,
-      [LoyaltyLevel.GOLD]: 2,
-      [LoyaltyLevel.PLATINUM]: 3
+    const multipliers: Record<string, number> = {
+      'BRONZE': 1,
+      'SILVER': 1.5,
+      'GOLD': 2,
+      'PLATINUM': 3
     };
     return Math.floor(this.subtotal() * (multipliers[this.loyaltyLevel()] || 1));
   });
@@ -152,7 +154,7 @@ export class Cart implements OnInit {
 
   readonly tax = computed(() => {
     const cart = this.cart();
-    return cart?.taxAmount ?? (this.subtotal() * this.taxRate);
+    return cart?.taxAmount ?? (this.subtotal() * this.taxRate());
   });
 
   readonly maxRedeemablePoints = computed(() => {
@@ -172,9 +174,14 @@ export class Cart implements OnInit {
 
   ngOnInit(): void {
     this.loadRealCartData();
-    this.loyaltyService.getAccount().subscribe();
+    this.loadLoyaltyData();
     this.initDeliveryEstimation();
     this.prefillUserProfile();
+    // Fetch dynamic TVA rate
+    this.taxConfigService.getEffective().subscribe({
+      next: (cfg) => { this.taxRate.set(cfg.rate); this.taxName.set(cfg.name); },
+      error: () => { /* fallback 19% already set */ }
+    });
   }
 
   private initDeliveryEstimation(): void {
@@ -369,8 +376,18 @@ export class Cart implements OnInit {
 
   // ============== EXISTING CART LOGIC ==============
 
-  private loadLoyaltyAccount(): void {
-    this.loyaltyService.getAccount().subscribe();
+  private loadLoyaltyData(): void {
+    this.loyaltyService.getDashboard().subscribe({
+      next: (dashboard) => {
+        this.loyaltyPoints.set(dashboard.totalPoints);
+        this.loyaltyLevel.set(dashboard.loyaltyLevel as LoyaltyLevel);
+      },
+      error: () => {
+        // Fallback to defaults
+        this.loyaltyPoints.set(0);
+        this.loyaltyLevel.set(LoyaltyLevel.BRONZE);
+      }
+    });
   }
 
   loadRealCartData(): void {

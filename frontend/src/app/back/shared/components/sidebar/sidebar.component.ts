@@ -195,6 +195,7 @@ export class SidebarComponent {
         { label: 'Orders & Analytics', icon: '📊', route: '/admin/platform-management/orders-analytics' },
         { label: 'Loyalty System', icon: '🏆', route: '/admin/platform-management/loyalty-system' },
         { label: 'Coupons & Discounts', icon: '🎟️', route: '/admin/platform-management/coupons-discounts' },
+        { label: 'Tax Configuration (TVA)', icon: '🧾', route: '/admin/platform-management/tax-configuration' },
         { label: 'System Settings', icon: '⚙️', route: '/admin/platform-management/system-settings' }
     ];
 

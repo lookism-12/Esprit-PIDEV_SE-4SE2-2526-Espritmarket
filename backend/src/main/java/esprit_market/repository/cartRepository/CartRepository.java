@@ -32,4 +32,21 @@ public interface CartRepository extends MongoRepository<Cart, ObjectId> {
 
     // SAV - Find all carts by userId field directly (avoids @DBRef lazy-load)
     List<Cart> findByUserId(ObjectId userId);
+    
+    // ==================== CART EXPIRATION QUERIES ====================
+    
+    /**
+     * Find DRAFT carts last updated before a given date that haven't sent 24h notification yet.
+     * Used by the scheduled job that sends "24h remaining" warnings.
+     */
+    List<Cart> findByStatusAndLastUpdatedBeforeAndNotification24hSent(
+            CartStatus status, LocalDateTime date, Boolean notification24hSent);
+    
+    /**
+     * Find DRAFT carts last updated before a given date that haven't sent 47.5h notification yet.
+     * Used by the scheduled job that sends "expiring soon" urgent alerts.
+     */
+    List<Cart> findByStatusAndLastUpdatedBeforeAndNotification47hSent(
+            CartStatus status, LocalDateTime date, Boolean notification47hSent);
 }
+

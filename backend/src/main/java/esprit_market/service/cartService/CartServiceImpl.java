@@ -74,6 +74,9 @@ public class CartServiceImpl implements ICartService {
     
     // --- Auto discount rules service ---
     private final IAutoDiscountRuleService autoDiscountRuleService;
+    
+    // --- Cart expiration service ---
+    private final CartExpirationService cartExpirationService;
 
     // Tax rate applied after discount
     private static final double TAX_RATE = 0.18;
@@ -269,6 +272,10 @@ public class CartServiceImpl implements ICartService {
 
             CartItem updated = cartItemRepository.save(existingItem);
 
+            // Reset expiration timer (user modified cart)
+            cartExpirationService.resetExpirationTimer(cart);
+            cartRepository.save(cart);
+
             // Recalculate totals
             recalculateCartInternal(cart.getId());
 
@@ -295,6 +302,9 @@ public class CartServiceImpl implements ICartService {
         // Add item reference to cart
         cart.getCartItemIds().add(saved.getId());
         cart.setLastUpdated(LocalDateTime.now());
+        
+        // Reset expiration timer (user added new item)
+        cartExpirationService.resetExpirationTimer(cart);
         cartRepository.save(cart);
 
         // Recalculate totals
@@ -337,6 +347,8 @@ public class CartServiceImpl implements ICartService {
         CartItem updated = cartItemRepository.save(cartItem);
 
         cart.setLastUpdated(LocalDateTime.now());
+        // Reset expiration timer (user updated quantity)
+        cartExpirationService.resetExpirationTimer(cart);
         cartRepository.save(cart);
 
         recalculateCartInternal(cart.getId());
