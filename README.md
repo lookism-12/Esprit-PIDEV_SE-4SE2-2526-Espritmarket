@@ -65,7 +65,7 @@ The project follows a **monolithic architecture** with clear separation of conce
             │ (JWT Token)
 ┌───────────▼─────────────┐
 │  Spring Boot Backend    │
-│  (Port 8080)            │
+│  (Port 8090)            │
 │  - Controllers          │
 │  - Services             │
 │  - Security (JWT)       │
