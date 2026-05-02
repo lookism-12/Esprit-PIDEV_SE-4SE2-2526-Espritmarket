@@ -322,31 +322,260 @@
 
         <!-- Form Actions -->
         @if (!showImageUpload()) {
-          <div class="flex gap-4 pt-6 border-t-2 border-gray-100">
-            <button 
-              type="submit"
-              [disabled]="isSubmitting() || categories().length === 0 || selectedCategoryIds().length === 0"
-              class="flex-1 px-8 py-4 bg-primary text-white font-black rounded-xl hover:bg-primary-dark disabled:bg-gray-300 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-3 text-lg">
-              @if (isSubmitting()) {
-                <div class="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                <span>Creating Product...</span>
-              } @else {
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                </svg>
-                <span>Create Product</span>
-              }
-            </button>
-            <button 
-              type="button"
-              (click)="cancel()"
-              [disabled]="isSubmitting()"
-              class="px-8 py-4 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-all">
-              Cancel
-            </button>
+          <div class="flex flex-col gap-3 pt-6 border-t-2 border-gray-100">
+
+            <!-- Main action row -->
+            <div class="flex gap-3">
+              <button 
+                type="submit"
+                [disabled]="isSubmitting() || categories().length === 0 || selectedCategoryIds().length === 0"
+                class="flex-1 px-8 py-4 bg-primary text-white font-black rounded-xl hover:bg-primary-dark disabled:bg-gray-300 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-3 text-lg">
+                @if (isSubmitting()) {
+                  <div class="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <span>Creating Product...</span>
+                } @else {
+                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>Create Product</span>
+                }
+              </button>
+
+              <!-- 🤖 Help with AI button -->
+              <button
+                type="button"
+                (click)="openAIPanel()"
+                class="px-6 py-4 text-white font-bold rounded-xl transition-all shadow-lg flex items-center gap-2 whitespace-nowrap"
+                style="background: linear-gradient(135deg, #4a9e7f, #2d7a5f);">
+                🤖 Help with AI
+              </button>
+
+              <button 
+                type="button"
+                (click)="cancel()"
+                [disabled]="isSubmitting()"
+                class="px-6 py-4 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-all">
+                Cancel
+              </button>
+            </div>
+
+            <!-- AI hint -->
+            <p class="text-xs text-gray-400 text-center">
+              🤖 Not sure about the price? Click <strong>Help with AI</strong> to get market insights before publishing
+            </p>
           </div>
         }
       </form>
     </div>
   </div>
 </div>
+
+<!-- ============================================================ -->
+<!-- 🤖 AI SUGGESTION PANEL (centered modal)                      -->
+<!-- ============================================================ -->
+@if (showAIPanel()) {
+  <!-- Backdrop -->
+  <div class="fixed inset-0 bg-black/50 z-40 backdrop-blur-sm flex items-center justify-center p-4"
+       (click)="closeAIPanel()">
+
+    <!-- Modal — stop click propagation so clicking inside doesn't close -->
+    <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden"
+         (click)="$event.stopPropagation()"
+         style="animation: popIn 0.22s cubic-bezier(0.34,1.56,0.64,1);">
+
+      <!-- Decorative top circle accent -->
+      <div class="absolute -top-10 -right-10 w-40 h-40 rounded-full opacity-10"
+           style="background: radial-gradient(circle, #4a9e7f, transparent);"></div>
+
+      <!-- Header -->
+      <div class="px-6 pt-6 pb-4 flex items-start justify-between"
+           style="background: linear-gradient(135deg, #f0faf5 0%, #e6f5ee 100%); border-bottom: 1px solid #c8e6d4;">
+        <div class="flex items-center gap-3">
+          <!-- AI icon circle -->
+          <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shadow-sm"
+               style="background: linear-gradient(135deg, #4a9e7f, #2d7a5f);">
+            🤖
+          </div>
+          <div>
+            <h2 class="font-black text-lg" style="color: #1a3d2e;">AI Product Advisor</h2>
+            <p class="text-xs" style="color: #5a8a72;">Smart pricing &amp; market insights</p>
+          </div>
+        </div>
+        <button (click)="closeAIPanel()"
+                class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors"
+                style="background: #d4ede0; color: #2d7a5f;"
+                onmouseover="this.style.background='#b8dfc8'" onmouseout="this.style.background='#d4ede0'">
+          ✕
+        </button>
+      </div>
+
+      <!-- Product Summary pill -->
+      <div class="px-6 py-3 flex items-center gap-3 text-sm" style="background: #f8fdfb; border-bottom: 1px solid #e0f0e8;">
+        <span class="text-lg">📦</span>
+        <div class="flex-1 min-w-0">
+          <span class="font-bold" style="color: #1a3d2e;">{{ productName() || 'New Product' }}</span>
+          @if (price() > 0) {
+            <span class="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold"
+                  style="background: #d4ede0; color: #2d7a5f;">{{ price() }} TND</span>
+          }
+        </div>
+        @if (stock() > 0) {
+          <span class="text-xs" style="color: #5a8a72;">📦 {{ stock() }} units</span>
+        }
+      </div>
+
+      <!-- Scrollable Body -->
+      <div class="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+
+        <!-- Loading -->
+        @if (aiLoading()) {
+          <div class="text-center py-10">
+            <div class="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl"
+                 style="background: linear-gradient(135deg, #e6f5ee, #c8e6d4);">
+              🤖
+            </div>
+            <div class="flex justify-center mb-3">
+              <div class="w-8 h-8 border-3 border-t-transparent rounded-full animate-spin"
+                   style="border-color: #4a9e7f; border-top-color: transparent; border-width: 3px;"></div>
+            </div>
+            <p class="font-semibold" style="color: #1a3d2e;">Analyzing market data...</p>
+            <p class="text-xs mt-1" style="color: #5a8a72;">Comparing with similar products</p>
+          </div>
+        }
+
+        <!-- Results -->
+        @if (!aiLoading() && aiSuggestion()) {
+
+          <!-- Recommended Price — hero card -->
+          <div class="rounded-2xl p-5 text-center"
+               style="background: linear-gradient(135deg, #e6f5ee 0%, #d4ede0 100%); border: 1px solid #b8dfc8;">
+            <p class="text-xs font-bold uppercase tracking-widest mb-2" style="color: #2d7a5f;">💡 Recommended Price</p>
+            <div class="flex items-end justify-center gap-3 mb-1">
+              <span class="text-5xl font-black" style="color: #1a3d2e;">{{ aiSuggestion()!.recommendedPrice }}</span>
+              <span class="text-xl font-bold mb-1" style="color: #2d7a5f;">TND</span>
+              @if (price() > 0 && price() !== aiSuggestion()!.recommendedPrice) {
+                <span class="text-sm line-through mb-1" style="color: #8aaa96;">{{ price() }} TND</span>
+              }
+            </div>
+            <p class="text-xs mb-4" style="color: #5a8a72;">
+              Market range: {{ aiSuggestion()!.priceRange.min }}–{{ aiSuggestion()!.priceRange.max }} TND
+            </p>
+            <button (click)="applyAIPrice()"
+                    class="w-full py-3 rounded-xl font-bold text-white transition-all shadow-md hover:shadow-lg"
+                    style="background: linear-gradient(135deg, #4a9e7f, #2d7a5f);">
+              ✅ Apply This Price
+            </button>
+          </div>
+
+          <!-- Stats row -->
+          <div class="grid grid-cols-2 gap-3">
+            <div class="rounded-xl p-4 text-center" style="background: #f8fdfb; border: 1px solid #e0f0e8;">
+              <p class="text-xs mb-1" style="color: #5a8a72;">Market Position</p>
+              <p class="font-bold text-sm"
+                 [style.color]="aiSuggestion()!.marketPosition === 'ABOVE_MARKET' ? '#c0392b' :
+                                aiSuggestion()!.marketPosition === 'BELOW_MARKET' ? '#27ae60' : '#2d7a5f'">
+                {{ aiSuggestion()!.marketPosition === 'ABOVE_MARKET' ? '⬆️ Above Market' :
+                   aiSuggestion()!.marketPosition === 'BELOW_MARKET' ? '⬇️ Below Market' : '✅ At Market' }}
+              </p>
+            </div>
+            <div class="rounded-xl p-4 text-center" style="background: #f8fdfb; border: 1px solid #e0f0e8;">
+              <p class="text-xs mb-1" style="color: #5a8a72;">Demand Level</p>
+              <p class="font-bold text-sm"
+                 [style.color]="aiSuggestion()!.demandLevel === 'HIGH' ? '#e67e22' :
+                                aiSuggestion()!.demandLevel === 'MEDIUM' ? '#f39c12' : '#c0392b'">
+                {{ aiSuggestion()!.demandLevel === 'HIGH' ? '🔥 High' :
+                   aiSuggestion()!.demandLevel === 'MEDIUM' ? '📊 Medium' : '📉 Low' }}
+              </p>
+            </div>
+          </div>
+
+          <!-- Category Insight -->
+          <div class="rounded-xl p-4" style="background: #fffbf0; border: 1px solid #f0e0a0;">
+            <p class="text-xs font-bold mb-1" style="color: #8a6d00;">📊 Category Insight</p>
+            <p class="text-sm" style="color: #5a4a00;">{{ aiSuggestion()!.categoryInsight }}</p>
+          </div>
+
+          <!-- Pricing + Promo in 2 rows -->
+          <div class="rounded-xl p-4" style="background: #f8fdfb; border: 1px solid #e0f0e8;">
+            <p class="text-xs font-bold mb-1" style="color: #2d7a5f;">💰 Pricing Advice</p>
+            <p class="text-sm" style="color: #1a3d2e;">{{ aiSuggestion()!.pricingAdvice }}</p>
+          </div>
+
+          <div class="rounded-xl p-4" style="background: #f8fdfb; border: 1px solid #e0f0e8;">
+            <p class="text-xs font-bold mb-1" style="color: #2d7a5f;">🏷️ Promotion Strategy</p>
+            <p class="text-sm" style="color: #1a3d2e;">{{ aiSuggestion()!.promotionAdvice }}</p>
+          </div>
+
+          <!-- Tips -->
+          @if (aiSuggestion()!.tips.length > 0) {
+            <div class="rounded-xl p-4" style="background: #f0faf5; border: 1px solid #c8e6d4;">
+              <p class="text-xs font-bold mb-2" style="color: #2d7a5f;">✅ Tips</p>
+              <ul class="space-y-1.5">
+                @for (tip of aiSuggestion()!.tips; track $index) {
+                  <li class="text-xs flex items-start gap-1.5" style="color: #1a3d2e;">
+                    <span class="mt-0.5" style="color: #4a9e7f;">•</span>
+                    <span>{{ tip }}</span>
+                  </li>
+                }
+              </ul>
+            </div>
+          }
+
+          <!-- Confidence bar -->
+          <div class="flex items-center gap-3 px-1">
+            <span class="text-xs shrink-0" style="color: #5a8a72;">AI Confidence</span>
+            <div class="flex-1 rounded-full h-2" style="background: #e0f0e8;">
+              <div class="h-2 rounded-full transition-all"
+                   style="background: linear-gradient(90deg, #4a9e7f, #2d7a5f);"
+                   [style.width.%]="aiSuggestion()!.confidence * 100"></div>
+            </div>
+            <span class="text-xs font-bold shrink-0" style="color: #2d7a5f;">
+              {{ (aiSuggestion()!.confidence * 100).toFixed(0) }}%
+            </span>
+          </div>
+
+        }
+
+        <!-- Empty state -->
+        @if (!aiLoading() && !aiSuggestion() && !aiError()) {
+          <div class="text-center py-10">
+            <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl"
+                 style="background: linear-gradient(135deg, #e6f5ee, #c8e6d4);">
+              🤖
+            </div>
+            <p class="font-semibold mb-1" style="color: #1a3d2e;">Fill in the form first</p>
+            <p class="text-xs mb-4" style="color: #5a8a72;">Add a product name, price, or description to get AI suggestions</p>
+            <button (click)="analyzeWithAI()"
+                    [disabled]="!canAnalyzeWithAI()"
+                    class="px-6 py-2.5 text-white text-sm font-bold rounded-xl disabled:opacity-40 transition-all"
+                    style="background: linear-gradient(135deg, #4a9e7f, #2d7a5f);">
+              🔍 Analyze Now
+            </button>
+          </div>
+        }
+
+      </div>
+
+      <!-- Footer -->
+      <div class="px-6 py-4 flex gap-3" style="border-top: 1px solid #e0f0e8; background: #f8fdfb;">
+        <button (click)="analyzeWithAI()"
+                [disabled]="aiLoading() || !canAnalyzeWithAI()"
+                class="flex-1 py-2.5 text-white text-sm font-bold rounded-xl disabled:opacity-40 transition-all flex items-center justify-center gap-2"
+                style="background: linear-gradient(135deg, #4a9e7f, #2d7a5f);">
+          @if (aiLoading()) {
+            <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+          } @else {
+            🔄
+          }
+          Re-analyze
+        </button>
+        <button (click)="closeAIPanel()"
+                class="px-6 py-2.5 text-sm font-bold rounded-xl transition-colors"
+                style="background: #e0f0e8; color: #2d7a5f;">
+          Close
+        </button>
+      </div>
+
+    </div>
+  </div>
+}

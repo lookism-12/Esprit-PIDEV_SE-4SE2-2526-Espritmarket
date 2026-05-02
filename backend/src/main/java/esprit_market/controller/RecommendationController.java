@@ -169,26 +169,26 @@ public class RecommendationController {
      * Create error recommendation response
      */
     private RecommendationDTO createErrorRecommendation(String userId, String message) {
-        RecommendationDTO error = new RecommendationDTO();
-        error.setUserId(userId);
-        error.setRecommendations(java.util.Collections.emptyList());
-        error.setTotalCount(0);
-        error.setAlgorithmUsed("error");
-        error.setGeneratedAt(java.time.Instant.now().toString());
-        return error;
+        return RecommendationDTO.builder()
+                .userId(userId)
+                .recommendations(java.util.Collections.emptyList())
+                .totalCount(0)
+                .algorithmUsed("error")
+                .generatedAt(java.time.Instant.now().toString())
+                .build();
     }
 
     /**
      * Create error feedback response
      */
     private FeedbackResponseDTO createErrorFeedbackResponse(FeedbackRequestDTO request, String message) {
-        FeedbackResponseDTO error = new FeedbackResponseDTO();
-        error.setUserId(request.getUserId());
-        error.setProductId(request.getProductId());
-        error.setAction(request.getAction());
-        error.setStatus("error");
-        error.setMessage(message);
-        error.setProcessedAt(java.time.Instant.now().toString());
-        return error;
+        return FeedbackResponseDTO.builder()
+                .userId(request.getUserId())
+                .productId(request.getProductId())
+                .action(request.getAction())
+                .status("error")
+                .message(message)
+                .processedAt(java.time.Instant.now().toString())
+                .build();
     }
 }

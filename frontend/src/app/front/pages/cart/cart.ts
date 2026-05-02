@@ -13,6 +13,7 @@ import { LoyaltyLevel } from '../../models/loyalty.model';
 import { AuthService } from '../../core/auth.service';
 import { TaxConfigService } from '../../../back/features/platform-management/tax-config.service';
 import { CardDetails, CardOtpResponse, PaymentService } from '../../core/payment.service';
+import { CartMLService, CartMLSuggestion } from '../../core/cart-ml.service';
 import { forkJoin, switchMap } from 'rxjs';
 
 // Enhanced cart item interface for display
@@ -56,7 +57,17 @@ export class Cart implements OnInit {
   private invoiceService = inject(InvoiceService);
   private taxConfigService = inject(TaxConfigService);
   private paymentService = inject(PaymentService);
+  private cartMLService = inject(CartMLService);
   private route = inject(ActivatedRoute);
+
+  // ML Suggestions
+  readonly mlSuggestions = signal<CartMLSuggestion[]>([]);
+  readonly mlLoading = signal(false);
+
+  /** Returns the ML suggestion for a given productId, or null */
+  getMLSuggestion(productId: string): CartMLSuggestion | null {
+    return this.mlSuggestions().find(s => s.product_id === productId) ?? null;
+  }
 
   // New Wizard Flow State
   readonly currentStep = signal<'CART' | 'PLACE_ORDER' | 'PAY' | 'COMPLETE'>('CART');
@@ -624,8 +635,28 @@ export class Cart implements OnInit {
       cart: this.cartService.getCart(),
       items: this.cartService.getCartItems()
     }).subscribe({
-      next: ({ items }) => this.processCartItems(items),
+      next: ({ items }) => {
+        this.processCartItems(items);
+        this.loadMLSuggestions();
+      },
       error: () => this.cartItems.set([])
+    });
+  }
+
+  private loadMLSuggestions(): void {
+    this.mlLoading.set(true);
+    this.cartMLService.getSuggestions().subscribe({
+      next: (suggestions) => {
+        this.mlSuggestions.set(suggestions);
+        this.mlLoading.set(false);
+        if (suggestions.length > 0) {
+          const promoCount = suggestions.filter(s => s.promotion_suggestion === 'YES').length;
+          if (promoCount > 0) {
+            this.toastService.info(`🤖 ML: ${promoCount} item(s) eligible for promotion`, 3000);
+          }
+        }
+      },
+      error: () => this.mlLoading.set(false)
     });
   }
 

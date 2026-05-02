@@ -2,6 +2,7 @@ package esprit_market.dto.recommendation;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -12,6 +13,7 @@ import jakarta.validation.constraints.Pattern;
  * DTO for sending feedback to ML service
  */
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class FeedbackRequestDTO {

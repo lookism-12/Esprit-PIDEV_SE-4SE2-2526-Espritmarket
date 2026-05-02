@@ -13,6 +13,7 @@ import { ToastService } from '../../core/toast.service';
 import { AuthService } from '../../core/auth.service';
 import { BookingService, BookingResponse } from '../../../core/services/booking.service';
 import { ChatService as RealtimeChatService } from '../../../core/services/chat.service';
+import { ProviderMLService, ProviderMLAnalytics, ProductMLPrediction } from '../../core/provider-ml.service';
 import { Product, ProductStatus } from '../../models/product';
 import { environment } from '../../../../environment';
 
@@ -72,7 +73,181 @@ export class ProviderDashboard implements OnInit {
   readonly error = signal<string | null>(null);
   readonly selectedStatus = signal<string>('ALL');
   readonly searchText = signal<string>('');
-  readonly activeTab = signal<'orders' | 'products' | 'services' | 'serviceRequests' | 'coupons' | 'discountRules' | 'eventPromotions' | 'returnedOrders'>('orders');
+  readonly activeTab = signal<'orders' | 'products' | 'services' | 'serviceRequests' | 'coupons' | 'discountRules' | 'eventPromotions' | 'returnedOrders' | 'mlAnalytics'>('orders');
+
+  // ML Analytics
+  private providerMLService = inject(ProviderMLService);
+  readonly mlAnalytics = signal<ProviderMLAnalytics | null>(null);
+  readonly mlLoading = signal(false);
+  readonly mlFilter = signal<'ALL' | 'PROMO' | 'INCREASE' | 'DECREASE'>('ALL');
+
+  readonly filteredMLPredictions = computed(() => {
+    const analytics = this.mlAnalytics();
+    if (!analytics) return [];
+    const filter = this.mlFilter();
+    if (filter === 'ALL') return analytics.predictions;
+    if (filter === 'PROMO') return analytics.predictions.filter(p => p.promotionSuggestion === 'YES');
+    if (filter === 'INCREASE') return analytics.predictions.filter(p => p.priceAdjustment === 'INCREASE');
+    if (filter === 'DECREASE') return analytics.predictions.filter(p => p.priceAdjustment === 'DECREASE');
+    return analytics.predictions;
+  });
+
+  // ── AI Coupon Advisor ────────────────────────────────────────
+  readonly showCouponAI = signal(false);
+  readonly couponAILoading = signal(false);
+  readonly couponAISuggestion = signal<any | null>(null);
+
+  openCouponAI(): void {
+    this.showCouponAI.set(true);
+    this.couponAISuggestion.set(null);
+    this.analyzeCouponOpportunity();
+  }
+
+  closeCouponAI(): void {
+    this.showCouponAI.set(false);
+  }
+
+  analyzeCouponOpportunity(): void {
+    this.couponAILoading.set(true);
+    const totalOrders = this.orders().length;
+    const deliveredOrders = this.orders().filter(o => o.orderStatus === 'DELIVERED').length;
+    const cancelledOrders = this.orders().filter(o => o.orderStatus === 'CANCELLED').length;
+    const revenue = this.orders().filter(o => o.orderStatus === 'DELIVERED').reduce((s, o) => s + (o.subTotal || 0), 0);
+    const activeCoupons = this.coupons().filter(c => c.isActive).length;
+    const avgOrderValue = deliveredOrders > 0 ? revenue / deliveredOrders : 0;
+    const cancellationRate = totalOrders > 0 ? cancelledOrders / totalOrders : 0;
+    setTimeout(() => {
+      this.couponAISuggestion.set(this.generateCouponSuggestion({ totalOrders, deliveredOrders, cancelledOrders, revenue, activeCoupons, avgOrderValue, cancellationRate }));
+      this.couponAILoading.set(false);
+    }, 900);
+  }
+
+  private generateCouponSuggestion(data: any): any {
+    const { deliveredOrders, cancellationRate, avgOrderValue, activeCoupons } = data;
+    let score = 50;
+    const reasons: string[] = [];
+    const tips: string[] = [];
+    if (deliveredOrders < 5) { score += 25; reasons.push('Very few completed sales — a coupon will attract first buyers'); }
+    else if (deliveredOrders < 15) { score += 15; reasons.push('Sales are growing — a coupon can accelerate momentum'); }
+    else { score -= 10; reasons.push('Sales are healthy — coupon is optional but can boost further'); }
+    if (cancellationRate > 0.3) { score += 20; reasons.push(`${(cancellationRate * 100).toFixed(0)}% cancellation rate — a discount reduces hesitation`); }
+    if (activeCoupons > 2) { score -= 15; tips.push('You already have active coupons — avoid over-discounting'); }
+    if (activeCoupons === 0) { score += 10; tips.push('No active coupons — good time to launch one'); }
+    let suggestedDiscount = 10;
+    let suggestedMinOrder = 0;
+    if (avgOrderValue > 200) { suggestedDiscount = 15; suggestedMinOrder = Math.round(avgOrderValue * 0.6); }
+    else if (avgOrderValue > 100) { suggestedDiscount = 10; suggestedMinOrder = Math.round(avgOrderValue * 0.5); }
+    else { suggestedDiscount = 5; }
+    const urgency: 'HIGH' | 'MEDIUM' | 'LOW' = score >= 70 ? 'HIGH' : score >= 50 ? 'MEDIUM' : 'LOW';
+    const suggestedDays = urgency === 'HIGH' ? 5 : urgency === 'MEDIUM' ? 7 : 14;
+    const month = new Date().toLocaleString('en', { month: 'short' }).toUpperCase();
+    const suggestedCode = `SAVE${suggestedDiscount}${month}`;
+    tips.push(`Set validity to ${suggestedDays} days — creates urgency without being too short`);
+    if (suggestedMinOrder > 0) tips.push(`Minimum order of ${suggestedMinOrder} TND protects your margin`);
+    tips.push('Share the coupon code on social media for maximum reach');
+    return {
+      shouldCreate: score >= 45, urgency, score: Math.min(100, Math.max(0, score)),
+      suggestedCode, suggestedDiscount, suggestedType: 'PERCENTAGE', suggestedDays, suggestedMinOrder,
+      reason: reasons.join(' · '),
+      expectedImpact: score >= 70
+        ? `Expected +${Math.round(suggestedDiscount * 1.8)}% sales increase over ${suggestedDays} days`
+        : `Expected +${Math.round(suggestedDiscount * 1.2)}% sales increase over ${suggestedDays} days`,
+      bestTiming: new Date().getHours() < 12 ? 'Launch in the morning — shoppers browse early'
+        : new Date().getHours() < 18 ? 'Good time to launch — peak shopping hours'
+        : 'Evening launch works well — people shop after work',
+      tips
+    };
+  }
+
+  applyCouponAISuggestion(): void {
+    const s = this.couponAISuggestion();
+    if (!s) return;
+    this.newCoupon = {
+      ...this.getEmptyCoupon(),
+      code: s.suggestedCode,
+      discountType: s.suggestedType,
+      discountValue: s.suggestedDiscount,
+      minOrderAmount: s.suggestedMinOrder || undefined,
+      validUntil: new Date(Date.now() + s.suggestedDays * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    };
+    this.showCouponForm.set(true);
+    this.closeCouponAI();
+    this.toastService.info('✅ AI suggestion applied to the coupon form!');
+  }
+
+  // ── AI Discount Rule Advisor ─────────────────────────────────
+  readonly showDiscountAI = signal(false);
+  readonly discountAILoading = signal(false);
+  readonly discountAISuggestion = signal<any | null>(null);
+
+  openDiscountAI(): void {
+    this.showDiscountAI.set(true);
+    this.discountAISuggestion.set(null);
+    this.analyzeDiscountOpportunity();
+  }
+
+  closeDiscountAI(): void {
+    this.showDiscountAI.set(false);
+  }
+
+  analyzeDiscountOpportunity(): void {
+    this.discountAILoading.set(true);
+    const totalOrders = this.orders().length;
+    const avgOrderValue = totalOrders > 0 ? this.orders().reduce((s, o) => s + (o.subTotal || 0), 0) / totalOrders : 0;
+    const activeRules = this.discountRules().filter(r => r.isActive).length;
+    setTimeout(() => {
+      this.discountAISuggestion.set(this.generateDiscountRuleSuggestion({ totalOrders, avgOrderValue, activeRules }));
+      this.discountAILoading.set(false);
+    }, 900);
+  }
+
+  private generateDiscountRuleSuggestion(data: any): any {
+    const { avgOrderValue, activeRules } = data;
+    const suggestions: any[] = [];
+    if (avgOrderValue > 0) {
+      const threshold = Math.round(avgOrderValue * 1.3);
+      suggestions.push({
+        type: 'CART_TOTAL_THRESHOLD', ruleName: `Spend ${threshold} TND, Save 10%`,
+        triggerType: 'CART_TOTAL_THRESHOLD', thresholdValue: threshold,
+        discountType: 'PERCENTAGE', discountValue: 10,
+        description: `Customers who spend over ${threshold} TND get 10% off`,
+        why: `Your avg order is ${Math.round(avgOrderValue)} TND — threshold at ${threshold} TND encourages adding more items`,
+        impact: 'Increases average order value by 20–30%'
+      });
+    }
+    suggestions.push({
+      type: 'QUANTITY_THRESHOLD', ruleName: 'Buy 3+ items, Save 8%',
+      triggerType: 'QUANTITY_THRESHOLD', thresholdValue: 3,
+      discountType: 'PERCENTAGE', discountValue: 8,
+      description: 'Customers who buy 3 or more items get 8% off',
+      why: 'Encourages bulk buying and reduces per-order cost',
+      impact: 'Increases units per order by 15–25%'
+    });
+    return {
+      suggestions, activeRules, avgOrderValue: Math.round(avgOrderValue),
+      tips: [
+        activeRules === 0 ? '🚀 No active rules — start with the cart total rule for quick wins' : `You have ${activeRules} active rule(s) — avoid stacking too many`,
+        'Rules apply automatically at checkout — no coupon code needed',
+        'Set an expiry date to create urgency and review performance'
+      ],
+      recommendation: activeRules === 0
+        ? 'Start with a cart total threshold rule — most effective for increasing revenue'
+        : 'Consider a quantity threshold to boost units per order'
+    };
+  }
+
+  applyDiscountAISuggestion(suggestion: any): void {
+    this.newRule = {
+      ...this.getEmptyRule(),
+      ruleName: suggestion.ruleName, triggerType: suggestion.triggerType,
+      thresholdValue: suggestion.thresholdValue, discountType: suggestion.discountType,
+      discountValue: suggestion.discountValue, description: suggestion.description, isActive: true
+    };
+    this.showRuleForm.set(true);
+    this.closeDiscountAI();
+    this.toastService.info('✅ AI suggestion applied to the discount rule form!');
+  }
+
   readonly showCouponForm = signal(false);
   readonly editingCoupon = signal<ProviderCoupon | null>(null);
   readonly isSavingCoupon = signal(false);
@@ -175,6 +350,49 @@ export class ProviderDashboard implements OnInit {
     this.loadDiscountRules();
     this.loadEventPromotion();
     this.loadReturnedOrders();
+  }
+
+  loadMLAnalytics() {
+    this.mlLoading.set(true);
+    this.providerMLService.getAnalytics().subscribe({
+      next: (data) => {
+        this.mlAnalytics.set(data);
+        this.mlLoading.set(false);
+        if (data) {
+          this.toastService.info(`🤖 AI analyzed ${data.analyzedProducts} products`, 2000);
+        }
+      },
+      error: () => {
+        this.mlLoading.set(false);
+        this.toastService.error('Failed to load AI analytics');
+      }
+    });
+  }
+
+  getPriceAdjustmentBadge(adj: string): string {
+    switch (adj) {
+      case 'INCREASE': return '📈 Increase';
+      case 'DECREASE': return '📉 Decrease';
+      case 'HOLD':
+      case 'STABLE':   return '➡️ Stable';
+      default:         return adj;
+    }
+  }
+
+  getPriceAdjustmentClass(adj: string): string {
+    switch (adj) {
+      case 'INCREASE': return 'bg-red-100 text-red-700';
+      case 'DECREASE': return 'bg-green-100 text-green-700';
+      default:         return 'bg-gray-100 text-gray-600';
+    }
+  }
+
+  getPricePositionClass(pos: string): string {
+    switch (pos) {
+      case 'ABOVE_MARKET': return 'text-red-600';
+      case 'BELOW_MARKET': return 'text-green-600';
+      default:             return 'text-gray-500';
+    }
   }
 
   loadProducts() {

@@ -141,12 +141,10 @@ export class SidebarComponent {
     menuItems: MenuItem[] = [
         { label: 'Dashboard', icon: '🏠', route: '/admin/dashboard' },
         { label: 'User Management', icon: '👥', route: '/admin/users' },
-        { label: 'Orders & Transactions', icon: '💳', route: '/admin/orders' },
         { label: 'Support Center', icon: '🎧', route: '/admin/support' },
         { label: 'Notification Center', icon: '🔔', route: '/admin/notifications', badge: 5 },
         { label: 'Negotiations', icon: '🤝', route: '/admin/negotiations' },
-        { label: 'After Sales Service', icon: '🛠️', route: '/admin/sav' },
-        { label: 'System Settings', icon: '⚙️', route: '/admin/settings' }
+        { label: 'After Sales Service', icon: '🛠️', route: '/admin/sav' }
     ];
 
     deliveryManagementItems = [
@@ -195,8 +193,7 @@ export class SidebarComponent {
         { label: 'Orders & Analytics', icon: '📊', route: '/admin/platform-management/orders-analytics' },
         { label: 'Loyalty System', icon: '🏆', route: '/admin/platform-management/loyalty-system' },
         { label: 'Coupons & Discounts', icon: '🎟️', route: '/admin/platform-management/coupons-discounts' },
-        { label: 'Tax Configuration (TVA)', icon: '🧾', route: '/admin/platform-management/tax-configuration' },
-        { label: 'System Settings', icon: '⚙️', route: '/admin/platform-management/system-settings' }
+        { label: 'Tax Configuration (TVA)', icon: '🧾', route: '/admin/platform-management/tax-configuration' }
     ];
 
     // Check if user is provider/seller

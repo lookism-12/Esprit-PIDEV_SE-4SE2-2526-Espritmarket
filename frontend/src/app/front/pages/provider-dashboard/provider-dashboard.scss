@@ -109,3 +109,20 @@
     display: none;
   }
 }
+
+/* ── Tab Navigation ─────────────────────────────────────────── */
+nav.overflow-x-auto {
+  /* Hide scrollbar on all browsers */
+  scrollbar-width: none;       /* Firefox */
+  -ms-overflow-style: none;    /* IE/Edge */
+
+  &::-webkit-scrollbar {
+    display: none;             /* Chrome/Safari */
+  }
+}
+
+/* ── AI Modal pop-in animation ──────────────────────────────── */
+@keyframes popIn {
+  from { transform: scale(0.88) translateY(16px); opacity: 0; }
+  to   { transform: scale(1) translateY(0);       opacity: 1; }
+}

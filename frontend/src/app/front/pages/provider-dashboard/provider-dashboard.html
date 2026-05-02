@@ -12,60 +12,67 @@
 
       <!-- Tab Navigation -->
       <div class="mt-6 border-b border-gray-200">
-        <nav class="-mb-px flex space-x-8">
+        <nav class="-mb-px flex overflow-x-auto gap-1 pb-0 scrollbar-hide" style="scrollbar-width:none;">
           <button
             (click)="activeTab.set('orders')"
-            [class]="'py-2 px-1 border-b-2 font-medium text-sm ' + 
+            [class]="'whitespace-nowrap py-2.5 px-3 border-b-2 font-medium text-sm shrink-0 ' + 
                      (activeTab() === 'orders' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300')">
             📦 Orders
           </button>
           <button
             (click)="activeTab.set('returnedOrders')"
-            [class]="'py-2 px-1 border-b-2 font-medium text-sm ' + 
+            [class]="'whitespace-nowrap py-2.5 px-3 border-b-2 font-medium text-sm shrink-0 ' + 
                      (activeTab() === 'returnedOrders' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300')">
-            ↩️ Returned Orders
+            ↩️ Returned
             @if (returnedOrders().length > 0) {
-              <span class="ml-1 px-2 py-0.5 bg-orange-100 text-orange-700 rounded-full text-xs font-bold">{{ returnedOrders().length }}</span>
+              <span class="ml-1 px-1.5 py-0.5 bg-orange-100 text-orange-700 rounded-full text-xs font-bold">{{ returnedOrders().length }}</span>
             }
           </button>
           <button
             (click)="activeTab.set('products')"
-            [class]="'py-2 px-1 border-b-2 font-medium text-sm ' + 
+            [class]="'whitespace-nowrap py-2.5 px-3 border-b-2 font-medium text-sm shrink-0 ' + 
                      (activeTab() === 'products' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300')">
             🛍️ Products
           </button>
           <button
             (click)="activeTab.set('services')"
-            [class]="'py-2 px-1 border-b-2 font-medium text-sm ' + 
+            [class]="'whitespace-nowrap py-2.5 px-3 border-b-2 font-medium text-sm shrink-0 ' + 
                      (activeTab() === 'services' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300')">
             🔧 Services
           </button>
           <button
             (click)="activeTab.set('serviceRequests')"
-            [class]="'py-2 px-1 border-b-2 font-medium text-sm ' + 
+            [class]="'whitespace-nowrap py-2.5 px-3 border-b-2 font-medium text-sm shrink-0 ' + 
                      (activeTab() === 'serviceRequests' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300')">
-            Service Requests
+            📋 Requests
             @if (pendingServiceRequestsCount() > 0) {
-              <span class="ml-1 px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded-full text-xs font-bold">{{ pendingServiceRequestsCount() }}</span>
+              <span class="ml-1 px-1.5 py-0.5 bg-yellow-100 text-yellow-700 rounded-full text-xs font-bold">{{ pendingServiceRequestsCount() }}</span>
             }
           </button>
           <button
             (click)="activeTab.set('coupons')"
-            [class]="'py-2 px-1 border-b-2 font-medium text-sm ' + 
+            [class]="'whitespace-nowrap py-2.5 px-3 border-b-2 font-medium text-sm shrink-0 ' + 
                      (activeTab() === 'coupons' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300')">
             🎟️ Coupons
           </button>
           <button
             (click)="activeTab.set('discountRules')"
-            [class]="'py-2 px-1 border-b-2 font-medium text-sm ' + 
+            [class]="'whitespace-nowrap py-2.5 px-3 border-b-2 font-medium text-sm shrink-0 ' + 
                      (activeTab() === 'discountRules' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300')">
-            ⚡ Auto Discounts
+            ⚡ Discounts
           </button>
           <button
             (click)="activeTab.set('eventPromotions')"
-            [class]="'py-2 px-1 border-b-2 font-medium text-sm ' + 
+            [class]="'whitespace-nowrap py-2.5 px-3 border-b-2 font-medium text-sm shrink-0 ' + 
                      (activeTab() === 'eventPromotions' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300')">
-            🎉 Event Promotions
+            🎉 Events
+          </button>
+          <button
+            (click)="activeTab.set('mlAnalytics'); loadMLAnalytics()"
+            [class]="'whitespace-nowrap py-2.5 px-3 border-b-2 font-medium text-sm shrink-0 flex items-center gap-1 ' + 
+                     (activeTab() === 'mlAnalytics' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300')">
+            🤖 AI Analytics
+            <span class="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-bold">ML</span>
           </button>
         </nav>
       </div>
@@ -859,12 +866,20 @@
             <h2 class="text-2xl font-bold text-dark">Coupons & Discounts</h2>
             <p class="text-sm text-gray-500 mt-1">Manage discount coupons for your shop</p>
           </div>
-          <button (click)="openCouponForm()" class="btn-primary inline-flex items-center gap-2">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-            </svg>
-            Create Coupon
-          </button>
+          <div class="flex items-center gap-3">
+            <!-- 🤖 AI Coupon Advisor button -->
+            <button (click)="openCouponAI()"
+                    class="inline-flex items-center gap-2 px-4 py-2.5 text-white text-sm font-bold rounded-xl transition-all shadow-md"
+                    style="background: linear-gradient(135deg, #4a9e7f, #2d7a5f);">
+              🤖 Help with AI
+            </button>
+            <button (click)="openCouponForm()" class="btn-primary inline-flex items-center gap-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+              </svg>
+              Create Coupon
+            </button>
+          </div>
         </div>
 
         <!-- Create/Edit Coupon Form -->
@@ -1162,12 +1177,19 @@
             <h2 class="text-2xl font-bold text-dark">Automatic Discount Rules</h2>
             <p class="text-sm text-gray-500 mt-1">Set up automatic discounts that apply without coupon codes</p>
           </div>
-          <button (click)="openRuleForm()" class="btn-primary inline-flex items-center gap-2">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-            </svg>
-            Create Rule
-          </button>
+          <div class="flex items-center gap-3">
+            <button (click)="openDiscountAI()"
+                    class="inline-flex items-center gap-2 px-4 py-2.5 text-white text-sm font-bold rounded-xl transition-all shadow-md"
+                    style="background: linear-gradient(135deg, #4a9e7f, #2d7a5f);">
+              🤖 Help with AI
+            </button>
+            <button (click)="openRuleForm()" class="btn-primary inline-flex items-center gap-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+              </svg>
+              Create Rule
+            </button>
+          </div>
         </div>
 
         <!-- Create/Edit Rule Form -->
@@ -1761,5 +1783,446 @@
       </div>
     }
 
+    <!-- ============================================================ -->
+    <!-- 🤖 ML ANALYTICS TAB                                          -->
+    <!-- ============================================================ -->
+    @if (activeTab() === 'mlAnalytics') {
+      <div class="space-y-4">
+
+        <!-- Header -->
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-xl font-bold text-dark flex items-center gap-2">
+              🤖 AI Product Analytics
+              <span class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-bold">ML</span>
+            </h2>
+            <p class="text-xs text-gray-400 mt-0.5">Promotion suggestions · Price adjustments · Competitive analysis</p>
+          </div>
+          <button (click)="loadMLAnalytics()"
+                  [disabled]="mlLoading()"
+                  class="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark disabled:opacity-50 transition-colors">
+            @if (mlLoading()) {
+              <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+              </svg>
+              Analyzing...
+            } @else {
+              🔄 Refresh
+            }
+          </button>
+        </div>
+
+        <!-- Loading -->
+        @if (mlLoading()) {
+          <div class="rounded-xl border border-gray-200 p-8 text-center bg-white">
+            <div class="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+            <p class="text-sm text-gray-500">AI is analyzing your products...</p>
+          </div>
+        }
+
+        <!-- Results -->
+        @if (!mlLoading() && mlAnalytics()) {
+
+          <!-- Summary Row -->
+          <div class="grid grid-cols-4 gap-3">
+            <div class="rounded-xl border border-gray-200 bg-white p-4 text-center">
+              <p class="text-2xl font-black text-dark">{{ mlAnalytics()!.analyzedProducts }}</p>
+              <p class="text-xs text-gray-400 mt-0.5">Analyzed</p>
+            </div>
+            <div class="rounded-xl border border-orange-200 bg-orange-50 p-4 text-center">
+              <p class="text-2xl font-black text-orange-600">{{ mlAnalytics()!.promoEligibleCount }}</p>
+              <p class="text-xs text-orange-500 mt-0.5">🏷️ Promo Eligible</p>
+            </div>
+            <div class="rounded-xl border border-red-200 bg-red-50 p-4 text-center">
+              <p class="text-2xl font-black text-red-600">{{ mlAnalytics()!.priceIncreaseCount }}</p>
+              <p class="text-xs text-red-500 mt-0.5">📈 Price ↑</p>
+            </div>
+            <div class="rounded-xl border border-green-200 bg-green-50 p-4 text-center">
+              <p class="text-2xl font-black text-green-600">{{ mlAnalytics()!.priceDecreaseCount }}</p>
+              <p class="text-xs text-green-500 mt-0.5">📉 Price ↓</p>
+            </div>
+          </div>
+
+          <!-- Recommendations -->
+          @if (mlAnalytics()!.topRecommendations.length > 0) {
+            <div class="rounded-xl border border-blue-200 bg-blue-50 p-4">
+              <p class="text-xs font-bold text-blue-700 mb-2">💡 Recommendations</p>
+              <ul class="space-y-1">
+                @for (rec of mlAnalytics()!.topRecommendations; track $index) {
+                  <li class="text-xs text-blue-700">{{ rec }}</li>
+                }
+              </ul>
+            </div>
+          }
+
+          <!-- Filter + Table -->
+          <div class="rounded-xl border border-gray-200 bg-white overflow-hidden">
+
+            <!-- Filter Bar -->
+            <div class="flex items-center gap-2 px-4 py-3 border-b border-gray-100 bg-gray-50">
+              <span class="text-xs text-gray-500 font-medium">Filter:</span>
+              @for (f of [['ALL','All'],['PROMO','🏷️ Promo'],['INCREASE','📈 Price ↑'],['DECREASE','📉 Price ↓']]; track f[0]) {
+                <button (click)="mlFilter.set($any(f[0]))"
+                        [class]="'px-3 py-1 rounded-full text-xs font-semibold transition-all ' +
+                                 (mlFilter() === f[0] ? 'bg-primary text-white' : 'bg-white text-gray-500 border border-gray-200 hover:border-gray-300')">
+                  {{ f[1] }}
+                </button>
+              }
+              <span class="text-xs text-gray-400 ml-auto">{{ filteredMLPredictions().length }} products</span>
+            </div>
+
+            <!-- Table -->
+            <div class="overflow-x-auto">
+              <table class="w-full text-xs">
+                <thead class="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th class="text-left py-2.5 px-4 text-gray-500 font-semibold">Product</th>
+                    <th class="text-center py-2.5 px-3 text-gray-500 font-semibold">Price</th>
+                    <th class="text-center py-2.5 px-3 text-gray-500 font-semibold">Stock</th>
+                    <th class="text-center py-2.5 px-3 text-gray-500 font-semibold">Sales</th>
+                    <th class="text-center py-2.5 px-3 text-gray-500 font-semibold">Promo</th>
+                    <th class="text-center py-2.5 px-3 text-gray-500 font-semibold">Price Action</th>
+                    <th class="text-center py-2.5 px-3 text-gray-500 font-semibold">Suggested</th>
+                    <th class="text-left py-2.5 px-3 text-gray-500 font-semibold">vs Market</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                  @for (pred of filteredMLPredictions(); track pred.productId) {
+                    <tr class="hover:bg-gray-50 transition-colors">
+                      <td class="py-3 px-4">
+                        <p class="font-semibold text-dark text-sm">{{ pred.productName }}</p>
+                        <p class="text-gray-400 text-xs">{{ pred.category }}</p>
+                      </td>
+                      <td class="py-3 px-3 text-center font-semibold text-dark">{{ pred.currentPrice | number:'1.2-2' }} TND</td>
+                      <td class="py-3 px-3 text-center">
+                        <span [class]="pred.stock < 5 ? 'text-red-600 font-bold' : pred.stock < 20 ? 'text-orange-500 font-medium' : 'text-green-600'">
+                          {{ pred.stock }}
+                        </span>
+                      </td>
+                      <td class="py-3 px-3 text-center text-gray-600">{{ pred.salesVolume }}</td>
+                      <td class="py-3 px-3 text-center">
+                        @if (pred.promotionSuggestion === 'YES') {
+                          <span class="px-2 py-0.5 bg-orange-100 text-orange-700 rounded-full font-bold">🏷️ YES</span>
+                        } @else {
+                          <span class="text-gray-400">—</span>
+                        }
+                      </td>
+                      <td class="py-3 px-3 text-center">
+                        <span [class]="'px-2 py-0.5 rounded-full font-bold ' + getPriceAdjustmentClass(pred.priceAdjustment)">
+                          {{ getPriceAdjustmentBadge(pred.priceAdjustment) }}
+                        </span>
+                      </td>
+                      <td class="py-3 px-3 text-center">
+                        @if (pred.recommendedPrice && pred.recommendedPrice !== pred.currentPrice) {
+                          <span class="font-semibold text-blue-600">{{ pred.recommendedPrice | number:'1.2-2' }} TND</span>
+                        } @else {
+                          <span class="text-gray-400">—</span>
+                        }
+                      </td>
+                      <td class="py-3 px-3">
+                        <span [class]="'font-semibold ' + getPricePositionClass(pred.pricePosition)">
+                          {{ pred.pricePosition === 'ABOVE_MARKET' ? '⬆️ Above' :
+                             pred.pricePosition === 'BELOW_MARKET' ? '⬇️ Below' : '✅ At avg' }}
+                        </span>
+                        <p class="text-gray-400 text-xs">avg {{ pred.avgCategoryPrice | number:'1.2-2' }} TND</p>
+                      </td>
+                    </tr>
+                  } @empty {
+                    <tr>
+                      <td colspan="8" class="py-8 text-center text-gray-400 text-sm">No products match the filter</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Footer -->
+            <div class="px-4 py-2 border-t border-gray-100 bg-gray-50 text-xs text-gray-400 text-right">
+              🤖 Random Forest (85.2%) + XGBoost (93.6%) · {{ mlAnalytics()!.analyzedProducts }} products analyzed
+            </div>
+          </div>
+
+        }
+
+        <!-- Empty state -->
+        @if (!mlLoading() && !mlAnalytics()) {
+          <div class="rounded-xl border border-dashed border-gray-300 p-12 text-center bg-white">
+            <div class="text-4xl mb-3">🤖</div>
+            <p class="text-sm font-medium text-gray-600 mb-1">AI Analytics Ready</p>
+            <p class="text-xs text-gray-400 mb-4">Click Refresh to analyze your products</p>
+            <button (click)="loadMLAnalytics()" class="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark">
+              🚀 Run Analysis
+            </button>
+          </div>
+        }
+
+      </div>
+    }
+
   </div>
 </div>
+
+<!-- ============================================================ -->
+<!-- 🤖 AI COUPON ADVISOR MODAL                                   -->
+<!-- ============================================================ -->
+@if (showCouponAI()) {
+  <div class="fixed inset-0 bg-black/50 z-50 backdrop-blur-sm flex items-center justify-center p-4"
+       (click)="closeCouponAI()">
+    <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden"
+         (click)="$event.stopPropagation()"
+         style="animation: popIn 0.22s cubic-bezier(0.34,1.56,0.64,1);">
+
+      <!-- Header -->
+      <div class="px-6 pt-6 pb-4 flex items-start justify-between"
+           style="background: linear-gradient(135deg, #f0faf5, #e6f5ee); border-bottom: 1px solid #c8e6d4;">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shadow-sm"
+               style="background: linear-gradient(135deg, #4a9e7f, #2d7a5f);">🎟️</div>
+          <div>
+            <h2 class="font-black text-lg" style="color: #1a3d2e;">AI Coupon Advisor</h2>
+            <p class="text-xs" style="color: #5a8a72;">Should you create a coupon right now?</p>
+          </div>
+        </div>
+        <button (click)="closeCouponAI()"
+                class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
+                style="background: #d4ede0; color: #2d7a5f;">✕</button>
+      </div>
+
+      <!-- Body -->
+      <div class="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+
+        @if (couponAILoading()) {
+          <div class="text-center py-10">
+            <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-4"
+                 style="background: linear-gradient(135deg, #e6f5ee, #c8e6d4);">🤖</div>
+            <div class="flex justify-center mb-3">
+              <div class="w-8 h-8 rounded-full animate-spin"
+                   style="border: 3px solid #c8e6d4; border-top-color: #4a9e7f;"></div>
+            </div>
+            <p class="font-semibold" style="color: #1a3d2e;">Analyzing your shop data...</p>
+            <p class="text-xs mt-1" style="color: #5a8a72;">Reading orders, cancellations, and active coupons</p>
+          </div>
+        }
+
+        @if (!couponAILoading() && couponAISuggestion()) {
+          <!-- Verdict card -->
+          <div class="rounded-2xl p-5 text-center"
+               [style.background]="couponAISuggestion().shouldCreate ? 'linear-gradient(135deg, #e6f5ee, #d4ede0)' : 'linear-gradient(135deg, #fff8f0, #fdebd0)'"
+               [style.border]="couponAISuggestion().shouldCreate ? '1px solid #b8dfc8' : '1px solid #f0c080'">
+            <div class="text-4xl mb-2">{{ couponAISuggestion().shouldCreate ? '✅' : '⏳' }}</div>
+            <p class="font-black text-xl mb-1"
+               [style.color]="couponAISuggestion().shouldCreate ? '#1a3d2e' : '#7a4a00'">
+              {{ couponAISuggestion().shouldCreate ? 'Yes — Create a Coupon!' : 'Not Urgent Right Now' }}
+            </p>
+            <p class="text-sm" [style.color]="couponAISuggestion().shouldCreate ? '#2d7a5f' : '#8a6000'">
+              {{ couponAISuggestion().reason }}
+            </p>
+            <!-- Urgency badge -->
+            <span class="inline-block mt-3 px-3 py-1 rounded-full text-xs font-bold"
+                  [style.background]="couponAISuggestion().urgency === 'HIGH' ? '#fee2e2' : couponAISuggestion().urgency === 'MEDIUM' ? '#fef3c7' : '#e6f5ee'"
+                  [style.color]="couponAISuggestion().urgency === 'HIGH' ? '#991b1b' : couponAISuggestion().urgency === 'MEDIUM' ? '#92400e' : '#2d7a5f'">
+              {{ couponAISuggestion().urgency === 'HIGH' ? '🔴 High Urgency' : couponAISuggestion().urgency === 'MEDIUM' ? '🟡 Medium Urgency' : '🟢 Low Urgency' }}
+            </span>
+          </div>
+
+          <!-- Suggested coupon -->
+          @if (couponAISuggestion().shouldCreate) {
+            <div class="rounded-xl p-4" style="background: #f8fdfb; border: 1px solid #e0f0e8;">
+              <p class="text-xs font-bold mb-3" style="color: #2d7a5f;">💡 Suggested Coupon</p>
+              <div class="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <p class="text-xs" style="color: #5a8a72;">Code</p>
+                  <p class="font-black text-lg" style="color: #1a3d2e;">{{ couponAISuggestion().suggestedCode }}</p>
+                </div>
+                <div>
+                  <p class="text-xs" style="color: #5a8a72;">Discount</p>
+                  <p class="font-black text-lg" style="color: #1a3d2e;">{{ couponAISuggestion().suggestedDiscount }}%</p>
+                </div>
+                <div>
+                  <p class="text-xs" style="color: #5a8a72;">Duration</p>
+                  <p class="font-semibold" style="color: #1a3d2e;">{{ couponAISuggestion().suggestedDays }} days</p>
+                </div>
+                <div>
+                  <p class="text-xs" style="color: #5a8a72;">Min Order</p>
+                  <p class="font-semibold" style="color: #1a3d2e;">
+                    {{ couponAISuggestion().suggestedMinOrder > 0 ? couponAISuggestion().suggestedMinOrder + ' TND' : 'None' }}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Expected impact -->
+            <div class="rounded-xl p-4" style="background: #f0faf5; border: 1px solid #c8e6d4;">
+              <p class="text-xs font-bold mb-1" style="color: #2d7a5f;">📈 Expected Impact</p>
+              <p class="text-sm" style="color: #1a3d2e;">{{ couponAISuggestion().expectedImpact }}</p>
+              <p class="text-xs mt-1" style="color: #5a8a72;">⏰ {{ couponAISuggestion().bestTiming }}</p>
+            </div>
+          }
+
+          <!-- Tips -->
+          <div class="rounded-xl p-4" style="background: #fffbf0; border: 1px solid #f0e0a0;">
+            <p class="text-xs font-bold mb-2" style="color: #8a6d00;">💡 Tips</p>
+            <ul class="space-y-1.5">
+              @for (tip of couponAISuggestion().tips; track $index) {
+                <li class="text-xs flex items-start gap-1.5" style="color: #5a4a00;">
+                  <span style="color: #4a9e7f;">•</span><span>{{ tip }}</span>
+                </li>
+              }
+            </ul>
+          </div>
+
+          <!-- Score bar -->
+          <div class="flex items-center gap-3 px-1">
+            <span class="text-xs shrink-0" style="color: #5a8a72;">Opportunity Score</span>
+            <div class="flex-1 rounded-full h-2" style="background: #e0f0e8;">
+              <div class="h-2 rounded-full" style="background: linear-gradient(90deg, #4a9e7f, #2d7a5f);"
+                   [style.width.%]="couponAISuggestion().score"></div>
+            </div>
+            <span class="text-xs font-bold shrink-0" style="color: #2d7a5f;">{{ couponAISuggestion().score }}/100</span>
+          </div>
+        }
+
+      </div>
+
+      <!-- Footer -->
+      <div class="px-6 py-4 flex gap-3" style="border-top: 1px solid #e0f0e8; background: #f8fdfb;">
+        @if (couponAISuggestion()?.shouldCreate) {
+          <button (click)="applyCouponAISuggestion()"
+                  class="flex-1 py-2.5 text-white text-sm font-bold rounded-xl transition-all"
+                  style="background: linear-gradient(135deg, #4a9e7f, #2d7a5f);">
+            ✅ Apply Suggestion & Create
+          </button>
+        }
+        <button (click)="analyzeCouponOpportunity()"
+                [disabled]="couponAILoading()"
+                class="px-4 py-2.5 text-sm font-bold rounded-xl disabled:opacity-40"
+                style="background: #e0f0e8; color: #2d7a5f;">
+          🔄
+        </button>
+        <button (click)="closeCouponAI()"
+                class="px-5 py-2.5 text-sm font-bold rounded-xl"
+                style="background: #f0f0f0; color: #555;">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ============================================================ -->
+<!-- 🤖 AI DISCOUNT RULE ADVISOR MODAL                            -->
+<!-- ============================================================ -->
+@if (showDiscountAI()) {
+  <div class="fixed inset-0 bg-black/50 z-50 backdrop-blur-sm flex items-center justify-center p-4"
+       (click)="closeDiscountAI()">
+    <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden"
+         (click)="$event.stopPropagation()"
+         style="animation: popIn 0.22s cubic-bezier(0.34,1.56,0.64,1);">
+
+      <!-- Header -->
+      <div class="px-6 pt-6 pb-4 flex items-start justify-between"
+           style="background: linear-gradient(135deg, #f0faf5, #e6f5ee); border-bottom: 1px solid #c8e6d4;">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shadow-sm"
+               style="background: linear-gradient(135deg, #4a9e7f, #2d7a5f);">⚡</div>
+          <div>
+            <h2 class="font-black text-lg" style="color: #1a3d2e;">AI Discount Advisor</h2>
+            <p class="text-xs" style="color: #5a8a72;">Smart automatic discount rule suggestions</p>
+          </div>
+        </div>
+        <button (click)="closeDiscountAI()"
+                class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
+                style="background: #d4ede0; color: #2d7a5f;">✕</button>
+      </div>
+
+      <!-- Body -->
+      <div class="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+
+        @if (discountAILoading()) {
+          <div class="text-center py-10">
+            <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-4"
+                 style="background: linear-gradient(135deg, #e6f5ee, #c8e6d4);">🤖</div>
+            <div class="flex justify-center mb-3">
+              <div class="w-8 h-8 rounded-full animate-spin"
+                   style="border: 3px solid #c8e6d4; border-top-color: #4a9e7f;"></div>
+            </div>
+            <p class="font-semibold" style="color: #1a3d2e;">Analyzing order patterns...</p>
+          </div>
+        }
+
+        @if (!discountAILoading() && discountAISuggestion()) {
+
+          <!-- Context summary -->
+          <div class="rounded-xl p-4 flex gap-4" style="background: #f8fdfb; border: 1px solid #e0f0e8;">
+            <div class="text-center flex-1">
+              <p class="text-2xl font-black" style="color: #1a3d2e;">{{ discountAISuggestion().avgOrderValue }} TND</p>
+              <p class="text-xs" style="color: #5a8a72;">Avg Order Value</p>
+            </div>
+            <div class="text-center flex-1">
+              <p class="text-2xl font-black" style="color: #1a3d2e;">{{ discountAISuggestion().activeRules }}</p>
+              <p class="text-xs" style="color: #5a8a72;">Active Rules</p>
+            </div>
+          </div>
+
+          <!-- Recommendation -->
+          <div class="rounded-xl p-4" style="background: #f0faf5; border: 1px solid #c8e6d4;">
+            <p class="text-xs font-bold mb-1" style="color: #2d7a5f;">🎯 AI Recommendation</p>
+            <p class="text-sm" style="color: #1a3d2e;">{{ discountAISuggestion().recommendation }}</p>
+          </div>
+
+          <!-- Suggested rules -->
+          <p class="text-xs font-bold" style="color: #2d7a5f;">💡 Suggested Rules</p>
+          @for (s of discountAISuggestion().suggestions; track $index) {
+            <div class="rounded-xl p-4" style="background: #f8fdfb; border: 1px solid #e0f0e8;">
+              <div class="flex items-start justify-between mb-2">
+                <p class="font-bold text-sm" style="color: #1a3d2e;">{{ s.ruleName }}</p>
+                <span class="px-2 py-0.5 rounded-full text-xs font-bold"
+                      style="background: #d4ede0; color: #2d7a5f;">
+                  {{ s.discountValue }}% OFF
+                </span>
+              </div>
+              <p class="text-xs mb-1" style="color: #5a8a72;">{{ s.description }}</p>
+              <p class="text-xs mb-3" style="color: #2d7a5f;">📈 {{ s.impact }}</p>
+              <p class="text-xs italic mb-3" style="color: #8aaa96;">{{ s.why }}</p>
+              <button (click)="applyDiscountAISuggestion(s)"
+                      class="w-full py-2 text-white text-xs font-bold rounded-lg transition-all"
+                      style="background: linear-gradient(135deg, #4a9e7f, #2d7a5f);">
+                ✅ Apply This Rule
+              </button>
+            </div>
+          }
+
+          <!-- Tips -->
+          <div class="rounded-xl p-4" style="background: #fffbf0; border: 1px solid #f0e0a0;">
+            <p class="text-xs font-bold mb-2" style="color: #8a6d00;">💡 Tips</p>
+            <ul class="space-y-1.5">
+              @for (tip of discountAISuggestion().tips; track $index) {
+                <li class="text-xs flex items-start gap-1.5" style="color: #5a4a00;">
+                  <span style="color: #4a9e7f;">•</span><span>{{ tip }}</span>
+                </li>
+              }
+            </ul>
+          </div>
+        }
+
+      </div>
+
+      <!-- Footer -->
+      <div class="px-6 py-4 flex gap-3" style="border-top: 1px solid #e0f0e8; background: #f8fdfb;">
+        <button (click)="analyzeDiscountOpportunity()"
+                [disabled]="discountAILoading()"
+                class="px-4 py-2.5 text-sm font-bold rounded-xl disabled:opacity-40"
+                style="background: #e0f0e8; color: #2d7a5f;">
+          🔄 Re-analyze
+        </button>
+        <button (click)="closeDiscountAI()"
+                class="flex-1 py-2.5 text-sm font-bold rounded-xl"
+                style="background: #f0f0f0; color: #555;">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+}
+

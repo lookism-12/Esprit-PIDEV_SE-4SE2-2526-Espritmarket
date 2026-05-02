@@ -27,6 +27,12 @@ import { TaxConfigService, TaxConfig } from './tax-config.service';
                   class="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-red-700 to-red-600 text-white rounded-xl font-semibold text-sm hover:from-red-800 hover:to-red-700 transition-all shadow-lg hover:shadow-red-200">
             <span class="text-lg">➕</span> Add Tax Rate
           </button>
+          <!-- 🤖 AI TVA Advisor -->
+          <button (click)="openTaxAI()"
+                  class="flex items-center gap-2 px-5 py-2.5 text-white rounded-xl font-semibold text-sm transition-all shadow-lg"
+                  style="background: linear-gradient(135deg, #4a9e7f, #2d7a5f);">
+            🤖 Help with AI
+          </button>
         </div>
       </div>
 
@@ -244,11 +250,148 @@ import { TaxConfigService, TaxConfig } from './tax-config.service';
         </div>
       </div>
     }
+
+    <!-- ============================================================ -->
+    <!-- 🤖 AI TVA ADVISOR MODAL                                      -->
+    <!-- ============================================================ -->
+    @if (showTaxAI()) {
+      <div class="fixed inset-0 bg-black/50 z-50 backdrop-blur-sm flex items-center justify-center p-4"
+           (click)="closeTaxAI()">
+        <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden"
+             (click)="$event.stopPropagation()"
+             style="animation: popIn 0.22s cubic-bezier(0.34,1.56,0.64,1);">
+
+          <div class="px-6 pt-6 pb-4 flex items-start justify-between"
+               style="background: linear-gradient(135deg, #f0faf5, #e6f5ee); border-bottom: 1px solid #c8e6d4;">
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shadow-sm"
+                   style="background: linear-gradient(135deg, #4a9e7f, #2d7a5f);">🧾</div>
+              <div>
+                <h2 class="font-black text-lg" style="color: #1a3d2e;">AI TVA Advisor</h2>
+                <p class="text-xs" style="color: #5a8a72;">Tunisia tax rates & best practices</p>
+              </div>
+            </div>
+            <button (click)="closeTaxAI()"
+                    class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
+                    style="background: #d4ede0; color: #2d7a5f;">✕</button>
+          </div>
+
+          <div class="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+
+            <!-- Current effective rate -->
+            @if (effective()) {
+              <div class="rounded-xl p-4 flex items-center gap-4"
+                   style="background: #f0faf5; border: 1px solid #c8e6d4;">
+                <div class="text-3xl">✅</div>
+                <div>
+                  <p class="text-xs font-bold" style="color: #2d7a5f;">Currently Applied</p>
+                  <p class="font-black text-xl" style="color: #1a3d2e;">
+                    {{ effective()!.name }} — {{ (effective()!.rate * 100).toFixed(0) }}%
+                  </p>
+                </div>
+              </div>
+            }
+
+            <!-- Tunisia TVA reference table -->
+            <div class="rounded-xl p-4" style="background: #f8fdfb; border: 1px solid #e0f0e8;">
+              <p class="text-xs font-bold mb-3" style="color: #2d7a5f;">📋 Tunisia Official TVA Rates (2024)</p>
+              <div class="space-y-2">
+                @for (rate of tunisiaTaxRates; track rate.name) {
+                  <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+                    <div>
+                      <p class="text-sm font-semibold" style="color: #1a3d2e;">{{ rate.name }}</p>
+                      <p class="text-xs" style="color: #5a8a72;">{{ rate.description }}</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <span class="font-black text-lg" style="color: #2d7a5f;">{{ rate.rate }}%</span>
+                      <button (click)="applyTaxRate(rate)"
+                              class="px-3 py-1 text-xs font-bold text-white rounded-lg transition-all"
+                              style="background: linear-gradient(135deg, #4a9e7f, #2d7a5f);">
+                        Apply
+                      </button>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+
+            <!-- Recommendation -->
+            <div class="rounded-xl p-4" style="background: #fffbf0; border: 1px solid #f0e0a0;">
+              <p class="text-xs font-bold mb-2" style="color: #8a6d00;">💡 AI Recommendation for E-commerce</p>
+              <p class="text-sm" style="color: #5a4a00;">
+                For a general e-commerce marketplace in Tunisia, use <strong>TVA Standard at 19%</strong>.
+                This applies to most product categories. Use 7% for food items and 0% for exported goods.
+              </p>
+            </div>
+
+            <!-- Tips -->
+            <div class="rounded-xl p-4" style="background: #f8fdfb; border: 1px solid #e0f0e8;">
+              <p class="text-xs font-bold mb-2" style="color: #2d7a5f;">✅ Best Practices</p>
+              <ul class="space-y-1.5">
+                <li class="text-xs flex items-start gap-1.5" style="color: #1a3d2e;">
+                  <span style="color: #4a9e7f;">•</span>
+                  <span>Set one rate as Default — it applies automatically at checkout</span>
+                </li>
+                <li class="text-xs flex items-start gap-1.5" style="color: #1a3d2e;">
+                  <span style="color: #4a9e7f;">•</span>
+                  <span>19% is the standard rate for electronics, clothing, and general goods</span>
+                </li>
+                <li class="text-xs flex items-start gap-1.5" style="color: #1a3d2e;">
+                  <span style="color: #4a9e7f;">•</span>
+                  <span>7% applies to food, medicine, and essential goods</span>
+                </li>
+                <li class="text-xs flex items-start gap-1.5" style="color: #1a3d2e;">
+                  <span style="color: #4a9e7f;">•</span>
+                  <span>Always display prices TTC (all taxes included) to customers</span>
+                </li>
+              </ul>
+            </div>
+
+          </div>
+
+          <div class="px-6 py-4 flex gap-3" style="border-top: 1px solid #e0f0e8; background: #f8fdfb;">
+            <button (click)="closeTaxAI()"
+                    class="flex-1 py-2.5 text-sm font-bold rounded-xl"
+                    style="background: #f0f0f0; color: #555;">Close</button>
+          </div>
+        </div>
+      </div>
+    }
   `,
-  styles: [`:host { display: block; }`]
+  styles: [`:host { display: block; }
+    @keyframes popIn {
+      from { transform: scale(0.88) translateY(16px); opacity: 0; }
+      to   { transform: scale(1) translateY(0); opacity: 1; }
+    }
+  `]
 })
 export class TaxConfigurationComponent implements OnInit {
   private svc = inject(TaxConfigService);
+
+  // ── AI TVA Advisor ───────────────────────────────────────────
+  readonly showTaxAI = signal(false);
+
+  readonly tunisiaTaxRates = [
+    { name: 'TVA Standard',   rate: 19, description: 'Electronics, clothing, general goods, services' },
+    { name: 'TVA Réduit',     rate: 13, description: 'Certain industrial products' },
+    { name: 'TVA Réduit',     rate: 7,  description: 'Food, medicine, essential goods, books' },
+    { name: 'TVA Exonéré',    rate: 0,  description: 'Exported goods, certain agricultural products' },
+  ];
+
+  openTaxAI(): void { this.showTaxAI.set(true); }
+  closeTaxAI(): void { this.showTaxAI.set(false); }
+
+  applyTaxRate(rate: { name: string; rate: number; description: string }): void {
+    this.form = {
+      name: rate.name + ' ' + rate.rate + '%',
+      ratePct: rate.rate,
+      description: rate.description,
+      active: true
+    };
+    this.editingId.set(null);
+    this.showForm.set(true);
+    this.closeTaxAI();
+  }
 
   configs = signal<TaxConfig[]>([]);
   effective = signal<TaxConfig | null>(null);
