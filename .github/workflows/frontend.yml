@@ -30,4 +30,5 @@ jobs:
         with:
           app-name: marketplace-frontend
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          package: ./frontend/dist/frontend/browser
+          package: ./frontend/dist/esprit-market-front/browser
+
