@@ -29,6 +29,6 @@ jobs:
         uses: azure/webapps-deploy@v3
         with:
           app-name: marketplace-frontend
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          publish-profile: ${{ secrets.AZURE_FRONTEND_PUBLISH_PROFILE }}
           package: ./frontend/dist/esprit-market-front/browser
 
