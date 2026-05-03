@@ -44,6 +44,79 @@ public class ForumRecommendationService {
         return getRecommendations(post, config.getDefaultTopK());
     }
 
+    /**
+     * Semantic search: finds posts semantically similar to a free-text query.
+     * Uses the AI service (all-MiniLM-L6-v2 + FAISS) when available,
+     * falls back to keyword-based matching from MongoDB.
+     */
+    public List<RecommendedForumPost> semanticSearch(String query, int topK) {
+        if (query == null || query.isBlank()) return List.of();
+
+        if (!config.isEnabled()) {
+            return keywordFallbackSearch(query, topK);
+        }
+
+        try {
+            ForumRecommendationRequest request = ForumRecommendationRequest.builder()
+                    .content(query)
+                    .topK(topK)
+                    .build();
+
+            ForumRecommendationResponse response = webClient.post()
+                    .uri("/recommend")
+                    .bodyValue(request)
+                    .retrieve()
+                    .bodyToMono(ForumRecommendationResponse.class)
+                    .timeout(Duration.ofSeconds(config.getTimeoutSeconds()))
+                    .retryWhen(Retry.backoff(config.getMaxRetries(), Duration.ofMillis(300))
+                            .filter(this::isRetryableException))
+                    .block();
+
+            if (response != null && response.getRecommendations() != null
+                    && !response.getRecommendations().isEmpty()) {
+                return response.getRecommendations();
+            }
+        } catch (Exception e) {
+            log.warn("Forum AI semantic search unavailable, using keyword fallback: {}", e.getMessage());
+        }
+
+        return keywordFallbackSearch(query, topK);
+    }
+
+    /**
+     * Simple keyword fallback when the AI service is down.
+     * Scores posts by how many query words appear in their content.
+     */
+    private List<RecommendedForumPost> keywordFallbackSearch(String query, int topK) {
+        String[] terms = query.toLowerCase().split("\\s+");
+        return postRepository.findAll().stream()
+                .filter(p -> p.getContent() != null && !p.getContent().isBlank())
+                .map(p -> {
+                    String text = p.getContent().toLowerCase();
+                    long hits = java.util.Arrays.stream(terms).filter(text::contains).count();
+                    return new Object[]{ p, hits };
+                })
+                .filter(pair -> (long) pair[1] > 0)
+                .sorted((a, b) -> Long.compare((long) b[1], (long) a[1]))
+                .limit(topK)
+                .map(pair -> {
+                    Post p = (Post) pair[0];
+                    String[] tb = splitTitle(p.getContent());
+                    double score = Math.min(1.0, (long) pair[1] * 0.15);
+                    return RecommendedForumPost.builder()
+                            .postId(toId(p.getId()))
+                            .title(tb[0])
+                            .content(tb[1])
+                            .excerpt(excerpt(tb[1]))
+                            .categoryId(toId(p.getCategoryId()))
+                            .category(resolveCategoryName(p.getCategoryId()))
+                            .score(score)
+                            .source("keyword-fallback")
+                            .build();
+                })
+                .collect(java.util.stream.Collectors.toList());
+    }
+
     public List<RecommendedForumPost> getRecommendations(Post post, int topK) {
         if (post == null || post.getContent() == null || post.getContent().isBlank()) {
             return List.of();

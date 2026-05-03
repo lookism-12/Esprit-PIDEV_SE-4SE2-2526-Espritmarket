@@ -76,30 +76,28 @@ export class CallService {
   private recordingStream: MediaStream | null = null;
 
   private readonly ICE_SERVERS: RTCIceServer[] = [
-    // ── STUN servers (discover public IP, works for same-network calls) ──
+    // ── STUN servers ──────────────────────────────────────────────────────
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:stun2.l.google.com:19302' },
-    { urls: 'stun:stun3.l.google.com:19302' },
-    // ── Free TURN relay (fallback for cross-network / strict NAT) ────────
-    // Metered free tier — works without an account
+    { urls: 'stun:global.stun.twilio.com:3478' },
+    // ── TURN relay — Open Relay Project (free, no account needed) ─────────
     {
-      urls: 'turn:a.relay.metered.ca:80',
+      urls: 'turn:openrelay.metered.ca:80',
       username: 'openrelayproject',
       credential: 'openrelayproject',
     },
     {
-      urls: 'turn:a.relay.metered.ca:80?transport=tcp',
+      urls: 'turn:openrelay.metered.ca:443',
       username: 'openrelayproject',
       credential: 'openrelayproject',
     },
     {
-      urls: 'turn:a.relay.metered.ca:443',
+      urls: 'turn:openrelay.metered.ca:443?transport=tcp',
       username: 'openrelayproject',
       credential: 'openrelayproject',
     },
     {
-      urls: 'turns:a.relay.metered.ca:443?transport=tcp',
+      urls: 'turns:openrelay.metered.ca:443',
       username: 'openrelayproject',
       credential: 'openrelayproject',
     },

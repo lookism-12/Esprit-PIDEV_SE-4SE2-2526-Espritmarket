@@ -14,4 +14,5 @@ public interface IRideRequestService {
     List<RideRequestResponseDTO> findAll();
     long countPendingRequests();
     RideRequestResponseDTO counterPrice(String requestId, Float price, String note);
+    RideRequestResponseDTO predictAcceptance(PassengerRideRequestCreationDTO dto, String email);
 }

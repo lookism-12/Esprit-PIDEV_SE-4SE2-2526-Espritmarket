@@ -150,23 +150,38 @@ export class SavClaimCreateComponent implements OnInit {
     }
 
     this.isSubmitting.set(true);
-    const claim: SavClaim = {
-      type: 'SAV',
-      ...this.form.value as any
-    };
 
-    const files = this.selectedImages().map(img => img.file);
+    const files: File[] = this.selectedImages().map(img => img.file);
 
-    this.savService.createSavClaim(claim, files).subscribe({
-      next: () => {
-        alert(this.form.value.targetType === 'DELIVERY_AGENT'
-          ? 'Your delivery agent claim has been submitted successfully'
-          : 'Your return request has been submitted successfully');
-        this.router.navigate(this.form.value.targetType === 'DELIVERY_AGENT' ? ['/sav'] : ['/sav/claims']);
+    // Step 1: upload images to Cloudinary (no-op if none selected)
+    this.savService.uploadImages(files).subscribe({
+      next: (imageUrls) => {
+        // Step 2: submit claim with real Cloudinary URLs
+        const claim: SavClaim = {
+          type: 'SAV',
+          ...(this.form.value as any),
+          imageUrls
+        };
+
+        this.savService.createSavClaim(claim).subscribe({
+          next: () => {
+            alert(this.form.value.targetType === 'DELIVERY_AGENT'
+              ? 'Your delivery agent claim has been submitted successfully'
+              : 'Your return request has been submitted successfully');
+            this.router.navigate(
+              this.form.value.targetType === 'DELIVERY_AGENT' ? ['/sav'] : ['/sav/claims']
+            );
+          },
+          error: (err) => {
+            console.error('Error creating claim:', err);
+            alert('Failed to submit return request');
+            this.isSubmitting.set(false);
+          }
+        });
       },
       error: (err) => {
-        console.error('Error creating claim:', err);
-        alert('Failed to submit return request');
+        console.error('Error uploading images:', err);
+        alert('Failed to upload images. Please try again.');
         this.isSubmitting.set(false);
       }
     });

@@ -113,6 +113,20 @@ public class BookingController {
                 return bookingService.update(new ObjectId(id), dto, user.getUsername());
         }
 
+        @PatchMapping("/{id}/accept")
+        @Operation(summary = "Accept booking", description = "Driver accepts a pending booking — sets status to CONFIRMED")
+        public BookingResponseDTO acceptBooking(@PathVariable String id,
+                        @AuthenticationPrincipal UserDetails user) {
+                return bookingService.acceptBooking(new ObjectId(id), user.getUsername());
+        }
+
+        @PatchMapping("/{id}/reject")
+        @Operation(summary = "Reject booking", description = "Driver rejects a pending booking — sets status to CANCELLED and restores seats")
+        public BookingResponseDTO rejectBooking(@PathVariable String id,
+                        @AuthenticationPrincipal UserDetails user) {
+                return bookingService.rejectBooking(new ObjectId(id), user.getUsername());
+        }
+
         @PatchMapping("/{id}/status")
         @Operation(summary = "Update booking status", description = "Updates the status of a booking")
         @ApiResponses(value = {

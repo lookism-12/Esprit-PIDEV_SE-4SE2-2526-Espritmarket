@@ -13,11 +13,14 @@ import { UserRole } from '../../models/user.model';
 import { CarpoolingMapComponent, MapRide } from '../../shared/components/carpooling-map/carpooling-map.component';
 import { ForumChatWidget } from '../../shared/components/forum-chat-widget/forum-chat-widget';
 import { ChatService } from '../../../core/services/chat.service';
+import { RideReviewModal } from '../../shared/components/ride-review-modal/ride-review-modal';
+import { RideReviewService } from '../../core/ride-review.service';
+import { PassengerEngagementWidget } from '../../shared/components/passenger-engagement-widget/passenger-engagement-widget';
 
 @Component({
   selector: 'app-carpooling',
   standalone: true,
-  imports: [CommonModule, CurrencyPipe, DatePipe, ReactiveFormsModule, RouterModule, CarpoolingMapComponent, ForumChatWidget],
+  imports: [CommonModule, CurrencyPipe, DatePipe, ReactiveFormsModule, RouterModule, CarpoolingMapComponent, ForumChatWidget, RideReviewModal, PassengerEngagementWidget],
   templateUrl: './carpooling.html',
   styleUrl: './carpooling.scss',
 })
@@ -29,6 +32,12 @@ export class Carpooling implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   readonly chatService = inject(ChatService);
+  private readonly reviewService = inject(RideReviewService);
+
+  // ── Review modal state ────────────────────────────────────────────────
+  showReviewModal = signal(false);
+  reviewRideId = signal<string | null>(null);
+  reviewOtherPartyName = signal('your ride partner');
 
   activeView = signal<'passenger' | 'driver'>('passenger');
   isLoading = signal(false);
@@ -45,6 +54,14 @@ export class Carpooling implements OnInit {
   predictionResult = signal<RideRequestResponseDTO | null>(null);
   isCheckingAI = signal(false);
   myRideRequests = signal<RideRequestResponseDTO[]>([]);
+
+  /** Driver profile ID of the currently logged-in user (null if not a driver) */
+  myDriverProfileId = signal<string | null>(null);
+  
+  // Autocomplete
+  suggestions = signal<any[]>([]);
+  activeAutocompleteField = signal<'from' | 'to' | 'reqFrom' | 'reqTo' | null>(null);
+  private searchTimeout: any = null;
 
   filteredRides = computed(() => {
     const sort = this.searchSortBy();
@@ -68,6 +85,11 @@ export class Carpooling implements OnInit {
   ngOnInit(): void {
     this.initForms();
     this.loadPassengerView();
+    // Load current user's driver profile ID so we can block self-booking
+    this.carpoolingService.getDriverProfile().subscribe({
+      next: (p) => this.myDriverProfileId.set(p.id),
+      error: () => this.myDriverProfileId.set(null)
+    });
     this.carpoolingService.getAvailableRideRequests().subscribe();
     this.route.queryParams.subscribe(params => {
       if (params['action'] === 'request') {
@@ -91,15 +113,17 @@ export class Carpooling implements OnInit {
       proposedPrice: [null, [Validators.min(0)]],
     });
 
-    // Automatically check acceptance probability when form changes
+    // Trigger AI prediction ONLY when proposedPrice has a value and form is valid
     this.createRideRequestForm.valueChanges.pipe(
-      debounceTime(300)
+      debounceTime(600),
+      distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b))
     ).subscribe((v: any) => {
-      // Trigger prediction ONLY if price is entered and form is otherwise valid
-      if (v && v.proposedPrice && v.proposedPrice > 0 && this.createRideRequestForm.valid) {
+      const hasPrice = v?.proposedPrice !== null && v?.proposedPrice !== undefined && v?.proposedPrice !== '';
+      if (hasPrice && this.createRideRequestForm.valid) {
         this.checkAcceptance();
       } else {
         this.predictionResult.set(null);
+        this.isCheckingAI.set(false);
       }
     });
 
@@ -172,7 +196,20 @@ export class Carpooling implements OnInit {
     });
   }
 
+  /** True when the logged-in user is the driver of this ride */
+  isOwnRide(ride: RideResponseDTO): boolean {
+    const myId = this.myDriverProfileId();
+    return !!myId && myId === ride.driverProfileId;
+  }
+
   openBookingPanel(rideId: string): void {
+    // Prevent driver from booking their own ride
+    const ride = this.rides().find(r => r.rideId === rideId);
+    if (ride && this.isOwnRide(ride)) {
+      this.error.set("You can't book your own ride.");
+      setTimeout(() => this.error.set(null), 3000);
+      return;
+    }
     if (!this.hasPassengerProfile()) {
       this.carpoolingService.registerAsPassenger().subscribe({
         next: () => { this.hasPassengerProfile.set(true); this.showBookingPanel.set(rideId); },
@@ -291,5 +328,54 @@ export class Carpooling implements OnInit {
     if (heroSection) {
       heroSection.style.backgroundColor = '#8B0000';
     }
+  }
+
+  // ==================== REVIEW SYSTEM ====================
+
+  openReviewModal(rideId: string, otherPartyName: string): void {
+    this.reviewRideId.set(rideId);
+    this.reviewOtherPartyName.set(otherPartyName);
+    this.showReviewModal.set(true);
+  }
+
+  closeReviewModal(): void {
+    this.showReviewModal.set(false);
+    this.reviewRideId.set(null);
+  }
+
+  // Autocomplete Logic
+  onLocationInput(val: string, field: 'from' | 'to' | 'reqFrom' | 'reqTo'): void {
+    this.activeAutocompleteField.set(field);
+    if (this.searchTimeout) clearTimeout(this.searchTimeout);
+    if (val.length < 3) { this.suggestions.set([]); return; }
+    this.searchTimeout = setTimeout(() => this.fetchSuggestions(val), 400);
+  }
+
+  private async fetchSuggestions(q: string): Promise<void> {
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q + ' Tunisia')}&format=json&limit=5&countrycodes=tn`);
+      const data = await res.json();
+      this.suggestions.set(data || []);
+    } catch { this.suggestions.set([]); }
+  }
+
+  selectSuggestion(s: any): void {
+    const name = s.display_name.split(',')[0];
+    const field = this.activeAutocompleteField();
+    if (field === 'from' || field === 'to') {
+      this.searchForm.patchValue({ [field]: name });
+    } else if (field === 'reqFrom') {
+      this.createRideRequestForm.patchValue({ departureLocation: name });
+    } else if (field === 'reqTo') {
+      this.createRideRequestForm.patchValue({ destinationLocation: name });
+    }
+    this.suggestions.set([]);
+    this.activeAutocompleteField.set(null);
+  }
+
+  onReviewSubmitted(): void {
+    this.showReviewModal.set(false);
+    this.reviewRideId.set(null);
+    this.success.set('Your review has been submitted! ⭐');
   }
 }

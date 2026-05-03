@@ -21,8 +21,12 @@ export interface ServiceDto {
   description: string;
   price: number;
   shopId: string;
+  shopName?: string;
   categoryIds: string[];
+  categoryId?: string;
   createdByUserId?: string;
+  providerName?: string;
+  providerAvatar?: string;
   status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'AVAILABLE' | 'PARTIALLY_BOOKED' | 'FULLY_BOOKED' | 'UNAVAILABLE';
   createdAt?: Date;
   updatedAt?: Date;

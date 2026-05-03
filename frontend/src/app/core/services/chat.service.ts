@@ -5,6 +5,7 @@ import SockJS from 'sockjs-client';
 import { BehaviorSubject, Observable, Subject, take, of } from 'rxjs';
 import { ChatConversation, ChatMessage, ChatMessagePayload, ChatUser } from '../models/chat.models';
 import { ChatUserService } from './chat-user.service';
+import { environment } from '../../../environment';
 
 export interface SignalPayload {
   type: 'call-request' | 'call-accept' | 'call-reject' | 'call-end' | 'offer' | 'answer' | 'ice-candidate';
@@ -63,8 +64,15 @@ export class ChatService {
   private pendingSubscriptions = new Set<string>();
   private messageQueue: ChatMessagePayload[] = [];
 
-  // ✅ Fixed: backend runs on 8090
-  private backendUrl = 'http://localhost:8090';
+  // ✅ Build backend base URL — works for both localhost and tunnel
+  private get backendUrl(): string {
+    const api = environment.apiUrl;
+    // If relative (e.g. '/api'), use current window origin so tunnel URLs work
+    if (api.startsWith('/')) {
+      return window.location.origin;
+    }
+    return api.replace('/api', '');
+  }
 
   // --- UI State Signals ---
   public isInboxOpen = signal<boolean>(false);
@@ -82,8 +90,12 @@ export class ChatService {
     (window as any).global = window; // sockjs-client polyfill
 
     this.stompClient = new Client({
-      // Use a factory so every reconnect creates a fresh SockJS socket
-      webSocketFactory: () => new SockJS(`${this.backendUrl}/ws`) as any,
+      // Force native WebSocket — SockJS XHR/iframe fallbacks are blocked by Cloudflare tunnel
+      webSocketFactory: () => {
+        const wsUrl = `${this.backendUrl}/ws/websocket`;
+        console.log(`[STOMP] Connecting via native WebSocket: ${wsUrl}`);
+        return new WebSocket(wsUrl.replace('https://', 'wss://').replace('http://', 'ws://'));
+      },
       reconnectDelay: 3000,
       heartbeatIncoming: 10000,
       heartbeatOutgoing: 10000,
@@ -98,8 +110,8 @@ export class ChatService {
         if (msg.body) this.presenceSubject.next(JSON.parse(msg.body));
       });
 
-      // Subscribe to personal signaling topic
-      this.stompClient!.subscribe(`/user/queue/signal`, (msg: Message) => {
+      // Subscribe to personal signaling topic — must match backend's ChatWebSocketController
+      this.stompClient!.subscribe(`/topic/signal/${userId}`, (msg: Message) => {
         if (msg.body) this.signalSubject.next(JSON.parse(msg.body));
       });
 
@@ -256,14 +268,14 @@ export class ChatService {
 
   getUserConversations(userId: string): Observable<ChatConversation[]> {
     if (!userId || userId === 'null') return of([]);
-    return this.http.get<ChatConversation[]>(`${this.backendUrl}/api/messenger/conversations`, {
+    return this.http.get<ChatConversation[]>(`${this.backendUrl}/api/chat/conversations`, {
       params: { userId }
     });
   }
 
   getChatHistory(conversationId: string): Observable<ChatMessage[]> {
     if (!conversationId || conversationId === 'null') return of([]);
-    return this.http.get<ChatMessage[]>(`${this.backendUrl}/api/messenger/history/${conversationId}`);
+    return this.http.get<ChatMessage[]>(`${this.backendUrl}/api/chat/history/${conversationId}`);
   }
 
   generateConversationId(userId1: string, userId2: string): string {

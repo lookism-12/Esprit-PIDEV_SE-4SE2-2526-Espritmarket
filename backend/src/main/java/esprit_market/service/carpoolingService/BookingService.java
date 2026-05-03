@@ -5,16 +5,19 @@ import esprit_market.Enum.userEnum.Role;
 import esprit_market.dto.carpooling.BookingRequestDTO;
 import esprit_market.dto.carpooling.BookingResponseDTO;
 import esprit_market.entity.carpooling.Booking;
+import esprit_market.entity.carpooling.DriverProfile;
 import esprit_market.entity.carpooling.PassengerProfile;
 import esprit_market.entity.carpooling.Ride;
 import esprit_market.entity.carpooling.RidePayment;
 import esprit_market.entity.user.User;
 import esprit_market.repository.carpoolingRepository.BookingRepository;
+import esprit_market.repository.carpoolingRepository.DriverProfileRepository;
 import esprit_market.repository.carpoolingRepository.PassengerProfileRepository;
 import esprit_market.repository.carpoolingRepository.RidePaymentRepository;
 import esprit_market.repository.carpoolingRepository.RideRepository;
 import esprit_market.repository.userRepository.UserRepository;
 import esprit_market.mappers.carpooling.BookingMapper;
+import esprit_market.service.carpoolingService.PassengerEngagementService;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
 import org.springframework.security.access.AccessDeniedException;
@@ -31,8 +34,10 @@ public class BookingService implements IBookingService {
     private final RideRepository rideRepository;
     private final RidePaymentRepository ridePaymentRepository;
     private final PassengerProfileRepository passengerProfileRepository;
+    private final DriverProfileRepository driverProfileRepository;
     private final UserRepository userRepository;
     private final BookingMapper bookingMapper;
+    private final PassengerEngagementService engagementService;
 
     @Override
     public List<BookingResponseDTO> findAll() {
@@ -134,15 +139,88 @@ public class BookingService implements IBookingService {
         Booking booking = bookingRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Booking not found"));
         booking.setStatus(status);
+        return bookingMapper.toResponseDTO(bookingRepository.save(booking));
+    }
 
-        // Part 2: Logical additions
-        if (status == BookingStatus.CONFIRMED) {
-            // Send notification to passenger
-            // notificationService.notifyUser(booking.getPassengerProfileId(), "Booking
-            // Confirmed", "Your booking has been confirmed.");
+    /**
+     * Driver accepts a PENDING booking → CONFIRMED.
+     * Verifies the caller owns the ride the booking belongs to.
+     */
+    @Override
+    @Transactional
+    public BookingResponseDTO acceptBooking(ObjectId bookingId, String driverEmail) {
+        var driver = userRepository.findByEmail(driverEmail)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        var driverProfileOpt = driverProfileRepository.findByUserId(driver.getId())
+                .orElseThrow(() -> new IllegalArgumentException("Driver profile not found"));
+
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new IllegalArgumentException("Booking not found"));
+
+        if (booking.getStatus() != BookingStatus.PENDING) {
+            throw new IllegalStateException("Only PENDING bookings can be accepted");
         }
 
-        return bookingMapper.toResponseDTO(bookingRepository.save(booking));
+        Ride ride = rideRepository.findById(booking.getRideId())
+                .orElseThrow(() -> new IllegalArgumentException("Ride not found"));
+
+        if (!ride.getDriverProfileId().equals(driverProfileOpt.getId())) {
+            throw new AccessDeniedException("Only the ride driver can accept bookings");
+        }
+
+        booking.setStatus(BookingStatus.CONFIRMED);
+        Booking saved = bookingRepository.save(booking);
+
+        // Mark payment as completed (driver confirmed the ride)
+        ridePaymentRepository.findByBookingId(saved.getId()).ifPresent(payment -> {
+            payment.setStatus(esprit_market.Enum.carpoolingEnum.PaymentStatus.COMPLETED);
+            ridePaymentRepository.save(payment);
+        });
+
+        return bookingMapper.toResponseDTO(saved);
+    }
+
+    /**
+     * Driver rejects a PENDING booking → CANCELLED.
+     * Restores the seats on the ride.
+     */
+    @Override
+    @Transactional
+    public BookingResponseDTO rejectBooking(ObjectId bookingId, String driverEmail) {
+        var driver = userRepository.findByEmail(driverEmail)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        var driverProfileOpt = driverProfileRepository.findByUserId(driver.getId())
+                .orElseThrow(() -> new IllegalArgumentException("Driver profile not found"));
+
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new IllegalArgumentException("Booking not found"));
+
+        if (booking.getStatus() != BookingStatus.PENDING) {
+            throw new IllegalStateException("Only PENDING bookings can be rejected");
+        }
+
+        Ride ride = rideRepository.findById(booking.getRideId())
+                .orElseThrow(() -> new IllegalArgumentException("Ride not found"));
+
+        if (!ride.getDriverProfileId().equals(driverProfileOpt.getId())) {
+            throw new AccessDeniedException("Only the ride driver can reject bookings");
+        }
+
+        booking.setStatus(BookingStatus.CANCELLED);
+        booking.setCancelledAt(java.time.LocalDateTime.now());
+        Booking saved = bookingRepository.save(booking);
+
+        // Restore seats
+        ride.setAvailableSeats(ride.getAvailableSeats() + booking.getNumberOfSeats());
+        rideRepository.save(ride);
+
+        // Refund payment
+        ridePaymentRepository.findByBookingId(saved.getId()).ifPresent(payment -> {
+            payment.setStatus(esprit_market.Enum.carpoolingEnum.PaymentStatus.REFUNDED);
+            ridePaymentRepository.save(payment);
+        });
+
+        return bookingMapper.toResponseDTO(saved);
     }
 
     @Transactional
@@ -198,6 +276,9 @@ public class BookingService implements IBookingService {
                 .status(esprit_market.Enum.carpoolingEnum.PaymentStatus.PENDING)
                 .build();
         ridePaymentRepository.save(payment);
+
+        // Award engagement points for booking
+        engagementService.awardBookingPoints(passengerProfileId);
 
         return bookingMapper.toResponseDTO(savedBooking);
     }

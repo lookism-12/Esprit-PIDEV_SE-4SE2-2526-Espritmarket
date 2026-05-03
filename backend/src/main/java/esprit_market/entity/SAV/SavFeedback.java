@@ -46,6 +46,14 @@ public class SavFeedback {
     private Double aiSimilarityScore; // 0-100 score
     private String aiDecision; // MATCH, UNCERTAIN, MISMATCH
     private String aiRecommendation; // AI recommendation text
+
+    /**
+     * Keyword-based urgency score computed at creation/update time.
+     * Higher = more urgent. Used to sort claims so critical ones surface first.
+     * Null-safe: treated as 0 when absent (backward compatibility).
+     */
+    @Builder.Default
+    private Integer priorityScore = 0;
     
     // Metadata
     @Builder.Default

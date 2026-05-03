@@ -8,6 +8,7 @@ import { ProductService } from '../../../core/services/product.service';
 import { CategoryService, Category } from '../../../core/services/category.service';
 import { AuthService } from '../../core/auth.service';
 import { ImageUrlHelper } from '../../../shared/utils/image-url.helper';
+import { MarketplaceMLService, MarketplaceMLInsight } from '../../core/marketplace-ml.service';
 
 @Component({
   selector: 'app-products',
@@ -22,11 +23,17 @@ export class Products implements OnInit {
   private productService = inject(ProductService);
   private categoryService = inject(CategoryService);
   private authService = inject(AuthService);
+  readonly mlService = inject(MarketplaceMLService);
+
+  // ML insights: productId → insight
+  readonly mlInsights = signal<Map<string, MarketplaceMLInsight>>(new Map());
+  readonly mlLoading = signal(false);
 
   // Auth State
   isAdmin = computed(() => this.authService.isAdmin());
   isSeller = computed(() => this.authService.isSeller());
   isAuthenticated = computed(() => this.authService.isAuthenticated());
+  readonly currentUserId = computed(() => this.authService.currentUser()?.id ?? null);
 
   // Products data
   products = signal<Product[]>([]);
@@ -187,11 +194,31 @@ export class Products implements OnInit {
     this.isLoading.set(true);
     this.productService.getAll().subscribe({
       next: (data) => {
-        this.products.set(data.map(p => this.mapProduct(p)));
+        const mapped = data.map(p => this.mapProduct(p));
+        this.products.set(mapped);
         this.isLoading.set(false);
+        // Load ML insights for all products (non-blocking)
+        this.loadMLInsights(mapped.map(p => p.id));
       },
       error: () => this.isLoading.set(false)
     });
+  }
+
+  private loadMLInsights(productIds: string[]): void {
+    if (!productIds.length) return;
+    this.mlLoading.set(true);
+    this.mlService.getBatchInsights(productIds).subscribe({
+      next: insights => {
+        this.mlInsights.set(insights);
+        this.mlLoading.set(false);
+      },
+      error: () => this.mlLoading.set(false)
+    });
+  }
+
+  /** Get ML insight for a product (used in template) */
+  getInsight(productId: string): MarketplaceMLInsight | null {
+    return this.mlInsights().get(productId) ?? null;
   }
 
   mapProduct(product: any): Product {

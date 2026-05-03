@@ -84,4 +84,22 @@ public class NotificationSettingsController {
             Authentication authentication) {
         return ResponseEntity.ok(notificationSettingsService.updateSettings(resolveUserId(authentication), dto));
     }
+
+    // ─────────────────────────────────────────────────────────────
+    // Email Notifications Toggle
+    // ─────────────────────────────────────────────────────────────
+
+    @GetMapping("/email-status")
+    @Operation(summary = "Get email notification status for the current user")
+    public ResponseEntity<Map<String, Boolean>> getEmailStatus(Authentication authentication) {
+        boolean enabled = notificationSettingsService.getEmailNotificationsStatus(resolveUserId(authentication));
+        return ResponseEntity.ok(Map.of("emailNotificationsEnabled", enabled));
+    }
+
+    @PutMapping("/toggle-email")
+    @Operation(summary = "Toggle email notifications on/off for the current user")
+    public ResponseEntity<Map<String, Boolean>> toggleEmail(Authentication authentication) {
+        boolean newState = notificationSettingsService.toggleEmailNotifications(resolveUserId(authentication));
+        return ResponseEntity.ok(Map.of("emailNotificationsEnabled", newState));
+    }
 }

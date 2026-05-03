@@ -3,6 +3,7 @@ package esprit_market.service.forumService;
 import esprit_market.dto.forum.PostRequest;
 import esprit_market.entity.forum.Post;
 import esprit_market.mappers.ForumMapper;
+import esprit_market.utils.BadWordFilter;
 import esprit_market.utils.HtmlSanitizer;
 import esprit_market.repository.forumRepository.PostRepository;
 import esprit_market.repository.forumRepository.CommentRepository;
@@ -34,6 +35,8 @@ public class PostService implements IPostService {
     public Post create(PostRequest dto) {
         Post entity = ForumMapper.toPost(dto);
         if (entity == null) return null;
+        // Filter bad words before persisting
+        entity.setContent(BadWordFilter.filter(entity.getContent()));
         return repository.save(entity);
     }
 
@@ -41,7 +44,8 @@ public class PostService implements IPostService {
     public Post update(ObjectId id, PostRequest dto) {
         Post existing = repository.findById(id).orElse(null);
         if (existing == null || dto == null) return existing;
-        if (dto.getContent() != null) existing.setContent(HtmlSanitizer.sanitize(dto.getContent()));
+        if (dto.getContent() != null)
+            existing.setContent(BadWordFilter.filter(HtmlSanitizer.sanitize(dto.getContent())));
         if (dto.getPinned() != null) existing.setPinned(dto.getPinned());
         if (dto.getApproved() != null) existing.setApproved(dto.getApproved());
         return repository.save(existing);

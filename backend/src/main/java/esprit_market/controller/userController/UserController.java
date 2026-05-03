@@ -28,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
 
@@ -72,7 +73,8 @@ public class UserController {
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .phone(request.getPhone())
-                .roles(Collections.singletonList(userRole))
+
+                .roles(new ArrayList<>(Collections.singletonList(userRole)))
                 .enabled(true)
                 // Client/Passenger fields
                 .address(request.getAddress())
@@ -193,6 +195,7 @@ public class UserController {
             String firstName = request.get("firstName") != null ? request.get("firstName").toString() : null;
             String lastName = request.get("lastName") != null ? request.get("lastName").toString() : null;
             String phone = request.get("phone") != null ? request.get("phone").toString() : null;
+
             String deliveryZone = request.get("deliveryZone") != null ? request.get("deliveryZone").toString() : null;
             String vehicleType = request.get("vehicleType") != null ? request.get("vehicleType").toString() : null;
             Double currentLatitude = parseOptionalDouble(request.get("currentLatitude"));

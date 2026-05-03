@@ -215,9 +215,12 @@ public class DashboardService implements IDashboardService {
                             }
                         } catch (Exception ignored) {}
                         return ReviewResponseDTO.builder()
-                                .id(review.getId().toHexString()).passengerName(passengerName)
-                                .rating(review.getRating()).comment(review.getComment())
-                                .createdAt(review.getCreatedAt()).build();
+                                .id(review.getId().toHexString())
+                                .reviewerName(passengerName)
+                                .rating(review.getRating())
+                                .comment(review.getComment())
+                                .createdAt(review.getCreatedAt())
+                                .build();
                     }).collect(Collectors.toList());
         } catch (Exception e) { return new ArrayList<>(); }
     }

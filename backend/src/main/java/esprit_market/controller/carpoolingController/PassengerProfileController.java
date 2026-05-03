@@ -1,10 +1,12 @@
 package esprit_market.controller.carpoolingController;
 
 import esprit_market.dto.carpooling.BookingResponseDTO;
+import esprit_market.dto.carpooling.PassengerEngagementDTO;
 import esprit_market.dto.carpooling.PassengerProfileRequestDTO;
 import esprit_market.dto.carpooling.PassengerProfileResponseDTO;
 import esprit_market.service.carpoolingService.IBookingService;
 import esprit_market.service.carpoolingService.IPassengerProfileService;
+import esprit_market.service.carpoolingService.PassengerEngagementService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
@@ -22,6 +24,7 @@ public class PassengerProfileController {
     private final IPassengerProfileService passengerProfileService;
     private final IBookingService bookingService;
     private final esprit_market.repository.userRepository.UserRepository userRepository;
+    private final PassengerEngagementService engagementService;
 
     @PostMapping
     public PassengerProfileResponseDTO create(@Valid @RequestBody PassengerProfileRequestDTO dto,
@@ -67,5 +70,10 @@ public class PassengerProfileController {
     @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
     public void delete(@PathVariable String id) {
         passengerProfileService.delete(new ObjectId(id));
+    }
+
+    @GetMapping("/me/engagement")
+    public PassengerEngagementDTO getMyEngagement(@AuthenticationPrincipal UserDetails user) {
+        return engagementService.getEngagement(user.getUsername());
     }
 }

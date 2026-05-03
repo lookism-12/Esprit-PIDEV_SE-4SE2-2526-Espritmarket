@@ -12,6 +12,7 @@ import esprit_market.mappers.notificationMapper.NotificationMapper;
 import esprit_market.repository.notificationRepository.NotificationRepository;
 import esprit_market.repository.notificationRepository.QueuedNotificationRepository;
 import esprit_market.repository.userRepository.UserRepository;
+import esprit_market.service.emailService.EmailService;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
 import org.slf4j.Logger;
@@ -36,6 +37,7 @@ public class NotificationService implements INotificationService {
     private final NotificationSettingsService notificationSettingsService;
     private final QueuedNotificationRepository queuedNotificationRepository;
     private final NotificationWebSocketService notificationWebSocketService;
+    private final EmailService emailService;
 
     private User getUser(ObjectId id) {
         return userRepository.findById(id)
@@ -43,9 +45,9 @@ public class NotificationService implements INotificationService {
     }
 
     private String fullName(User u) {
-        return (u.getFirstName() != null ? u.getFirstName() : "") +
-               " " +
-               (u.getLastName() != null ? u.getLastName() : "");
+        return (u.getFirstName() != null ? u.getFirstName() : "")
+                + " "
+                + (u.getLastName() != null ? u.getLastName() : "");
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -57,12 +59,25 @@ public class NotificationService implements INotificationService {
     public NotificationDTO createNotification(NotificationDTO dto, ObjectId userId) {
         log.info("Creating notification for user: {}", userId);
         User user = getUser(userId);
+
         Notification notification = notificationMapper.toEntity(dto);
         notification.setUserId(user.getId());
         notification.setUserFullName(fullName(user));
         notification.setCreatedAt(LocalDateTime.now());
         notification.setRead(false);
-        return notificationMapper.toDTO(notificationRepository.save(notification));
+
+        NotificationDTO saved = notificationMapper.toDTO(notificationRepository.save(notification));
+
+        // Send email after save — failure does NOT affect notification creation
+        if (user.getEmail() != null && !user.getEmail().isBlank()) {
+            emailService.sendNotificationEmail(
+                    user.getEmail(),
+                    notification.getTitle(),
+                    notification.getDescription()
+            );
+        }
+
+        return saved;
     }
 
     @Override
@@ -117,11 +132,14 @@ public class NotificationService implements INotificationService {
     @Override
     @Transactional
     public NotificationDTO broadcast(NotificationDTO dto) {
-        log.info("Broadcasting notification: {}", dto.getTitle());
+        log.info("Broadcasting notification: {} (type: {})", dto.getTitle(), dto.getType());
+        // Use the type from the DTO; fall back to EXTERNAL_NOTIFICATION if not set
+        NotificationType broadcastType = dto.getType() != null
+                ? dto.getType()
+                : NotificationType.EXTERNAL_NOTIFICATION;
         List<User> allUsers = userRepository.findAll();
         for (User user : allUsers) {
-            sendNotification(user, dto.getTitle(), dto.getDescription(),
-                    NotificationType.EXTERNAL_NOTIFICATION, null);
+            sendNotification(user, dto.getTitle(), dto.getDescription(), broadcastType, null);
         }
         return dto;
     }
@@ -196,6 +214,7 @@ public class NotificationService implements INotificationService {
 
     private void persistNotification(User user, String title, String description,
             NotificationType type, String linkedObjectId) {
+
         Notification saved = notificationRepository.save(Notification.builder()
                 .userId(user.getId())
                 .userFullName(fullName(user))
@@ -208,8 +227,13 @@ public class NotificationService implements INotificationService {
                 .createdAt(LocalDateTime.now())
                 .build());
 
-        // Push real-time over WebSocket
+        // Real-time push over WebSocket
         notificationWebSocketService.pushToUser(user.getId(), notificationMapper.toDTO(saved));
+
+        // Send email after save — failure does NOT affect notification creation
+        if (user.getEmail() != null && !user.getEmail().isBlank()) {
+            emailService.sendNotificationEmail(user.getEmail(), title, description);
+        }
     }
 
     @Transactional
@@ -222,19 +246,25 @@ public class NotificationService implements INotificationService {
 
     @Override
     @Transactional
-    public void notifyAllAdmins(String title, String description, NotificationType type, String linkedObjectId) {
+    public void notifyAllAdmins(String title, String description,
+            NotificationType type, String linkedObjectId) {
         userRepository.findAll().stream()
                 .filter(u -> u.getRoles() != null &&
                         u.getRoles().contains(esprit_market.Enum.userEnum.Role.ADMIN))
                 .forEach(admin -> sendNotification(admin, title, description, type, linkedObjectId));
     }
 
+    // ─────────────────────────────────────────────────────────────
+    // Star / Follow / Bulk ops
+    // ─────────────────────────────────────────────────────────────
+
     @Override
     @Transactional
     public NotificationDTO toggleStar(ObjectId id, ObjectId userId) {
         Notification n = notificationRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Notification", "id", id.toHexString()));
-        if (n.effectiveUserId() != null && !n.effectiveUserId().equals(userId)) throw new AccessDeniedException("Access denied");
+        if (n.effectiveUserId() != null && !n.effectiveUserId().equals(userId))
+            throw new AccessDeniedException("Access denied");
         n.setStarred(!n.isStarred());
         return notificationMapper.toDTO(notificationRepository.save(n));
     }
@@ -244,7 +274,8 @@ public class NotificationService implements INotificationService {
     public NotificationDTO toggleFollow(ObjectId id, ObjectId userId) {
         Notification n = notificationRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Notification", "id", id.toHexString()));
-        if (n.effectiveUserId() != null && !n.effectiveUserId().equals(userId)) throw new AccessDeniedException("Access denied");
+        if (n.effectiveUserId() != null && !n.effectiveUserId().equals(userId))
+            throw new AccessDeniedException("Access denied");
         n.setFollowed(!n.isFollowed());
         return notificationMapper.toDTO(notificationRepository.save(n));
     }
@@ -280,7 +311,7 @@ public class NotificationService implements INotificationService {
     }
 
     // ─────────────────────────────────────────────────────────────
-    // Coupon Broadcast Notification
+    // Coupon Broadcast
     // ─────────────────────────────────────────────────────────────
 
     @Override
@@ -288,28 +319,24 @@ public class NotificationService implements INotificationService {
     public void notifyUsersAboutCoupon(ObjectId couponId, String couponCode, String shopName,
                                        String discountInfo, LocalDateTime expiryDate) {
         log.info("Broadcasting coupon notification: {} from shop: {}", couponCode, shopName);
-        
-        // Get all active customers (users who are not ADMIN or PROVIDER)
+
         List<User> customers = userRepository.findAll().stream()
-                .filter(user -> user.getRoles() != null && 
+                .filter(user -> user.getRoles() != null &&
                        !user.getRoles().contains(esprit_market.Enum.userEnum.Role.ADMIN) &&
                        !user.getRoles().contains(esprit_market.Enum.userEnum.Role.PROVIDER))
                 .collect(Collectors.toList());
-        
+
         log.info("Sending coupon notification to {} customers", customers.size());
-        
-        String title = "🎟️ New Coupon Available";
+
+        String title       = "🎟️ New Coupon Available";
         String description = String.format("%s offers %s with code %s. Valid until %s",
-                shopName, discountInfo, couponCode,
-                expiryDate.toLocalDate().toString());
-        
+                shopName, discountInfo, couponCode, expiryDate.toLocalDate());
+
         for (User customer : customers) {
-            if (!customer.isNotificationsEnabled()) {
-                continue;
-            }
-            
-            // Check focus mode and notification settings
+            if (!customer.isNotificationsEnabled()) continue;
+
             LocalTime now = LocalTime.now();
+
             if (notificationSettingsService.isInFocusWindow(customer, now)) {
                 log.debug("Focus mode: queuing coupon notification for {}", customer.getEmail());
                 queuedNotificationRepository.save(QueuedNotification.builder()
@@ -323,12 +350,9 @@ public class NotificationService implements INotificationService {
                         .build());
                 continue;
             }
-            
-            if (!notificationSettingsService.canSendNotification(customer, "external", now)) {
-                continue;
-            }
-            
-            // Persist notification with coupon metadata
+
+            if (!notificationSettingsService.canSendNotification(customer, "external", now)) continue;
+
             Notification saved = notificationRepository.save(Notification.builder()
                     .userId(customer.getId())
                     .userFullName(fullName(customer))
@@ -344,11 +368,16 @@ public class NotificationService implements INotificationService {
                     .notificationStatus(true)
                     .createdAt(LocalDateTime.now())
                     .build());
-            
-            // Push real-time over WebSocket
+
+            // Real-time push
             notificationWebSocketService.pushToUser(customer.getId(), notificationMapper.toDTO(saved));
+
+            // Send email after save — failure does NOT affect notification creation
+            if (customer.getEmail() != null && !customer.getEmail().isBlank()) {
+                emailService.sendNotificationEmail(customer.getEmail(), title, description);
+            }
         }
-        
+
         log.info("Coupon notification broadcast completed for coupon: {}", couponCode);
     }
 }

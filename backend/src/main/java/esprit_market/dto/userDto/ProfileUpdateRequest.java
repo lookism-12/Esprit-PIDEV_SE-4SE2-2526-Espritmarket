@@ -23,4 +23,5 @@ public class ProfileUpdateRequest {
     // Pattern allows empty string or valid phone
     @Pattern(regexp = "^[0-9]{8,15}$|^$", message = "Phone must be 8-15 digits or empty")
     private String phone;
+
 }

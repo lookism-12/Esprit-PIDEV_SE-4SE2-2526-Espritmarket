@@ -14,6 +14,7 @@ import { AuthService } from '../../core/auth.service';
 import { TaxConfigService } from '../../../back/features/platform-management/tax-config.service';
 import { CardDetails, CardOtpResponse, PaymentService } from '../../core/payment.service';
 import { CartMLService, CartMLSuggestion } from '../../core/cart-ml.service';
+import { RecommendationWidget } from '../../shared/components/recommendation-widget/recommendation-widget';
 import { forkJoin, switchMap } from 'rxjs';
 
 // Enhanced cart item interface for display
@@ -43,7 +44,7 @@ type PaymentGatewayState =
 @Component({
   selector: 'app-cart',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule],
+  imports: [CommonModule, RouterLink, FormsModule, RecommendationWidget],
   templateUrl: './cart.html',
   styleUrl: './cart.scss',
 })
@@ -63,6 +64,9 @@ export class Cart implements OnInit {
   // ML Suggestions
   readonly mlSuggestions = signal<CartMLSuggestion[]>([]);
   readonly mlLoading = signal(false);
+
+  /** Current user ID for recommendation widget */
+  readonly currentUserId = computed(() => this.authService.currentUser()?.id ?? null);
 
   /** Returns the ML suggestion for a given productId, or null */
   getMLSuggestion(productId: string): CartMLSuggestion | null {
@@ -427,13 +431,18 @@ export class Cart implements OnInit {
       next: (confirmedOrder) => {
         this.isProcessingPayment.set(false);
         this.paymentGatewayState.set('SUCCEEDED');
+        const finalOrderId = confirmedOrder.id;
+        const finalStatus = confirmedOrder.paymentStatus || confirmedOrder.status || 'PAID';
         this.orderNumber.set(confirmedOrder.orderNumber || confirmedOrder.id || this.orderNumber());
-        this.orderId.set(confirmedOrder.id);
-        this.orderStatus.set(confirmedOrder.paymentStatus || confirmedOrder.status || 'PAID');
-        this.goToStep('COMPLETE');
+        this.orderId.set(finalOrderId);
+        this.orderStatus.set(finalStatus);
         this.toastService.success('Order placed successfully!', 4000);
         this.triggerConfetti();
         sessionStorage.removeItem('pendingPurchase');
+        // Navigate to the invoice / checkout-success page
+        this.router.navigate(['/checkout-success'], {
+          queryParams: { orderId: finalOrderId, status: finalStatus }
+        });
       },
       error: (error) => {
         const message = error.error?.message || 'Payment verification failed. Please try again.';
@@ -450,13 +459,18 @@ export class Cart implements OnInit {
     this.cartService.checkout(this.buildCheckoutData('CASH_ON_DELIVERY')).subscribe({
       next: (order) => {
         this.isProcessingPayment.set(false);
+        const finalOrderId = order.id;
+        const finalStatus = order.paymentStatus || order.status || 'PENDING';
         this.orderNumber.set(order.orderNumber || order.id || `ORD-${Math.floor(Math.random() * 1000000)}`);
-        this.orderId.set(order.id);
-        this.orderStatus.set(order.paymentStatus || order.status || 'PENDING');
-        this.goToStep('COMPLETE');
+        this.orderId.set(finalOrderId);
+        this.orderStatus.set(finalStatus);
         this.toastService.success('Order placed successfully! Payment on delivery.', 4000);
         this.triggerConfetti();
         sessionStorage.removeItem('pendingPurchase');
+        // Navigate to the invoice / checkout-success page
+        this.router.navigate(['/checkout-success'], {
+          queryParams: { orderId: finalOrderId, status: finalStatus }
+        });
       },
       error: (error) => {
         this.isProcessingPayment.set(false);

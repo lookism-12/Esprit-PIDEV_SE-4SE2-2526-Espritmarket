@@ -11,7 +11,6 @@ export { AdminService } from './services/admin.service';
 export { DashboardService } from './services/dashboard.service';
 export { UserService } from './services/user.service';
 export { KYCService } from './services/kyc.service';
-export { SupportService } from './services/support.service';
 export { ToastService } from './services/toast.service';
 export type { Toast } from './services/toast.service';
 export { OrderService } from './services/order.service';

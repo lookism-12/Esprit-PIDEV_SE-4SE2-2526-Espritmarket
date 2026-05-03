@@ -100,6 +100,39 @@
                     }
                 </div>
 
+                <!-- 🤖 AI Market Insight Panel -->
+                @if (mlInsight()) {
+                  <div class="rounded-2xl border p-4 flex items-start gap-3"
+                       [class.border-orange-200]="mlInsight()!.promotion_suggestion === 'YES'"
+                       [class.bg-orange-50]="mlInsight()!.promotion_suggestion === 'YES'"
+                       [class.border-red-200]="mlInsight()!.promotion_suggestion !== 'YES' && mlInsight()!.price_adjustment === 'INCREASE'"
+                       [class.bg-red-50]="mlInsight()!.promotion_suggestion !== 'YES' && mlInsight()!.price_adjustment === 'INCREASE'"
+                       [class.border-green-200]="mlInsight()!.promotion_suggestion !== 'YES' && mlInsight()!.price_adjustment === 'DECREASE'"
+                       [class.bg-green-50]="mlInsight()!.promotion_suggestion !== 'YES' && mlInsight()!.price_adjustment === 'DECREASE'"
+                       [class.border-gray-100]="mlInsight()!.promotion_suggestion !== 'YES' && mlInsight()!.price_adjustment === 'STABLE'"
+                       [class.bg-gray-50]="mlInsight()!.promotion_suggestion !== 'YES' && mlInsight()!.price_adjustment === 'STABLE'">
+                    <span class="text-2xl mt-0.5">🤖</span>
+                    <div class="flex-1 min-w-0">
+                      <div class="flex items-center gap-2 flex-wrap mb-1">
+                        <span class="text-xs font-black uppercase tracking-widest text-gray-500">AI Market Insight</span>
+                        <span class="px-2 py-0.5 rounded-full text-xs font-bold {{ mlService.getBadgeClass(mlInsight()) }}">
+                          {{ mlService.getBadgeLabel(mlInsight()) || '✅ Stable' }}
+                        </span>
+                        @if (mlInsight()!.recommended_price && mlInsight()!.recommended_price !== safeProduct().price) {
+                          <span class="text-xs font-bold text-gray-500">
+                            Suggested: <strong>{{ mlInsight()!.recommended_price | number:'1.2-2' }} TND</strong>
+                            {{ mlService.getPriceArrow(mlInsight()) }}
+                          </span>
+                        }
+                      </div>
+                      <p class="text-xs text-gray-600">{{ mlInsight()!.expected_impact }}</p>
+                      <p class="text-[10px] text-gray-400 mt-1">
+                        Confidence: {{ (mlInsight()!.confidence_promo * 100) | number:'1.0-0' }}% · {{ mlInsight()!.model_used }}
+                      </p>
+                    </div>
+                  </div>
+                }
+
                 <!-- Negotiable Badge -->
                 @if (safeProduct().isNegotiable) {
                     <div class="flex items-center gap-3 p-4 bg-accent/10 rounded-xl border border-accent/20">
@@ -469,32 +502,40 @@
             </div>
         </div>
 
-        <!-- AI Recommendations Section -->
-        <section class="mt-16">
-            <div class="flex items-center gap-3 mb-6">
-                <div class="w-1 h-8 bg-primary rounded-full"></div>
-                <h2 class="text-2xl font-black text-dark">You May Also Like</h2>
-                <span class="px-2 py-1 bg-accent/20 text-accent-dark text-xs font-bold rounded-full">AI</span>
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                @for (p of relatedProducts(); track p.id) {
-                    <div class="premium-card overflow-hidden group">
-                        <a [routerLink]="['/product', p.id]" class="block aspect-square bg-gray-100 overflow-hidden">
-                            <img [src]="p.imageUrl" [alt]="p.name" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
-                        </a>
-                        <div class="p-4">
-                            <span class="text-[10px] font-bold text-primary uppercase">{{ p.category }}</span>
-                            <a [routerLink]="['/product', p.id]">
-                                <h3 class="font-bold text-dark group-hover:text-primary transition-colors">{{ p.name }}</h3>
-                            </a>
-                            <p class="text-lg font-black text-primary mt-2">{{ p.price }} TND</p>
-                        </div>
-                    </div>
-                }
-            </div>
-        </section>
     </div>
 </div>
+
+<!-- ── Shein-style "You May Also Like" strip ─────────────────────────────── -->
+@if (currentUserId()) {
+<div class="bg-white border-t border-gray-100 py-10 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-7xl mx-auto">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-6">
+      <div class="flex items-center gap-3">
+        <div class="w-1 h-7 bg-primary rounded-full"></div>
+        <h2 class="text-xl font-black text-gray-900 tracking-tight">You May Also Like</h2>
+        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 bg-primary/10 text-primary text-[10px] font-black rounded-full uppercase tracking-widest">
+          <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+          </svg>
+          AI
+        </span>
+      </div>
+    </div>
+
+    <!-- Horizontal scroll strip -->
+    <app-recommendation-widget
+      [userId]="currentUserId()"
+      [limit]="6"
+      title=""
+      [showInfoCard]="false">
+    </app-recommendation-widget>
+
+  </div>
+</div>
+}
 
 <!-- Negotiation Modal -->
 @if (showNegotiationModal()) {
@@ -646,9 +687,43 @@
                 </div>
             </div>
 
+            <!-- 🤖 AI Prediction Result -->
+            @if (negotiationAiPrediction()) {
+                <div class="p-4 rounded-2xl border animate-fadeIn mb-4"
+                  [style.background-color]="negotiationAiPrediction()!.aiAcceptanceProbability! >= 0.65 ? 'rgba(34,197,94,0.06)' : negotiationAiPrediction()!.aiAcceptanceProbability! >= 0.35 ? 'rgba(234,179,8,0.06)' : 'rgba(239,68,68,0.06)'"
+                  [style.border-color]="negotiationAiPrediction()!.aiAcceptanceProbability! >= 0.65 ? 'rgba(34,197,94,0.25)' : negotiationAiPrediction()!.aiAcceptanceProbability! >= 0.35 ? 'rgba(234,179,8,0.25)' : 'rgba(239,68,68,0.25)'">
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="text-[10px] font-black uppercase tracking-widest flex items-center gap-2"
+                      [style.color]="negotiationAiPrediction()!.aiAcceptanceProbability! >= 0.65 ? 'rgb(22,163,74)' : negotiationAiPrediction()!.aiAcceptanceProbability! >= 0.35 ? 'rgb(161,98,7)' : 'rgb(220,38,38)'">
+                      <span>🤖</span> AI Acceptance Likelihood
+                    </span>
+                    <span class="text-xs font-black"
+                      [style.color]="negotiationAiPrediction()!.aiAcceptanceProbability! >= 0.65 ? 'rgb(22,163,74)' : negotiationAiPrediction()!.aiAcceptanceProbability! >= 0.35 ? 'rgb(161,98,7)' : 'rgb(220,38,38)'">
+                      {{ (negotiationAiPrediction()!.aiAcceptanceProbability! * 100) | number:'1.0-0' }}%
+                    </span>
+                  </div>
+                  <div class="w-full h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                    <div class="h-full rounded-full transition-all duration-700"
+                      [style.width.%]="negotiationAiPrediction()!.aiAcceptanceProbability! * 100"
+                      [style.background-color]="negotiationAiPrediction()!.aiAcceptanceProbability! >= 0.65 ? 'rgb(34,197,94)' : negotiationAiPrediction()!.aiAcceptanceProbability! >= 0.35 ? 'rgb(234,179,8)' : 'rgb(239,68,68)'">
+                    </div>
+                  </div>
+                  @if (negotiationAiPrediction()?.aiExplanation && negotiationAiPrediction()!.aiExplanation!.length > 0) {
+                    <ul class="mt-2 space-y-1">
+                      @for (reason of negotiationAiPrediction()!.aiExplanation; track $index) {
+                        <li class="text-[10px] text-gray-500 flex items-start gap-2 leading-tight">
+                          <span class="text-primary font-bold">•</span>
+                          {{ reason }}
+                        </li>
+                      }
+                    </ul>
+                  }
+                </div>
+            }
+
             <!-- API error -->
             @if (negotiationError()) {
-                <div class="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 font-semibold">
+                <div class="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 font-semibold mb-4">
                     ⚠️ {{ negotiationError() }}
                 </div>
             }

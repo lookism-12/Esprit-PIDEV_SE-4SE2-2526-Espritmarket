@@ -8,11 +8,15 @@ import { CartService } from '../../core/cart.service';
 import { NegotiationService } from '../../core/negotiation.service';
 import { AuthService } from '../../core/auth.service';
 import { ShopService } from '../../core/shop.service';
+import { RecommendationService } from '../../../core/services/recommendation.service';
 import { NegotiationStatus, NegotiationResponse, ProposalStatus } from '../../models/negotiation.model';
 import { ImageUrlHelper } from '../../../shared/utils/image-url.helper';
 import { Subscription } from 'rxjs';
-import { catchError, of } from 'rxjs';
+import { catchError, of, debounceTime, distinctUntilChanged } from 'rxjs';
 import { SavService } from '../../../back/core/services/sav.service';
+import { MarketplaceMLService, MarketplaceMLInsight } from '../../core/marketplace-ml.service';
+import { RecommendationWidget } from '../../shared/components/recommendation-widget/recommendation-widget';
+
 
 interface NegotiationProposal {
   id: string;
@@ -26,7 +30,7 @@ interface NegotiationProposal {
 @Component({
   selector: 'app-product-details',
   standalone: true,
-  imports: [CommonModule, RouterLink, ReactiveFormsModule],
+  imports: [CommonModule, RouterLink, ReactiveFormsModule, RecommendationWidget],
   templateUrl: './product-details.html',
   styleUrl: './product-details.scss',
 })
@@ -41,6 +45,14 @@ export class ProductDetails implements OnInit, OnDestroy {
   private savService = inject(SavService);
   private fb = inject(FormBuilder);
   private wsSub?: Subscription;
+  private recommendationService = inject(RecommendationService);
+
+  // ML insight for this product
+  readonly mlService = inject(MarketplaceMLService);
+  readonly mlInsight = signal<MarketplaceMLInsight | null>(null);
+
+  /** Current user ID — passed to the recommendation widget */
+  readonly currentUserId = computed(() => this.authService.currentUser()?.id ?? null);
 
   // my shop id (set if current user is a provider)
   private myShopId = signal<string | null>(null);
@@ -84,6 +96,14 @@ export class ProductDetails implements OnInit, OnDestroy {
   activeNegotiation = signal<NegotiationResponse | null>(null);
   negotiationError = signal<string | null>(null);
   error = signal<string | null>(null);
+  
+  // AI Prediction for Negotiation
+  isCheckingNegotiationAI = signal(false);
+  negotiationAiPrediction = signal<NegotiationResponse | null>(null);
+
+  // Exchange image upload
+  isUploadingExchangeImage = signal(false);
+  exchangeImagePreview = signal<string | null>(null);
 
   // Reviews data (loaded from API)
   reviews = signal<any[]>([]);
@@ -113,6 +133,11 @@ export class ProductDetails implements OnInit, OnDestroy {
     }
   }
 
+  ngOnDestroy(): void {
+    this.wsSub?.unsubscribe();
+    this.negotiationService.disconnect();
+  }
+
   private initNegotiationForm(): void {
     const price = this.product()?.price ?? 0;
     this.negotiationForm = this.fb.group({
@@ -128,15 +153,27 @@ export class ProductDetails implements OnInit, OnDestroy {
       exchangeImage: [null]
     });
 
-    // Handle conditional validation
     this.negotiationForm.get('isExchange')?.valueChanges.subscribe(isExchange => {
       const priceControl = this.negotiationForm.get('proposedPrice');
       if (isExchange) {
         priceControl?.clearValidators();
       } else {
-        priceControl?.setValidators([Validators.required, Validators.min(1), Validators.max(price > 0 ? price - 0.01 : 999999)]);
+        const p = this.product()?.price ?? 0;
+        priceControl?.setValidators([Validators.required, Validators.min(1), Validators.max(p > 0 ? p - 0.01 : 999999)]);
       }
       priceControl?.updateValueAndValidity();
+    });
+
+    // Automatically check negotiation acceptance likelihood
+    this.negotiationForm.valueChanges.pipe(
+      debounceTime(500),
+      distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr))
+    ).subscribe((v: any) => {
+      if (this.showNegotiationModal() && v && v.proposedPrice > 0 && this.negotiationForm.valid) {
+        this.checkNegotiationAcceptance();
+      } else {
+        this.negotiationAiPrediction.set(null);
+      }
     });
   }
 
@@ -174,6 +211,15 @@ export class ProductDetails implements OnInit, OnDestroy {
         };
         
         this.product.set(product);
+
+        // Track view interaction for ML recommendations (fire-and-forget)
+        this.trackInteraction(product.id, 'view');
+        
+        // Load ML insight for this product (non-blocking)
+        this.mlService.getProductInsight(product.id).subscribe({
+          next: insight => this.mlInsight.set(insight),
+          error: () => {}
+        });
         
         // Set images
         const productImages = product.images && product.images.length > 0 
@@ -296,6 +342,8 @@ export class ProductDetails implements OnInit, OnDestroy {
         this.isAddingToCart.set(false);
         this.addedToCart.set(true);
         setTimeout(() => this.addedToCart.set(false), 2000);
+        // Track add_to_cart for ML recommendations
+        this.trackInteraction(product.id, 'add_to_cart');
       },
       error: (err) => {
         this.isAddingToCart.set(false);
@@ -318,6 +366,8 @@ export class ProductDetails implements OnInit, OnDestroy {
     }).subscribe({
       next: () => {
         this.isAddingToCart.set(false);
+        // Track purchase intent for ML recommendations
+        this.trackInteraction(product.id, 'add_to_cart');
         this.router.navigate(['/cart'], { queryParams: { step: 'PLACE_ORDER' } });
       },
       error: (err) => {
@@ -326,6 +376,15 @@ export class ProductDetails implements OnInit, OnDestroy {
         console.error('❌ buyNow error:', err);
       }
     });
+  }
+
+  /**
+   * Track user interaction with the ML recommendation service (fire-and-forget)
+   */
+  private trackInteraction(productId: string, action: string): void {
+    const user = this.authService.currentUser();
+    if (!user?.id) return;
+    this.recommendationService.trackInteraction(user.id, productId, action).subscribe();
   }
 
   toggleFavorite(): void {
@@ -360,11 +419,6 @@ export class ProductDetails implements OnInit, OnDestroy {
     const p = this.product();
     if (!p || !p.originalPrice || p.originalPrice <= 0) return 0;
     return ((p.originalPrice - p.price) / p.originalPrice) * 100;
-  }
-
-  ngOnDestroy(): void {
-    this.wsSub?.unsubscribe();
-    this.negotiationService.disconnect();
   }
 
   contactSeller(): void {
@@ -416,12 +470,12 @@ export class ProductDetails implements OnInit, OnDestroy {
         exchangeImage,
         message: message || undefined
       }).subscribe({
-        next: (updated) => {
+        next: (updated: NegotiationResponse) => {
           this.activeNegotiation.set(updated);
           this.isSubmittingOffer.set(false);
           this.closeNegotiationModal();
         },
-        error: (err) => {
+        error: (err: any) => {
           this.negotiationError.set(err.error?.message || 'Failed to submit offer. Please try again.');
           this.isSubmittingOffer.set(false);
         }
@@ -437,7 +491,7 @@ export class ProductDetails implements OnInit, OnDestroy {
         exchangeImage,
         message: message || undefined
       }).subscribe({
-        next: (created) => {
+        next: (created: NegotiationResponse) => {
           this.activeNegotiation.set(created);
           this.hasActiveNegotiation.set(true);
           // Subscribe to real-time updates
@@ -448,7 +502,7 @@ export class ProductDetails implements OnInit, OnDestroy {
           this.isSubmittingOffer.set(false);
           this.closeNegotiationModal();
         },
-        error: (err) => {
+        error: (err: any) => {
           this.negotiationError.set(err.error?.message || 'Failed to create negotiation. Please try again.');
           this.isSubmittingOffer.set(false);
         }
@@ -456,11 +510,38 @@ export class ProductDetails implements OnInit, OnDestroy {
     }
   }
 
-  acceptOffer(proposalId: string): void {
+  checkNegotiationAcceptance(): void {
+    const product = this.product();
+    if (!product) return;
+
+    this.isCheckingNegotiationAI.set(true);
+    const val = this.negotiationForm.getRawValue();
+    
+    this.negotiationService.predictNegotiation({
+      productId: product.id,
+      proposedPrice: val.proposedPrice,
+      amount: val.proposedPrice,
+      quantity: val.quantity,
+      message: val.message,
+      isExchange: val.isExchange,
+      exchangeImage: val.exchangeImage
+    }).subscribe({
+      next: (res: NegotiationResponse) => {
+        this.negotiationAiPrediction.set(res);
+        this.isCheckingNegotiationAI.set(false);
+      },
+      error: () => {
+        this.isCheckingNegotiationAI.set(false);
+        this.negotiationAiPrediction.set(null);
+      }
+    });
+  }
+
+  acceptOffer(proposalId: any): void {
     const neg = this.activeNegotiation();
     if (!neg) return;
     this.negotiationService.accept(neg.id).subscribe({
-      next: (updated) => {
+      next: (updated: NegotiationResponse) => {
         this.activeNegotiation.set(updated);
         // Use the product ID from the loaded product (most reliable source)
         const productId = this.product()?.id
@@ -472,7 +553,7 @@ export class ProductDetails implements OnInit, OnDestroy {
         if (productId) {
           this.cartService.addItem({ productId, quantity: 1, negotiatedPrice }).subscribe({
             next: () => this.router.navigate(['/cart']),
-            error: (err) => {
+            error: (err: any) => {
               console.error('Failed to add negotiated item to cart:', err);
               this.router.navigate(['/cart']);
             }
@@ -487,7 +568,7 @@ export class ProductDetails implements OnInit, OnDestroy {
     const neg = this.activeNegotiation();
     if (!neg) return;
     this.negotiationService.reject(neg.id).subscribe({
-      next: (updated) => this.activeNegotiation.set(updated),
+      next: (updated: NegotiationResponse) => this.activeNegotiation.set(updated),
       error: () => {}
     });
   }
@@ -517,8 +598,6 @@ export class ProductDetails implements OnInit, OnDestroy {
     return 'Invalid value';
   }
 
-  isUploadingExchangeImage = signal(false);
-  exchangeImagePreview = signal<string | null>(null);
 
   onExchangeFileSelected(event: Event): void {
     const file = (event.target as HTMLInputElement).files?.[0];

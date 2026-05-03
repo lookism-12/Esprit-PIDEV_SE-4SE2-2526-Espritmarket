@@ -1,5 +1,5 @@
 import { Injectable, signal, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of, map, catchError } from 'rxjs';
 import { environment } from '../../../environment';
 import {
@@ -164,6 +164,19 @@ export class ForumService {
     return this.http.get<RecommendedForumPostDto[]>(
       `${this.apiUrl}/forum/posts/${id}/recommendations`
     );
+  }
+
+  /**
+   * Semantic search using all-MiniLM-L6-v2 + FAISS.
+   * Returns posts semantically similar to the query, even with different wording.
+   */
+  semanticSearch(query: string, topK: number = 8): Observable<RecommendedForumPostDto[]> {
+    const params = new HttpParams()
+      .set('q', query)
+      .set('topK', topK.toString());
+    return this.http.get<RecommendedForumPostDto[]>(
+      `${this.apiUrl}/forum/posts/search`, { params }
+    ).pipe(catchError(() => of([])));
   }
 
   createPost(request: CreatePostRequest): Observable<PostDto> {

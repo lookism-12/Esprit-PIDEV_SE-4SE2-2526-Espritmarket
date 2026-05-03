@@ -36,4 +36,5 @@ public interface INegociationService {
     NegociationResponse addProposal(String negociationId, ProposalRequest request, String senderId);
 
     void deleteNegociation(String id, String clientId);
+    NegociationResponse predictNegotiation(NegociationRequest request, String clientId);
 }

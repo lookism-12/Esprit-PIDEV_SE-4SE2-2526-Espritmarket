@@ -29,4 +29,8 @@ public class NegociationResponse {
     private List<ProposalResponse> proposals;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    
+    // AI Prediction Fields
+    private Double aiAcceptanceProbability;
+    private List<String> aiExplanation;
 }

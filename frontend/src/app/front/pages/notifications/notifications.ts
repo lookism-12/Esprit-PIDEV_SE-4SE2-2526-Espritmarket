@@ -360,9 +360,12 @@ export class Notifications implements OnInit, OnDestroy {
 
   consultNegotiation(n: NotificationResponse): void {
     if (!n.linkedObjectId) return;
-    // Navigate to profile negotiations tab
     this.router.navigate(['/profile/negotiations'], { 
       queryParams: { id: n.linkedObjectId } 
     });
+  }
+
+  downloadNegotiationPdf(negotiationId: string): void {
+    this.negotiationService.downloadPdf(negotiationId);
   }
 }

@@ -1,4 +1,93 @@
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+  <!-- ── Wheel of Fortune Popup ── -->
+  @if (showWheelPopup()) {
+    <div class="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+         (click)="dismissWheelPopup()">
+      <!-- Backdrop -->
+      <div class="absolute inset-0 bg-black/60 backdrop-blur-sm animate-[fadeIn_0.3s_ease-out]"></div>
+
+      <!-- Card -->
+      <div class="relative z-10 w-full max-w-sm bg-white rounded-3xl shadow-2xl overflow-hidden
+                  animate-[scaleIn_0.4s_cubic-bezier(0.34,1.56,0.64,1)]"
+           (click)="$event.stopPropagation()">
+
+        <!-- Gradient header -->
+        <div class="relative bg-gradient-to-br from-[#667eea] to-[#764ba2] px-6 pt-8 pb-16 text-center overflow-hidden">
+          <!-- Decorative circles -->
+          <div class="absolute -top-6 -right-6 w-28 h-28 bg-white/10 rounded-full"></div>
+          <div class="absolute -bottom-4 -left-4 w-20 h-20 bg-white/10 rounded-full"></div>
+
+          <!-- Spinning wheel emoji -->
+          <div class="text-7xl mb-3 inline-block animate-[float_3s_ease-in-out_infinite]">🎡</div>
+          <h2 class="text-2xl font-black text-white tracking-tight">Spin & Win!</h2>
+          <p class="text-white/80 text-sm mt-1 font-medium">Your daily reward is waiting</p>
+        </div>
+
+        <!-- Body -->
+        <div class="px-6 -mt-8 pb-6">
+          <!-- Reward chips -->
+          <div class="bg-white rounded-2xl shadow-lg p-4 mb-5 flex flex-wrap gap-2 justify-center">
+            <span class="px-3 py-1 bg-red-50 text-red-600 text-xs font-black rounded-full border border-red-100">🎁 50% OFF</span>
+            <span class="px-3 py-1 bg-teal-50 text-teal-600 text-xs font-black rounded-full border border-teal-100">🚚 Free Shipping</span>
+            <span class="px-3 py-1 bg-yellow-50 text-yellow-600 text-xs font-black rounded-full border border-yellow-100">⭐ 100 Points</span>
+            <span class="px-3 py-1 bg-purple-50 text-purple-600 text-xs font-black rounded-full border border-purple-100">✨ 20% OFF</span>
+          </div>
+
+          <p class="text-center text-gray-500 text-xs mb-5 font-medium">
+            One free spin every 24 hours — don't miss today's!
+          </p>
+
+          <!-- CTA -->
+          <button (click)="goToWheel()"
+            class="w-full py-4 rounded-2xl font-black text-white text-base uppercase tracking-wider
+                   bg-gradient-to-r from-[#800000] to-[#a52a2a]
+                   shadow-[0_10px_30px_rgba(128,0,0,0.35)]
+                   hover:shadow-[0_15px_40px_rgba(128,0,0,0.45)]
+                   hover:-translate-y-0.5 active:scale-95
+                   transition-all duration-200">
+            🎯 Spin Now
+          </button>
+
+          <button (click)="dismissWheelPopup()"
+            class="w-full mt-3 py-2.5 rounded-xl text-gray-400 text-sm font-semibold
+                   hover:text-gray-600 hover:bg-gray-50 transition-all">
+            Maybe later
+          </button>
+        </div>
+
+        <!-- Close -->
+        <button (click)="dismissWheelPopup()"
+          class="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/20 hover:bg-white/30
+                 flex items-center justify-center transition-all">
+          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- ── Floating Wheel Button (always visible when logged in) ── -->
+  @if (isLoggedIn()) {
+    <button (click)="goToWheel()"
+      title="Spin the Wheel of Fortune"
+      class="fixed bottom-6 right-6 z-[9000] w-16 h-16 rounded-full
+             bg-gradient-to-br from-[#667eea] to-[#764ba2]
+             shadow-[0_8px_30px_rgba(102,126,234,0.5)]
+             hover:shadow-[0_12px_40px_rgba(102,126,234,0.7)]
+             hover:scale-110 active:scale-95
+             flex items-center justify-center
+             transition-all duration-300
+             animate-[pulse_3s_ease-in-out_infinite]">
+      <span class="text-2xl">🎡</span>
+      <!-- Notification dot -->
+      <span class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white
+                   flex items-center justify-center">
+        <span class="text-[8px] font-black text-white">1</span>
+      </span>
+    </button>
+  }
     <!-- Hero Section with Sidebar -->
     <div class="flex flex-col lg:flex-row gap-0 lg:gap-12 py-10">
         <!-- Sidebar -->
@@ -183,59 +272,37 @@
     <!-- AI Recommendations Section -->
     <section class="py-16 bg-gradient-to-br from-gray-50 to-white -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8">
         <div class="max-w-7xl mx-auto">
-            <div class="flex items-center gap-3 mb-8">
-                <div class="w-5 h-10 bg-primary rounded-sm"></div>
-                <h2 class="text-2xl font-black text-text-color">Recommended For You</h2>
-                <span class="px-3 py-1 bg-accent/20 text-accent-dark text-xs font-bold rounded-full flex items-center gap-1">
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                    </svg>
-                    AI
-                </span>
-            </div>
- 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <!-- AI Info Card -->
-                <div class="premium-card p-8 bg-gradient-to-br from-primary/5 to-accent/5 border border-primary/10">
-                    <div class="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-6">
-                        <svg class="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            @if (currentUserId()) {
+                <app-recommendation-widget
+                    [userId]="currentUserId()"
+                    [limit]="4"
+                    title="Recommended For You"
+                    [showInfoCard]="true">
+                </app-recommendation-widget>
+            } @else {
+                <!-- Guest: show static featured products with AI branding -->
+                <div class="flex items-center gap-3 mb-8">
+                    <div class="w-5 h-10 bg-primary rounded-sm"></div>
+                    <h2 class="text-2xl font-black text-text-color">Trending Products</h2>
+                    <span class="px-3 py-1 bg-accent/20 text-accent-dark text-xs font-bold rounded-full flex items-center gap-1">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                         </svg>
-                    </div>
-                    <h3 class="text-xl font-bold text-text-color mb-3">Smart Recommendations</h3>
-                    <p class="text-text-muted text-sm mb-6">Our AI analyzes your preferences, browsing history, and academic interests to suggest products you'll love.</p>
-                    <ul class="space-y-3 text-sm">
-                        <li class="flex items-center gap-2 text-text-muted">
-                            <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                            </svg>
-                            Personalized suggestions
-                        </li>
-                        <li class="flex items-center gap-2 text-gray-600">
-                            <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                            </svg>
-                            Based on your department
-                        </li>
-                        <li class="flex items-center gap-2 text-gray-600">
-                            <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                            </svg>
-                            Price-matched to budget
-                        </li>
-                    </ul>
-                    <a routerLink="/profile" [queryParams]="{tab: 'preferences'}" class="mt-6 text-primary font-bold text-sm hover:underline block">
-                        Set Your Preferences →
-                    </a>
+                        AI
+                    </span>
                 </div>
-
-                <!-- Recommended Products -->
-                <div class="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                     @for (product of recommendedProducts(); track product.id) {
                         <app-product-card [product]="product"></app-product-card>
                     }
                 </div>
-            </div>
+                <div class="mt-8 text-center">
+                    <p class="text-text-muted text-sm mb-3">
+                        <a routerLink="/login" class="text-primary font-bold hover:underline">Sign in</a>
+                        to get personalized AI recommendations based on your interests.
+                    </p>
+                </div>
+            }
         </div>
     </section>
 

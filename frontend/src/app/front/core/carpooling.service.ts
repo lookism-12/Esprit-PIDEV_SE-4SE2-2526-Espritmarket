@@ -75,6 +75,19 @@ export interface PassengerDashboardDTO {
   recentBookings: BookingResponseDTO[]; myRideRequests: RideRequestResponseDTO[];
 }
 
+export interface PassengerEngagementDTO {
+  engagementPoints: number;
+  engagementTier: 'NONE' | 'BRONZE' | 'SILVER' | 'GOLD' | 'PLATINUM';
+  discountPercentage: number;
+  feedbackCount: number;
+  rideRequestCount: number;
+  bookedRidesCount: number;
+  pointsToNextTier: number;
+  nextTier: string | null;
+  progressPercent: number;
+  nextTierDiscount: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class CarpoolingService {
   private readonly http = inject(HttpClient);
@@ -221,6 +234,10 @@ export class CarpoolingService {
 
   getPassengerDashboard(): Observable<PassengerDashboardDTO> {
     return this.http.get<PassengerDashboardDTO>(`${this.base}/passenger/dashboard`);
+  }
+
+  getPassengerEngagement(): Observable<PassengerEngagementDTO> {
+    return this.http.get<PassengerEngagementDTO>(`${this.base}/passenger-profiles/me/engagement`);
   }
 
   predictRideAcceptance(payload: any): Observable<RideRequestResponseDTO> {

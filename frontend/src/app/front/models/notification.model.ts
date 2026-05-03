@@ -99,6 +99,11 @@ export interface UserNotificationSettings {
   focusModeEnd: string | null;
 }
 
+/** Email notification toggle response */
+export interface EmailNotificationStatus {
+  emailNotificationsEnabled: boolean;
+}
+
 export enum QueuedNotificationStatus {
   QUEUED = 'QUEUED',
   DELIVERED = 'DELIVERED'

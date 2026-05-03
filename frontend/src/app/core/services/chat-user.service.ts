@@ -10,7 +10,7 @@ import { ChatUser } from '../models/chat.models';
 export class ChatUserService {
   private http = inject(HttpClient);
   // ✅ Fixed port: backend runs on 8090, not 8080
-  private userApiUrl = 'http://localhost:8090/api/users';
+  private userApiUrl = '/api/users';
 
   // In-memory cache to avoid repeated HTTP calls (fixes slow popup + ID display)
   private cache = new Map<string, ChatUser>();
@@ -29,7 +29,7 @@ export class ChatUserService {
         let avatar = user.avatarUrl || user.profileImage;
         if (avatar && !avatar.startsWith('http') && !avatar.startsWith('data:')) {
           // Prefix relative paths with backend host
-          avatar = `http://localhost:8090/uploads/avatars/${avatar}`;
+          avatar = `/uploads/avatars/${avatar}`;
         }
         
         return {

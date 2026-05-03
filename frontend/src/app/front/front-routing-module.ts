@@ -59,5 +59,9 @@ export const FRONT_ROUTES: Routes = [
     {
         path: 'about',
         loadComponent: () => import('./pages/about/about').then(m => m.About)
+    },
+    {
+        path: 'wheel',
+        loadComponent: () => import('./pages/wheel-of-fortune/wheel-of-fortune').then(m => m.WheelOfFortune)
     }
 ];

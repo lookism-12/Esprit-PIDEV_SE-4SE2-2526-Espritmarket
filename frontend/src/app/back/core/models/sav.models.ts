@@ -20,6 +20,8 @@ export interface SavFeedback {
   creationDate: string;
   cartItemId: string;
   imageUrls?: string[];
+  /** Keyword-based score: negative keywords for SAV, positive for FEEDBACK. */
+  priorityScore?: number;
 }
 
 export interface SavFeedbackRequest {

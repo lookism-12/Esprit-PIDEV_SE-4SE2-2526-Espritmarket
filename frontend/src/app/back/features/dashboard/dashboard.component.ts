@@ -1,4 +1,4 @@
-﻿import { Component, OnInit, signal, computed, inject } from '@angular/core';
+import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule, NgFor } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
@@ -27,12 +27,20 @@ export class DashboardComponent implements OnInit {
   pendingPostsCount = signal(0);
   totalOrders = signal(0);
   totalShops = signal(0);
-  totalFavorites = signal(0); // ✅ NEW: Total favorites count
-  totalBookings = signal(0); // ✅ NEW: Total service bookings
-  pendingBookings = signal(0); // ✅ NEW: Pending bookings
-  recentBookings = signal<any[]>([]); // ✅ NEW: Recent bookings
+  totalFavorites = signal(0);
+  totalBookings = signal(0);
+  pendingBookings = signal(0);
+  totalRides = signal(0);
+  totalNegotiations = signal(0);
+  pendingNegotiations = signal(0);
+  activeRides = signal(0);
+  mongoStats = signal<Record<string, number>>({});
+  recentBookings = signal<any[]>([]);
   recentUsers = signal<any[]>([]);
   recentProducts = signal<any[]>([]);
+  selectedCollection = signal<string | null>(null);
+  collectionData = signal<any[]>([]);
+  isBrowsingData = signal(false);
   currentDate = signal(new Date());
   calendarMonthYear = computed(() => this.currentDate().toLocaleString('default', { month: 'long', year: 'numeric' }));
   calendarDays = computed(() => {
@@ -61,17 +69,21 @@ export class DashboardComponent implements OnInit {
       posts: this.http.get<any[]>('/api/forum/posts').pipe(catchError((err) => { console.error('❌ Failed to load posts:', err); return of([]); })),
       orders: this.http.get<any[]>('/api/orders').pipe(catchError((err) => { console.error('❌ Failed to load orders:', err); return of([]); })),
       shops: this.http.get<any[]>('/api/shops').pipe(catchError((err) => { console.error('❌ Failed to load shops:', err); return of([]); })),
-      favorites: this.http.get<any[]>('/api/admin/favoris').pipe(catchError((err) => { console.error('❌ Failed to load favorites:', err); return of([]); })), // ✅ NEW: Load favorites
-      bookings: this.http.get<any[]>('/api/service-bookings/admin/all').pipe(catchError((err) => { console.error('❌ Failed to load bookings:', err); return of([]); })) // ✅ NEW: Load service bookings
-    }).subscribe(({ users, products, posts, orders, shops, favorites, bookings }) => {
+      favorites: this.http.get<any[]>('/api/admin/favoris').pipe(catchError(() => of([]))),
+      bookings: this.http.get<any[]>('/api/service-bookings/admin/all').pipe(catchError(() => of([]))),
+      rides: this.http.get<any[]>('/api/rides').pipe(catchError(() => of([]))),
+      negotiations: this.http.get<any>('/api/negotiations/admin/all?page=0&size=1000').pipe(catchError(() => of({ content: [] }))),
+      mongo: this.http.get<Record<string, number>>('/api/admin/mongodb/stats').pipe(catchError(() => of({})))
+    }).subscribe(({ users, products, posts, orders, shops, favorites, bookings, rides, negotiations, mongo }) => {
       // ✅ SAFETY: Ensure all responses are arrays
       const safeUsers = Array.isArray(users) ? users : [];
       const safeProducts = Array.isArray(products) ? products : [];
       const safePosts = Array.isArray(posts) ? posts : [];
       const safeOrders = Array.isArray(orders) ? orders : [];
       const safeShops = Array.isArray(shops) ? shops : [];
-      const safeFavorites = Array.isArray(favorites) ? favorites : []; // ✅ NEW
-      const safeBookings = Array.isArray(bookings) ? bookings : []; // ✅ NEW
+      const safeFavorites = Array.isArray(favorites) ? favorites : [];
+      const safeBookings = Array.isArray(bookings) ? bookings : [];
+      const safeMongo = mongo || {};
 
       // ✅ NEW: Count favorites per product
       const favoritesCountMap = new Map<string, number>();
@@ -91,6 +103,9 @@ export class DashboardComponent implements OnInit {
       // ✅ NEW: Sort products by favoriteCount (most liked first)
       const sortedProducts = [...productsWithFavorites].sort((a, b) => b.favoriteCount - a.favoriteCount);
 
+      const safeRides = Array.isArray(rides) ? rides : [];
+      const negList = negotiations?.content || [];
+      
       this.totalUsers.set(safeUsers.length);
       this.totalProducts.set(safeProducts.length);
       this.pendingProducts.set(safeProducts.filter((p: any) => p.status === 'PENDING').length);
@@ -100,11 +115,18 @@ export class DashboardComponent implements OnInit {
       this.pendingPostsCount.set(safePosts.filter((p: any) => !p.approved).length);
       this.totalOrders.set(safeOrders.length);
       this.totalShops.set(safeShops.length);
-      this.totalFavorites.set(safeFavorites.length); // ✅ NEW: Set total favorites
-      this.totalBookings.set(safeBookings.length); // ✅ NEW: Set total bookings
-      this.pendingBookings.set(safeBookings.filter((b: any) => b.status === 'PENDING').length); // ✅ NEW: Set pending bookings
+      this.totalFavorites.set(safeFavorites.length);
+      this.totalBookings.set(safeBookings.length);
+      this.pendingBookings.set(safeBookings.filter((b: any) => b.status === 'PENDING').length);
+      
+      this.totalRides.set(safeRides.length);
+      this.activeRides.set(safeRides.filter((r: any) => r.status === 'IN_PROGRESS' || r.status === 'ACCEPTED').length);
+      this.totalNegotiations.set(negList.length);
+      this.pendingNegotiations.set(negList.filter((n: any) => n.status === 'PENDING' || n.status === 'IN_PROGRESS').length);
+      this.mongoStats.set(safeMongo);
+
       this.recentUsers.set([...safeUsers].reverse().slice(0, 5));
-      this.recentBookings.set([...safeBookings].reverse().slice(0, 5)); // ✅ NEW: Set recent bookings
+      this.recentBookings.set([...safeBookings].reverse().slice(0, 5));
       // ✅ MODIFIED: Show pending products sorted by favorites, or top 4 most liked if no pending
       const pendingProductsSorted = sortedProducts.filter((p: any) => p.status === 'PENDING');
       this.recentProducts.set(
@@ -113,6 +135,40 @@ export class DashboardComponent implements OnInit {
           : sortedProducts.slice(0, 4)
       );
       this.isLoading.set(false);
+    });
+  }
+  load(): void { this.ngOnInit(); }
+
+  viewCollection(name: string): void {
+    this.selectedCollection.set(name);
+    this.isBrowsingData.set(true);
+    this.http.get<any[]>(`/api/admin/mongodb/collection/${name}`).subscribe({
+      next: (data) => this.collectionData.set(data),
+      error: () => alert('Failed to fetch collection data.')
+    });
+  }
+
+  closeInspector(): void {
+    this.isBrowsingData.set(false);
+    this.selectedCollection.set(null);
+    this.collectionData.set([]);
+  }
+
+  exportSystemData(): void {
+    const confirmExport = confirm('This will retrieve and download all project data from MongoDB. Continue?');
+    if (!confirmExport) return;
+
+    this.http.get('/api/admin/mongodb/export').subscribe({
+      next: (data) => {
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `espritmarket_backup_${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+      },
+      error: () => alert('Failed to export data. Ensure you have admin privileges.')
     });
   }
   prevMonth(): void { this.currentDate.update(d => new Date(d.getFullYear(), d.getMonth() - 1, 1)); }

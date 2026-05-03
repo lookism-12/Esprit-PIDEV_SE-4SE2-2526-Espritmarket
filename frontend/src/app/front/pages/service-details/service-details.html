@@ -51,12 +51,38 @@
                         [ngClass]="getStatusClass(safeService().status)">
                     {{ safeService().status }}
                   </span>
+                  @if (safeService().durationMinutes) {
+                    <span class="px-3 py-1 bg-blue-50 text-blue-600 text-xs font-bold rounded-lg flex items-center gap-1">
+                      ⏱ {{ safeService().durationMinutes }} min
+                    </span>
+                  }
                 </div>
               </div>
               <div class="text-right">
                 <div class="text-4xl font-black text-primary mb-1">
                   {{ safeService().price }} <span class="text-lg text-secondary">TND</span>
                 </div>
+              </div>
+            </div>
+
+            <!-- Provider Info Banner -->
+            <div class="mt-5 pt-5 border-t border-gray-100 flex items-center gap-4">
+              @if (safeService().providerAvatar) {
+                <img [src]="safeService().providerAvatar" alt="provider"
+                     class="w-14 h-14 rounded-2xl object-cover border-2 border-gray-100 shadow-sm">
+              } @else {
+                <div class="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-2xl font-black text-primary border-2 border-gray-100 shadow-sm">
+                  {{ (safeService().providerName || 'P').charAt(0).toUpperCase() }}
+                </div>
+              }
+              <div>
+                <p class="text-[10px] font-bold text-secondary uppercase tracking-widest mb-0.5">Posted by</p>
+                <p class="text-base font-black text-dark">{{ safeService().providerName || 'Provider' }}</p>
+                @if (safeService().shopName) {
+                  <p class="text-sm text-secondary flex items-center gap-1 mt-0.5">
+                    🏪 {{ safeService().shopName }}
+                  </p>
+                }
               </div>
             </div>
           </div>

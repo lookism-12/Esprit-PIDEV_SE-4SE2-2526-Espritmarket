@@ -25,14 +25,16 @@ public class CorsConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Allow requests from Angular frontend - CORRECTED PORTS
-        configuration.setAllowedOrigins(Arrays.asList(
-                "http://localhost:4200",    // Angular development server
-                "http://localhost:3000",    // Alternative dev port  
-                "http://127.0.0.1:4200",    // Localhost alias
-                "http://localhost:4201",    // Alternative Angular port
-                "https://espritmarket.com", // Production domain
-                "https://www.espritmarket.com"
+        // Use origin patterns to support wildcards (trycloudflare.com subdomains)
+        // setAllowedOriginPatterns is required when using credentials + wildcards
+        configuration.setAllowedOriginPatterns(Arrays.asList(
+                "http://localhost:4200",           // Angular dev server
+                "http://localhost:3000",           // Alternative dev port
+                "http://127.0.0.1:4200",           // Localhost alias
+                "http://localhost:4201",           // Alternative Angular port
+                "https://espritmarket.com",        // Production domain
+                "https://www.espritmarket.com",
+                "https://*.trycloudflare.com"      // All Cloudflare quick tunnels (wildcard)
         ));
 
         // Allow ALL standard HTTP methods

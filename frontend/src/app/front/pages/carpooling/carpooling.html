@@ -40,13 +40,35 @@
         <div class="flex-1 relative">
           <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[#8B0000]/70">📍</span>
           <input formControlName="from" type="text" placeholder="Leaving from..."
+            (input)="onLocationInput($any($event.target).value, 'from')"
             class="w-full pl-10 pr-4 h-13 py-3.5 bg-[#FFF9F2] text-[#8B0000] placeholder-[#8B0000]/60 rounded-xl border-2 border-transparent font-bold focus:outline-none focus:border-[#E0B84A] shadow-sm transition-all">
+          @if (activeAutocompleteField() === 'from' && suggestions().length > 0) {
+            <div class="absolute top-full left-0 right-0 z-[110] bg-white rounded-xl shadow-2xl border border-gray-100 mt-2 overflow-hidden max-h-60 overflow-y-auto">
+              @for (s of suggestions(); track s.place_id) {
+                <button type="button" (click)="selectSuggestion(s)" class="w-full px-4 py-3 text-left hover:bg-gray-50 border-b border-gray-50 flex items-center gap-3">
+                  <span class="text-xs">📍</span>
+                  <span class="text-sm font-bold text-[#8B0000]">{{ s.display_name }}</span>
+                </button>
+              }
+            </div>
+          }
         </div>
         <button type="button" (click)="swapCities()" class="w-10 h-10 bg-[#FFF9F2] text-[#8B0000] border-2 border-transparent hover:border-[#E0B84A] rounded-full flex items-center justify-center font-black hover:scale-105 transition-all shrink-0 shadow-sm">⇄</button>
         <div class="flex-1 relative">
           <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[#8B0000]/70">🏁</span>
           <input formControlName="to" type="text" placeholder="Going to..."
+            (input)="onLocationInput($any($event.target).value, 'to')"
             class="w-full pl-10 pr-4 h-13 py-3.5 bg-[#FFF9F2] text-[#8B0000] placeholder-[#8B0000]/60 rounded-xl border-2 border-transparent font-bold focus:outline-none focus:border-[#E0B84A] shadow-sm transition-all">
+          @if (activeAutocompleteField() === 'to' && suggestions().length > 0) {
+            <div class="absolute top-full left-0 right-0 z-[110] bg-white rounded-xl shadow-2xl border border-gray-100 mt-2 overflow-hidden max-h-60 overflow-y-auto">
+              @for (s of suggestions(); track s.place_id) {
+                <button type="button" (click)="selectSuggestion(s)" class="w-full px-4 py-3 text-left hover:bg-gray-50 border-b border-gray-50 flex items-center gap-3">
+                  <span class="text-xs">📍</span>
+                  <span class="text-sm font-bold text-[#8B0000]">{{ s.display_name }}</span>
+                </button>
+              }
+            </div>
+          }
         </div>
         <input formControlName="date" type="date"
           class="px-4 py-3.5 bg-[#FFF9F2] text-[#8B0000] rounded-xl font-bold border-2 border-transparent focus:outline-none focus:border-[#E0B84A] shadow-sm transition-all">
@@ -73,6 +95,11 @@
 
 <!-- MAIN VIEW -->
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+<!-- Passenger Engagement & Discount Widget (full width, always visible) -->
+<div class="mb-6">
+  <app-passenger-engagement-widget />
+</div>
 
 <!-- ═══════════════════════════════════════════════════════════════
      PASSENGER VIEW — Two-column: Rides list LEFT + Map RIGHT
@@ -147,8 +174,11 @@
       } @else {
         <div class="space-y-3">
           @for (ride of filteredRides(); track ride.rideId) {
-            <div class="premium-card-gold p-6 transition-all hover:-translate-y-1 hover:shadow-2xl cursor-pointer group mb-4"
-              (click)="openBookingPanel(ride.rideId)">
+            <div class="premium-card-gold p-6 transition-all hover:-translate-y-1 hover:shadow-2xl group mb-4"
+              [class.cursor-pointer]="!isOwnRide(ride)"
+              [class.cursor-default]="isOwnRide(ride)"
+              [class.opacity-75]="isOwnRide(ride)"
+              (click)="!isOwnRide(ride) && openBookingPanel(ride.rideId)">
               <div class="flex items-start gap-4">
                 <!-- Driver avatar -->
                 <div class="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center text-white font-black text-lg shrink-0 shadow-sm">
@@ -158,6 +188,11 @@
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-2 mb-2 flex-wrap">
                     <span class="font-black text-sm" style="color:var(--text-color)">{{ ride.driverName || 'Driver' }}</span>
+                    @if (isOwnRide(ride)) {
+                      <span class="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200">
+                        🚗 Your Ride
+                      </span>
+                    }
                     @if (ride.driverRating) {
                       <span class="flex items-center gap-0.5 text-xs font-bold text-amber-500">⭐ {{ ride.driverRating | number:'1.1-1' }}</span>
                     }
@@ -200,9 +235,15 @@
               <!-- Book CTA -->
               <div class="mt-4 pt-3 border-t flex items-center justify-between" style="border-color:var(--border)">
                 <span class="text-xs font-semibold" style="color:var(--muted)">{{ ride.availableSeats }} seats available</span>
-                <button class="px-4 py-2 bg-primary hover:bg-primary-dark text-white font-bold rounded-xl text-xs transition-all active:scale-95 opacity-0 group-hover:opacity-100">
-                  Book Now →
-                </button>
+                @if (isOwnRide(ride)) {
+                  <span class="px-4 py-2 bg-amber-50 text-amber-600 font-bold rounded-xl text-xs border border-amber-200">
+                    🚗 You're the driver
+                  </span>
+                } @else {
+                  <button class="px-4 py-2 bg-primary hover:bg-primary-dark text-white font-bold rounded-xl text-xs transition-all active:scale-95 opacity-0 group-hover:opacity-100">
+                    Book Now →
+                  </button>
+                }
               </div>
             </div>
           }
@@ -380,6 +421,12 @@
                     💬 Chat with Driver
                   </button>
                 }
+                @if (req.status === 'ACCEPTED' && req.rideId) {
+                  <button (click)="openReviewModal(req.rideId, req.driverName || 'your driver')"
+                    class="px-5 py-2.5 bg-amber-400 hover:bg-amber-500 text-white font-bold rounded-xl text-sm transition-all active:scale-95 flex items-center gap-2">
+                    ⭐ Rate Ride
+                  </button>
+                }
               </div>
             </div>
           }
@@ -437,20 +484,42 @@
 
       <!-- From / To -->
       <div class="grid grid-cols-2 gap-4">
-        <div class="space-y-1">
+        <div class="space-y-1 relative">
           <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">From</label>
           <input formControlName="departureLocation" type="text" placeholder="Departure city"
+            (input)="onLocationInput($any($event.target).value, 'reqFrom')"
             class="dashboard-input"
             [class.border-red-400]="isFieldInvalid(createRideRequestForm, 'departureLocation')">
+          @if (activeAutocompleteField() === 'reqFrom' && suggestions().length > 0) {
+            <div class="absolute top-full left-0 right-0 z-[60] bg-white rounded-xl shadow-2xl border border-gray-100 mt-1 overflow-hidden max-h-48 overflow-y-auto">
+              @for (s of suggestions(); track s.place_id) {
+                <button type="button" (click)="selectSuggestion(s)" class="w-full px-4 py-2 text-left hover:bg-gray-50 border-b border-gray-50 flex items-center gap-2">
+                  <span class="text-[10px]">📍</span>
+                  <span class="text-xs font-bold text-gray-800 truncate">{{ s.display_name }}</span>
+                </button>
+              }
+            </div>
+          }
           @if (isFieldInvalid(createRideRequestForm, 'departureLocation')) {
             <p class="text-[10px] text-red-500 font-bold ml-1">Departure is required</p>
           }
         </div>
-        <div class="space-y-1">
+        <div class="space-y-1 relative">
           <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">To</label>
           <input formControlName="destinationLocation" type="text" placeholder="Destination city"
+            (input)="onLocationInput($any($event.target).value, 'reqTo')"
             class="dashboard-input"
             [class.border-red-400]="isFieldInvalid(createRideRequestForm, 'destinationLocation')">
+          @if (activeAutocompleteField() === 'reqTo' && suggestions().length > 0) {
+            <div class="absolute top-full left-0 right-0 z-[60] bg-white rounded-xl shadow-2xl border border-gray-100 mt-1 overflow-hidden max-h-48 overflow-y-auto">
+              @for (s of suggestions(); track s.place_id) {
+                <button type="button" (click)="selectSuggestion(s)" class="w-full px-4 py-2 text-left hover:bg-gray-50 border-b border-gray-50 flex items-center gap-2">
+                  <span class="text-[10px]">📍</span>
+                  <span class="text-xs font-bold text-gray-800 truncate">{{ s.display_name }}</span>
+                </button>
+              }
+            </div>
+          }
           @if (isFieldInvalid(createRideRequestForm, 'destinationLocation')) {
             <p class="text-[10px] text-red-500 font-bold ml-1">Destination is required</p>
           }
@@ -547,3 +616,14 @@
 
 <!-- CHAT WIDGET (reused from forum) -->
 <app-forum-chat-widget></app-forum-chat-widget>
+
+<!-- REVIEW MODAL -->
+@if (showReviewModal() && reviewRideId()) {
+  <app-ride-review-modal
+    [rideId]="reviewRideId()!"
+    [otherPartyName]="reviewOtherPartyName()"
+    (submitted)="onReviewSubmitted()"
+    (closed)="closeReviewModal()">
+  </app-ride-review-modal>
+}
+

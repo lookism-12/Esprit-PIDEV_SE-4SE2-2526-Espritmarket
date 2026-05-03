@@ -28,25 +28,53 @@ export class DriverDashboard implements OnInit {
   lastSelectedDistance = signal<number | null>(null);
   currentYear = new Date();
   
-  // Weekly Analytics Data (Mocked for visualization based on rides)
-  weeklyStats = signal([
-    { day: 'Mon', earnings: 45, rides: 2 },
-    { day: 'Tue', earnings: 78, rides: 4 },
-    { day: 'Wed', earnings: 32, rides: 1 },
-    { day: 'Thu', earnings: 95, rides: 5 },
-    { day: 'Fri', earnings: 110, rides: 6 },
-    { day: 'Sat', earnings: 60, rides: 3 },
-    { day: 'Sun', earnings: 85, rides: 4 }
-  ]);
+  // Monthly Earnings Trend — real data from backend, last 6 months
+  monthlyTrend = computed(() => {
+    const trend = this.stats()?.monthlyEarningsTrend || [];
+    if (trend.length === 0) return [
+      { label: 'Jan', earnings: 0 },
+      { label: 'Feb', earnings: 0 },
+      { label: 'Mar', earnings: 0 },
+      { label: 'Apr', earnings: 0 },
+      { label: 'May', earnings: 0 },
+      { label: 'Jun', earnings: 0 },
+    ];
+    const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return trend.slice(-6).map(t => {
+      // t.month is "YYYY-MM" or "MM"
+      const parts = t.month.split('-');
+      const monthIndex = parseInt(parts[parts.length - 1], 10) - 1;
+      return {
+        label: monthNames[monthIndex] ?? t.month,
+        earnings: t.earnings
+      };
+    });
+  });
+
+  maxMonthlyEarnings = computed(() => {
+    const max = Math.max(...this.monthlyTrend().map(s => s.earnings));
+    return max > 0 ? max : 1; // avoid division by zero
+  });
 
   // Ride Activity Distribution
-  rideActivity = signal([
-    { label: 'Completed', value: 65, color: '#8B0000' },
-    { label: 'Cancelled', value: 15, color: '#1a1a1a' },
-    { label: 'Pending', value: 20, color: '#BD9C7C' }
-  ]);
+  rideActivity = computed(() => {
+    const s = this.stats();
+    if (!s) return [
+      { label: 'Completed', value: 0, color: '#8B0000' },
+      { label: 'Cancelled', value: 0, color: '#1a1a1a' },
+      { label: 'Pending', value: 100, color: '#BD9C7C' }
+    ];
+    const total = (s.totalRidesCreated || 0) + (s.pendingRequests || 0);
+    if (total === 0) return [{ label: 'No Activity', value: 100, color: '#eee' }];
+    
+    return [
+      { label: 'Completed', value: Math.round(((s.totalRidesCompleted || 0) / total) * 100), color: '#8B0000' },
+      { label: 'Active/Pending', value: Math.round(((s.pendingRequests || 0) / total) * 100), color: '#BD9C7C' },
+      { label: 'Other', value: Math.max(0, 100 - Math.round(((s.totalRidesCompleted || 0) / total) * 100) - Math.round(((s.pendingRequests || 0) / total) * 100)), color: '#1a1a1a' }
+    ];
+  });
 
-  maxWeeklyEarnings = computed(() => Math.max(...this.weeklyStats().map(s => s.earnings)));
+  maxWeeklyEarnings = computed(() => this.maxMonthlyEarnings());
   
   // Stats & Core Info
   stats = signal<DriverStatsDTO | null>(null);
@@ -118,8 +146,8 @@ export class DriverDashboard implements OnInit {
     });
 
     this.driverOnboardingForm = this.fb.group({
-      licenseNumber: ['', [Validators.required, Validators.minLength(5)]],
-      licenseDocument: ['', Validators.required],
+      licenseNumber: [''],
+      licenseDocument: ['NO_DOCUMENT'],
     });
 
     this.counterForm = this.fb.group({
@@ -137,9 +165,20 @@ export class DriverDashboard implements OnInit {
         this.loadManagementData();
       },
       error: () => {
-        this.driverProfile.set(null);
-        this.showOnboarding.set(true);
-        this.isLoading.set(false);
+        // No driver profile? Register automatically without asking for license
+        this.service.registerAsDriver({
+          licenseNumber: 'NOT_REQUIRED',
+          licenseDocument: 'AUTO_REGISTERED'
+        }).subscribe({
+          next: p => {
+            this.driverProfile.set(p);
+            this.loadInitialData(); // Reload stats and data
+          },
+          error: (err) => {
+            console.error('Auto-registration failed', err);
+            this.isLoading.set(false);
+          }
+        });
       }
     });
     this.service.getAvailableRideRequests().subscribe();
@@ -223,10 +262,6 @@ export class DriverDashboard implements OnInit {
     });
   }
 
-  onOnboardingFile(event: Event): void {
-    const file = (event.target as HTMLInputElement).files?.[0];
-    if (file) this.driverOnboardingForm.patchValue({ licenseDocument: file.name });
-  }
 
   submitOnboarding(): void {
     if (this.driverOnboardingForm.invalid) return;

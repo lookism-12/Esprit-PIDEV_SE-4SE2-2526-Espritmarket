@@ -1,0 +1,165 @@
+@if (isLoading()) {
+  <!-- Skeleton loader -->
+  <div class="engagement-card skeleton-card">
+    <div class="skeleton-line w-40 h-5 mb-3"></div>
+    <div class="skeleton-line w-full h-3 mb-2"></div>
+    <div class="skeleton-line w-3/4 h-3"></div>
+  </div>
+} @else if (hasNoProfile()) {
+  <!-- No profile yet — show teaser to encourage engagement -->
+  <div class="engagement-card no-profile-card" [style.--tier-color]="'#9CA3AF'" [style.--tier-glow]="'rgba(156,163,175,0.2)'" [style.--tier-bg]="'rgba(156,163,175,0.06)'">
+    <div class="card-header no-profile-header">
+      <div class="tier-badge-row">
+        <span class="tier-emoji" style="animation:none">🌱</span>
+        <div class="tier-info">
+          <span class="tier-label">Ride Rewards</span>
+          <span class="discount-pill inactive">Start earning discounts</span>
+        </div>
+      </div>
+      <div class="earn-grid" style="margin-top:10px">
+        <div class="earn-item">
+          <span class="earn-icon">🎫</span>
+          <div><span class="earn-action">Book a ride</span><span class="earn-pts">+10 pts</span></div>
+        </div>
+        <div class="earn-item">
+          <span class="earn-icon">📋</span>
+          <div><span class="earn-action">Request a ride</span><span class="earn-pts">+5 pts</span></div>
+        </div>
+        <div class="earn-item">
+          <span class="earn-icon">⭐</span>
+          <div><span class="earn-action">Leave feedback</span><span class="earn-pts">+15 pts</span></div>
+        </div>
+      </div>
+      <p style="font-size:0.72rem;color:rgba(255,255,255,0.35);margin-top:10px;text-align:center">
+        Reach 50 pts → 🥉 Bronze (5% off) · 150 pts → 🥈 Silver (10% off) · 300 pts → 🥇 Gold (15% off)
+      </p>
+    </div>
+  </div>
+} @else if (engagement()) {
+  <div class="engagement-card" [style.--tier-color]="currentTierConfig().color" [style.--tier-glow]="currentTierConfig().glow" [style.--tier-bg]="currentTierConfig().bg">
+
+    <!-- Header row -->
+    <div class="card-header" (click)="toggleExpanded()">
+      <div class="tier-badge-row">
+        <span class="tier-emoji">{{ currentTierConfig().emoji }}</span>
+        <div class="tier-info">
+          <span class="tier-label">{{ currentTierConfig().label }} Member</span>
+          @if (engagement()!.discountPercentage > 0) {
+            <span class="discount-pill">{{ engagement()!.discountPercentage }}% OFF rides</span>
+          } @else {
+            <span class="discount-pill inactive">No discount yet</span>
+          }
+        </div>
+        <div class="points-bubble">
+          <span class="points-value">{{ engagement()!.engagementPoints }}</span>
+          <span class="points-label">pts</span>
+        </div>
+        <button class="expand-btn" [class.rotated]="isExpanded()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Progress bar to next tier -->
+      @if (engagement()!.nextTier) {
+        <div class="progress-section">
+          <div class="progress-labels">
+            <span class="progress-current">{{ currentTierConfig().label }}</span>
+            <span class="progress-next">
+              {{ tierConfig[engagement()!.nextTier!].emoji }} {{ tierConfig[engagement()!.nextTier!].label }}
+              <span class="next-discount">(+{{ engagement()!.nextTierDiscount - engagement()!.discountPercentage }}% discount)</span>
+            </span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" [style.width.%]="engagement()!.progressPercent">
+              <div class="progress-shimmer"></div>
+            </div>
+          </div>
+          <p class="progress-hint">
+            <span class="pts-needed">{{ engagement()!.pointsToNextTier }} pts</span> to unlock
+            {{ tierConfig[engagement()!.nextTier!].label }}
+          </p>
+        </div>
+      } @else {
+        <div class="platinum-banner">
+          <span>💎 You've reached the highest tier! Enjoy 20% off every ride.</span>
+        </div>
+      }
+    </div>
+
+    <!-- Expanded details -->
+    @if (isExpanded()) {
+      <div class="expanded-body">
+
+        <!-- How to earn points -->
+        <div class="earn-section">
+          <h4 class="section-title">How to earn points</h4>
+          <div class="earn-grid">
+            <div class="earn-item">
+              <span class="earn-icon">🎫</span>
+              <div>
+                <span class="earn-action">Book a ride</span>
+                <span class="earn-pts">+10 pts</span>
+              </div>
+            </div>
+            <div class="earn-item">
+              <span class="earn-icon">📋</span>
+              <div>
+                <span class="earn-action">Request a ride</span>
+                <span class="earn-pts">+5 pts</span>
+              </div>
+            </div>
+            <div class="earn-item">
+              <span class="earn-icon">⭐</span>
+              <div>
+                <span class="earn-action">Leave feedback</span>
+                <span class="earn-pts">+15 pts</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Activity stats -->
+        <div class="stats-row">
+          <div class="stat-chip">
+            <span class="stat-icon">🎫</span>
+            <span class="stat-val">{{ engagement()!.bookedRidesCount }}</span>
+            <span class="stat-lbl">Bookings</span>
+          </div>
+          <div class="stat-chip">
+            <span class="stat-icon">📋</span>
+            <span class="stat-val">{{ engagement()!.rideRequestCount }}</span>
+            <span class="stat-lbl">Requests</span>
+          </div>
+          <div class="stat-chip">
+            <span class="stat-icon">⭐</span>
+            <span class="stat-val">{{ engagement()!.feedbackCount }}</span>
+            <span class="stat-lbl">Reviews</span>
+          </div>
+        </div>
+
+        <!-- Tier roadmap -->
+        <div class="tier-roadmap">
+          <h4 class="section-title">Tier Roadmap</h4>
+          <div class="roadmap-track">
+            @for (tier of tierOrder; track tier) {
+              <div class="roadmap-node" [class.unlocked]="isTierUnlocked(tier)" [class.current]="isTierCurrent(tier)">
+                <div class="node-circle" [style.border-color]="tierConfig[tier].color" [style.box-shadow]="isTierCurrent(tier) ? '0 0 12px ' + tierConfig[tier].glow : 'none'">
+                  <span class="node-emoji">{{ tierConfig[tier].emoji }}</span>
+                </div>
+                <span class="node-label">{{ tierConfig[tier].label }}</span>
+                <span class="node-discount">{{ tier === 'NONE' ? '0%' : (tier === 'BRONZE' ? '5%' : tier === 'SILVER' ? '10%' : tier === 'GOLD' ? '15%' : '20%') }}</span>
+                @if (!$last) {
+                  <div class="roadmap-connector" [class.filled]="isTierUnlocked(tier)"></div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+
+      </div>
+    }
+
+  </div>
+}

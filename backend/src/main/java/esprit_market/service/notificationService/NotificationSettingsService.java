@@ -93,6 +93,27 @@ public class NotificationSettingsService {
         return toDTO(updated);
     }
 
+    /**
+     * Toggle email notifications on/off for the given user.
+     * Returns the new state (true = enabled).
+     */
+    @Transactional
+    public boolean toggleEmailNotifications(ObjectId userId) {
+        User user = getUser(userId);
+        boolean newState = !user.isEmailNotificationsEnabled();
+        user.setEmailNotificationsEnabled(newState);
+        userRepository.save(user);
+        log.info("Email notifications {} for user {}", newState ? "ENABLED" : "DISABLED", user.getEmail());
+        return newState;
+    }
+
+    /**
+     * Returns whether email notifications are currently enabled for the user.
+     */
+    public boolean getEmailNotificationsStatus(ObjectId userId) {
+        return getUser(userId).isEmailNotificationsEnabled();
+    }
+
     // ─────────────────────────────────────────────────────────────
     // Helpers
     // ─────────────────────────────────────────────────────────────

@@ -15,6 +15,7 @@ import esprit_market.repository.cartRepository.CouponRepository;
 import esprit_market.repository.cartRepository.DiscountRepository;
 import esprit_market.repository.marketplaceRepository.ProductRepository;
 import esprit_market.repository.userRepository.UserRepository;
+import esprit_market.service.RecommendationIntegrationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
@@ -77,6 +78,9 @@ public class CartServiceImpl implements ICartService {
     
     // --- Cart expiration service ---
     private final CartExpirationService cartExpirationService;
+    
+    // --- Recommendation integration service ---
+    private final RecommendationIntegrationService recommendationIntegration;
 
     // Tax rate applied after discount
     private static final double TAX_RATE = 0.18;
@@ -309,6 +313,13 @@ public class CartServiceImpl implements ICartService {
 
         // Recalculate totals
         recalculateCartInternal(cart.getId());
+
+        // Track "add to cart" for recommendation system
+        try {
+            recommendationIntegration.trackAddToCart(userId.toHexString(), productId.toHexString());
+        } catch (Exception e) {
+            log.warn("Failed to track add to cart for recommendation: {}", e.getMessage());
+        }
 
         return cartItemMapper.toResponse(saved);
     }

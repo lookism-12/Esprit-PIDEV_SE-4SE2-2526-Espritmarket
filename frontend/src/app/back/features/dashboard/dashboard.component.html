@@ -361,14 +361,32 @@
             <p class="text-xs opacity-90">{{ pendingBookings() }} awaiting approval</p>
           </div>
         </a>
-        <a routerLink="/admin/services/calendar" 
+        <a routerLink="/admin/carpooling" 
            class="flex items-center gap-3 p-4 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl transition-all shadow-md hover:shadow-lg hover:scale-105">
-          <span class="text-2xl">📅</span>
+          <span class="text-2xl">🚗</span>
           <div>
-            <p class="font-black text-sm">View Calendar</p>
-            <p class="text-xs opacity-90">Schedule overview</p>
+            <p class="font-black text-sm">Mobility Stats</p>
+            <p class="text-xs opacity-90">{{ totalRides() }} total rides</p>
           </div>
         </a>
+      </div>
+
+      <!-- Mobility & Negotiation Summary (NEW) -->
+      <div class="mt-6 pt-6 border-t grid grid-cols-2 gap-4" style="border-color:var(--border)">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-lg">⚖️</div>
+          <div>
+            <p class="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">Negotiations</p>
+            <p class="text-xl font-black" style="color:var(--text-color)">{{ totalNegotiations() }} <span class="text-[10px] font-bold text-amber-500">({{ pendingNegotiations() }} active)</span></p>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-lg">🗺️</div>
+          <div>
+            <p class="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">Active Rides</p>
+            <p class="text-xl font-black" style="color:var(--text-color)">{{ activeRides() }} <span class="text-[10px] font-bold text-gray-400">/ {{ totalRides() }}</span></p>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -408,7 +426,98 @@
           }
         </div>
       }
+  </div>
+
+  <!-- ══ ROW 5: MongoDB Health & Data Explorer (NEW) ══════════════════════════ -->
+  <div class="mt-5 p-6 rounded-3xl shadow-sm" style="background-color:var(--card-bg);border:1px solid var(--border)">
+    <div class="flex items-center justify-between mb-6">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center text-2xl">🍃</div>
+        <div>
+          <h3 class="font-black text-base" style="color:var(--text-color)">Database Health (MongoDB)</h3>
+          <p class="text-xs mt-0.5" style="color:var(--muted)">Real-time collection document counts</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <button (click)="exportSystemData()" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-xs font-black transition-all shadow-md flex items-center gap-2">
+          📥 Export All Data
+        </button>
+        <button (click)="load()" class="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-black transition-all shadow-md">
+          🔄 Refresh Data
+        </button>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+      @for (entry of mongoStats() | keyvalue; track entry.key) {
+        <div (click)="viewCollection(entry.key)" 
+          class="p-4 rounded-2xl border transition-all hover:shadow-md group cursor-pointer hover:border-emerald-400 active:scale-95" 
+          style="background-color:var(--subtle);border-color:var(--border)">
+          <div class="flex items-center justify-between mb-1">
+            <p class="text-[9px] font-black text-emerald-500 uppercase tracking-widest truncate">{{ entry.key }}</p>
+            <span class="opacity-0 group-hover:opacity-100 transition-opacity text-[10px]">👁️</span>
+          </div>
+          <div class="flex items-baseline gap-1">
+            <p class="text-xl font-black" style="color:var(--text-color)">{{ entry.value }}</p>
+            <p class="text-[10px]" style="color:var(--muted)">docs</p>
+          </div>
+        </div>
+      }
     </div>
   </div>
+
+  <!-- ══ DATA INSPECTOR OVERLAY (NEW) ══════════════════════════════════════════ -->
+  @if (isBrowsingData()) {
+    <div class="fixed inset-0 z-[100] flex flex-col bg-white overflow-hidden animate-slideUp">
+      <!-- Header -->
+      <div class="px-8 py-4 border-b flex items-center justify-between bg-gray-50">
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 bg-emerald-500 text-white rounded-2xl flex items-center justify-center text-2xl shadow-lg">
+            🔍
+          </div>
+          <div>
+            <h2 class="text-xl font-black text-gray-900">Inspecting: <span class="text-emerald-600 uppercase">{{ selectedCollection() }}</span></h2>
+            <p class="text-xs text-gray-500 font-bold uppercase tracking-widest">{{ collectionData().length }} documents found in MongoDB</p>
+          </div>
+        </div>
+        <button (click)="closeInspector()" class="w-12 h-12 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-gray-600 font-black transition-all active:scale-90 shadow-sm">
+          ✕
+        </button>
+      </div>
+
+      <!-- Data Grid -->
+      <div class="flex-1 overflow-auto p-8 bg-gray-100">
+        @if (collectionData().length === 0) {
+          <div class="flex flex-col items-center justify-center h-full text-center">
+            <div class="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center text-4xl mb-4 grayscale opacity-50">📁</div>
+            <h3 class="text-lg font-black text-gray-400">This collection is currently empty</h3>
+          </div>
+        } @else {
+          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            @for (doc of collectionData(); track doc.id || doc._id) {
+              <div class="bg-white rounded-[2rem] p-6 shadow-xl border border-gray-100 hover:border-emerald-300 transition-all group relative overflow-hidden">
+                <div class="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <span class="px-3 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-black rounded-full border border-emerald-100">DOC_ID: {{ doc.id || doc._id }}</span>
+                </div>
+                
+                <div class="space-y-4">
+                  @for (field of doc | keyvalue; track field.key) {
+                    @if (field.key !== 'id' && field.key !== '_id' && field.key !== 'class') {
+                      <div class="border-b border-gray-50 pb-2 last:border-0">
+                        <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">{{ field.key }}</p>
+                        <p class="text-sm font-bold text-gray-800 break-words">
+                          {{ field.value?.toString() || '—' }}
+                        </p>
+                      </div>
+                    }
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  }
 
 </div>

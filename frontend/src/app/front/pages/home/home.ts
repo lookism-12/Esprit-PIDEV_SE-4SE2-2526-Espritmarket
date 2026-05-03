@@ -1,9 +1,11 @@
 import { Component, signal, computed, OnInit, OnDestroy, inject } from '@angular/core';
 import { ProductCard } from '../../shared/components/product-card/product-card';
+import { RecommendationWidget } from '../../shared/components/recommendation-widget/recommendation-widget';
 import { Product, StockStatus, ProductCondition } from '../../models/product';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { RouterLink, Router } from '@angular/router';
 import { ProductService } from '../../core/product.service';
+import { AuthService } from '../../core/auth.service';
 
 interface Promotion {
   id: string;
@@ -19,12 +21,21 @@ interface Promotion {
 
 @Component({
   selector: 'app-home',
-  imports: [ProductCard, CommonModule, RouterLink],
+  imports: [ProductCard, RecommendationWidget, CommonModule, RouterLink],
   templateUrl: './home.html',
   styleUrl: './home.scss',
 })
 export class Home implements OnInit, OnDestroy {
   private productService = inject(ProductService);
+  private authService = inject(AuthService);
+  private router = inject(Router);
+
+  // Current logged-in user ID for recommendations
+  readonly currentUserId = computed(() => this.authService.currentUser()?.id ?? null);
+  readonly isLoggedIn = computed(() => !!this.authService.currentUser());
+
+  // Wheel of Fortune popup
+  showWheelPopup = signal(false);
 
   // Countdown timer
   countdown = signal({ days: 3, hours: 23, minutes: 19, seconds: 56 });
@@ -70,8 +81,6 @@ export class Home implements OnInit, OnDestroy {
     }
   ]);
 
-  // AI Recommendations (placeholder) - managed above
-
   // Categories
   categories = signal([
     { name: 'Electronics', icon: '💻', count: 156, slug: 'electronics' },
@@ -85,6 +94,16 @@ export class Home implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.startCountdown();
     this.loadProducts();
+
+    // Show wheel popup after 1.5s if user is logged in
+    setTimeout(() => {
+      if (this.isLoggedIn()) {
+        const dismissed = sessionStorage.getItem('wheelPopupDismissed');
+        if (!dismissed) {
+          this.showWheelPopup.set(true);
+        }
+      }
+    }, 1500);
   }
 
   ngOnDestroy(): void {
@@ -94,25 +113,18 @@ export class Home implements OnInit, OnDestroy {
   }
 
   private loadProducts(): void {
-    // Load featured products from backend
-    this.productService.getAll({ limit: 4 }).subscribe({
+    this.productService.getAll().subscribe({
       next: (products) => {
-        // Explicitly sort by newest first
         const sorted = [...products].sort((a, b) => {
           const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
           const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
           return dateB - dateA;
         });
-        
-        this.featuredProducts.set(sorted.slice(0, 4));
-        this.recommendedProducts.set(sorted.slice(4, 6));
-        console.log('✅ Home products loaded and sorted (newest first):', sorted.length);
+        this.featuredProducts.set(sorted.slice(0, 4) as any);
+        this.recommendedProducts.set(sorted.slice(4, 6) as any);
+        console.log('✅ Home products loaded:', sorted.length);
       },
-      error: (err) => {
-        console.error('❌ Failed to load home products:', err);
-        // Keep using fallback/hardcoded data if backend fails
-        this.setFallbackProducts();
-      }
+      error: () => this.setFallbackProducts()
     });
   }
 
@@ -194,24 +206,10 @@ export class Home implements OnInit, OnDestroy {
       this.countdown.update(c => {
         let { days, hours, minutes, seconds } = c;
         seconds--;
-        if (seconds < 0) {
-          seconds = 59;
-          minutes--;
-        }
-        if (minutes < 0) {
-          minutes = 59;
-          hours--;
-        }
-        if (hours < 0) {
-          hours = 23;
-          days--;
-        }
-        if (days < 0) {
-          days = 0;
-          hours = 0;
-          minutes = 0;
-          seconds = 0;
-        }
+        if (seconds < 0) { seconds = 59; minutes--; }
+        if (minutes < 0) { minutes = 59; hours--; }
+        if (hours < 0) { hours = 23; days--; }
+        if (days < 0) { days = 0; hours = 0; minutes = 0; seconds = 0; }
         return { days, hours, minutes, seconds };
       });
     }, 1000);
@@ -219,5 +217,15 @@ export class Home implements OnInit, OnDestroy {
 
   copyPromoCode(code: string): void {
     navigator.clipboard.writeText(code);
+  }
+
+  dismissWheelPopup(): void {
+    this.showWheelPopup.set(false);
+    sessionStorage.setItem('wheelPopupDismissed', '1');
+  }
+
+  goToWheel(): void {
+    this.showWheelPopup.set(false);
+    this.router.navigate(['/wheel']);
   }
 }

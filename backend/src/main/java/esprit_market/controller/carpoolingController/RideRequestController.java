@@ -69,4 +69,11 @@ public class RideRequestController {
                                                @RequestParam(required = false) String note) {
         return service.counterPrice(id, price, note);
     }
+
+    @PostMapping("/predict")
+    @Operation(summary = "Passenger: Predict ride acceptance likelihood")
+    public RideRequestResponseDTO predict(@Valid @RequestBody PassengerRideRequestCreationDTO dto,
+                                          @AuthenticationPrincipal UserDetails user) {
+        return service.predictAcceptance(dto, user.getUsername());
+    }
 }

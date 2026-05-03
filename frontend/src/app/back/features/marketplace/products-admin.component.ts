@@ -5,6 +5,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MarketplaceAdminService, ProductAdminDto, CategoryDto, ShopAdminDto } from '../../core/services/marketplace-admin.service';
 import { AdminAuthService } from '../../core/services/admin-auth.service';
 import { ImageUrlHelper } from '../../../shared/utils/image-url.helper';
+import { MarketplaceMLService, MarketplaceMLInsight } from '../../../front/core/marketplace-ml.service';
 
 @Component({
   selector: 'app-admin-products',
@@ -91,6 +92,7 @@ import { ImageUrlHelper } from '../../../shared/utils/image-url.helper';
                 <th class="px-6 py-5 text-[10px] font-black text-secondary uppercase tracking-widest">Product</th>
                 <th class="px-6 py-5 text-[10px] font-black text-secondary uppercase tracking-widest">Category</th>
                 <th class="px-6 py-5 text-[10px] font-black text-secondary uppercase tracking-widest">Price</th>
+                <th class="px-6 py-5 text-[10px] font-black text-secondary uppercase tracking-widest">🤖 AI Insight</th>
                 <th class="px-6 py-5 text-[10px] font-black text-secondary uppercase tracking-widest">Stock</th>
                 <th class="px-6 py-5 text-[10px] font-black text-secondary uppercase tracking-widest">Status</th>
                 <th class="px-6 py-5 text-[10px] font-black text-secondary uppercase tracking-widest text-right">Actions</th>
@@ -98,14 +100,14 @@ import { ImageUrlHelper } from '../../../shared/utils/image-url.helper';
             </thead>
             <tbody class="divide-y divide-gray-50">
               @if (isLoading()) {
-                <tr><td colspan="6" class="px-6 py-16 text-center">
+                <tr><td colspan="7" class="px-6 py-16 text-center">
                   <div class="flex flex-col items-center gap-3">
                     <div class="w-8 h-8 border-4 border-gray-100 border-t-primary rounded-full animate-spin"></div>
                     <p class="text-xs font-black text-secondary uppercase tracking-widest">Loading...</p>
                   </div>
                 </td></tr>
               } @else if (products().length === 0) {
-                <tr><td colspan="6" class="px-6 py-16 text-center text-secondary font-medium">No products found.</td></tr>
+                <tr><td colspan="7" class="px-6 py-16 text-center text-secondary font-medium">No products found.</td></tr>
               } @else {
                 @for (p of products(); track p.id) {
                   <tr class="hover:bg-gray-50/50 transition-colors group">
@@ -128,6 +130,25 @@ import { ImageUrlHelper } from '../../../shared/utils/image-url.helper';
                     </td>
                     <td class="px-6 py-4">
                       <p class="font-black text-primary text-sm">{{ p.price }} <span class="text-[10px]">TND</span></p>
+                    </td>
+                    <td class="px-6 py-4">
+                      @if (mlLoading() && !getInsight(p.id)) {
+                        <div class="w-4 h-4 border-2 border-gray-200 border-t-blue-400 rounded-full animate-spin"></div>
+                      } @else if (getInsight(p.id); as insight) {
+                        <div class="flex flex-col gap-1">
+                          @if (mlService.getBadgeLabel(insight)) {
+                            <span class="px-2 py-0.5 rounded-md text-[10px] font-black w-fit {{ mlService.getBadgeClass(insight) }}">
+                              {{ mlService.getBadgeLabel(insight) }}
+                            </span>
+                          }
+                          <span class="text-[10px] text-gray-400">
+                            {{ insight.price_adjustment === 'INCREASE' ? '↑ Price up' : insight.price_adjustment === 'DECREASE' ? '↓ Price down' : '→ Stable' }}
+                            · {{ (insight.confidence_promo * 100 | number:'1.0-0') }}%
+                          </span>
+                        </div>
+                      } @else {
+                        <span class="text-[10px] text-gray-300">—</span>
+                      }
                     </td>
                     <td class="px-6 py-4">
                       <div class="flex items-center gap-2">
@@ -258,6 +279,7 @@ export class ProductsAdminComponent implements OnInit {
   private authService = inject(AdminAuthService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  readonly mlService = inject(MarketplaceMLService);
 
   products = signal<ProductAdminDto[]>([]);
   categories = signal<CategoryDto[]>([]);
@@ -266,6 +288,14 @@ export class ProductsAdminComponent implements OnInit {
   isSaving = signal(false);
   showModal = signal(false);
   editingId = signal<string | null>(null);
+
+  // ML insights map: productId → insight
+  readonly mlInsights = signal<Map<string, MarketplaceMLInsight>>(new Map());
+  readonly mlLoading = signal(false);
+
+  getInsight(productId: string): MarketplaceMLInsight | null {
+    return this.mlInsights().get(productId) ?? null;
+  }
 
   // Role-based access
   isAdmin = signal(false);
@@ -364,11 +394,22 @@ export class ProductsAdminComponent implements OnInit {
         this.products.set(data);
         console.log('✅ Products signal updated. Current value:', this.products());
         this.isLoading.set(false);
+        // Load ML insights for all products (non-blocking)
+        this.loadMLInsights(data.map(p => p.id));
       },
       error: (err: any) => {
         console.error('❌ Failed to load products:', err);
         this.isLoading.set(false);
       }
+    });
+  }
+
+  private loadMLInsights(productIds: string[]): void {
+    if (!productIds.length) return;
+    this.mlLoading.set(true);
+    this.mlService.getBatchInsights(productIds).subscribe({
+      next: insights => { this.mlInsights.set(insights); this.mlLoading.set(false); },
+      error: () => this.mlLoading.set(false)
     });
   }
 

@@ -12,6 +12,8 @@ export interface SavClaim {
   problemNature: string;
   desiredSolution: string;
   priority?: string;
+  /** Keyword-based urgency score computed server-side. Higher = more urgent. */
+  priorityScore?: number;
   status?: string;
   adminResponse?: string;
   readByAdmin?: boolean;

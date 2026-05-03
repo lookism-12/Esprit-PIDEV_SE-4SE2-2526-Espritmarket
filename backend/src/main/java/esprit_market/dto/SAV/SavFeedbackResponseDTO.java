@@ -33,6 +33,12 @@ public class SavFeedbackResponseDTO {
     private Double aiSimilarityScore;
     private String aiDecision;
     private String aiRecommendation;
+
+    /**
+     * Keyword-based urgency score (computed server-side).
+     * Higher = more urgent. Null-safe on the client side (treat as 0).
+     */
+    private Integer priorityScore;
     
     // Metadata
     private LocalDateTime creationDate;

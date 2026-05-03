@@ -5,6 +5,7 @@ import esprit_market.dto.negociation.NegociationRequest;
 import esprit_market.dto.negociation.NegociationResponse;
 import esprit_market.dto.negociation.ProposalRequest;
 import esprit_market.service.negociationService.INegociationService;
+import esprit_market.service.negociationService.NegociationPdfService;
 import esprit_market.service.userService.IUserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -15,7 +16,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -32,6 +36,7 @@ public class NegociationController {
 
     private final INegociationService negociationService;
     private final IUserService userService;
+    private final NegociationPdfService pdfService;
 
     private String resolveUserId(Authentication authentication) {
         return userService.resolveUserId(authentication.getName()).toHexString();
@@ -132,5 +137,31 @@ public class NegociationController {
             Authentication authentication) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(negociationService.addProposalDirect(id, request, resolveUserId(authentication)));
+    }
+
+    @PostMapping("/predict")
+    @Operation(summary = "Predict negotiation outcome likelihood")
+    public ResponseEntity<NegociationResponse> predict(
+            @Valid @RequestBody NegociationRequest request,
+            Authentication authentication) {
+        return ResponseEntity.ok(negociationService.predictNegotiation(request, resolveUserId(authentication)));
+    }
+
+    @GetMapping("/{id}/pdf")
+    @Operation(summary = "Download negotiation contract as PDF")
+    public ResponseEntity<byte[]> downloadPdf(@PathVariable String id) {
+        NegociationResponse neg = negociationService.getNegociationById(id);
+        byte[] pdfBytes = pdfService.generateNegociationPdf(neg);
+
+        String filename = "negotiation-contract-" + id.substring(0, 8).toUpperCase() + ".pdf";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDisposition(
+            ContentDisposition.attachment().filename(filename).build()
+        );
+        headers.setContentLength(pdfBytes.length);
+
+        return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
     }
 }

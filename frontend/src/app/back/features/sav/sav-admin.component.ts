@@ -20,6 +20,8 @@ interface SavCase {
   message: string;
   status: string;
   priority?: string;
+  /** Keyword-based score from backend. Claims: negative words. Feedback: positive words. */
+  priorityScore?: number;
   reason?: string;
   problemNature?: string;
   desiredSolution?: string;
@@ -226,6 +228,38 @@ export class SavAdminComponent implements OnInit {
     return 'bg-gray-50 text-gray-600 border-gray-100';
   }
 
+  /**
+   * Badge class driven by the numeric priorityScore.
+   * Claims:   high score = urgent/negative → red
+   * Feedback: high score = enthusiastic/positive → emerald
+   */
+  getPriorityScoreBadgeClass(item: SavCase): string {
+    const score = item.priorityScore ?? 0;
+    if (item.source === 'FEEDBACK') {
+      // Positive scale: high = great review
+      if (score >= 5) return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+      if (score >= 2) return 'bg-teal-50 text-teal-700 border-teal-100';
+      return 'bg-gray-50 text-gray-500 border-gray-100';
+    }
+    // Negative scale: high = urgent claim
+    if (score >= 5) return 'bg-rose-100 text-rose-700 border-rose-200';
+    if (score >= 2) return 'bg-orange-100 text-orange-700 border-orange-200';
+    return 'bg-gray-50 text-gray-500 border-gray-100';
+  }
+
+  /** Human-readable label for the priority score badge. */
+  getPriorityScoreLabel(item: SavCase): string {
+    const score = item.priorityScore ?? 0;
+    if (item.source === 'FEEDBACK') {
+      if (score >= 5) return '⭐ Top Review';
+      if (score >= 2) return '👍 Positive';
+      return '😐 Neutral';
+    }
+    if (score >= 5) return '🔴 High';
+    if (score >= 2) return '🟠 Medium';
+    return '⚪ Low';
+  }
+
   getAiBadgeClass(decision?: string): string {
     switch (decision) {
       case 'MATCH': return 'bg-emerald-50 text-emerald-700 border-emerald-100';
@@ -233,6 +267,19 @@ export class SavAdminComponent implements OnInit {
       case 'MISMATCH': return 'bg-rose-50 text-rose-700 border-rose-100';
       default: return 'bg-gray-50 text-gray-600 border-gray-100';
     }
+  }
+
+  /**
+   * Returns true only for values that are real HTTP(S) URLs.
+   * Filters out legacy records where just a filename was stored (e.g. "service_01.webp").
+   */
+  isValidImageUrl(value: string): boolean {
+    return typeof value === 'string' && (value.startsWith('http://') || value.startsWith('https://'));
+  }
+
+  /** Returns only the valid image URLs from a list, silently dropping bare filenames. */
+  validImages(urls: string[]): string[] {
+    return (urls ?? []).filter(u => this.isValidImageUrl(u));
   }
 
   getInitials(item: SavCase): string {
@@ -264,6 +311,7 @@ export class SavAdminComponent implements OnInit {
       message: claim.message || '',
       status: claim.status || 'PENDING',
       priority: claim.priority,
+      priorityScore: claim.priorityScore ?? 0,
       reason: claim.reason,
       problemNature: claim.problemNature,
       desiredSolution: claim.desiredSolution,
@@ -295,6 +343,7 @@ export class SavAdminComponent implements OnInit {
       message: feedback.message || '',
       status: feedback.status || 'PENDING',
       priority: feedback.priority,
+      priorityScore: feedback.priorityScore ?? 0,
       reason: feedback.reason,
       problemNature: feedback.problemNature,
       desiredSolution: feedback.desiredSolution,
@@ -338,8 +387,9 @@ export class SavAdminComponent implements OnInit {
 
   private sortWeight(item: SavCase): number {
     const openWeight = item.status === 'PENDING' ? 6000000000000 : item.status === 'INVESTIGATING' ? 5000000000000 : 0;
-    const priorityWeight = this.priorityValue(item.priority) * 100000000000;
-    return openWeight + priorityWeight + this.timestamp(item.createdAt);
+    // Use numeric priorityScore (server-computed) as primary signal; fall back to string priority
+    const scoreWeight = (item.priorityScore ?? this.priorityValue(item.priority)) * 100000000000;
+    return openWeight + scoreWeight + this.timestamp(item.createdAt);
   }
 
   private timestamp(value?: string | Date): number {

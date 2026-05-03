@@ -46,21 +46,264 @@
             </div>
         </div>
 
+        <!-- ── AI Semantic Search Bar removed — consolidated in sidebar ── -->
+
         <div class="flex flex-col lg:flex-row gap-12">
-            <!-- Sidebar: Categories -->
-            <aside class="w-full lg:w-80 flex-shrink-0 space-y-10">
-                <!-- Search -->
-                <div class="floating-card p-6">
-                    <div class="relative">
-                        <input type="text" [value]="searchQuery()" (input)="searchQuery.set($any($event.target).value)"
-                            placeholder="Search discussions..." class="forum-input pl-14 h-14">
-                        <svg class="absolute left-5 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400" fill="none"
-                            stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            <!-- Sidebar: Categories + AI -->
+            <aside class="w-full lg:w-80 flex-shrink-0 space-y-6">
+
+                <!-- ── AI Semantic Search — single self-contained section ── -->
+                <div class="rounded-3xl border border-primary/20 bg-white shadow-lg overflow-hidden">
+
+                  <!-- Header -->
+                  <div class="px-5 pt-5 pb-4 bg-gradient-to-br from-primary/8 via-white to-white border-b border-primary/10">
+                    <div class="flex items-center gap-3 mb-3">
+                      <div class="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
                         </svg>
+                      </div>
+                      <div>
+                        <p class="text-sm font-black text-dark uppercase tracking-wider leading-none">AI Forum Search</p>
+                        <p class="text-[10px] text-gray-400 font-semibold mt-0.5">Semantic · MiniLM-L6-v2 + FAISS</p>
+                      </div>
                     </div>
+
+                    <!-- Input -->
+                    <div class="relative">
+                      <input
+                        type="text"
+                        [value]="searchQuery()"
+                        (input)="onSearchInput($any($event.target).value)"
+                        placeholder="Describe your problem…"
+                        autocomplete="off"
+                        class="w-full h-11 pl-4 pr-10 text-sm font-semibold text-dark bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/10 transition-all placeholder:text-gray-400 placeholder:font-normal">
+                      @if (aiSearchLoading()) {
+                        <div class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin"></div>
+                      } @else if (searchQuery().length > 0) {
+                        <button type="button" (click)="onSearchInput('')"
+                            class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 hover:text-gray-600 transition-colors">
+                          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+                          </svg>
+                        </button>
+                      } @else {
+                        <svg class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                      }
+                    </div>
+                    @if (searchQuery().trim().length > 0 && searchQuery().trim().length < 3) {
+                      <p class="text-[10px] text-gray-400 mt-1.5 pl-0.5">Type 3+ characters to search…</p>
+                    }
+                  </div>
+
+                  <!-- ── Results body ── -->
+                  <div class="px-4 py-3">
+
+                    <!-- Loading skeleton -->
+                    @if (aiSearchLoading() && searchQuery().trim().length >= 3) {
+                      <div class="space-y-2.5">
+                        @for (i of [1,2,3]; track i) {
+                          <div class="flex gap-3 p-3 rounded-xl bg-gray-50 animate-pulse">
+                            <div class="w-8 h-8 rounded-lg bg-gray-200 shrink-0"></div>
+                            <div class="flex-1 space-y-1.5">
+                              <div class="h-3 bg-gray-200 rounded w-3/4"></div>
+                              <div class="h-2.5 bg-gray-200 rounded w-full"></div>
+                              <div class="h-2.5 bg-gray-200 rounded w-2/3"></div>
+                            </div>
+                          </div>
+                        }
+                      </div>
+                    }
+
+                    <!-- AI results -->
+                    @if (showAiResults()) {
+                      <div class="mb-2 flex items-center justify-between">
+                        <span class="text-[10px] font-black text-primary uppercase tracking-widest">
+                          {{ aiSearchResults().length }} matches found
+                        </span>
+                        <button type="button" (click)="onSearchInput('')"
+                            class="text-[10px] font-bold text-gray-400 hover:text-gray-600 transition-colors">
+                          Clear
+                        </button>
+                      </div>
+                      <div class="space-y-1.5">
+                        @for (result of aiSearchResults(); track result.postId; let i = $index) {
+                          <button type="button" (click)="openAiSearchResult(result)"
+                              class="w-full text-left p-3 rounded-xl border transition-all group flex items-start gap-3"
+                              [class]="i === 0 ? 'border-primary/30 bg-primary/5 hover:bg-primary/10' : 'border-gray-100 bg-white hover:border-primary/20 hover:bg-gray-50'">
+
+                            <!-- Rank -->
+                            <div class="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-black"
+                                 [class]="i === 0 ? 'bg-primary text-white' : 'bg-gray-100 text-gray-500'">
+                              {{ i + 1 }}
+                            </div>
+
+                            <!-- Text -->
+                            <div class="flex-1 min-w-0">
+                              <p class="text-xs font-black text-dark leading-snug line-clamp-2 group-hover:text-primary transition-colors mb-1">
+                                {{ result.title }}
+                              </p>
+                              <p class="text-[10px] text-gray-400 line-clamp-2 leading-relaxed mb-1.5">{{ result.excerpt }}</p>
+                              <div class="flex items-center justify-between gap-2">
+                                @if (result.category) {
+                                  <span class="text-[9px] font-black text-primary/60 uppercase tracking-widest truncate">{{ result.category }}</span>
+                                }
+                                <!-- Score bar -->
+                                <div class="flex items-center gap-1.5 shrink-0">
+                                  <div class="w-10 h-1 bg-gray-100 rounded-full overflow-hidden">
+                                    <div class="h-full bg-primary rounded-full" [style.width.%]="recommendationScore(result)"></div>
+                                  </div>
+                                  <span class="text-[9px] font-black text-primary">{{ recommendationScore(result) }}%</span>
+                                </div>
+                              </div>
+                            </div>
+                          </button>
+                        }
+                      </div>
+                    }
+
+                    <!-- Post recommendations (when a post is open) -->
+                    @if (!showAiResults() && !aiSearchLoading()) {
+                      @if (recommendationsLoading() && latestRecommendations().length === 0) {
+                        <div class="space-y-2.5">
+                          @for (i of [1,2,3]; track i) {
+                            <div class="flex gap-3 p-3 rounded-xl bg-gray-50 animate-pulse">
+                              <div class="w-8 h-8 rounded-lg bg-gray-200 shrink-0"></div>
+                              <div class="flex-1 space-y-1.5">
+                                <div class="h-3 bg-gray-200 rounded w-3/4"></div>
+                                <div class="h-2.5 bg-gray-200 rounded w-full"></div>
+                              </div>
+                            </div>
+                          }
+                        </div>
+                      } @else if (latestRecommendations().length > 0) {
+                        <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Related to open post</p>
+                        <div class="space-y-1.5">
+                          @for (rec of latestRecommendations(); track rec.postId) {
+                            <button type="button" (click)="openRecommendedPost(rec)"
+                                class="w-full text-left p-3 rounded-xl border border-gray-100 bg-white hover:border-primary/20 hover:bg-gray-50 transition-all group flex items-start gap-3">
+                              <div class="shrink-0 w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+                                <svg class="w-3.5 h-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                                </svg>
+                              </div>
+                              <div class="flex-1 min-w-0">
+                                <p class="text-xs font-black text-dark line-clamp-2 group-hover:text-primary transition-colors mb-1">{{ rec.title }}</p>
+                                <div class="flex items-center justify-between gap-2">
+                                  @if (rec.category) {
+                                    <span class="text-[9px] font-black text-primary/60 uppercase tracking-widest truncate">{{ rec.category }}</span>
+                                  }
+                                  <div class="flex items-center gap-1.5 shrink-0">
+                                    <div class="w-10 h-1 bg-gray-100 rounded-full overflow-hidden">
+                                      <div class="h-full bg-primary rounded-full" [style.width.%]="recommendationScore(rec)"></div>
+                                    </div>
+                                    <span class="text-[9px] font-black text-primary">{{ recommendationScore(rec) }}%</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </button>
+                          }
+                        </div>
+                      } @else {
+                        <!-- Empty state -->
+                        <div class="py-6 text-center">
+                          <div class="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center mx-auto mb-2">
+                            <svg class="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                            </svg>
+                          </div>
+                          <p class="text-xs font-bold text-gray-400">Describe your problem above</p>
+                          <p class="text-[10px] text-gray-300 mt-0.5">or open a post to see related discussions</p>
+                        </div>
+                      }
+                    }
+
+                  </div>
                 </div>
+                <!-- ── end AI section ── -->
+
+                <!-- ── Top 3 AI Recommended Posts ── -->
+                <div class="rounded-3xl border border-primary/20 bg-white shadow-lg overflow-hidden">
+                  <!-- Header -->
+                  <div class="px-5 pt-5 pb-4 bg-gradient-to-br from-primary/8 via-white to-white border-b border-primary/10">
+                    <div class="flex items-center gap-3">
+                      <div class="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                        </svg>
+                      </div>
+                      <div>
+                        <p class="text-sm font-black text-dark uppercase tracking-wider leading-none">Top 3 Recommended</p>
+                        <p class="text-[10px] text-gray-400 font-semibold mt-0.5">AI-Powered · Trending Now</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Body -->
+                  <div class="px-4 py-3">
+                    @if (topRecommendedPosts().length > 0) {
+                      <div class="space-y-1.5">
+                        @for (post of topRecommendedPosts(); track post.id; let i = $index) {
+                          <button type="button" (click)="togglePostExpansion(post.id)"
+                              class="w-full text-left p-3 rounded-xl border transition-all group flex items-start gap-3"
+                              [class]="i === 0 ? 'border-primary/30 bg-primary/5 hover:bg-primary/10' : 'border-gray-100 bg-white hover:border-primary/20 hover:bg-gray-50'">
+
+                            <!-- Rank Badge -->
+                            <div class="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-black"
+                                 [class]="i === 0 ? 'bg-primary text-white' : i === 1 ? 'bg-primary/80 text-white' : 'bg-primary/60 text-white'">
+                              {{ i + 1 }}
+                            </div>
+
+                            <!-- Content -->
+                            <div class="flex-1 min-w-0">
+                              <p class="text-xs font-black text-dark leading-snug line-clamp-2 group-hover:text-primary transition-colors mb-1">
+                                {{ post.title }}
+                              </p>
+                              <p class="text-[10px] text-gray-400 line-clamp-2 leading-relaxed mb-1.5">{{ post.content }}</p>
+                              <div class="flex items-center justify-between gap-2">
+                                <span class="text-[9px] font-black text-primary/60 uppercase tracking-widest truncate">{{ post.category }}</span>
+                                <!-- Engagement metrics -->
+                                <div class="flex items-center gap-2 shrink-0">
+                                  <div class="flex items-center gap-1">
+                                    <svg class="w-3 h-3 text-primary" fill="currentColor" viewBox="0 0 24 24">
+                                      <path d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"/>
+                                    </svg>
+                                    <span class="text-[9px] font-black text-gray-500">{{ post.likes }}</span>
+                                  </div>
+                                  <div class="flex items-center gap-1">
+                                    <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                                    </svg>
+                                    <span class="text-[9px] font-black text-gray-500">{{ post.comments }}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </button>
+                        }
+                      </div>
+                    } @else {
+                      <!-- Empty state -->
+                      <div class="py-6 text-center">
+                        <div class="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center mx-auto mb-2">
+                          <svg class="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                              d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                          </svg>
+                        </div>
+                        <p class="text-xs font-bold text-gray-400">No recommendations yet</p>
+                        <p class="text-[10px] text-gray-300 mt-0.5">Check back soon for trending posts</p>
+                      </div>
+                    }
+                  </div>
+                </div>
+                <!-- ── end Top 3 AI Recommended Posts ── -->
 
                 <!-- Categories -->
                 <div class="floating-card p-6">
@@ -94,53 +337,7 @@
                     </div>
                 </div>
 
-                <!-- AI Recommendations -->
-                <div class="floating-card p-6 bg-gradient-to-br from-primary/5 to-transparent border-primary/10">
-                    <div class="flex items-center gap-3 mb-4">
-                        <div class="p-2 bg-primary/10 rounded-xl">
-                            <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                            </svg>
-                        </div>
-                        <div>
-                            <span class="font-black text-dark text-sm uppercase tracking-wider block">AI
-                                Suggested</span>
-                            <span
-                                class="px-2 py-0.5 bg-primary/20 text-primary text-[9px] font-black rounded uppercase">Premium</span>
-                        </div>
-                    </div>
-                    @if (latestRecommendations().length > 0) {
-                    <div class="space-y-3">
-                        @for (rec of latestRecommendations(); track rec.postId) {
-                        <button type="button" (click)="openRecommendedPost(rec)"
-                            class="w-full text-left p-4 rounded-2xl bg-white/80 border border-primary/10 hover:border-primary/30 hover:shadow-lg transition-all">
-                            <div class="flex items-center justify-between gap-3 mb-2">
-                                <span class="text-[10px] font-black text-primary uppercase tracking-widest truncate">
-                                    {{ rec.category || 'Forum' }}
-                                </span>
-                                <span class="text-[10px] font-black text-gray-400">
-                                    {{ recommendationScore(rec) }}%
-                                </span>
-                            </div>
-                            <p class="text-sm font-black text-dark leading-snug line-clamp-2">{{ rec.title }}</p>
-                            <p class="text-xs text-gray-500 font-semibold mt-2 line-clamp-2">{{ rec.excerpt }}</p>
-                        </button>
-                        }
-                    </div>
-                    } @else {
-                    <p class="text-xs text-gray-500 mb-5 font-bold leading-relaxed">Similar discussions will appear
-                        here after you launch a post.</p>
-                    <a routerLink="/profile" [queryParams]="{tab: 'preferences'}"
-                        class="text-primary font-black text-[11px] uppercase tracking-widest hover:underline flex items-center gap-2">
-                        Configure Preferences
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                        </svg>
-                    </a>
-                    }
-                </div>
+                <!-- ── end AI section — old separate card removed ── -->
             </aside>
 
             <!-- Main Content -->
@@ -480,6 +677,43 @@
                             }
                         </div>
                     </div>
+
+                    <!-- 🤖 Inline AI Similar Discussions (shown when post is expanded) -->
+                    @if (expandedPostId() === post.id && latestRecommendations().length > 0) {
+                    <div class="mt-6 pt-6 border-t border-dashed border-primary/20">
+                        <div class="flex items-center gap-2 mb-4">
+                            <div class="p-1.5 bg-primary/10 rounded-lg">
+                                <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                                </svg>
+                            </div>
+                            <span class="text-xs font-black text-primary uppercase tracking-widest">AI Similar Discussions</span>
+                            <span class="text-[10px] text-gray-400 font-bold ml-auto">Semantic search · {{ latestRecommendations().length }} found</span>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                            @for (rec of latestRecommendations(); track rec.postId) {
+                            <button type="button" (click)="openRecommendedPost(rec)"
+                                class="text-left p-4 rounded-2xl bg-primary/3 border border-primary/10 hover:border-primary/30 hover:bg-primary/5 hover:shadow-md transition-all group/inline">
+                                <div class="flex items-center justify-between gap-2 mb-2">
+                                    <span class="text-[9px] font-black text-primary uppercase tracking-widest truncate">
+                                        {{ rec.category || 'Forum' }}
+                                    </span>
+                                    <div class="flex items-center gap-1 flex-shrink-0">
+                                        <div class="w-8 h-1 bg-gray-100 rounded-full overflow-hidden">
+                                            <div class="h-full bg-primary rounded-full"
+                                                 [style.width.%]="recommendationScore(rec)"></div>
+                                        </div>
+                                        <span class="text-[9px] font-bold text-gray-400">{{ recommendationScore(rec) }}%</span>
+                                    </div>
+                                </div>
+                                <p class="text-xs font-black text-dark leading-snug line-clamp-2 group-hover/inline:text-primary transition-colors">{{ rec.title }}</p>
+                                <p class="text-[11px] text-gray-500 mt-1 line-clamp-1">{{ rec.excerpt }}</p>
+                            </button>
+                            }
+                        </div>
+                    </div>
+                    }
                     } @empty {
                     <div class="py-20 text-center premium-card-gold">
                         <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -753,3 +987,4 @@
     }
 
     <app-forum-chat-widget></app-forum-chat-widget>
+</div>

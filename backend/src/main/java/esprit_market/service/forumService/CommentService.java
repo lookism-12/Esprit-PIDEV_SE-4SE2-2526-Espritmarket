@@ -3,6 +3,7 @@ package esprit_market.service.forumService;
 import esprit_market.dto.forum.CommentRequest;
 import esprit_market.entity.forum.Comment;
 import esprit_market.mappers.ForumMapper;
+import esprit_market.utils.BadWordFilter;
 import esprit_market.utils.HtmlSanitizer;
 import esprit_market.repository.forumRepository.CommentRepository;
 import esprit_market.repository.forumRepository.ReplyRepository;
@@ -34,6 +35,8 @@ public class CommentService implements ICommentService {
     public Comment create(CommentRequest dto) {
         Comment entity = ForumMapper.toComment(dto);
         if (entity == null) return null;
+        // Filter bad words before persisting
+        entity.setContent(BadWordFilter.filter(entity.getContent()));
         return repository.save(entity);
     }
 
@@ -41,7 +44,8 @@ public class CommentService implements ICommentService {
     public Comment update(ObjectId id, CommentRequest dto) {
         Comment existing = repository.findById(id).orElse(null);
         if (existing == null || dto == null) return existing;
-        if (dto.getContent() != null) existing.setContent(HtmlSanitizer.sanitize(dto.getContent()));
+        if (dto.getContent() != null)
+            existing.setContent(BadWordFilter.filter(HtmlSanitizer.sanitize(dto.getContent())));
         return repository.save(existing);
     }
 

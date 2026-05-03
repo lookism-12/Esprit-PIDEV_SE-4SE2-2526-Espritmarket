@@ -56,6 +56,9 @@ export interface NegotiationResponse {
   proposals: ProposalResponse[];
   createdAt: string;
   updatedAt: string;
+  // AI Prediction fields
+  aiAcceptanceProbability?: number;
+  aiExplanation?: string[];
 }
 
 export interface CreateNegotiationRequest {

@@ -90,15 +90,48 @@ export interface MapRide {
         </div>
       }
 
-      <!-- EMPTY STATE -->
-      @if (rides.length === 0 && !isGeocoding() && (fromInput || toInput)) {
-        <div class="absolute bottom-8 left-4 right-4 z-20">
-          <div class="rounded-2xl p-5 text-center shadow-2xl" style="background:rgba(255,255,255,0.97)">
-            <span class="text-4xl block mb-2">🚗</span>
-            <p class="font-black text-gray-900">Enter locations above to see routes on the map</p>
-          </div>
+
+      <!-- FLOATING CONTROLS (Right side stack) -->
+      <div class="absolute top-1/2 -translate-y-1/2 right-4 z-20 flex flex-col gap-3">
+        <!-- Layer Switcher -->
+        <div class="group relative">
+          <button (click)="toggleMapMode()" class="w-12 h-12 bg-white hover:bg-gray-50 text-gray-700 rounded-2xl shadow-2xl flex items-center justify-center transition-all active:scale-90 border border-gray-100">
+            <span class="text-xl">🗺️</span>
+          </button>
+          <!-- Tooltip / Label -->
+          <span class="absolute right-14 top-1/2 -translate-y-1/2 px-3 py-1 bg-gray-900 text-white text-[10px] font-bold rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap uppercase tracking-widest">
+            Switch View
+          </span>
         </div>
-      }
+
+        <!-- Locate Me -->
+        <div class="group relative">
+          <button (click)="locateMe()" class="w-12 h-12 bg-white hover:bg-gray-50 text-blue-600 rounded-2xl shadow-2xl flex items-center justify-center transition-all active:scale-90 border border-gray-100">
+            <span class="text-xl">🎯</span>
+          </button>
+          <span class="absolute right-14 top-1/2 -translate-y-1/2 px-3 py-1 bg-gray-900 text-white text-[10px] font-bold rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap uppercase tracking-widest">
+            My Location
+          </span>
+        </div>
+
+        <!-- Zoom Stack -->
+        <div class="flex flex-col rounded-2xl shadow-2xl border border-gray-100 overflow-hidden">
+          <button (click)="zoomIn()" class="w-12 h-12 bg-white hover:bg-gray-50 text-gray-700 flex items-center justify-center transition-all active:scale-90 border-b border-gray-100">
+            <span class="text-xl font-bold">+</span>
+          </button>
+          <button (click)="zoomOut()" class="w-12 h-12 bg-white hover:bg-gray-50 text-gray-700 flex items-center justify-center transition-all active:scale-90">
+            <span class="text-xl font-bold">−</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- MAP MODE INDICATOR (Bottom Left) -->
+      <div class="absolute bottom-6 left-6 z-20">
+        <div class="px-4 py-2 bg-white/90 backdrop-blur-md rounded-full shadow-lg border border-gray-100 flex items-center gap-2">
+          <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+          <span class="text-[10px] font-black text-gray-900 uppercase tracking-tighter">Live Traffic Mode</span>
+        </div>
+      </div>
 
     </div>
 
@@ -146,6 +179,8 @@ export class CarpoolingMapComponent implements AfterViewInit, OnChanges, OnDestr
   private rideMarkers: any[] = [];
   private geocodeCache = new Map<string, [number, number]>();
   private searchTimeout: any = null;
+  private currentLayerIndex = 0;
+  private tileLayers: any[] = [];
 
   fromInput = '';
   toInput = '';
@@ -189,10 +224,62 @@ export class CarpoolingMapComponent implements AfterViewInit, OnChanges, OnDestr
       center: [36.8065, 10.1815], zoom: 10,
       zoomControl: false, attributionControl: false
     });
-    this.L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      maxZoom: 19
-    }).addTo(this.map);
-    this.L.control.zoom({ position: 'bottomright' }).addTo(this.map);
+    const voyager = this.L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap &copy; CARTO'
+    });
+
+    const satellite = this.L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      attribution: 'Tiles &copy; Esri'
+    });
+
+    const street = this.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap'
+    });
+
+    this.tileLayers = [voyager, satellite, street];
+    this.tileLayers[0].addTo(this.map);
+  }
+
+  toggleMapMode(): void {
+    if (!this.map) return;
+    this.tileLayers[this.currentLayerIndex].remove();
+    this.currentLayerIndex = (this.currentLayerIndex + 1) % this.tileLayers.length;
+    this.tileLayers[this.currentLayerIndex].addTo(this.map);
+  }
+
+  zoomIn(): void { this.map?.zoomIn(); }
+  zoomOut(): void { this.map?.zoomOut(); }
+
+  locateMe(): void {
+    if (!this.map || !isPlatformBrowser(this.platformId)) return;
+    this.map.locate({ setView: true, maxZoom: 16 });
+    this.map.on('locationfound', async (e: any) => {
+      const radius = e.accuracy / 2;
+      this.L.circle(e.latlng, radius).addTo(this.map);
+      this.L.marker(e.latlng).addTo(this.map).bindPopup("You are here").openPopup();
+      
+      // Auto-set as departure
+      const coords: [number, number] = [e.latlng.lat, e.latlng.lng];
+      this.fromCoords = coords;
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${coords[0]}&lon=${coords[1]}&format=json`);
+        const data = await res.json();
+        if (data && data.display_name) {
+          const name = data.display_name.split(',')[0] + (data.address.suburb ? ', ' + data.address.suburb : '');
+          this.fromInput = name;
+          this.geocodeCache.set(name, coords);
+        } else {
+          this.fromInput = "Current Location";
+        }
+      } catch {
+        this.fromInput = "Current Location";
+      }
+    });
+    this.map.on('locationerror', (e: any) => {
+      console.error(e.message);
+    });
   }
 
   onFromChange(val: string): void {
@@ -282,12 +369,26 @@ export class CarpoolingMapComponent implements AfterViewInit, OnChanges, OnDestr
 
     // Markers
     const fromIcon = this.L.divIcon({
-      html: `<div style="background:#8B0000;width:16px;height:16px;border-radius:50%;border:3px solid white;box-shadow:0 0 0 3px rgba(139,0,0,0.3)"></div>`,
-      className: '', iconSize: [16, 16], iconAnchor: [8, 8]
+      html: `
+        <div class="relative">
+          <div class="absolute -inset-4 bg-blue-500/20 rounded-full animate-ping"></div>
+          <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white shadow-lg border-2 border-white transform transition-transform hover:scale-110 relative z-10">
+            <span class="text-xs">A</span>
+          </div>
+          <div class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-blue-600 rotate-45 border-r border-b border-white z-10"></div>
+        </div>`,
+      className: '', iconSize: [32, 32], iconAnchor: [16, 32]
     });
     const toIcon = this.L.divIcon({
-      html: `<div style="background:#22c55e;width:16px;height:16px;border-radius:50%;border:3px solid white;box-shadow:0 0 0 3px rgba(34,197,94,0.3)"></div>`,
-      className: '', iconSize: [16, 16], iconAnchor: [8, 8]
+      html: `
+        <div class="relative">
+          <div class="absolute -inset-4 bg-red-500/20 rounded-full animate-pulse"></div>
+          <div class="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center text-white shadow-lg border-2 border-white transform transition-transform hover:scale-110 relative z-10">
+            <span class="text-xs">B</span>
+          </div>
+          <div class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-red-600 rotate-45 border-r border-b border-white z-10"></div>
+        </div>`,
+      className: '', iconSize: [32, 32], iconAnchor: [16, 32]
     });
 
     this.L.marker(from, { icon: fromIcon }).bindPopup(`<b>📍 ${this.fromInput}</b>`).addTo(this.map);

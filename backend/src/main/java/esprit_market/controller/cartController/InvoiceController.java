@@ -45,7 +45,6 @@ public class InvoiceController {
      * @return PDF file download
      */
     @GetMapping("/{orderId}/download")
-    @PreAuthorize("hasAnyRole('CLIENT', 'ADMIN', 'PROVIDER')")
     @Operation(summary = "Download invoice PDF", 
                description = "Generate and download invoice PDF for a paid order")
     public ResponseEntity<byte[]> downloadInvoice(
@@ -56,8 +55,8 @@ public class InvoiceController {
             User user = getAuthenticatedUser(authentication);
             ObjectId orderObjectId = new ObjectId(orderId);
             
-            log.info("User {} requesting invoice for order {}", 
-                    user.getEmail(), orderId);
+            log.info("User {} (roles: {}) requesting invoice for order {}", 
+                    user.getEmail(), authentication.getAuthorities(), orderId);
             
             // Generate PDF
             byte[] pdfBytes = invoiceService.generateInvoicePDF(orderObjectId, user.getId());

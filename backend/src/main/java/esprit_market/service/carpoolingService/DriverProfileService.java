@@ -70,7 +70,7 @@ public class DriverProfileService implements IDriverProfileService {
                 .userId(user.getId())
                 .licenseNumber(dto.getLicenseNumber())
                 .licenseDocument(dto.getLicenseDocument())
-                .isVerified(false)
+                .isVerified(true)
                 .averageRating(0f)
                 .totalRidesCompleted(0)
                 .totalEarnings(0f)

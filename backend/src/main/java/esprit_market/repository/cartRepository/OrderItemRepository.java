@@ -26,6 +26,8 @@ public interface OrderItemRepository extends MongoRepository<OrderItem, ObjectId
     
     List<OrderItem> findByProductId(ObjectId productId);
 
+    long countByProductId(ObjectId productId);
+
     /**
      * Fallback for legacy data where shopId was not persisted on OrderItem.
      * Allows provider filtering via Product.shopId.

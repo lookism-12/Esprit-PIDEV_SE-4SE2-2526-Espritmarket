@@ -4,6 +4,7 @@ import esprit_market.Enum.marketplaceEnum.BookingStatus;
 import esprit_market.Enum.marketplaceEnum.AvailabilityMode;
 import esprit_market.Enum.marketplaceEnum.MeetingMode;
 import esprit_market.Enum.marketplaceEnum.ServiceStatus;
+import esprit_market.Enum.notificationEnum.NotificationType;
 import esprit_market.config.Exceptions.ResourceNotFoundException;
 import esprit_market.dto.marketplace.ServiceBookingRequestDTO;
 import esprit_market.dto.marketplace.ServiceBookingResponseDTO;
@@ -19,6 +20,7 @@ import esprit_market.repository.marketplaceRepository.ServiceRepository;
 import esprit_market.repository.marketplaceRepository.ShopRepository;
 import esprit_market.repository.userRepository.UserRepository;
 import esprit_market.service.chat.ChatService;
+import esprit_market.service.notificationService.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
 import org.springframework.security.core.Authentication;
@@ -43,6 +45,7 @@ public class ServiceBookingService {
     private final ShopRepository shopRepository;
     private final UserRepository userRepository;
     private final ChatService chatService;
+    private final NotificationService notificationService;
     
     /**
      * Generate available time slots for a service on a specific date
@@ -246,7 +249,22 @@ public class ServiceBookingService {
         updateServiceStatus(serviceId);
         
         System.out.println("📅 Booking created: " + booking.getId() + " for service: " + service.getName());
-        
+
+        // ── Notify provider about new booking request ──────────────────────────
+        final ServiceBooking savedBooking = booking;
+        final String clientFullName = user.getFirstName() + " " + user.getLastName();
+        final String serviceName = service.getName();
+        if (savedBooking.getProviderId() != null) {
+            userRepository.findById(savedBooking.getProviderId()).ifPresent(provider ->
+                notificationService.sendNotification(provider,
+                        "📅 New Service Booking Request",
+                        clientFullName + " requested to book \"" + serviceName + "\" on "
+                                + savedBooking.getBookingDate() + " at " + savedBooking.getStartTime() + ".",
+                        NotificationType.INTERNAL_NOTIFICATION,
+                        savedBooking.getId().toHexString())
+            );
+        }
+
         return toResponseDTO(booking, service.getName());
     }
     
@@ -345,7 +363,20 @@ public class ServiceBookingService {
         updateServiceStatus(booking.getServiceId());
         
         System.out.println("✅ Booking approved: " + bookingId);
-        
+
+        // ── Notify client that booking was accepted ────────────────────────────
+        final ServiceBooking approvedBooking = booking;
+        final String approvedServiceName = service.getName();
+        userRepository.findById(approvedBooking.getUserId()).ifPresent(client ->
+            notificationService.sendNotification(client,
+                    "✅ Booking Confirmed!",
+                    "Your booking for \"" + approvedServiceName + "\" on "
+                            + approvedBooking.getBookingDate() + " at " + approvedBooking.getStartTime()
+                            + " has been accepted by the provider.",
+                    NotificationType.INTERNAL_NOTIFICATION,
+                    approvedBooking.getId().toHexString())
+        );
+
         return toResponseDTO(booking, service.getName());
     }
     
@@ -377,7 +408,20 @@ public class ServiceBookingService {
         updateServiceStatus(booking.getServiceId());
         
         System.out.println("❌ Booking rejected: " + bookingId + " - Reason: " + reason);
-        
+
+        // ── Notify client that booking was rejected ────────────────────────────
+        final ServiceBooking rejectedBooking = booking;
+        final String rejectedServiceName = service.getName();
+        userRepository.findById(rejectedBooking.getUserId()).ifPresent(client ->
+            notificationService.sendNotification(client,
+                    "❌ Booking Request Declined",
+                    "Your booking for \"" + rejectedServiceName + "\" on "
+                            + rejectedBooking.getBookingDate() + " at " + rejectedBooking.getStartTime()
+                            + " was declined. Reason: " + reason,
+                    NotificationType.INTERNAL_NOTIFICATION,
+                    rejectedBooking.getId().toHexString())
+        );
+
         return toResponseDTO(booking, service.getName());
     }
     

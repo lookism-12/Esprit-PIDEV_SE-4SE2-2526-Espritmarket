@@ -72,7 +72,7 @@
           <button (click)="activeTab.set('trips')" 
             class="nav-btn w-full text-left px-4 py-3 rounded-xl font-bold text-sm transition-all flex items-center gap-3"
             [class.active-link]="activeTab() === 'trips'">
-            🚗 My Active Trips
+            🚗 My Ride History
           </button>
           <button (click)="activeTab.set('requests')" 
             class="nav-btn relative w-full text-left px-4 py-3 rounded-xl font-bold text-sm transition-all flex items-center gap-3"
@@ -114,8 +114,16 @@
     </aside>
 
     <!-- RIGHT: Main Content Dynamic Area -->
-    <main class="flex-1 min-w-0">
+    <main class="flex-1 min-w-0 relative">
       
+      <!-- Global Loading Overlay -->
+      @if (isLoading()) {
+        <div class="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-50 flex flex-col items-center justify-center min-h-[400px] rounded-3xl animate-fade-in">
+          <div class="w-12 h-12 border-4 border-gray-100 border-t-primary rounded-full animate-spin mb-4"></div>
+          <p class="text-sm font-black text-gray-900 italic tracking-widest uppercase opacity-50">Syncing Intelligence...</p>
+        </div>
+      }
+  
       <!-- Notifications/Alerts -->
       @if (success()) {
         <div class="mb-6 p-4 bg-emerald-50 border border-emerald-100 rounded-2xl flex items-center gap-3 animate-slide-up">
@@ -124,10 +132,18 @@
         </div>
       }
       @if (error()) {
-        <div class="mb-6 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3 animate-slide-up">
-          <span class="text-red-500 text-xl font-black">✕</span>
-          <p class="text-red-800 text-sm font-bold">{{ error() }}</p>
-          <button (click)="error.set(null)" class="ml-auto text-red-500 opacity-50 hover:opacity-100">✕</button>
+        <div class="mb-6 p-6 bg-red-50 border border-red-100 rounded-3xl flex flex-col gap-4 animate-slide-up shadow-sm">
+          <div class="flex items-center gap-3">
+            <span class="w-10 h-10 bg-red-100 text-red-600 flex items-center justify-center rounded-full text-xl font-black">✕</span>
+            <div class="flex-1">
+              <h4 class="text-sm font-black text-red-900 uppercase tracking-widest">System Error</h4>
+              <p class="text-xs font-bold text-red-800">{{ error() }}</p>
+            </div>
+            <button (click)="error.set(null)" class="text-red-400 hover:text-red-600 transition-colors">✕</button>
+          </div>
+          <button (click)="loadInitialData()" class="w-full py-3 bg-white border border-red-200 text-red-600 font-black rounded-xl hover:bg-red-50 transition-all text-xs">
+            Retry Connection
+          </button>
         </div>
       }
 
@@ -194,28 +210,28 @@
               <div class="flex items-center justify-between mb-8">
                 <div>
                   <h3 class="text-lg font-black text-gray-900 leading-none">Earnings <span class="text-primary">Performance</span></h3>
-                  <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Weekly growth tracking</p>
+                  <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Monthly trend</p>
                 </div>
                 <div class="flex items-center gap-2">
                   <span class="w-2 h-2 rounded-full bg-primary"></span>
-                  <span class="text-[10px] font-bold text-gray-500 uppercase tracking-tighter">Current Week</span>
+                  <span class="text-[10px] font-bold text-gray-500 uppercase tracking-tighter">Last 6 Months</span>
                 </div>
               </div>
 
               <div class="h-64 flex items-end justify-between gap-4 px-2">
-                @for (stat of weeklyStats(); track stat.day) {
+                @for (stat of monthlyTrend(); track stat.label) {
                   <div class="flex-1 flex flex-col items-center gap-3 group">
                     <div class="absolute -top-4 opacity-0 group-hover:opacity-100 group-hover:-top-8 transition-all duration-300 pointer-events-none z-10">
                       <div class="bg-black text-white text-[10px] font-bold px-2 py-1 rounded shadow-lg whitespace-nowrap">
                         {{ stat.earnings | currency:'TND' }}
                       </div>
                     </div>
-                    
-                    <div class="w-full bg-gray-50 rounded-t-xl relative overflow-hidden" [style.height.%]="(stat.earnings / maxWeeklyEarnings()) * 100">
+
+                    <div class="w-full bg-gray-50 rounded-t-xl relative overflow-hidden" [style.height.%]="(stat.earnings / maxMonthlyEarnings()) * 100">
                       <div class="absolute inset-0 bg-gradient-to-t from-primary to-red-500 opacity-90 transition-all duration-500 transform origin-bottom scale-y-0 group-hover:scale-y-100"></div>
                       <div class="absolute inset-0 bg-primary opacity-20"></div>
                     </div>
-                    <span class="text-[10px] font-bold text-gray-400 uppercase">{{ stat.day }}</span>
+                    <span class="text-[10px] font-bold text-gray-400 uppercase">{{ stat.label }}</span>
                   </div>
                 }
               </div>
@@ -282,15 +298,16 @@
         </div>
       }
 
-      <!-- TAB 2: TRIPS -->
+      <!-- TAB 2: HISTORY -->
       @if (activeTab() === 'trips') {
         <div class="space-y-6 animate-fade-in">
-          <h3 class="text-2xl font-black text-gray-900 px-2 italic">Active Loadout</h3>
+          <h3 class="text-2xl font-black text-gray-900 px-2 italic">Ride History</h3>
           @if (myRides().length === 0) {
             <div class="bg-white rounded-[2.5rem] p-20 text-center border-2 border-dashed border-gray-200">
               <span class="text-6xl block mb-4">🛣️</span>
-              <h4 class="text-xl font-black text-gray-900 mb-2">No active journeys</h4>
-              <button (click)="openCreateRide()" class="px-8 py-3 bg-[#8B0000] text-white font-black rounded-xl active:scale-95 transition-all">Create New Trip</button>
+              <h4 class="text-xl font-black text-gray-900 mb-2">No rides found in your history</h4>
+              <p class="text-gray-500 mb-6 font-medium">Once you publish or complete journeys, they will appear here.</p>
+              <button (click)="openCreateRide()" class="px-8 py-3 bg-[#8B0000] text-white font-black rounded-xl active:scale-95 transition-all">Create Your First Trip</button>
             </div>
           } @else {
             <div class="grid grid-cols-1 gap-4">
@@ -442,20 +459,6 @@
     </div>
   }
 
-  @if (showOnboarding()) {
-    <div class="fixed inset-0 z-[120] flex items-center justify-center p-4">
-      <div class="absolute inset-0 bg-[#8B0000]/10 backdrop-blur-xl"></div>
-      <div class="relative w-full max-w-md bg-white rounded-[3rem] p-12 text-center shadow-2xl">
-        <h3 class="text-3xl font-black mb-2">Driver Onboarding</h3>
-        <p class="text-gray-400 mb-8">Ready to start earning by sharing your rides?</p>
-        <form [formGroup]="driverOnboardingForm" (ngSubmit)="submitOnboarding()" class="space-y-6">
-          <input formControlName="licenseNumber" placeholder="License ID" class="dashboard-input">
-          <input type="file" (change)="onOnboardingFile($event)" class="w-full text-sm">
-          <button type="submit" [disabled]="driverOnboardingForm.invalid" class="w-full bg-[#8B0000] text-white h-16 rounded-[2rem] font-black text-xl">Complete Setup</button>
-        </form>
-      </div>
-    </div>
-  }
 
   @if (showCounterModal()) {
     <div class="fixed inset-0 z-[130] flex items-center justify-center p-4">

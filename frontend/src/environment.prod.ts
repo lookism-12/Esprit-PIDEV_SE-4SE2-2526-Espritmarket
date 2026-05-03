@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://api.espritmarket.com/api'
+  apiUrl: 'https://api.yourproject.com/api'
 };

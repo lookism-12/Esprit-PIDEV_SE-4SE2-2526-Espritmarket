@@ -125,10 +125,6 @@ export const BACK_ROUTES: Routes = [
                 loadComponent: () => import('./features/coupons/coupon-create.component').then(m => m.CouponCreateComponent)
             },
             {
-                path: 'support',
-                loadComponent: () => import('./features/support/support.component').then(m => m.SupportComponent)
-            },
-            {
                 path: 'community',
                 loadComponent: () => import('./features/placeholders').then(m => m.CommunityComponent)
             },

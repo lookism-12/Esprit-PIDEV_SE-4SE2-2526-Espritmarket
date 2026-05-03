@@ -28,6 +28,31 @@ public class PassengerProfile {
     private java.util.List<ObjectId> bookingIds;
     private Integer totalRidesCompleted;
 
+    // ── Engagement & Discount System ─────────────────────────────────────────
+    /** Cumulative engagement points earned (bookings + ride requests + feedback) */
+    @Builder.Default
+    private Integer engagementPoints = 0;
+
+    /** Number of feedback/reviews submitted */
+    @Builder.Default
+    private Integer feedbackCount = 0;
+
+    /** Number of ride requests created */
+    @Builder.Default
+    private Integer rideRequestCount = 0;
+
+    /** Number of confirmed bookings made */
+    @Builder.Default
+    private Integer bookedRidesCount = 0;
+
+    /** Current discount tier: NONE / BRONZE / SILVER / GOLD / PLATINUM */
+    @Builder.Default
+    private String engagementTier = "NONE";
+
+    /** Current discount percentage unlocked (0, 5, 10, 15, 20) */
+    @Builder.Default
+    private Integer discountPercentage = 0;
+
     @CreatedDate
     private LocalDateTime createdAt;
 

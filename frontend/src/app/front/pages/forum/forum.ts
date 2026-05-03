@@ -1,8 +1,8 @@
 import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { forkJoin, of, switchMap } from 'rxjs';
+import { forkJoin, of, switchMap, Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged, switchMap as rxSwitchMap } from 'rxjs/operators';
 import { ForumCategory, ModerationBadge, ReactionType, CreatePostRequest, CreateCommentRequest } from '../../models/forum.model';
 import { ForumService, UserNameDto, PostDto, CategoryForumDto, CommentDto, ReactionDto, ReplyDto, RecommendedForumPostDto } from '../../core/forum.service';
 
@@ -57,7 +57,7 @@ import { AuthService } from '../../core/auth.service';
 @Component({
   selector: 'app-forum',
   standalone: true,
-  imports: [CommonModule, RouterLink, ReactiveFormsModule, ForumChatWidget],
+  imports: [CommonModule, ReactiveFormsModule, ForumChatWidget],
   templateUrl: './forum.html',
   styleUrl: './forum.scss',
 })
@@ -87,6 +87,15 @@ export class Forum implements OnInit {
   expandedPostCommentsLoading = signal<boolean>(false);
   updatePostTarget = signal<SimplePost | null>(null);
   latestRecommendations = signal<RecommendedForumPostDto[]>([]);
+  recommendationsLoading = signal(false);
+
+  // ── AI Semantic Search ────────────────────────────────────────────────────
+  /** Results returned by the AI semantic search (separate from post recommendations) */
+  aiSearchResults = signal<RecommendedForumPostDto[]>([]);
+  aiSearchLoading = signal(false);
+  /** True when the search bar has enough text to trigger AI search */
+  showAiResults = computed(() => this.searchQuery().trim().length >= 3 && this.aiSearchResults().length > 0);
+  private searchSubject = new Subject<string>();
 
   // Admin category management modal
   showManageCategoriesModal = signal(false);
@@ -152,9 +161,71 @@ export class Forum implements OnInit {
     return [...filtered.filter(p => p.isPinned), ...filtered.filter(p => !p.isPinned)];
   });
 
+  // Top 3 AI Recommended Posts - based on engagement score (likes + comments + flames)
+  topRecommendedPosts = computed(() => {
+    const allPosts = this.posts();
+    
+    // Calculate engagement score for each post
+    const postsWithScore = allPosts.map(post => ({
+      ...post,
+      engagementScore: (post.likes * 2) + (post.loves * 3) + (post.flames * 1.5) + (post.comments * 2)
+    }));
+
+    // Sort by engagement score and take top 3
+    return postsWithScore
+      .sort((a, b) => b.engagementScore - a.engagementScore)
+      .slice(0, 3);
+  });
+
   ngOnInit(): void {
     this.initForms();
     this.loadForumData();
+
+    // ── AI semantic search: debounce 500ms, min 3 chars ───────────────────
+    this.searchSubject.pipe(
+      debounceTime(500),
+      distinctUntilChanged(),
+      rxSwitchMap(query => {
+        if (query.trim().length < 3) {
+          this.aiSearchResults.set([]);
+          this.aiSearchLoading.set(false);
+          return of([]);
+        }
+        this.aiSearchLoading.set(true);
+        return this.forumService.semanticSearch(query, 6);
+      })
+    ).subscribe({
+      next: results => {
+        this.aiSearchResults.set(results);
+        this.aiSearchLoading.set(false);
+      },
+      error: () => {
+        this.aiSearchResults.set([]);
+        this.aiSearchLoading.set(false);
+      }
+    });
+  }
+
+  /** Called on every keystroke in the search bar */
+  onSearchInput(value: string): void {
+    this.searchQuery.set(value);
+    if (value.trim().length < 3) {
+      this.aiSearchResults.set([]);
+    }
+    this.searchSubject.next(value);
+  }
+
+  /** Navigate to an AI search result */
+  openAiSearchResult(rec: RecommendedForumPostDto): void {
+    this.aiSearchResults.set([]);
+    this.searchQuery.set('');
+    const existing = this.posts().find(p => p.id === rec.postId);
+    if (existing) {
+      this.activeCategory.set('all');
+      this.togglePostExpansion(existing.id);
+    } else {
+      this.searchQuery.set(rec.title);
+    }
   }
 
   private initForms(): void {
@@ -388,6 +459,7 @@ export class Forum implements OnInit {
     this.forumService.createPost(request).subscribe({
       next: (createdPost) => {
         this.latestRecommendations.set(createdPost.recommendedPosts ?? []);
+        this.recommendationsLoading.set(false);
         this.isCreatingPost.set(false);
         this.closeCreatePostModal();
         this.loadForumData();
@@ -395,6 +467,7 @@ export class Forum implements OnInit {
       error: (err) => {
         console.error('Failed to create post:', err);
         this.isCreatingPost.set(false);
+        this.recommendationsLoading.set(false);
       }
     });
   }
@@ -426,6 +499,24 @@ export class Forum implements OnInit {
     }
 
     this.loadCommentsAndReplies(postId);
+
+    // Load AI recommendations for the opened post
+    this.loadRecommendationsForPost(postId);
+  }
+
+  private loadRecommendationsForPost(postId: string): void {
+    this.recommendationsLoading.set(true);
+    this.forumService.getPostRecommendations(postId).subscribe({
+      next: (recs) => {
+        this.recommendationsLoading.set(false);
+        if (recs && recs.length > 0) {
+          this.latestRecommendations.set(recs);
+        }
+      },
+      error: () => {
+        this.recommendationsLoading.set(false);
+      }
+    });
   }
 
   reactToPost(postId: string, reaction: ReactionType): void {

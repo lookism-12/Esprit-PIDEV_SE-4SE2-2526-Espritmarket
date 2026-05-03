@@ -98,6 +98,7 @@ public class SAVMapper {
                 .aiSimilarityScore(entity.getAiSimilarityScore())
                 .aiDecision(entity.getAiDecision())
                 .aiRecommendation(entity.getAiRecommendation())
+                .priorityScore(entity.getPriorityScore() != null ? entity.getPriorityScore() : 0)
                 .cartItemId(entity.getCartItemId() != null ? entity.getCartItemId().toHexString() : null)
                 .userId(entity.getUserId() != null ? entity.getUserId().toHexString() : null)
                 .targetType(entity.getTargetType() != null ? entity.getTargetType() : "PRODUCT")

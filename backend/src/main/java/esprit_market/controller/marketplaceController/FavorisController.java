@@ -26,7 +26,7 @@ public class FavorisController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('CLIENT', 'SELLER', 'PROVIDER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('CLIENT', 'SELLER', 'PROVIDER', 'ADMIN', 'PASSENGER', 'DRIVER')")
     @Operation(summary = "Add a new favorite")
     public FavorisResponseDTO create(@RequestBody FavorisRequestDTO dto) {
         return service.create(dto);
@@ -45,49 +45,49 @@ public class FavorisController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('CLIENT', 'SELLER', 'PROVIDER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('CLIENT', 'SELLER', 'PROVIDER', 'ADMIN', 'PASSENGER', 'DRIVER')")
     @Operation(summary = "Update an existing favorite")
     public FavorisResponseDTO update(@PathVariable String id, @RequestBody FavorisRequestDTO dto) {
         return service.update(new ObjectId(id), dto);
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('CLIENT', 'SELLER', 'PROVIDER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('CLIENT', 'SELLER', 'PROVIDER', 'ADMIN', 'PASSENGER', 'DRIVER')")
     @Operation(summary = "Remove a favorite")
     public void delete(@PathVariable String id) {
         service.delete(new ObjectId(id));
     }
 
     @PostMapping("/toggle/product/{productId}")
-    @PreAuthorize("hasAnyRole('CLIENT', 'SELLER', 'PROVIDER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('CLIENT', 'SELLER', 'PROVIDER', 'ADMIN', 'PASSENGER', 'DRIVER')")
     @Operation(summary = "Toggle favorite for a product (add if not exists, remove if exists)")
     public FavorisResponseDTO toggleProductFavorite(@PathVariable String productId) {
         return service.toggleProductFavorite(new ObjectId(productId));
     }
 
     @PostMapping("/toggle/service/{serviceId}")
-    @PreAuthorize("hasAnyRole('CLIENT', 'SELLER', 'PROVIDER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('CLIENT', 'SELLER', 'PROVIDER', 'ADMIN', 'PASSENGER', 'DRIVER')")
     @Operation(summary = "Toggle favorite for a service (add if not exists, remove if exists)")
     public FavorisResponseDTO toggleServiceFavorite(@PathVariable String serviceId) {
         return service.toggleServiceFavorite(new ObjectId(serviceId));
     }
 
     @GetMapping("/my")
-    @PreAuthorize("hasAnyRole('CLIENT', 'SELLER', 'PROVIDER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('CLIENT', 'SELLER', 'PROVIDER', 'ADMIN', 'PASSENGER', 'DRIVER')")
     @Operation(summary = "Get favorites for the current authenticated user")
     public List<FavorisResponseDTO> getMyFavorites() {
         return service.getMyFavorites();
     }
 
     @GetMapping("/check/product/{productId}")
-    @PreAuthorize("hasAnyRole('CLIENT', 'SELLER', 'PROVIDER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('CLIENT', 'SELLER', 'PROVIDER', 'ADMIN', 'PASSENGER', 'DRIVER')")
     @Operation(summary = "Check if current user has favorited a product")
     public boolean isProductFavorited(@PathVariable String productId) {
         return service.isProductFavorited(new ObjectId(productId));
     }
 
     @GetMapping("/check/service/{serviceId}")
-    @PreAuthorize("hasAnyRole('CLIENT', 'SELLER', 'PROVIDER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('CLIENT', 'SELLER', 'PROVIDER', 'ADMIN', 'PASSENGER', 'DRIVER')")
     @Operation(summary = "Check if current user has favorited a service")
     public boolean isServiceFavorited(@PathVariable String serviceId) {
         return service.isServiceFavorited(new ObjectId(serviceId));

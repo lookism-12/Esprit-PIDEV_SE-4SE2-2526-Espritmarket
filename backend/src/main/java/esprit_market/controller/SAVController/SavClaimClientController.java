@@ -45,7 +45,7 @@ public class SavClaimClientController {
      * Create a new SAV claim for a purchased product
      */
     @PostMapping
-    @PreAuthorize("hasRole('CLIENT')")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Create SAV claim", description = "Client creates a return request for a purchased product")
     public ResponseEntity<Map<String, Object>> createSavClaim(
             @Valid @RequestBody SavFeedbackRequestDTO request,
@@ -85,7 +85,7 @@ public class SavClaimClientController {
      * Get all SAV claims for the current client
      */
     @GetMapping("/my")
-    @PreAuthorize("hasRole('CLIENT')")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get my SAV claims", description = "Retrieve all return requests for the current client")
     public ResponseEntity<List<SavFeedbackResponseDTO>> getMySavClaims(Authentication authentication) {
         try {
@@ -106,7 +106,7 @@ public class SavClaimClientController {
      * Get a specific SAV claim by ID
      */
     @GetMapping("/my/{id}")
-    @PreAuthorize("hasRole('CLIENT')")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get SAV claim details", description = "Retrieve details of a specific return request")
     public ResponseEntity<SavFeedbackResponseDTO> getMySavClaimById(
             @Parameter(description = "Claim ID") @PathVariable String id,
@@ -133,7 +133,7 @@ public class SavClaimClientController {
      * Update a SAV claim (only if status is PENDING)
      */
     @PutMapping("/my/{id}")
-    @PreAuthorize("hasRole('CLIENT')")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Update SAV claim", description = "Update a return request (only if status is PENDING)")
     public ResponseEntity<Map<String, Object>> updateMySavClaim(
             @PathVariable String id,
@@ -184,7 +184,7 @@ public class SavClaimClientController {
      * Delete a SAV claim (only if status is PENDING)
      */
     @DeleteMapping("/my/{id}")
-    @PreAuthorize("hasRole('CLIENT')")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Delete SAV claim", description = "Delete a return request (only if status is PENDING)")
     public ResponseEntity<Map<String, Object>> deleteMySavClaim(
             @PathVariable String id,

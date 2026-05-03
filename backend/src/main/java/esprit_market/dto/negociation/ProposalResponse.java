@@ -22,6 +22,11 @@ public class ProposalResponse {
     private String message;
     private String exchangeImage;
     private Boolean isExchange;
+    
+    // 🎯 AI Negotiation: Discount percentage visible to both client and provider
+    // Shows the discount % that the client offered (e.g., 30% off)
+    private Double discountPercentage;
+    
     private ProposalType type;
     private ProposalStatuts status;
     private LocalDateTime createdAt;

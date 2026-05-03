@@ -63,6 +63,11 @@ export const routes: Routes = [
         loadComponent: () => import('./front/pages/cart/cart').then(m => m.Cart),
         canActivate: [authGuard]
     },
+    {
+        path: 'checkout-success',
+        loadComponent: () => import('./front/pages/checkout-success/checkout-success').then(m => m.CheckoutSuccess),
+        canActivate: [authGuard]
+    },
     // Forum — public
     {
         path: 'forum',
@@ -214,6 +219,19 @@ export const routes: Routes = [
         path: 'admin',
         canActivate: [authGuard, adminAuthGuard],
         loadChildren: () => import('./back/back.routes').then(m => m.BACK_ROUTES)
+    },
+
+    // Wheel of Fortune
+    {
+        path: 'wheel',
+        loadComponent: () => import('./front/pages/wheel-of-fortune/wheel-of-fortune').then(m => m.WheelOfFortune),
+        canActivate: [authGuard]
+    },
+
+    // OAuth callback (GitHub redirect)
+    {
+        path: 'oauth/github/callback',
+        loadComponent: () => import('./front/pages/oauth-callback/oauth-callback').then(m => m.OAuthCallback)
     },
 
     // ==================== WILDCARD ====================

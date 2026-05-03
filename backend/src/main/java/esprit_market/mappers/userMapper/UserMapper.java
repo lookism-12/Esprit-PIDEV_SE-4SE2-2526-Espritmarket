@@ -20,6 +20,7 @@ public class UserMapper {
                 .lastName(user.getLastName() != null ? user.getLastName() : "")
                 .email(user.getEmail())
                 .phone(user.getPhone() != null ? user.getPhone() : "")
+
                 .avatarUrl(user.getAvatarUrl())
                 .roles(user.getRoles() != null 
                         ? user.getRoles().stream().map(Enum::name).collect(Collectors.toList())

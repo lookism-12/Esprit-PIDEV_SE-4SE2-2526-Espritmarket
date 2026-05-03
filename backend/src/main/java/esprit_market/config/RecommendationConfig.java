@@ -16,10 +16,11 @@ import java.time.Duration;
 @Data
 public class RecommendationConfig {
     
-    private String baseUrl = "http://127.0.0.1:8001";
+    private String baseUrl = "http://127.0.0.1:8000";
     private int timeoutSeconds = 30;
     private int maxRetries = 3;
     private boolean enabled = true;
+    private boolean useFallback = true;
     
     @Bean("recommendationWebClient")
     public WebClient recommendationWebClient() {

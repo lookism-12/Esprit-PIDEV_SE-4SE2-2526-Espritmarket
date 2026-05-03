@@ -16,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -29,6 +30,8 @@ public class SavFeedbackService implements ISavFeedbackService {
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
     private final SAVMapper savMapper;
+    /** Keyword-based urgency scorer — injected, stateless, no external APIs. */
+    private final ClaimPriorityScorer priorityScorer;
 
     /**
      * Create a new SAV claim for a client
@@ -43,6 +46,19 @@ public class SavFeedbackService implements ISavFeedbackService {
         feedback.setReadByAdmin(false);
         feedback.setCreationDate(LocalDateTime.now());
         feedback.setStatus("PENDING");
+
+        // Compute keyword-based urgency score from message + reason + problemNature
+        // SAV claims → negative keywords (urgency/frustration)
+        // FEEDBACK   → positive keywords (satisfaction/enthusiasm)
+        boolean isFeedback = "FEEDBACK".equalsIgnoreCase(request.getType());
+        int score = isFeedback
+                ? priorityScorer.computePositive(request.getMessage(), request.getReason(), request.getProblemNature())
+                : priorityScorer.compute(request.getMessage(), request.getReason(), request.getProblemNature());
+        feedback.setPriorityScore(score);
+        // Auto-set priority label if the client did not supply one
+        if (feedback.getPriority() == null || feedback.getPriority().isBlank()) {
+            feedback.setPriority(priorityScorer.scoreToLabel(score));
+        }
         
         SavFeedback saved = savFeedbackRepository.save(feedback);
         log.info("SAV feedback created with ID: {}", saved.getId());
@@ -67,6 +83,7 @@ public class SavFeedbackService implements ISavFeedbackService {
     public List<SavFeedbackResponseDTO> getAllFeedbacks() {
         return savFeedbackRepository.findAll().stream()
                 .map(this::toResponseWithNames)
+                .sorted(SMART_SORT)
                 .collect(Collectors.toList());
     }
 
@@ -87,6 +104,7 @@ public class SavFeedbackService implements ISavFeedbackService {
     public List<SavFeedbackResponseDTO> getFeedbacksByType(String type) {
         return savFeedbackRepository.findByType(type).stream()
                 .map(this::toResponseWithNames)
+                .sorted(SMART_SORT)
                 .collect(Collectors.toList());
     }
 
@@ -154,6 +172,25 @@ public class SavFeedbackService implements ISavFeedbackService {
         }
     }
 
+    // ── Sorting ───────────────────────────────────────────────────────────────
+
+    /**
+     * Comparator: priorityScore DESC (null → 0), then creationDate DESC.
+     * Applied to every list endpoint so urgent claims always surface first.
+     */
+    private static final Comparator<SavFeedbackResponseDTO> SMART_SORT =
+            Comparator.comparingInt((SavFeedbackResponseDTO d) ->
+                            d.getPriorityScore() != null ? d.getPriorityScore() : 0)
+                    .reversed()
+                    .thenComparing(
+                            Comparator.comparing(
+                                    d -> d.getCreationDate() != null ? d.getCreationDate() : java.time.LocalDateTime.MIN,
+                                    Comparator.reverseOrder()
+                            )
+                    );
+
+    // ── Private helpers ───────────────────────────────────────────────────────
+
     private SavFeedbackResponseDTO toResponseWithNames(SavFeedback feedback) {
         SavFeedbackResponseDTO dto = savMapper.toSavFeedbackResponse(feedback);
         try {
@@ -178,6 +215,7 @@ public class SavFeedbackService implements ISavFeedbackService {
         log.info("Fetching SAV claims for user: {}", userId);
         return savFeedbackRepository.findByUserIdAndType(new ObjectId(userId), "SAV").stream()
                 .map(this::toResponseWithNames)
+                .sorted(SMART_SORT)
                 .collect(Collectors.toList());
     }
 
@@ -187,6 +225,7 @@ public class SavFeedbackService implements ISavFeedbackService {
     public List<SavFeedbackResponseDTO> getSavClaimsByStatus(String status) {
         return savFeedbackRepository.findByTypeAndStatus("SAV", status).stream()
                 .map(this::toResponseWithNames)
+                .sorted(SMART_SORT)
                 .collect(Collectors.toList());
     }
 
@@ -213,6 +252,16 @@ public class SavFeedbackService implements ISavFeedbackService {
         feedback.setTargetType(request.getTargetType() != null && !request.getTargetType().isBlank() ? request.getTargetType() : "PRODUCT");
         feedback.setDeliveryAgentId(request.getDeliveryAgentId() != null && !request.getDeliveryAgentId().isBlank() ? new ObjectId(request.getDeliveryAgentId()) : null);
         feedback.setLastUpdatedDate(LocalDateTime.now());
+
+        // Recompute priority score when content changes (branch by type)
+        boolean isUpdatedFeedback = "FEEDBACK".equalsIgnoreCase(request.getType());
+        int updatedScore = isUpdatedFeedback
+                ? priorityScorer.computePositive(request.getMessage(), request.getReason(), request.getProblemNature())
+                : priorityScorer.compute(request.getMessage(), request.getReason(), request.getProblemNature());
+        feedback.setPriorityScore(updatedScore);
+        if (request.getPriority() == null || request.getPriority().isBlank()) {
+            feedback.setPriority(priorityScorer.scoreToLabel(updatedScore));
+        }
         
         if (request.getStatus() != null) {
             feedback.setStatus(request.getStatus());

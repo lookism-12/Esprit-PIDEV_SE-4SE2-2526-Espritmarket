@@ -16,6 +16,8 @@ import esprit_market.repository.carpoolingRepository.PassengerProfileRepository;
 import esprit_market.repository.carpoolingRepository.VehicleRepository;
 import esprit_market.repository.userRepository.UserRepository;
 import esprit_market.service.notificationService.NotificationService;
+import esprit_market.service.mlService.PredictiveAiService;
+import esprit_market.entity.carpooling.Vehicle;
 import esprit_market.mappers.carpooling.RideMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
@@ -46,6 +48,7 @@ public class RideService implements IRideService {
     private final IDriverProfileService driverProfileService;
     private final RatingService ratingService;
     private final RideMapper rideMapper;
+    private final PredictiveAiService predictiveAiService;
 
     public RideService(RideRepository rideRepository,
                       VehicleRepository vehicleRepository,
@@ -58,7 +61,8 @@ public class RideService implements IRideService {
                       @Lazy IPassengerProfileService passengerProfileService,
                       @Lazy IDriverProfileService driverProfileService,
                       RatingService ratingService,
-                      RideMapper rideMapper) {
+                      RideMapper rideMapper,
+                      PredictiveAiService predictiveAiService) {
         this.rideRepository = rideRepository;
         this.vehicleRepository = vehicleRepository;
         this.driverProfileRepository = driverProfileRepository;
@@ -71,6 +75,7 @@ public class RideService implements IRideService {
         this.driverProfileService = driverProfileService;
         this.ratingService = ratingService;
         this.rideMapper = rideMapper;
+        this.predictiveAiService = predictiveAiService;
     }
 
     @Override
@@ -138,26 +143,42 @@ public class RideService implements IRideService {
         Ride ride = rideRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Ride not found"));
 
-        // Part 1 #7 & #8: State transition validation
         RideStatus current = ride.getStatus();
         if (current == RideStatus.COMPLETED || current == RideStatus.CANCELLED) {
             throw new IllegalStateException("Ride is already in a terminal state: " + current);
         }
 
         if (status == RideStatus.CANCELLED) {
-            cancelRide(ride.getId().toHexString(), null); // reuse cancel logic
+            // Cancel all bookings and refund payments directly — no driverEmail needed
+            ride.setStatus(RideStatus.CANCELLED);
+            List<Booking> bookings = bookingRepository.findByRideId(ride.getId());
+            List<ObjectId> passengerUserIds = new ArrayList<>();
+            for (Booking b : bookings) {
+                b.setStatus(esprit_market.Enum.carpoolingEnum.BookingStatus.CANCELLED);
+                bookingRepository.save(b);
+                PassengerProfile passengerProfile = passengerProfileRepository.findById(b.getPassengerProfileId()).orElse(null);
+                if (passengerProfile != null) passengerUserIds.add(passengerProfile.getUserId());
+                ridePaymentRepository.findByBookingId(b.getId()).ifPresent(payment -> {
+                    payment.setStatus(esprit_market.Enum.carpoolingEnum.PaymentStatus.REFUNDED);
+                    ridePaymentRepository.save(payment);
+                });
+            }
+            rideRepository.save(ride);
+            if (!passengerUserIds.isEmpty()) {
+                notificationService.notifyUsers(passengerUserIds, "Ride Cancelled",
+                        "Your ride from " + ride.getDepartureLocation() + " to "
+                                + ride.getDestinationLocation() + " has been cancelled.");
+            }
             return rideMapper.toResponseDTO(rideRepository.findById(ride.getId()).orElse(ride));
         }
 
         if (status == RideStatus.COMPLETED) {
             ride.setCompletedAt(LocalDateTime.now());
-            // Trigger booking completion handled in scheduler usually, but if manual:
             List<Booking> bookings = bookingRepository.findByRideIdAndStatus(ride.getId(),
                     esprit_market.Enum.carpoolingEnum.BookingStatus.CONFIRMED);
             for (Booking b : bookings) {
                 b.setStatus(esprit_market.Enum.carpoolingEnum.BookingStatus.COMPLETED);
                 bookingRepository.save(b);
-                // Synchronize payment status
                 ridePaymentRepository.findByBookingId(b.getId()).ifPresent(p -> {
                     p.setStatus(esprit_market.Enum.carpoolingEnum.PaymentStatus.COMPLETED);
                     ridePaymentRepository.save(p);
@@ -173,15 +194,22 @@ public class RideService implements IRideService {
     public List<RideResponseDTO> findByFilters(String departureLocation, String destinationLocation,
             LocalDateTime departureTime,
             Integer availableSeats, RideStatus status, LocalDateTime postedSince, Pageable pageable) {
-        return rideRepository.findAll().stream()
-                .filter(r -> departureLocation == null || r.getDepartureLocation().equalsIgnoreCase(departureLocation))
-                .filter(r -> destinationLocation == null
-                        || r.getDestinationLocation().equalsIgnoreCase(destinationLocation))
-                .filter(r -> departureTime == null || r.getDepartureTime().isAfter(departureTime)
+        // Use status-scoped query when possible to avoid full collection scan
+        List<Ride> candidates = (status != null)
+                ? rideRepository.findByStatus(status)
+                : rideRepository.findAll();
+
+        return candidates.stream()
+                .filter(r -> departureLocation == null || departureLocation.isBlank()
+                        || r.getDepartureLocation().toLowerCase().contains(departureLocation.toLowerCase()))
+                .filter(r -> destinationLocation == null || destinationLocation.isBlank()
+                        || r.getDestinationLocation().toLowerCase().contains(destinationLocation.toLowerCase()))
+                .filter(r -> departureTime == null
+                        || r.getDepartureTime().isAfter(departureTime)
                         || r.getDepartureTime().isEqual(departureTime))
                 .filter(r -> availableSeats == null || r.getAvailableSeats() >= availableSeats)
-                .filter(r -> status == null || r.getStatus() == status)
-                .filter(r -> postedSince == null || (r.getCreatedAt() != null && !r.getCreatedAt().isBefore(postedSince)))
+                .filter(r -> postedSince == null
+                        || (r.getCreatedAt() != null && !r.getCreatedAt().isBefore(postedSince)))
                 .map(rideMapper::toResponseDTO)
                 .collect(Collectors.toList());
     }
@@ -252,13 +280,26 @@ public class RideService implements IRideService {
         var driverProfile = driverProfileRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new IllegalArgumentException("Driver profile not found. Register as driver first."));
 
-        if (!Boolean.TRUE.equals(driverProfile.getIsVerified())) {
-            throw new IllegalStateException("Your driver profile is not verified yet");
-        }
-
-        ObjectId vehicleId = new ObjectId(dto.getVehicleId());
-        if (!vehicleRepository.existsByIdAndDriverProfileId(vehicleId, driverProfile.getId())) {
-            throw new AccessDeniedException("Vehicle does not belong to this driver");
+        ObjectId vehicleId;
+        if (dto.getVehicleId() == null || dto.getVehicleId().isBlank()) {
+            // Auto-create or find a default vehicle for this driver
+            Vehicle vehicle = vehicleRepository.findByDriverProfileId(driverProfile.getId()).stream()
+                    .findFirst()
+                    .orElseGet(() -> {
+                        Vehicle newVehicle = Vehicle.builder()
+                                .driverProfileId(driverProfile.getId())
+                                .model("Standard Car")
+                                .make("Default")
+                                .numberOfSeats(4)
+                                .build();
+                        return vehicleRepository.save(newVehicle);
+                    });
+            vehicleId = vehicle.getId();
+        } else {
+            vehicleId = new ObjectId(dto.getVehicleId());
+            if (!vehicleRepository.existsByIdAndDriverProfileId(vehicleId, driverProfile.getId())) {
+                throw new AccessDeniedException("Vehicle does not belong to this driver");
+            }
         }
 
         // Apply Dynamic Pricing

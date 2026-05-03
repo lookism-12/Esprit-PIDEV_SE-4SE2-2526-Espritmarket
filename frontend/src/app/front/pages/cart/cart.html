@@ -181,6 +181,18 @@
                     }
                 }
 
+                <!-- ── AI Recommendations (Shein-style) — shown in CART step ── -->
+                @if (currentStep() === 'CART' && currentUserId()) {
+                    <div class="mt-8 rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
+                        <app-recommendation-widget
+                            [userId]="currentUserId()"
+                            [limit]="4"
+                            title="You Might Also Like"
+                            [showInfoCard]="false">
+                        </app-recommendation-widget>
+                    </div>
+                }
+
                 <!-- STEP 2: PLACE ORDER -->
                 @if (currentStep() === 'PLACE_ORDER') {
                     <div class="premium-card p-8 animate-fade-in-up">

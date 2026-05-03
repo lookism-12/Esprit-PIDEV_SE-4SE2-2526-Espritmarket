@@ -39,7 +39,7 @@ public class User {
     private String firstName;
     private String lastName;
     private String phone;
-    
+
     @Indexed(unique = true)
     private String email;
     
@@ -91,6 +91,13 @@ public class User {
     private boolean internalNotificationsEnabled = true;
     @Builder.Default
     private boolean externalNotificationsEnabled = true;
+
+    /**
+     * When true, every in-app notification is also sent to the user's email via Brevo.
+     * User can toggle this from the Notification Center.
+     */
+    @Builder.Default
+    private boolean emailNotificationsEnabled = false;
 
     /** Granular notification preferences including focus mode */
     private NotificationSettings notificationSettings;

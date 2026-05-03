@@ -160,17 +160,14 @@ export class Login implements OnInit, AfterViewInit {
   }
 
   loginWithGoogle(): void {
-    console.log('Google login initiated');
-    // TODO: Implement OAuth
+    this.authService.loginWithGoogle();
   }
 
   loginWithGithub(): void {
-    console.log('GitHub login initiated');
-    // TODO: Implement OAuth
+    this.authService.loginWithGithub();
   }
 
   loginWithFacebook(): void {
-    console.log('Facebook login initiated');
-    // TODO: Implement OAuth
+    this.authService.loginWithFacebook();
   }
 }

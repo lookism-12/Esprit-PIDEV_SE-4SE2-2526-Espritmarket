@@ -72,6 +72,22 @@ public class PostController {
         return ResponseEntity.ok(recommendationService.getRecommendations(entity));
     }
 
+    /**
+     * Semantic search: finds posts semantically similar to the given query text.
+     * Proxies to the AI forum recommendation service (all-MiniLM-L6-v2 + FAISS).
+     * Falls back to keyword matching when the AI service is unavailable.
+     */
+    @GetMapping("/search")
+    public ResponseEntity<List<RecommendedForumPost>> semanticSearch(
+            @RequestParam String q,
+            @RequestParam(defaultValue = "8") int topK) {
+        if (q == null || q.isBlank()) {
+            return ResponseEntity.ok(List.of());
+        }
+        List<RecommendedForumPost> results = recommendationService.semanticSearch(q.trim(), topK);
+        return ResponseEntity.ok(results);
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<PostResponse> update(@PathVariable String id, @Valid @RequestBody PostRequest dto) {
         Post existing = service.findById(new ObjectId(id));

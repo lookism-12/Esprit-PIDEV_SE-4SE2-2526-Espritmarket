@@ -6,16 +6,21 @@ import esprit_market.Enum.cartEnum.PaymentStatus;
 import esprit_market.dto.cartDto.*;
 import esprit_market.entity.cart.*;
 import esprit_market.entity.marketplace.Product;
+import esprit_market.entity.marketplace.Shop;
 import esprit_market.entity.user.User;
 import esprit_market.mappers.cartMapper.OrderItemMapper;
 import esprit_market.mappers.cartMapper.OrderMapper;
 import esprit_market.repository.cartRepository.*;
 import esprit_market.repository.marketplaceRepository.ProductRepository;
+import esprit_market.repository.marketplaceRepository.ShopRepository;
 import esprit_market.repository.userRepository.UserRepository;
 import esprit_market.service.marketplaceService.IProductService;
 import esprit_market.entity.SAV.Delivery;
 import esprit_market.repository.SAVRepository.DeliveryRepository;
+import esprit_market.service.notificationService.NotificationService;
+import esprit_market.Enum.notificationEnum.NotificationType;
 import esprit_market.config.Exceptions.ResourceNotFoundException;
+import esprit_market.service.RecommendationIntegrationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
@@ -54,6 +59,9 @@ public class OrderServiceImpl implements IOrderService {
     private final DeliveryRepository deliveryRepository;
     private final PromotionEngineService promotionEngineService;
     private final OrderStatusValidator orderStatusValidator;
+    private final ShopRepository shopRepository;
+    private final NotificationService notificationService;
+    private final RecommendationIntegrationService recommendationIntegration;
 
     private void ensureDeliveryRecordForOrder(Order order) {
         if (order == null || order.getId() == null) {
@@ -87,6 +95,61 @@ public class OrderServiceImpl implements IOrderService {
 
     private String generateDeliveryConfirmationCode() {
         return String.valueOf(ThreadLocalRandom.current().nextInt(100000, 1000000));
+    }
+
+    /**
+     * Notify each unique provider (shop owner) whose products appear in the order.
+     * For CASH orders: asks provider to confirm the order.
+     * For CARD orders: informs provider that payment is received and confirmation is needed.
+     */
+    private void notifyProvidersForNewOrder(Order order, List<CartItem> cartItems, User buyer) {
+        try {
+            // Collect unique shopIds from cart items
+            java.util.Set<ObjectId> shopIds = cartItems.stream()
+                    .map(CartItem::getProductId)
+                    .map(pid -> productRepository.findById(pid).orElse(null))
+                    .filter(p -> p != null && p.getShopId() != null)
+                    .map(Product::getShopId)
+                    .collect(java.util.stream.Collectors.toSet());
+
+            boolean isCash = OrderDeliveryEligibility.isCashPaymentMethod(order.getPaymentMethod());
+            String paymentLabel = isCash ? "Cash on Delivery" : "Card (PAID)";
+            String title = isCash
+                    ? "🛒 New Order — Confirmation Required"
+                    : "💳 New Paid Order — Please Confirm";
+            String message = String.format(
+                    "Order %s from %s %s | Payment: %s | Amount: %.2f TND. Please confirm or decline.",
+                    order.getOrderNumber(),
+                    buyer.getFirstName() != null ? buyer.getFirstName() : "",
+                    buyer.getLastName() != null ? buyer.getLastName() : "",
+                    paymentLabel,
+                    order.getFinalAmount() != null ? order.getFinalAmount() : 0.0
+            );
+
+            for (ObjectId shopId : shopIds) {
+                shopRepository.findById(shopId).ifPresent(shop -> {
+                    if (shop.getOwnerId() != null) {
+                        userRepository.findById(shop.getOwnerId()).ifPresent(provider -> {
+                            try {
+                                notificationService.sendNotification(
+                                        provider,
+                                        title,
+                                        message,
+                                        NotificationType.INTERNAL_NOTIFICATION,
+                                        order.getId().toHexString()
+                                );
+                                log.info("🔔 Provider {} notified for order {}", provider.getEmail(), order.getOrderNumber());
+                            } catch (Exception e) {
+                                log.warn("Could not notify provider {}: {}", provider.getEmail(), e.getMessage());
+                            }
+                        });
+                    }
+                });
+            }
+        } catch (Exception e) {
+            // Never let notification failure break the order creation
+            log.warn("Provider notification failed for order {}: {}", order.getOrderNumber(), e.getMessage());
+        }
     }
 
     private Optional<Delivery> findDeliveryForOrderResponse(Order order) {
@@ -234,15 +297,17 @@ public class OrderServiceImpl implements IOrderService {
         LocalDateTime paidAt = null;
         
         if (OrderDeliveryEligibility.isCardPaymentMethod(request.getPaymentMethod())) {
-            // CARD PAYMENT: wait for Stripe/provider confirmation before marking the order paid.
-            paymentStatus = PaymentStatus.PENDING_PAYMENT;
-            orderStatus = OrderStatus.PENDING;  // Provider must confirm
-            log.info("💳 CARD PAYMENT - Order created as PENDING_PAYMENT, awaiting provider confirmation");
+            // CARD PAYMENT: mark as PAID immediately — confirmPayment() will be called
+            // right after by the frontend to set the paymentId, but the status is already PAID.
+            paymentStatus = PaymentStatus.PAID;
+            orderStatus = OrderStatus.PENDING;  // Provider must still confirm
+            paidAt = LocalDateTime.now();
+            log.info("💳 CARD PAYMENT - Order created as PAID, awaiting provider confirmation");
         } else {
-            // CASH ON DELIVERY: Payment pending, order starts as PENDING
+            // CASH ON DELIVERY: Payment pending until delivery collects cash
             paymentStatus = PaymentStatus.PENDING_PAYMENT;
             orderStatus = OrderStatus.PENDING;  // Provider must confirm
-            log.info("💵 CASH ON DELIVERY - Order created as PENDING, payment pending, awaiting provider confirmation");
+            log.info("💵 CASH ON DELIVERY - Order created as PENDING_PAYMENT, awaiting provider confirmation");
         }
         
         // Create Order entity
@@ -305,6 +370,16 @@ public class OrderServiceImpl implements IOrderService {
                     shopId.toHexString());
         }
         
+        // Track purchases for recommendation system
+        try {
+            List<String> productIds = cartItems.stream()
+                    .map(item -> item.getProductId().toHexString())
+                    .collect(Collectors.toList());
+            recommendationIntegration.trackMultiplePurchases(user.getId().toHexString(), productIds);
+        } catch (Exception e) {
+            log.warn("Failed to track purchases for recommendation: {}", e.getMessage());
+        }
+        
         // Clear cart (or keep it empty for next shopping session)
         cartItemRepository.deleteByCartId(cart.getId());
         cart.setSubtotal(0.0);
@@ -324,9 +399,11 @@ public class OrderServiceImpl implements IOrderService {
         log.info("⏳ Loyalty points will be granted when order is confirmed/delivered");
         
         // 🚚 CREATE DELIVERY RECORD FOR ADMIN DASHBOARD
-        if (OrderDeliveryEligibility.isCardPaymentMethod(savedOrder.getPaymentMethod())) {
-            ensureDeliveryRecordForOrder(savedOrder);
-        }
+        // Both card-paid and cash orders need a delivery record so admin can assign a driver
+        ensureDeliveryRecordForOrder(savedOrder);
+
+        // 🔔 NOTIFY PROVIDERS: send a notification to each shop owner whose products are in this order
+        notifyProvidersForNewOrder(savedOrder, cartItems, user);
         
         return buildOrderResponse(savedOrder);
     }
@@ -340,44 +417,29 @@ public class OrderServiceImpl implements IOrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
         
-        if (!order.getUser().getId().equals(userId)) {
+        if (!order.getUser().getId().toHexString().equals(userId.toHexString())) {
             throw new IllegalStateException("Order does not belong to user");
         }
         
-        // ⚠️ DEPRECATED: This method is for legacy workflow
-        // New workflow: Orders are auto-confirmed on creation
-        // This is kept for backward compatibility only
-        
         if (order.getPaymentStatus() == PaymentStatus.PAID) {
-            log.warn("⚠️  Payment already confirmed for order {}", orderId);
+            // Already PAID (card orders are set PAID on creation) — just record the paymentId
+            if (paymentId != null && !paymentId.isBlank()) {
+                order.setPaymentId(paymentId);
+                order.setLastUpdated(LocalDateTime.now());
+                orderRepository.save(order);
+            }
+            log.info("✅ Payment already confirmed for order {} — paymentId recorded", orderId);
             return buildOrderResponse(order);
         }
         
-        PaymentStatus previousPaymentStatus = order.getPaymentStatus();
-
-        // Update payment status to PAID
+        // CASH order reaching here: mark as PAID (delivery collected cash)
         order.setPaymentStatus(PaymentStatus.PAID);
         order.setPaymentId(paymentId);
         order.setPaidAt(LocalDateTime.now());
         order.setLastUpdated(LocalDateTime.now());
         
-        // ✅ CRITICAL: Keep card stock handling in provider confirmation to avoid double deduction.
-        if (previousPaymentStatus == PaymentStatus.PENDING_PAYMENT
-                && OrderDeliveryEligibility.isCashPaymentMethod(order.getPaymentMethod())) {
-            log.info("📦 Reducing stock for CASH payment confirmation");
-            List<OrderItem> items = orderItemRepository.findByOrderId(orderId);
-            for (OrderItem item : items) {
-                stockManagementService.reduceStock(item.getProductId(), item.getQuantity());
-            }
-            
-            // ✅ CRITICAL: Grant loyalty points when payment confirmed
-            if (!items.isEmpty() && order.getFinalAmount() != null && order.getFinalAmount() > 0) {
-                log.info("🏆 Granting loyalty points for CASH payment confirmation");
-                loyaltyCardService.addPointsForOrder(userId, items, order.getFinalAmount());
-            }
-        }
-        
         Order updated = orderRepository.save(order);
+        log.info("💰 Cash payment confirmed for order {}", orderId);
         return buildOrderResponse(updated);
     }
     
@@ -507,6 +569,26 @@ public class OrderServiceImpl implements IOrderService {
                 // ✅ CRITICAL: Reduce stock when provider confirms order
                 reduceStockForOrder(order);
                 log.info("✅ Order {} confirmed by provider, stock reduced", order.getOrderNumber());
+                
+                // 🔔 NOTIFY CLIENT: Send notification to order client that order has been confirmed
+                try {
+                    User client = order.getUser();
+                    String title = "✅ Order Confirmed";
+                    String description = String.format(
+                            "Your order %s has been confirmed by the provider. Your purchase is now being prepared for delivery.",
+                            order.getOrderNumber()
+                    );
+                    notificationService.sendNotification(
+                            client,
+                            title,
+                            description,
+                            NotificationType.INTERNAL_NOTIFICATION,
+                            order.getId().toHexString()
+                    );
+                    log.info("🔔 Client {} notified that order {} has been confirmed", client.getEmail(), order.getOrderNumber());
+                } catch (Exception e) {
+                    log.warn("Could not notify client for order confirmation {}: {}", order.getOrderNumber(), e.getMessage());
+                }
                 
                 // Grant loyalty points for CARD payments (already paid)
                 if (order.getPaymentStatus() == PaymentStatus.PAID) {

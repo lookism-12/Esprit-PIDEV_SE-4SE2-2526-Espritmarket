@@ -124,6 +124,12 @@ export class Negotiations implements OnInit, OnDestroy {
     });
   }
 
+  downloadPdf(): void {
+    const current = this.selected();
+    if (!current) return;
+    this.negotiationService.downloadPdf(current.id);
+  }
+
   getStatusClass(status: string): string {
     if (status === 'PENDING') return 'status-pending';
     if (status === 'ACCEPTED') return 'status-accepted';

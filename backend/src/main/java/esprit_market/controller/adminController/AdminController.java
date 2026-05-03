@@ -12,10 +12,13 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -29,6 +32,7 @@ public class AdminController {
     private final UserRepository userRepository;
     private final ProductService productService;
     private final ShopMapper shopMapper;
+    private final MongoTemplate mongoTemplate;
 
     /**
      * Get all providers (users with shops) for admin dashboard
@@ -78,6 +82,48 @@ public class AdminController {
     @Operation(summary = "Get all products from all providers (ADMIN only)")
     public List<ProductResponseDTO> getAllProducts() {
         return productService.findAll();
+    }
+
+    /**
+     * Get MongoDB statistics (collection names and document counts)
+     */
+    @GetMapping("/mongodb/stats")
+    @Operation(summary = "Get MongoDB database statistics (ADMIN only)")
+    public Map<String, Long> getMongoStats() {
+        Map<String, Long> stats = new HashMap<>();
+        for (String collectionName : mongoTemplate.getCollectionNames()) {
+            try {
+                stats.put(collectionName, mongoTemplate.getCollection(collectionName).countDocuments());
+            } catch (Exception e) {
+                stats.put(collectionName, -1L);
+            }
+        }
+        return stats;
+    }
+
+    @GetMapping("/mongodb/export")
+    @Operation(summary = "Export all project data as JSON (ADMIN only)")
+    public Map<String, Object> exportAllData() {
+        Map<String, Object> backup = new HashMap<>();
+        
+        // Dynamically get all collection names to ensure 100% data recovery
+        for (String collectionName : mongoTemplate.getCollectionNames()) {
+            try {
+                backup.put(collectionName, mongoTemplate.findAll(Object.class, collectionName));
+            } catch (Exception e) {
+                backup.put(collectionName, "Error: " + e.getMessage());
+            }
+        }
+        return backup;
+    }
+
+    /**
+     * Get raw data from a specific collection (for Admin Inspector)
+     */
+    @GetMapping("/mongodb/collection/{collectionName}")
+    @Operation(summary = "Get raw data from a specific collection (ADMIN only)")
+    public List<Object> getCollectionData(@PathVariable String collectionName) {
+        return mongoTemplate.findAll(Object.class, collectionName);
     }
 
     /**

@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, signal, computed, effect } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -37,7 +37,7 @@ import { UserNotificationSettings } from '../../models/notification.model';
       <!-- ── Skeleton ─────────────────────────────────────────── -->
       @if (isLoading()) {
         <div class="ns-skeleton">
-          @for (i of [1,2,3]; track i) {
+          @for (i of [1,2,3,4]; track i) {
             <div class="sk-row">
               <div class="sk sk-icon"></div>
               <div class="sk-body">
@@ -94,6 +94,52 @@ import { UserNotificationSettings } from '../../models/notification.model';
             </button>
           </div>
         </div>
+
+        <!-- Email Notifications -->
+        <div class="ns-row ns-row--email" [class.ns-row--disabled]="emailToggling()">
+          <div class="ns-row-info">
+            <div class="ns-icon ns-icon--email">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                <polyline points="22,6 12,13 2,6"/>
+              </svg>
+            </div>
+            <div>
+              <p class="ns-name">Email Notifications</p>
+              <p class="ns-desc">
+                @if (emailEnabled()) {
+                  Each notification is also sent to your email via Brevo
+                } @else {
+                  Notifications are stored in-app only — no emails sent
+                }
+              </p>
+            </div>
+          </div>
+          <div class="ns-row-ctrl">
+            @if (emailToggling()) {
+              <svg class="ns-spin ns-spin--sm" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+              </svg>
+            } @else {
+              <span class="ns-lbl" [class.ns-lbl--on]="emailEnabled()">{{ emailEnabled() ? 'On' : 'Off' }}</span>
+              <button class="ns-toggle" [class.ns-toggle--on]="emailEnabled()"
+                      (click)="toggleEmail()" type="button"
+                      [attr.aria-label]="'Email notifications ' + (emailEnabled() ? 'on' : 'off')">
+                <span class="ns-thumb"></span>
+              </button>
+            }
+          </div>
+        </div>
+
+        @if (emailToggleSuccess()) {
+          <div class="ns-email-toast" [class.ns-email-toast--on]="emailEnabled()">
+            @if (emailEnabled()) {
+              ✅ Email notifications enabled — you'll receive emails for every notification
+            } @else {
+              🔕 Email notifications disabled — notifications are in-app only
+            }
+          </div>
+        }
 
         <!-- Focus Mode -->
         <div class="ns-row ns-row--focus" [class.ns-row--focus-on]="focus()">
@@ -253,6 +299,7 @@ import { UserNotificationSettings } from '../../models/notification.model';
     }
     .ns-row--disabled { opacity: .55; }
     .ns-row--focus-on { background: rgba(139,0,0,.025); }
+    .ns-row--email    { background: rgba(16,185,129,.02); }
 
     .ns-row-info { display: flex; align-items: flex-start; gap: .875rem; flex: 1; min-width: 0; }
     .ns-row-ctrl { display: flex; align-items: center; gap: .6rem; flex-shrink: 0; }
@@ -264,6 +311,7 @@ import { UserNotificationSettings } from '../../models/notification.model';
     }
     .ns-icon--ext   { background: #fce7f3; color: #be185d; }
     .ns-icon--int   { background: #dbeafe; color: #1d4ed8; }
+    .ns-icon--email { background: #d1fae5; color: #059669; }
     .ns-icon--focus { background: rgba(139,0,0,.1); color: #8B0000; }
 
     .ns-name { font-size: .875rem; font-weight: 700; color: var(--text-color); margin: 0 0 2px; }
@@ -285,6 +333,25 @@ import { UserNotificationSettings } from '../../models/notification.model';
       box-shadow: 0 1px 4px rgba(0,0,0,.25);
     }
     .ns-toggle--on .ns-thumb { transform: translateX(22px); }
+
+    /* Email toast */
+    .ns-email-toast {
+      margin: 0 1.5rem .75rem;
+      padding: .55rem .9rem;
+      border-radius: 10px;
+      font-size: .78rem;
+      font-weight: 600;
+      border: 1px solid #bbf7d0;
+      animation: fade-in .25s ease;
+    }
+    .ns-email-toast--on { background: #f0fdf4; color: #15803d; border-color: #bbf7d0; }
+    .ns-email-toast:not(.ns-email-toast--on) { background: #fafafa; color: #6b7280; border-color: #e5e7eb; }
+    @keyframes fade-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+
+    /* Spinner */
+    .ns-spin { animation: spin .7s linear infinite; }
+    .ns-spin--sm { color: var(--muted); }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
     /* Schedule */
     .ns-schedule {
@@ -337,20 +404,23 @@ import { UserNotificationSettings } from '../../models/notification.model';
     }
     .ns-save:disabled { opacity: .4; cursor: not-allowed; }
     .ns-save:not(:disabled):hover { opacity: .85; }
-    .ns-spin { animation: spin .7s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
   `]
 })
 export class NotificationSettingsComponent implements OnInit, OnDestroy {
 
-  // ── Individual signals for each field (Angular tracks these properly) ──
+  // ── Individual signals for each field ──
   ext        = signal(true);
   int        = signal(true);
   focus      = signal(false);
   focusStart = signal('21:00');
   focusEnd   = signal('05:00');
 
-  // ── Snapshot signals (also signals so computed() can track them) ──
+  // ── Email notifications (separate instant toggle — no Save needed) ──
+  emailEnabled       = signal(false);
+  emailToggling      = signal(false);
+  emailToggleSuccess = signal(false);
+
+  // ── Snapshot signals for dirty-check ──
   private snapExt        = signal(true);
   private snapInt        = signal(true);
   private snapFocus      = signal(false);
@@ -367,6 +437,7 @@ export class NotificationSettingsComponent implements OnInit, OnDestroy {
   // ── Clock tick for focus-active check ──
   private tick = signal(Date.now());
   private clockInterval: ReturnType<typeof setInterval> | null = null;
+  private emailToastTimer: ReturnType<typeof setTimeout> | null = null;
 
   // ── Computed ──
   isDirty = computed(() =>
@@ -383,7 +454,7 @@ export class NotificationSettingsComponent implements OnInit, OnDestroy {
   });
 
   focusActiveNow = computed(() => {
-    void this.tick(); // re-evaluate every minute
+    void this.tick();
     if (!this.focus() || !this.focusStart() || !this.focusEnd()) return false;
     const now = new Date();
     const cur = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
@@ -400,6 +471,7 @@ export class NotificationSettingsComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     if (this.clockInterval) clearInterval(this.clockInterval);
+    if (this.emailToastTimer) clearTimeout(this.emailToastTimer);
   }
 
   load(): void {
@@ -417,7 +489,6 @@ export class NotificationSettingsComponent implements OnInit, OnDestroy {
         this.focusStart.set(start);
         this.focusEnd.set(end);
 
-        // Sync snapshot
         this.snapExt.set(s.externalNotificationsEnabled);
         this.snapInt.set(s.internalNotificationsEnabled);
         this.snapFocus.set(s.focusModeEnabled);
@@ -431,6 +502,32 @@ export class NotificationSettingsComponent implements OnInit, OnDestroy {
         this.isLoading.set(false);
       }
     });
+
+    // Load email status independently — non-blocking
+    this.svc.getEmailStatus().subscribe({
+      next: res => this.emailEnabled.set(res.emailNotificationsEnabled),
+      error: () => { /* silently ignore */ }
+    });
+  }
+
+  /** Instantly toggle email notifications — no Save button needed */
+  toggleEmail(): void {
+    if (this.emailToggling()) return;
+    this.emailToggling.set(true);
+    this.emailToggleSuccess.set(false);
+
+    this.svc.toggleEmailNotifications().subscribe({
+      next: res => {
+        this.emailEnabled.set(res.emailNotificationsEnabled);
+        this.emailToggling.set(false);
+        this.emailToggleSuccess.set(true);
+        if (this.emailToastTimer) clearTimeout(this.emailToastTimer);
+        this.emailToastTimer = setTimeout(() => this.emailToggleSuccess.set(false), 3500);
+      },
+      error: () => {
+        this.emailToggling.set(false);
+      }
+    });
   }
 
   save(): void {
@@ -442,9 +539,9 @@ export class NotificationSettingsComponent implements OnInit, OnDestroy {
     const payload: UserNotificationSettings = {
       externalNotificationsEnabled: this.ext(),
       internalNotificationsEnabled: this.int(),
-      focusModeEnabled: this.focus(),
-      focusModeStart: this.focusStart(),
-      focusModeEnd:   this.focusEnd()
+      focusModeEnabled:  this.focus(),
+      focusModeStart:    this.focusStart(),
+      focusModeEnd:      this.focusEnd()
     };
 
     this.svc.updateSettings(payload).subscribe({
@@ -452,7 +549,6 @@ export class NotificationSettingsComponent implements OnInit, OnDestroy {
         const start = this.toHHmm(updated.focusModeStart) ?? '21:00';
         const end   = this.toHHmm(updated.focusModeEnd)   ?? '05:00';
 
-        // Update snapshot to match server response
         this.snapExt.set(updated.externalNotificationsEnabled);
         this.snapInt.set(updated.internalNotificationsEnabled);
         this.snapFocus.set(updated.focusModeEnabled);

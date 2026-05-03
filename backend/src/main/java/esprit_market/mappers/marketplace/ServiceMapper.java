@@ -6,25 +6,58 @@ import esprit_market.dto.marketplace.ServiceRequestDTO;
 import esprit_market.dto.marketplace.ServiceResponseDTO;
 import esprit_market.entity.marketplace.ServiceAvailability;
 import esprit_market.entity.marketplace.ServiceEntity;
+import esprit_market.entity.marketplace.Shop;
+import esprit_market.entity.user.User;
+import esprit_market.repository.marketplaceRepository.ShopRepository;
+import esprit_market.repository.userRepository.UserRepository;
+import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
 import org.springframework.stereotype.Component;
 
 import java.util.stream.Collectors;
 
 @Component
+@RequiredArgsConstructor
 public class ServiceMapper {
+
+    private final UserRepository userRepository;
+    private final ShopRepository shopRepository;
 
     public ServiceResponseDTO toDTO(ServiceEntity service) {
         if (service == null)
             return null;
+
+        // Resolve provider name
+        String providerName = null;
+        String providerAvatar = null;
+        if (service.getCreatedByUserId() != null) {
+            User creator = userRepository.findById(service.getCreatedByUserId()).orElse(null);
+            if (creator != null) {
+                String first = creator.getFirstName() != null ? creator.getFirstName() : "";
+                String last  = creator.getLastName()  != null ? creator.getLastName()  : "";
+                providerName   = (first + " " + last).trim();
+                providerAvatar = creator.getAvatarUrl();
+            }
+        }
+
+        // Resolve shop name
+        String shopName = null;
+        if (service.getShopId() != null) {
+            Shop shop = shopRepository.findById(service.getShopId()).orElse(null);
+            if (shop != null) shopName = shop.getName();
+        }
+
         return ServiceResponseDTO.builder()
                 .id(service.getId() != null ? service.getId().toHexString() : null)
                 .name(service.getName())
                 .description(service.getDescription())
                 .price(service.getPrice())
                 .shopId(service.getShopId() != null ? service.getShopId().toHexString() : null)
+                .shopName(shopName)
                 .categoryId(service.getCategoryId() != null ? service.getCategoryId().toHexString() : null)
                 .createdByUserId(service.getCreatedByUserId() != null ? service.getCreatedByUserId().toHexString() : null)
+                .providerName(providerName)
+                .providerAvatar(providerAvatar)
                 .durationMinutes(service.getDurationMinutes())
                 .status(service.getStatus())
                 .workingHoursStart(service.getWorkingHoursStart())

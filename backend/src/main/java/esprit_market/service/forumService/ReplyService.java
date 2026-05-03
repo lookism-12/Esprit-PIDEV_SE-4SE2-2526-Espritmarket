@@ -3,6 +3,7 @@ package esprit_market.service.forumService;
 import esprit_market.dto.forum.ReplyRequest;
 import esprit_market.entity.forum.Reply;
 import esprit_market.mappers.ForumMapper;
+import esprit_market.utils.BadWordFilter;
 import esprit_market.utils.HtmlSanitizer;
 import esprit_market.repository.forumRepository.ReplyRepository;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,8 @@ public class ReplyService implements IReplyService {
     public Reply create(ReplyRequest dto) {
         Reply entity = ForumMapper.toReply(dto);
         if (entity == null) return null;
+        // Filter bad words before persisting
+        entity.setContent(BadWordFilter.filter(entity.getContent()));
         return repository.save(entity);
     }
 
@@ -37,7 +40,8 @@ public class ReplyService implements IReplyService {
     public Reply update(ObjectId id, ReplyRequest dto) {
         Reply existing = repository.findById(id).orElse(null);
         if (existing == null || dto == null) return existing;
-        if (dto.getContent() != null) existing.setContent(HtmlSanitizer.sanitize(dto.getContent()));
+        if (dto.getContent() != null)
+            existing.setContent(BadWordFilter.filter(HtmlSanitizer.sanitize(dto.getContent())));
         return repository.save(existing);
     }
 

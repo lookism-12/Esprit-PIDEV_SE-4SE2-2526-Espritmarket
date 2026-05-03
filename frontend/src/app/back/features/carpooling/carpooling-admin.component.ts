@@ -120,29 +120,138 @@ export class CarpoolingAdminComponent implements OnInit {
 
   protected readonly Math = Math;
 
+  // ── Derived KPIs from loaded data (fallback when stats endpoint is unavailable) ──
+
+  readonly derivedActiveRides = computed(() =>
+    this.rides().filter(r => ['CONFIRMED', 'ACCEPTED', 'IN_PROGRESS'].includes(r.status)).length
+  );
+
+  readonly derivedPendingRequests = computed(() =>
+    this.requests().filter(r => r.status === 'PENDING').length
+  );
+
+  readonly derivedUnverifiedDrivers = computed(() =>
+    this.drivers().filter(d => !d.isVerified).length
+  );
+
+  readonly derivedRevenue = computed(() =>
+    this.payments().reduce((sum, p) => sum + (p.amount ?? 0), 0)
+  );
+
+  // ── Chart data: prefer backend stats, fall back to client-side aggregation ──
+
   readonly ridesTrend = computed(() => {
-    const data = this.stats()?.ridesTrend ?? {};
-    return this.months.map((_, i) => data[(i + 1).toString().padStart(2, '0')] ?? 0);
+    const serverData = this.stats()?.ridesTrend;
+    if (serverData && Object.keys(serverData).length > 0) {
+      return this.months.map((_, i) => serverData[(i + 1).toString().padStart(2, '0')] ?? 0);
+    }
+    // Derive from loaded rides by createdAt month
+    const counts = new Array(12).fill(0);
+    this.rides().forEach(r => {
+      if (r.createdAt) {
+        const m = new Date(r.createdAt).getMonth();
+        counts[m]++;
+      }
+    });
+    return counts;
   });
 
   readonly earningsTrend = computed(() => {
-    const data = this.stats()?.earningsTrend ?? {};
-    return this.months.map((_, i) => data[(i + 1).toString().padStart(2, '0')] ?? 0);
+    const serverData = this.stats()?.earningsTrend;
+    if (serverData && Object.keys(serverData).length > 0) {
+      return this.months.map((_, i) => serverData[(i + 1).toString().padStart(2, '0')] ?? 0);
+    }
+    // Derive from payments by createdAt month
+    const sums = new Array(12).fill(0);
+    this.payments().forEach(p => {
+      if (p.createdAt) {
+        const m = new Date(p.createdAt).getMonth();
+        sums[m] += p.amount ?? 0;
+      }
+    });
+    return sums;
   });
 
   readonly userGrowth = computed(() => {
-    const data = this.stats()?.userGrowth ?? {};
-    return this.months.map((_, i) => data[(i + 1).toString().padStart(2, '0')] ?? 0);
+    const serverData = this.stats()?.userGrowth;
+    if (serverData && Object.keys(serverData).length > 0) {
+      return this.months.map((_, i) => serverData[(i + 1).toString().padStart(2, '0')] ?? 0);
+    }
+    // Derive from passengers by createdAt month
+    const counts = new Array(12).fill(0);
+    this.passengers().forEach(p => {
+      if (p.createdAt) {
+        const m = new Date(p.createdAt).getMonth();
+        counts[m]++;
+      }
+    });
+    return counts;
   });
 
   readonly demandTrend = computed(() => {
-    const data = this.stats()?.reservationsDemand ?? {};
-    return this.months.map((_, i) => data[(i + 1).toString().padStart(2, '0')] ?? 0);
+    const serverData = this.stats()?.reservationsDemand;
+    if (serverData && Object.keys(serverData).length > 0) {
+      return this.months.map((_, i) => serverData[(i + 1).toString().padStart(2, '0')] ?? 0);
+    }
+    // Derive from requests by departureTime month
+    const counts = new Array(12).fill(0);
+    this.requests().forEach(r => {
+      if (r.departureTime) {
+        const m = new Date(r.departureTime).getMonth();
+        counts[m] += r.requestedSeats ?? 1;
+      }
+    });
+    return counts;
   });
 
   readonly statusStats = computed(() => {
-    const dist = this.stats()?.statusDistribution ?? {};
-    return Object.entries(dist).map(([k, v]) => ({ label: k, value: v }));
+    const serverDist = this.stats()?.statusDistribution;
+    if (serverDist && Object.keys(serverDist).length > 0) {
+      return Object.entries(serverDist).map(([k, v]) => ({ label: k, value: v as number }));
+    }
+    // Derive from loaded rides
+    const map: Record<string, number> = {};
+    this.rides().forEach(r => { map[r.status] = (map[r.status] ?? 0) + 1; });
+    return Object.entries(map).map(([k, v]) => ({ label: k, value: v }));
+  });
+
+  readonly topRoutes = computed(() => {
+    const serverRoutes = this.stats()?.topRoutes;
+    if (serverRoutes && serverRoutes.length > 0) return serverRoutes;
+    // Derive from loaded rides
+    const map: Record<string, number> = {};
+    this.rides().forEach(r => {
+      const key = `${r.departureLocation} → ${r.destinationLocation}`;
+      map[key] = (map[key] ?? 0) + 1;
+    });
+    return Object.entries(map)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 6)
+      .map(([route, count]) => ({ route, count }));
+  });
+
+  // Acceptance rate from requests
+  readonly acceptanceRate = computed(() => {
+    const total = this.requests().length;
+    if (!total) return 0;
+    const accepted = this.requests().filter(r => r.status === 'ACCEPTED').length;
+    return Math.round((accepted / total) * 100);
+  });
+
+  // Average price per seat
+  readonly avgPrice = computed(() => {
+    const rides = this.rides();
+    if (!rides.length) return 0;
+    const sum = rides.reduce((s, r) => s + (r.pricePerSeat ?? 0), 0);
+    return (sum / rides.length).toFixed(1);
+  });
+
+  // Verified driver rate
+  readonly verifiedDriverRate = computed(() => {
+    const total = this.drivers().length;
+    if (!total) return 0;
+    const verified = this.drivers().filter(d => d.isVerified).length;
+    return Math.round((verified / total) * 100);
   });
 
   readonly filteredRides = computed(() => {

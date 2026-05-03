@@ -14,7 +14,6 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class RideRequestDTO {
 
-    @NotBlank(message = "Vehicle ID is required")
     private String vehicleId;
 
     @NotBlank(message = "Departure location is required")

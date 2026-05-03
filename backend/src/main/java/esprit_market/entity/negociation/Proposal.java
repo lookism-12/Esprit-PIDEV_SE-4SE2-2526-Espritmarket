@@ -22,6 +22,10 @@ public class Proposal {
     private String message;
     private String exchangeImage;
     private Boolean isExchange;
+    
+    // 🎯 AI Negotiation: Discount percentage calculated from base price and offered amount
+    // Example: base_price=100, offered_price=70 → discountPercentage=30%
+    private Double discountPercentage;
 
     private ProposalType type;       // PROPOSAL ou COUNTER_PROPOSAL
     private ProposalStatuts statuts; // PENDING, ACCEPTED, REJECTED...

@@ -5,6 +5,7 @@ import io.github.cdimascio.dotenv.Dotenv;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 import java.nio.file.Files;
@@ -15,6 +16,7 @@ import esprit_market.config.TwilioProperties;
 
 @SpringBootApplication
 @EnableScheduling
+@EnableAsync
 @EnableConfigurationProperties(TwilioProperties.class)
 public class    EspritMarketApplication {
 

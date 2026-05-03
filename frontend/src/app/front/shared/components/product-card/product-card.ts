@@ -7,6 +7,7 @@ import { AuthService } from '../../../core/auth.service';
 import { ToastService } from '../../../core/toast.service';
 import { StockService } from '../../../core/stock.service';
 import { FavoriteService } from '../../../core/favorite.service';
+import { RecommendationService } from '../../../../core/services/recommendation.service';
 import { UserRole } from '../../../models/user.model';
 import { Subscription } from 'rxjs';
 
@@ -25,6 +26,7 @@ export class ProductCard implements OnInit, OnDestroy {
   private toastService = inject(ToastService);
   private stockService = inject(StockService);
   readonly favoriteService = inject(FavoriteService);
+  private recommendationService = inject(RecommendationService);
   private router = inject(Router);
   private subscription = new Subscription();
 
@@ -181,6 +183,8 @@ export class ProductCard implements OnInit, OnDestroy {
     }).subscribe({
       next: (cartItem) => {
         this.toastService.success(`${product.name} added to cart!`, 3000);
+        // Track add_to_cart interaction for ML recommendations
+        this.trackInteraction(product.id, 'add_to_cart');
       },
       error: (error) => {
         this.toastService.error('Failed to add to cart.');
@@ -317,6 +321,15 @@ export class ProductCard implements OnInit, OnDestroy {
       // For other roles, just navigate to product details
       this.router.navigate(['/product', this.product().id]);
     }
+  }
+
+  /**
+   * Track user interaction with the ML recommendation service (fire-and-forget)
+   */
+  private trackInteraction(productId: string, action: string): void {
+    const user = this.authService.currentUser();
+    if (!user?.id) return;
+    this.recommendationService.trackInteraction(user.id, productId, action).subscribe();
   }
 
   toggleFavorite(event: Event): void {

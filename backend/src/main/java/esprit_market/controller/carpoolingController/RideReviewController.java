@@ -1,67 +1,48 @@
 package esprit_market.controller.carpoolingController;
 
-import esprit_market.dto.carpooling.RideReviewRequestDTO;
-import esprit_market.dto.carpooling.RideReviewResponseDTO;
-import esprit_market.entity.carpooling.RideReview;
-import esprit_market.service.carpoolingService.IRideReviewService;
+import esprit_market.dto.carpooling.ReviewRequestDTO;
+import esprit_market.dto.carpooling.ReviewResponseDTO;
+import esprit_market.service.carpoolingService.RideReviewService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.bson.types.ObjectId;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/ride-reviews")
 @RequiredArgsConstructor
+@Tag(name = "Ride Reviews", description = "Post-ride rating and feedback system")
 public class RideReviewController {
 
-    private final IRideReviewService rideReviewService;
+    private final RideReviewService reviewService;
 
     @PostMapping
-    public RideReviewResponseDTO create(@Valid @RequestBody RideReviewRequestDTO dto,
-            @AuthenticationPrincipal UserDetails user) {
-        return rideReviewService.submitReview(dto, user.getUsername());
+    @ResponseStatus(HttpStatus.CREATED)
+    @Operation(summary = "Submit a review for a completed ride")
+    public ReviewResponseDTO addReview(@Valid @RequestBody ReviewRequestDTO dto) {
+        return reviewService.addReview(dto);
     }
 
-    @GetMapping("/{id}")
-    public RideReviewResponseDTO getById(@PathVariable String id) {
-        return rideReviewService.findById(new ObjectId(id));
+    @GetMapping("/user/{userId}")
+    @Operation(summary = "Get all reviews received by a user")
+    public List<ReviewResponseDTO> getReviewsByUser(@PathVariable String userId) {
+        return reviewService.getReviewsByUser(userId);
     }
 
     @GetMapping("/ride/{rideId}")
-    public List<RideReviewResponseDTO> getByRideId(@PathVariable String rideId) {
-        return rideReviewService.findByRideId(new ObjectId(rideId));
+    @Operation(summary = "Get all reviews for a specific ride")
+    public List<ReviewResponseDTO> getReviewsByRide(@PathVariable String rideId) {
+        return reviewService.getReviewsByRide(rideId);
     }
 
-    @GetMapping("/reviewer/{reviewerId}")
-    public List<RideReviewResponseDTO> getByReviewerId(@PathVariable String reviewerId) {
-        return rideReviewService.findByReviewerId(new ObjectId(reviewerId));
-    }
-
-    @GetMapping("/reviewee/{revieweeId}")
-    public List<RideReviewResponseDTO> getByRevieweeId(@PathVariable String revieweeId) {
-        return rideReviewService.findByRevieweeId(new ObjectId(revieweeId));
-    }
-
-    @GetMapping
-    public List<RideReviewResponseDTO> getByRating(@RequestParam(required = false) Integer rating) {
-        if (rating == null) {
-            return rideReviewService.findAll();
-        }
-        return rideReviewService.findByRating(rating);
-    }
-
-    @GetMapping("/received")
-    public List<RideReviewResponseDTO> getMyReceivedReviews(@AuthenticationPrincipal UserDetails user) {
-        return rideReviewService.findReceivedReviews(user.getUsername());
-    }
-
-    @DeleteMapping("/{id}")
-    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
-    public void delete(@PathVariable String id) {
-        rideReviewService.deleteById(new ObjectId(id));
+    @GetMapping("/can-review/{rideId}")
+    @Operation(summary = "Check if the current user can review a ride")
+    public Map<String, Boolean> canReview(@PathVariable String rideId) {
+        return Map.of("canReview", reviewService.canReview(rideId));
     }
 }

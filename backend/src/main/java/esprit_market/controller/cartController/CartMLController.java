@@ -2,10 +2,11 @@ package esprit_market.controller.cartController;
 
 import esprit_market.dto.cartDto.CartItemResponse;
 import esprit_market.dto.cartDto.CartMLResponse;
-import esprit_market.entity.user.User;
-import esprit_market.repository.userRepository.UserRepository;
+import esprit_market.dto.cartDto.CartResponse;
 import esprit_market.service.cartService.CartMLService;
 import esprit_market.service.cartService.ICartService;
+import esprit_market.entity.user.User;
+import esprit_market.repository.userRepository.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -19,124 +20,76 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * REST endpoints that expose Cart ML predictions to the Angular frontend.
- *
- * Base path: /api/cart/ml
+ * Exposes Cart ML predictions to the Angular frontend.
+ * Endpoint: /api/cart/ml/*
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/cart/ml")
 @RequiredArgsConstructor
-@Slf4j
 @Tag(name = "Cart ML", description = "ML-powered promotion and price suggestions for cart items")
 public class CartMLController {
 
-    private final CartMLService cartMLService;
-    private final ICartService  cartService;
+    private final CartMLService  cartMLService;
+    private final ICartService   cartService;
     private final UserRepository userRepository;
 
-    // ──────────────────────────────────────────────────────────
-    // HELPER
-    // ──────────────────────────────────────────────────────────
-
     private ObjectId resolveUserId(Authentication auth) {
-        String email = auth.getName();
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found: " + email));
+        if (auth == null) throw new IllegalStateException("Authentication required");
+        User user = userRepository.findByEmail(auth.getName())
+                .orElseThrow(() -> new IllegalStateException("User not found: " + auth.getName()));
         return user.getId();
     }
 
-    // ──────────────────────────────────────────────────────────
-    // ENDPOINTS
-    // ──────────────────────────────────────────────────────────
+    private List<CartItemResponse> getItems(ObjectId userId) {
+        CartResponse cart = cartService.getOrCreateCart(userId);
+        return cartService.findByCartId(new ObjectId(cart.getId()));
+    }
 
-    /**
-     * GET /api/cart/ml/suggestions
-     *
-     * Returns ML promotion + price suggestions for every item in the
-     * authenticated user's current cart.
-     */
     @GetMapping("/suggestions")
-    @Operation(
-        summary = "Get ML suggestions for cart",
-        description = "Returns promotion and price-adjustment suggestions for all items in the user's cart"
-    )
-    public ResponseEntity<List<CartMLResponse>> getCartSuggestions(Authentication auth) {
-        ObjectId userId = resolveUserId(auth);
-        log.info("🛒 ML suggestions requested for user {}", userId);
-
-        // Load current cart, then its items
-        CartItemResponse[] items;
+    @Operation(summary = "Get ML suggestions for all cart items")
+    public ResponseEntity<List<CartMLResponse>> getSuggestions(Authentication auth) {
         try {
-            var cart = cartService.getCartByUserId(userId);
-            if (cart == null || cart.getId() == null) {
-                return ResponseEntity.ok(List.of());
-            }
-            var cartItems = cartService.findByCartId(new ObjectId(cart.getId()));
-            if (cartItems == null || cartItems.isEmpty()) {
-                return ResponseEntity.ok(List.of());
-            }
-            List<CartMLResponse> predictions = cartMLService.predictBatch(cartItems);
-            log.info("✅ Returning {} ML predictions", predictions.size());
-            return ResponseEntity.ok(predictions);
+            ObjectId userId = resolveUserId(auth);
+            List<CartItemResponse> items = getItems(userId);
+            if (items == null || items.isEmpty()) return ResponseEntity.ok(List.of());
+            List<CartMLResponse> suggestions = cartMLService.predictBatch(items);
+            log.info("🤖 Cart ML: {} suggestions for user {}", suggestions.size(), auth.getName());
+            return ResponseEntity.ok(suggestions);
         } catch (Exception e) {
-            log.warn("⚠️ Could not load cart for ML suggestions: {}", e.getMessage());
+            log.warn("⚠️ Cart ML suggestions failed: {}", e.getMessage());
             return ResponseEntity.ok(List.of());
         }
     }
 
-    /**
-     * GET /api/cart/ml/suggest/{productId}
-     *
-     * Returns ML suggestion for a single product already in the cart.
-     */
     @GetMapping("/suggest/{productId}")
-    @Operation(
-        summary = "Get ML suggestion for one cart item",
-        description = "Returns promotion and price-adjustment suggestion for a specific product"
-    )
-    public ResponseEntity<CartMLResponse> getSingleSuggestion(
-            @PathVariable String productId,
-            Authentication auth) {
-
-        ObjectId userId = resolveUserId(auth);
-
+    @Operation(summary = "Get ML suggestion for a single cart item")
+    public ResponseEntity<CartMLResponse> getSuggestion(
+            @PathVariable String productId, Authentication auth) {
         try {
-            var cart = cartService.getCartByUserId(userId);
-            if (cart == null || cart.getId() == null) {
-                return ResponseEntity.notFound().build();
-            }
-            List<CartItemResponse> items = cartService.findByCartId(new ObjectId(cart.getId()));
+            ObjectId userId = resolveUserId(auth);
+            List<CartItemResponse> items = getItems(userId);
             CartItemResponse item = items.stream()
                     .filter(i -> productId.equals(i.getProductId()))
-                    .findFirst()
-                    .orElse(null);
-
-            if (item == null) {
-                return ResponseEntity.notFound().build();
-            }
-
-            CartMLResponse prediction = cartMLService.predict(item);
-            return ResponseEntity.ok(prediction);
+                    .findFirst().orElse(null);
+            if (item == null) return ResponseEntity.notFound().build();
+            return ResponseEntity.ok(cartMLService.predict(item));
         } catch (Exception e) {
-            log.warn("⚠️ Could not get ML suggestion for product {}: {}", productId, e.getMessage());
-            return ResponseEntity.notFound().build();
+            log.warn("⚠️ Cart ML single suggestion failed: {}", e.getMessage());
+            return ResponseEntity.ok(CartMLResponse.builder()
+                    .productId(productId).promotionSuggestion("NO")
+                    .priceAdjustment("STABLE").confidencePromo(0.0)
+                    .confidencePrice(0.0).expectedImpact("ML service unavailable")
+                    .modelUsed("fallback").build());
         }
     }
 
-    /**
-     * GET /api/cart/ml/health
-     *
-     * Checks if the Python ML service is reachable.
-     */
     @GetMapping("/health")
     @Operation(summary = "Check Cart ML service health")
-    public ResponseEntity<Map<String, Object>> health() {
-        boolean available = cartMLService.isServiceAvailable();
+    public ResponseEntity<Map<String, String>> health() {
+        boolean up = cartMLService.isServiceAvailable();
         return ResponseEntity.ok(Map.of(
-                "cartMLService", available ? "UP" : "DOWN",
-                "message", available
-                        ? "ML service is running"
-                        : "ML service unavailable – rule-based fallback active"
-        ));
+                "cartMLService", up ? "UP" : "DOWN",
+                "message", up ? "ML service is running" : "ML service unavailable — using fallback"));
     }
 }

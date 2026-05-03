@@ -141,7 +141,6 @@ export class SidebarComponent {
     menuItems: MenuItem[] = [
         { label: 'Dashboard', icon: '🏠', route: '/admin/dashboard' },
         { label: 'User Management', icon: '👥', route: '/admin/users' },
-        { label: 'Support Center', icon: '🎧', route: '/admin/support' },
         { label: 'Notification Center', icon: '🔔', route: '/admin/notifications', badge: 5 },
         { label: 'Negotiations', icon: '🤝', route: '/admin/negotiations' },
         { label: 'After Sales Service', icon: '🛠️', route: '/admin/sav' }

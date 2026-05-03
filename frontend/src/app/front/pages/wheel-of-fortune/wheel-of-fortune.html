@@ -1,0 +1,163 @@
+<div class="wheel-container">
+  <!-- Background Effects -->
+  <div class="bg-gradient"></div>
+  <div class="bg-pattern"></div>
+
+  <!-- Main Content -->
+  <div class="content-wrapper">
+    
+    <!-- Header -->
+    <div class="header">
+      <div class="header-badge">
+        <span class="badge-dot"></span>
+        <span class="badge-text">DAILY REWARD</span>
+      </div>
+      <h1 class="title">
+        Wheel of <span class="title-highlight">Fortune</span>
+      </h1>
+      <p class="subtitle">
+        Spin once per day and win amazing rewards! 🎁
+      </p>
+    </div>
+
+    <!-- Wheel Section -->
+    <div class="wheel-section">
+      
+      <!-- Wheel Container -->
+      <div class="wheel-wrapper">
+        <canvas #wheelCanvas class="wheel-canvas"></canvas>
+        
+        <!-- Spin Button Overlay -->
+        @if (!isSpinning()) {
+          <button 
+            class="spin-button"
+            [disabled]="!canSpin()"
+            (click)="spin()"
+            [class.disabled]="!canSpin()">
+            @if (canSpin()) {
+              <span class="spin-text">SPIN NOW</span>
+              <span class="spin-icon">🎯</span>
+            } @else {
+              <span class="spin-text">COME BACK</span>
+              <span class="spin-subtext">Tomorrow</span>
+            }
+          </button>
+        }
+
+        @if (isSpinning()) {
+          <div class="spinning-overlay">
+            <div class="spinner"></div>
+            <p class="spinning-text">Spinning...</p>
+          </div>
+        }
+      </div>
+
+      <!-- Info Cards -->
+      <div class="info-cards">
+        <div class="info-card">
+          <div class="info-icon">🎁</div>
+          <div class="info-content">
+            <h3>Daily Spin</h3>
+            <p>One free spin every 24 hours</p>
+          </div>
+        </div>
+        
+        <div class="info-card">
+          <div class="info-icon">⭐</div>
+          <div class="info-content">
+            <h3>Win Rewards</h3>
+            <p>Discounts, points & more!</p>
+          </div>
+        </div>
+        
+        <div class="info-card">
+          <div class="info-icon">🚀</div>
+          <div class="info-content">
+            <h3>Instant Apply</h3>
+            <p>Use rewards on your next order</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rewards Preview -->
+    <div class="rewards-preview">
+      <h2 class="section-title">Available Rewards</h2>
+      <div class="rewards-grid">
+        @for (reward of rewards(); track reward.id) {
+          <div class="reward-card" [style.border-color]="reward.color">
+            <div class="reward-icon" [style.background]="reward.color">
+              {{ reward.icon }}
+            </div>
+            <h3 class="reward-label">{{ reward.label }}</h3>
+            <p class="reward-description">{{ reward.description }}</p>
+            @if (reward.minOrderValue && reward.minOrderValue > 0) {
+              <span class="reward-min">Min. order: ${{ reward.minOrderValue }}</span>
+            }
+          </div>
+        }
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Confetti Canvas -->
+  <canvas #confettiCanvas class="confetti-canvas"></canvas>
+
+  <!-- Result Modal -->
+  @if (showResultModal() && spinResult()) {
+    <div class="modal-overlay" (click)="closeResultModal()">
+      <div class="modal-content" (click)="$event.stopPropagation()" 
+           [class]="getRewardIconClass(spinResult()!.reward.type)">
+        
+        <!-- Celebration Header -->
+        <div class="modal-header">
+          <div class="modal-icon">{{ spinResult()!.reward.icon }}</div>
+          <h2 class="modal-title">{{ spinResult()!.message }}</h2>
+        </div>
+
+        <!-- Reward Details -->
+        <div class="modal-body">
+          <div class="reward-display">
+            <div class="reward-value">{{ spinResult()!.reward.label }}</div>
+            <p class="reward-desc">{{ spinResult()!.reward.description }}</p>
+          </div>
+
+          @if (spinResult()!.reward.couponCode) {
+            <div class="coupon-code">
+              <span class="coupon-label">Coupon Code:</span>
+              <span class="coupon-value">{{ spinResult()!.reward.couponCode }}</span>
+            </div>
+          }
+
+          @if (spinResult()!.expiryDate) {
+            <div class="expiry-info">
+              <svg class="expiry-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              <span>Valid until {{ spinResult()!.expiryDate | date:'medium' }}</span>
+            </div>
+          }
+        </div>
+
+        <!-- Actions -->
+        <div class="modal-actions">
+          <button class="btn-primary" (click)="closeResultModal()">
+            Awesome! 🎉
+          </button>
+          <button class="btn-secondary" (click)="closeResultModal()">
+            View My Rewards
+          </button>
+        </div>
+
+        <!-- Close Button -->
+        <button class="modal-close" (click)="closeResultModal()">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  }
+</div>

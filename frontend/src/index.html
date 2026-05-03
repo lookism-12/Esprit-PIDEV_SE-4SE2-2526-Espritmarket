@@ -33,6 +33,33 @@
       }
     })();
   </script>
+  <!-- OAuth client IDs — read by AuthService at runtime -->
+  <!-- Replace the content values with your real credentials -->
+  <meta name="google-client-id"  content="">
+  <meta name="github-client-id"  content="">
+  <meta name="facebook-app-id"   content="">
+
+  <!-- Google Identity Services -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+  <!-- Facebook JS SDK -->
+  <script>
+    window.fbAsyncInit = function () {
+      FB.init({
+        appId:   document.querySelector('meta[name="facebook-app-id"]').content,
+        cookie:  true,
+        xfbml:   false,
+        version: 'v19.0'
+      });
+    };
+    (function (d, s, id) {
+      var js, fjs = d.getElementsByTagName(s)[0];
+      if (d.getElementById(id)) return;
+      js = d.createElement(s); js.id = id;
+      js.src = 'https://connect.facebook.net/en_US/sdk.js';
+      fjs.parentNode.insertBefore(js, fjs);
+    }(document, 'script', 'facebook-jssdk'));
+  </script>
 </head>
 <body>
   <app-root></app-root>

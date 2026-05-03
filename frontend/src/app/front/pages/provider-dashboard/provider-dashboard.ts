@@ -261,6 +261,30 @@ export class ProviderDashboard implements OnInit {
   readonly serviceRequests = signal<BookingResponse[]>([]);
   readonly isLoadingServiceRequests = signal(false);
   readonly updatingServiceRequestId = signal<string | null>(null);
+
+  // Reject modal state
+  readonly showRejectModal = signal(false);
+  private rejectingRequest = signal<BookingResponse | null>(null);
+  rejectReason = '';
+
+  openRejectModal(request: BookingResponse): void {
+    this.rejectingRequest.set(request);
+    this.rejectReason = '';
+    this.showRejectModal.set(true);
+  }
+
+  closeRejectModal(): void {
+    this.showRejectModal.set(false);
+    this.rejectingRequest.set(null);
+    this.rejectReason = '';
+  }
+
+  confirmReject(): void {
+    const request = this.rejectingRequest();
+    if (!request || !this.rejectReason.trim()) return;
+    this.closeRejectModal();
+    this.rejectServiceRequest(request, this.rejectReason.trim());
+  }
   readonly isLoadingReturned = signal(false);
   readonly restockingOrderId = signal<string | null>(null);
 
@@ -489,11 +513,11 @@ export class ProviderDashboard implements OnInit {
     });
   }
 
-  rejectServiceRequest(request: BookingResponse) {
-    const reason = prompt('Rejection reason:');
-    if (!reason?.trim()) return;
+  rejectServiceRequest(request: BookingResponse, reason?: string) {
+    const finalReason = reason ?? prompt('Rejection reason:');
+    if (!finalReason?.trim()) return;
     this.updatingServiceRequestId.set(request.id);
-    this.bookingService.rejectBooking(request.id, reason.trim()).subscribe({
+    this.bookingService.rejectBooking(request.id, finalReason.trim()).subscribe({
       next: () => {
         this.toastService.success('Service request rejected');
         this.updatingServiceRequestId.set(null);

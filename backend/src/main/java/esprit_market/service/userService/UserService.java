@@ -181,6 +181,7 @@ public class UserService implements IUserService {
             user.setPhone(phone);
             log.debug("Phone updated to: {}", phone);
         }
+
         if (deliveryZone != null && !deliveryZone.isBlank()) {
             user.setDeliveryZone(deliveryZone);
             log.debug("Delivery zone updated to: {}", deliveryZone);

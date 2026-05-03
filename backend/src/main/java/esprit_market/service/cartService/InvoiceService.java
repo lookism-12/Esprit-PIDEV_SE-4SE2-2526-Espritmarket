@@ -64,7 +64,11 @@ public class InvoiceService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new Exceptions.ResourceNotFoundException("Order not found"));
         
-        if (!order.getUser().getId().equals(userId)) {
+        // Compare by hex string to avoid ObjectId equality pitfalls with DBRef-loaded entities
+        if (order.getUser() == null || !order.getUser().getId().toHexString().equals(userId.toHexString())) {
+            log.warn("Invoice access denied: order.user={}, requestingUser={}",
+                    order.getUser() != null ? order.getUser().getId().toHexString() : "null",
+                    userId.toHexString());
             throw new Exceptions.AccessDeniedException("You do not have permission to access this invoice");
         }
         

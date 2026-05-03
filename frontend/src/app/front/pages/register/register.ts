@@ -146,9 +146,8 @@ export class Register implements OnInit {
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(8)]],
       confirmPassword: ['', [Validators.required]],
+
       phone: ['', [Validators.required, Validators.pattern(/^[0-9]{8,15}$/)]],
-      
-      // Client fields
       address: [''],
       
       // Provider fields
@@ -345,6 +344,7 @@ export class Register implements OnInit {
       email: formValue.email,
       password: formValue.password,
       phone: formValue.phone,
+
       role: role,
       address: formValue.address || undefined,
       businessName: formValue.businessName || undefined,

@@ -505,6 +505,100 @@ export class AuthService {
   }
 
   /**
+   * Sign in with Google using Google Identity Services popup.
+   * Verifies the credential on our backend and returns a JWT.
+   */
+  loginWithGoogle(): void {
+    const google = (window as any).google;
+    if (!google?.accounts?.id) {
+      console.error('Google Identity Services not loaded');
+      return;
+    }
+
+    google.accounts.id.initialize({
+      client_id: this.getGoogleClientId(),
+      callback: (response: { credential: string }) => {
+        this.handleOAuthResponse('google', { credential: response.credential });
+      },
+      auto_select: false,
+      cancel_on_tap_outside: true,
+    });
+
+    google.accounts.id.prompt((notification: any) => {
+      if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+        // Fallback: render a button in a temporary div and click it
+        const div = document.createElement('div');
+        div.style.display = 'none';
+        document.body.appendChild(div);
+        google.accounts.id.renderButton(div, { type: 'standard' });
+        const btn = div.querySelector('div[role=button]') as HTMLElement;
+        btn?.click();
+      }
+    });
+  }
+
+  /**
+   * Sign in with GitHub — redirects to GitHub's OAuth page.
+   * The callback URL must be registered in your GitHub OAuth App settings.
+   */
+  loginWithGithub(): void {
+    const clientId = this.getGithubClientId();
+    const redirectUri = encodeURIComponent(`${window.location.origin}/oauth/github/callback`);
+    const scope = encodeURIComponent('user:email');
+    window.location.href =
+      `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}`;
+  }
+
+  /**
+   * Sign in with Facebook using the Facebook JS SDK popup.
+   */
+  loginWithFacebook(): void {
+    const FB = (window as any).FB;
+    if (!FB) {
+      console.error('Facebook SDK not loaded');
+      return;
+    }
+
+    FB.login((response: any) => {
+      if (response.authResponse?.accessToken) {
+        this.handleOAuthResponse('facebook', { accessToken: response.authResponse.accessToken });
+      } else {
+        console.warn('Facebook login cancelled or failed');
+      }
+    }, { scope: 'email,public_profile' });
+  }
+
+  /** Shared handler — POSTs provider token to backend, stores JWT, redirects. */
+  private handleOAuthResponse(provider: string, payload: Record<string, string>): void {
+    this.isLoading.set(true);
+    this.http.post<AuthResponse>(`${this.apiUrl}/oauth/${provider}`, payload).subscribe({
+      next: (res) => {
+        localStorage.setItem('authToken', res.token);
+        localStorage.setItem('userId',    res.userId);
+        this.isAuthenticated.set(true);
+        this.loadCurrentUser().subscribe({
+          next:  (user) => { this.isLoading.set(false); this.redirectByRole(user.role); },
+          error: ()     => { this.isLoading.set(false); }
+        });
+      },
+      error: (err) => {
+        this.isLoading.set(false);
+        console.error(`${provider} OAuth failed:`, err.error?.error ?? err.message);
+      }
+    });
+  }
+
+  // ── OAuth client-id helpers (read from meta tags injected by index.html) ──
+
+  private getGoogleClientId(): string {
+    return document.querySelector<HTMLMetaElement>('meta[name="google-client-id"]')?.content ?? '';
+  }
+
+  private getGithubClientId(): string {
+    return document.querySelector<HTMLMetaElement>('meta[name="github-client-id"]')?.content ?? '';
+  }
+
+  /**
    * Check if current user is seller/provider
    */
   isSeller(): boolean {

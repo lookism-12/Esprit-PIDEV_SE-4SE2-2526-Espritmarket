@@ -17,9 +17,11 @@
             </div>
         </div>
 
+        <!-- AI Recommendations strip (only for logged-in users) -->
+        <!-- Removed from marketplace page — recommendations appear on product detail and cart pages -->
+
         <!-- Main Layout: Sidebar + Content -->
-        <div class="flex flex-col lg:flex-row gap-8">
-            <!-- Left Sidebar - Filters -->
+        <div class="flex flex-col lg:flex-row gap-8">            <!-- Left Sidebar - Filters -->
             <aside class="lg:w-80 flex-shrink-0">
                 <div class="rounded-3xl shadow-xl border p-6 sticky top-24 space-y-6" style="background-color: var(--card-bg); border-color: var(--border);">
                     <!-- Filters Header -->
@@ -148,9 +150,55 @@
                         }
                     </div>
                 } @else if (paginatedProducts().length > 0) {
+                    <!-- AI Insights Banner -->
+                    @if (mlInsights().size > 0) {
+                      <div class="mb-4 rounded-2xl p-3 border border-blue-100 bg-blue-50 flex flex-wrap items-center gap-3">
+                        <span class="text-blue-700 font-bold text-xs">🤖 AI Insights active</span>
+                        @if ([].constructor(0).length === 0) {
+                          @let promoCount = paginatedProducts().filter(p => getInsight(p.id)?.promotion_suggestion === 'YES').length;
+                          @let hotCount = paginatedProducts().filter(p => getInsight(p.id)?.price_adjustment === 'INCREASE').length;
+                          @let dealCount = paginatedProducts().filter(p => getInsight(p.id)?.price_adjustment === 'DECREASE').length;
+                          @if (promoCount > 0) {
+                            <span class="px-2 py-1 bg-orange-100 text-orange-700 text-xs font-bold rounded-full border border-orange-200">
+                              🏷️ {{ promoCount }} promo eligible
+                            </span>
+                          }
+                          @if (hotCount > 0) {
+                            <span class="px-2 py-1 bg-red-100 text-red-700 text-xs font-bold rounded-full border border-red-200">
+                              🔥 {{ hotCount }} trending up
+                            </span>
+                          }
+                          @if (dealCount > 0) {
+                            <span class="px-2 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full border border-green-200">
+                              📉 {{ dealCount }} price dropping
+                            </span>
+                          }
+                        }
+                        <span class="text-xs text-blue-400 ml-auto">Powered by ML (86% accuracy)</span>
+                      </div>
+                    }
+                    @if (mlLoading()) {
+                      <div class="mb-3 text-xs text-gray-400 flex items-center gap-2 px-1">
+                        <div class="w-3 h-3 border border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
+                        Loading AI insights…
+                      </div>
+                    }
+
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
                         @for (product of paginatedProducts(); track product.id) {
+                          <div class="relative">
+                            <!-- ML Badge overlay -->
+                            @let insight = getInsight(product.id);
+                            @if (insight && mlService.getBadgeLabel(insight)) {
+                              <div class="absolute top-3 left-3 z-10">
+                                <span class="px-2 py-1 rounded-lg text-xs font-bold shadow-sm {{ mlService.getBadgeClass(insight) }}"
+                                      [title]="mlService.getTooltip(insight)">
+                                  {{ mlService.getBadgeLabel(insight) }}
+                                </span>
+                              </div>
+                            }
                             <app-product-card [product]="product"></app-product-card>
+                          </div>
                         }
                     </div>
 

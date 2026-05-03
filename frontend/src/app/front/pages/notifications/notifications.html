@@ -189,6 +189,24 @@
                   <button (click)="buyNowFromNegotiation(n)" [disabled]="isNegotiationExpired(n)" class="btn-prim">⚡ Buy Now</button>
                 </div>
               </div>
+
+              <!-- PDF Contract Download -->
+              @if (n.linkedObjectId) {
+                <div style="margin-top:12px;padding:16px;background:linear-gradient(135deg,#fff9f2,#fff3e0);border:1px solid #e0b84a;border-radius:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+                  <div style="display:flex;align-items:center;gap:10px;">
+                    <span style="font-size:2rem;">📄</span>
+                    <div>
+                      <p style="font-weight:800;color:#1a1a1a;margin:0;font-size:14px;">Contract Ready</p>
+                      <p style="color:#666;margin:0;font-size:12px;">Your negotiation contract is available as PDF</p>
+                    </div>
+                  </div>
+                  <button
+                    (click)="downloadNegotiationPdf(n.linkedObjectId)"
+                    style="background:#8B0000;color:white;border:none;padding:10px 20px;border-radius:12px;font-weight:800;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:6px;white-space:nowrap;">
+                    ⬇️ Download PDF
+                  </button>
+                </div>
+              }
             }
 
             @if (n.type === 'NEGOTIATION_PROPOSAL' && (authService.userRole() === 'PROVIDER' || authService.userRole() === 'SELLER')) {

@@ -179,4 +179,36 @@ export class NegotiationService implements OnDestroy {
   counterOffer(id: string, price: number): Observable<NegotiationResponse> {
     return this.submitCounterProposal({ negotiationId: id, amount: price });
   }
+
+  predictNegotiation(payload: any): Observable<NegotiationResponse> {
+    return this.http.post<NegotiationResponse>(`${this.apiUrl}/predict`, {
+      serviceId: payload.productId ?? payload.serviceId,
+      amount: payload.proposedPrice ?? payload.amount,
+      quantity: payload.quantity,
+      message: payload.message,
+      isExchange: payload.isExchange,
+      exchangeImage: payload.exchangeImage
+    });
+  }
+
+  /**
+   * Downloads the negotiation PDF report.
+   * Returns a Blob that the browser saves as a file.
+   */
+  downloadPdf(negotiationId: string): void {
+    this.http.get(
+      `${this.apiUrl}/${negotiationId}/pdf`,
+      { responseType: 'blob' }
+    ).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `negotiation-${negotiationId.substring(0, 8)}.pdf`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+      },
+      error: (err) => console.error('PDF download failed', err)
+    });
+  }
 }

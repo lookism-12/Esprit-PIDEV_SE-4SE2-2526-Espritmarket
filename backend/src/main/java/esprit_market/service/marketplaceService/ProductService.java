@@ -17,6 +17,7 @@ import esprit_market.repository.marketplaceRepository.ProductCategoryRepository;
 import esprit_market.repository.marketplaceRepository.ProductRepository;
 import esprit_market.repository.marketplaceRepository.ShopRepository;
 import esprit_market.repository.userRepository.UserRepository;
+import esprit_market.service.RecommendationIntegrationService;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
 import org.slf4j.Logger;
@@ -41,6 +42,7 @@ public class ProductService implements IProductService {
     private final UserRepository userRepository;
     private final ProductMapper mapper;
     private final esprit_market.service.userService.TrustService trustService;
+    private final RecommendationIntegrationService recommendationIntegration;
 
     @Override
     public List<ProductResponseDTO> findAll() {
@@ -102,6 +104,19 @@ public class ProductService implements IProductService {
     public ProductResponseDTO findById(ObjectId id) {
         Product product = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
+        
+        // Track view for recommendation system
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.isAuthenticated() && !auth.getPrincipal().equals("anonymousUser")) {
+                userRepository.findByEmail(auth.getName()).ifPresent(user -> {
+                    recommendationIntegration.trackProductView(user.getId().toHexString(), id.toHexString());
+                });
+            }
+        } catch (Exception e) {
+            log.warn("Failed to track product view for recommendation: {}", e.getMessage());
+        }
+
         return mapper.toDTO(product);
     }
 

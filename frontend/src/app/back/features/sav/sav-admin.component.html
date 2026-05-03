@@ -150,6 +150,11 @@
                         @if (item.priority) {
                           <span class="rounded-full border px-2 py-0.5 uppercase" [ngClass]="getPriorityBadgeClass(item.priority)">{{ item.priority }}</span>
                         }
+                        <!-- Smart priority score badge (negative for claims, positive for feedback) -->
+                        <span class="rounded-full border px-2 py-0.5 font-black"
+                              [ngClass]="getPriorityScoreBadgeClass(item)">
+                          {{ getPriorityScoreLabel(item) }}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -232,11 +237,11 @@
                 </section>
               }
 
-              @if (item.imageUrls.length > 0) {
+              @if (validImages(item.imageUrls).length > 0) {
                 <section class="rounded-xl border border-gray-100 p-4">
                   <p class="text-[11px] font-black uppercase text-gray-400">Attachments</p>
                   <div class="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">
-                    @for (image of item.imageUrls; track image) {
+                    @for (image of validImages(item.imageUrls); track image) {
                       <a [href]="image" target="_blank" class="block overflow-hidden rounded-xl border border-gray-100 bg-gray-50">
                         <img [src]="image" alt="SAV attachment" class="h-28 w-full object-cover">
                       </a>

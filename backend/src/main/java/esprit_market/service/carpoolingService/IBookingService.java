@@ -31,6 +31,10 @@ public interface IBookingService {
 
     BookingResponseDTO updateStatus(ObjectId id, BookingStatus status);
 
+    BookingResponseDTO acceptBooking(ObjectId id, String driverEmail);
+
+    BookingResponseDTO rejectBooking(ObjectId id, String driverEmail);
+
     void cancelBooking(String bookingId, String passengerEmail);
 
     BookingResponseDTO createBooking(BookingRequestDTO dto, String passengerEmail, ObjectId rideId);

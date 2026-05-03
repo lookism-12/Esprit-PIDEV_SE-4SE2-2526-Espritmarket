@@ -48,13 +48,19 @@ public class JwtUtil {
                 .compact();
     }
 
-    public String generateTokenFromEmail(String email) {
+    public String generateTokenFromEmail(String email, List<String> roles) {
         return Jwts.builder()
                 .setSubject(email)
+                .claim("roles", roles)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
+    }
+
+    /** Overload kept for backward compatibility — generates token with no roles claim */
+    public String generateTokenFromEmail(String email) {
+        return generateTokenFromEmail(email, List.of());
     }
 
     public String getEmailFromToken(String token) {

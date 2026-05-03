@@ -4,6 +4,7 @@ import esprit_market.Enum.carpoolingEnum.BookingStatus;
 import esprit_market.Enum.carpoolingEnum.RideRequestStatus;
 import esprit_market.Enum.carpoolingEnum.RideStatus;
 import esprit_market.Enum.notificationEnum.NotificationType;
+
 import esprit_market.dto.carpooling.PassengerRideRequestCreationDTO;
 import esprit_market.dto.carpooling.RideRequestResponseDTO;
 import esprit_market.entity.carpooling.*;
@@ -12,13 +13,15 @@ import esprit_market.mappers.carpooling.RideRequestMapper;
 import esprit_market.repository.carpoolingRepository.*;
 import esprit_market.repository.userRepository.UserRepository;
 import esprit_market.service.notificationService.NotificationService;
+import esprit_market.service.mlService.PredictiveAiService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import java.time.DayOfWeek;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -36,6 +39,8 @@ public class RideRequestService implements IRideRequestService {
     private final VehicleRepository vehicleRepository;
     private final RideRequestMapper rideRequestMapper;
     private final NotificationService notificationService;
+    private final PredictiveAiService predictiveAiService;
+    private final PassengerEngagementService engagementService;
 
     @Override
     public RideRequestResponseDTO createRequest(PassengerRideRequestCreationDTO dto, String passengerEmail) {
@@ -50,11 +55,16 @@ public class RideRequestService implements IRideRequestService {
                             .build();
                     newProfile = passengerProfileRepository.save(newProfile);
                     user.setPassengerProfileId(newProfile.getId());
-                    if (user.getRoles() == null) {
-                        user.setRoles(new java.util.ArrayList<>());
+                    List<esprit_market.Enum.userEnum.Role> currentRoles = user.getRoles();
+                    if (currentRoles == null) {
+                        currentRoles = new java.util.ArrayList<>();
+                    } else {
+                        currentRoles = new java.util.ArrayList<>(currentRoles);
                     }
-                    if (!user.getRoles().contains(esprit_market.Enum.userEnum.Role.PASSENGER)) {
-                        user.getRoles().add(esprit_market.Enum.userEnum.Role.PASSENGER);
+                    
+                    if (!currentRoles.contains(esprit_market.Enum.userEnum.Role.PASSENGER)) {
+                        currentRoles.add(esprit_market.Enum.userEnum.Role.PASSENGER);
+                        user.setRoles(currentRoles);
                     }
                     userRepository.save(user);
                     return newProfile;
@@ -70,7 +80,10 @@ public class RideRequestService implements IRideRequestService {
                 .status(RideRequestStatus.PENDING)
                 .build();
 
-        return rideRequestMapper.toResponseDTO(rideRequestRepository.save(request));
+        RideRequest saved = rideRequestRepository.save(request);
+        // Award engagement points for submitting a ride request
+        engagementService.awardRideRequestPoints(profile.getId());
+        return rideRequestMapper.toResponseDTO(saved);
     }
 
     @Override
@@ -157,6 +170,34 @@ public class RideRequestService implements IRideRequestService {
                         + " to " + saved.getDestinationLocation() + ".",
                 NotificationType.RIDE_UPDATE, saved.getId().toHexString());
 
+        // ── ML incremental learning: ACCEPT outcome ───────────────────────────
+        try {
+            PassengerProfile passengerProfile = passengerProfileRepository
+                    .findById(saved.getPassengerProfileId()).orElse(null);
+            float passengerRating = passengerProfile != null
+                    && passengerProfile.getAverageRating() != null
+                    ? passengerProfile.getAverageRating() : 3.5f;
+
+            PredictiveAiService.CarpoolingFeedback feedback = PredictiveAiService.CarpoolingFeedback.builder()
+                    .passenger_rating(passengerRating)
+                    .ride_distance_km(15.0)
+                    .pickup_distance_km(2.0)
+                    .fare_offered(saved.getProposedPrice() != null ? saved.getProposedPrice() : 10.0f)
+                    .requested_seats(saved.getRequestedSeats() != null ? saved.getRequestedSeats() : 1)
+                    .available_seats(4)
+                    .time_of_day(getTimeOfDay(saved.getDepartureTime()))
+                    .is_weekend(isWeekend(saved.getDepartureTime()) ? 1 : 0)
+                    .has_luggage(0)
+                    .has_pets(0)
+                    .passenger_gender("MALE")
+                    .driver_gender("MALE")
+                    .driver_decision("ACCEPT")
+                    .build();
+            predictiveAiService.sendCarpoolingFeedback(feedback);
+        } catch (Exception e) {
+            log.warn("Carpooling ML feedback (accept) failed: {}", e.getMessage());
+        }
+
         return rideRequestMapper.toResponseDTO(saved);
     }
 
@@ -195,6 +236,31 @@ public class RideRequestService implements IRideRequestService {
 
         request.setStatus(RideRequestStatus.CANCELLED);
         rideRequestRepository.save(request);
+
+        // ── ML incremental learning: REJECT outcome when driver never accepted ─
+        // Only send feedback if the request was PENDING (never accepted = implicit reject)
+        if (request.getDriverProfileId() == null) {
+            try {
+                PredictiveAiService.CarpoolingFeedback feedback = PredictiveAiService.CarpoolingFeedback.builder()
+                        .passenger_rating(3.5)
+                        .ride_distance_km(15.0)
+                        .pickup_distance_km(2.0)
+                        .fare_offered(request.getProposedPrice() != null ? request.getProposedPrice() : 10.0f)
+                        .requested_seats(request.getRequestedSeats() != null ? request.getRequestedSeats() : 1)
+                        .available_seats(4)
+                        .time_of_day(getTimeOfDay(request.getDepartureTime()))
+                        .is_weekend(isWeekend(request.getDepartureTime()) ? 1 : 0)
+                        .has_luggage(0)
+                        .has_pets(0)
+                        .passenger_gender("MALE")
+                        .driver_gender("MALE")
+                        .driver_decision("REJECT")
+                        .build();
+                predictiveAiService.sendCarpoolingFeedback(feedback);
+            } catch (Exception e) {
+                log.warn("Carpooling ML feedback (cancel) failed: {}", e.getMessage());
+            }
+        }
     }
 
     @Override
@@ -230,5 +296,159 @@ public class RideRequestService implements IRideRequestService {
                                 NotificationType.RIDE_UPDATE, saved.getId().toHexString())));
 
         return rideRequestMapper.toResponseDTO(saved);
+    }
+
+    @Override
+    public RideRequestResponseDTO predictAcceptance(PassengerRideRequestCreationDTO dto, String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        PassengerProfile profile = passengerProfileRepository.findByUserId(user.getId()).orElse(null);
+
+        // Estimate distance from city names (Tunisian city lookup table)
+        double rideDistanceKm   = estimateDistanceKm(dto.getDepartureLocation(), dto.getDestinationLocation());
+        double pickupDistanceKm = estimatePickupKm(dto.getDepartureLocation());
+
+        // Prepare request for ML service
+        PredictiveAiService.CarpoolingAiRequest aiRequest = PredictiveAiService.CarpoolingAiRequest.builder()
+                .passenger_rating(profile != null && profile.getAverageRating() != null ? profile.getAverageRating() : 4.0)
+                .ride_distance_km(rideDistanceKm)
+                .pickup_distance_km(pickupDistanceKm)
+                .fare_offered(dto.getProposedPrice() != null ? dto.getProposedPrice() : 0.0)
+                .requested_seats(dto.getRequestedSeats())
+                .available_seats(4)
+                .time_of_day(getTimeOfDay(dto.getDepartureTime()))
+                .is_weekend(isWeekend(dto.getDepartureTime()) ? 1 : 0)
+                .has_luggage(0)
+                .has_pets(0)
+                .passenger_gender("MALE")
+                .driver_gender("MALE")
+                .build();
+
+        log.info("Predict: {} → {} | dist={} km | pickup={} km | fare={} TND | seats={}",
+                dto.getDepartureLocation(), dto.getDestinationLocation(),
+                rideDistanceKm, pickupDistanceKm,
+                dto.getProposedPrice(), dto.getRequestedSeats());
+
+        RideRequestResponseDTO response = RideRequestResponseDTO.builder()
+                .departureLocation(dto.getDepartureLocation())
+                .destinationLocation(dto.getDestinationLocation())
+                .departureTime(dto.getDepartureTime())
+                .requestedSeats(dto.getRequestedSeats())
+                .proposedPrice(dto.getProposedPrice())
+                .status(RideRequestStatus.PENDING)
+                .build();
+
+        try {
+            PredictiveAiService.CarpoolingAiResponse aiResponse = predictiveAiService.predictCarpooling(aiRequest).block();
+            if (aiResponse != null) {
+                log.info("AI probability: {}", aiResponse.getAccept_probability());
+                response.setAiAcceptanceProbability(aiResponse.getAccept_probability());
+                response.setAiExplanation(aiResponse.getExplanation());
+            } else {
+                response.setAiExplanation(java.util.List.of("AI service returned no insights."));
+            }
+        } catch (Exception e) {
+            log.error("AI Prediction failed: {}", e.getMessage());
+            response.setAiExplanation(java.util.List.of("AI service temporarily unavailable."));
+        }
+
+        return response;
+    }
+
+    /**
+     * Estimate ride distance in km from city name keywords.
+     * Uses a lookup table of common Tunisian city pairs.
+     * Falls back to 50 km if neither city is recognised.
+     */
+    private double estimateDistanceKm(String from, String to) {
+        if (from == null || to == null) return 50.0;
+        String f = from.toLowerCase();
+        String t = to.toLowerCase();
+
+        // Symmetric lookup: check both directions
+        double d = lookupDistance(f, t);
+        if (d < 0) d = lookupDistance(t, f);
+        return d > 0 ? d : 50.0;
+    }
+
+    private double lookupDistance(String f, String t) {
+        // Tunis ↔ others
+        if (contains(f, "tunis") && contains(t, "ariana"))      return 12;
+        if (contains(f, "tunis") && contains(t, "ben arous"))   return 15;
+        if (contains(f, "tunis") && contains(t, "marsa"))       return 20;
+        if (contains(f, "tunis") && contains(t, "sousse"))      return 140;
+        if (contains(f, "tunis") && contains(t, "sfax"))        return 270;
+        if (contains(f, "tunis") && contains(t, "nabeul"))      return 80;
+        if (contains(f, "tunis") && contains(t, "bizerte"))     return 65;
+        if (contains(f, "tunis") && contains(t, "zaghouan"))    return 55;
+        if (contains(f, "tunis") && contains(t, "hammamet"))    return 65;
+        if (contains(f, "tunis") && contains(t, "monastir"))    return 160;
+        if (contains(f, "tunis") && contains(t, "mahdia"))      return 200;
+        if (contains(f, "tunis") && contains(t, "kairouan"))    return 155;
+        if (contains(f, "tunis") && contains(t, "gafsa"))       return 340;
+        if (contains(f, "tunis") && contains(t, "gabes"))       return 400;
+        if (contains(f, "tunis") && contains(t, "djerba"))      return 500;
+        if (contains(f, "tunis") && contains(t, "jendouba"))    return 155;
+        if (contains(f, "tunis") && contains(t, "beja"))        return 105;
+        if (contains(f, "tunis") && contains(t, "siliana"))     return 130;
+        if (contains(f, "tunis") && contains(t, "kef"))         return 175;
+        if (contains(f, "tunis") && contains(t, "kasserine"))   return 250;
+        if (contains(f, "tunis") && contains(t, "manouba"))     return 12;
+        // Sousse ↔ others
+        if (contains(f, "sousse") && contains(t, "monastir"))   return 20;
+        if (contains(f, "sousse") && contains(t, "sfax"))       return 130;
+        if (contains(f, "sousse") && contains(t, "kairouan"))   return 55;
+        if (contains(f, "sousse") && contains(t, "hammamet"))   return 75;
+        if (contains(f, "sousse") && contains(t, "mahdia"))     return 60;
+        // Sfax ↔ others
+        if (contains(f, "sfax") && contains(t, "gabes"))        return 130;
+        if (contains(f, "sfax") && contains(t, "gafsa"))        return 130;
+        if (contains(f, "sfax") && contains(t, "mahdia"))       return 70;
+        if (contains(f, "sfax") && contains(t, "kairouan"))     return 130;
+        // Gabes ↔ others
+        if (contains(f, "gabes") && contains(t, "djerba"))      return 75;
+        if (contains(f, "gabes") && contains(t, "gafsa"))       return 120;
+        if (contains(f, "gabes") && contains(t, "medenine"))    return 75;
+        if (contains(f, "gabes") && contains(t, "tataouine"))   return 170;
+        // Nabeul / Hammamet
+        if (contains(f, "nabeul") && contains(t, "hammamet"))   return 12;
+        if (contains(f, "nabeul") && contains(t, "sousse"))     return 90;
+        // Ariana / Ben Arous / Manouba (Tunis suburbs — short)
+        if (contains(f, "ariana") && contains(t, "marsa"))      return 10;
+        if (contains(f, "ariana") && contains(t, "sousse"))     return 145;
+        if (contains(f, "manouba") && contains(t, "bizerte"))   return 70;
+        // Same city / suburb
+        if (f.equals(t))                                         return 5;
+        return -1; // unknown
+    }
+
+    private boolean contains(String haystack, String needle) {
+        return haystack.contains(needle);
+    }
+
+    /**
+     * Estimate pickup detour based on city size.
+     * Larger cities = larger average pickup distance.
+     */
+    private double estimatePickupKm(String city) {
+        if (city == null) return 2.5;
+        String c = city.toLowerCase();
+        if (contains(c, "tunis") || contains(c, "sfax") || contains(c, "sousse")) return 3.5;
+        if (contains(c, "ariana") || contains(c, "ben arous") || contains(c, "manouba")) return 2.0;
+        if (contains(c, "nabeul") || contains(c, "bizerte") || contains(c, "monastir")) return 2.5;
+        return 2.0; // small city default
+    }
+
+    private String getTimeOfDay(LocalDateTime dt) {
+        int hour = dt.getHour();
+        if (hour >= 5 && hour < 12) return "morning";
+        if (hour >= 12 && hour < 17) return "afternoon";
+        if (hour >= 17 && hour < 21) return "evening";
+        return "night";
+    }
+
+    private boolean isWeekend(LocalDateTime dt) {
+        DayOfWeek dw = dt.getDayOfWeek();
+        return dw == DayOfWeek.SATURDAY || dw == DayOfWeek.SUNDAY;
     }
 }

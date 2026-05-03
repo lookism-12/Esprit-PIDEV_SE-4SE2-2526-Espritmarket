@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { SavClaimService, SavClaim } from '../../core/sav-claim.service';
@@ -17,10 +17,19 @@ import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner
           <h1 class="text-3xl font-black text-dark tracking-tight">My Claims</h1>
           <p class="text-secondary font-medium mt-1">Track product returns and delivery agent claims</p>
         </div>
-        <button (click)="navigateToCreate()" 
-                class="px-6 py-3 bg-primary text-white font-black rounded-xl hover:bg-primary/90 transition-all uppercase tracking-widest text-[10px]">
-          + Create Claim
-        </button>
+        <div class="flex items-center gap-3">
+          <!-- Smart sort toggle -->
+          <button (click)="toggleSmartSort()"
+                  [class]="smartSort() 
+                    ? 'px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest bg-amber-100 text-amber-700 border border-amber-300 transition-all'
+                    : 'px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest bg-gray-100 text-gray-500 border border-gray-200 transition-all'">
+            ⚡ {{ smartSort() ? 'Smart Sort ON' : 'Smart Sort OFF' }}
+          </button>
+          <button (click)="navigateToCreate()" 
+                  class="px-6 py-3 bg-primary text-white font-black rounded-xl hover:bg-primary/90 transition-all uppercase tracking-widest text-[10px]">
+            + Create Claim
+          </button>
+        </div>
       </div>
 
       <!-- Loading State -->
@@ -28,7 +37,7 @@ import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner
         <div class="flex justify-center py-12">
           <app-loading-spinner></app-loading-spinner>
         </div>
-      } @else if (claims().length === 0) {
+      } @else if (displayedClaims().length === 0) {
         <!-- Empty State -->
         <div class="bg-white rounded-3xl shadow-soft border border-gray-100 p-12 text-center">
           <span class="text-6xl mb-4 block">📦</span>
@@ -42,14 +51,21 @@ import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner
       } @else {
         <!-- Claims List -->
         <div class="space-y-4">
-          @for (claim of claims(); track claim.id) {
+          @for (claim of displayedClaims(); track claim.id) {
             <div class="bg-white rounded-2xl shadow-soft border border-gray-100 p-6 hover:shadow-md transition-all">
               <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 
                 <!-- Claim Info -->
                 <div class="flex-1">
-                  <div class="flex items-center gap-3 mb-2">
+                  <div class="flex items-center gap-3 mb-2 flex-wrap">
                     <h3 class="font-black text-dark text-lg">{{ claim.reason }}</h3>
+
+                    <!-- Priority score badge -->
+                    <span [ngClass]="getPriorityBadgeClass(claim.priorityScore)"
+                          class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest">
+                      {{ getPriorityLabel(claim.priorityScore) }}
+                    </span>
+
                     @if (claim.targetType === 'DELIVERY_AGENT') {
                       <span class="px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider bg-amber-100 text-amber-700">
                         Delivery Agent
@@ -112,6 +128,25 @@ export class SavClaimsListComponent implements OnInit {
   claims = signal<SavClaim[]>([]);
   isLoading = signal(false);
 
+  /** When true, list is sorted by priorityScore DESC then date DESC (server already does this,
+   *  but the toggle lets the user switch back to plain date order client-side). */
+  smartSort = signal(true);
+
+  /** Claims as displayed — respects the smart-sort toggle. */
+  displayedClaims = computed(() => {
+    const list = [...this.claims()];
+    if (this.smartSort()) {
+      // Server already returns smart-sorted data; keep that order.
+      return list;
+    }
+    // Plain date sort (newest first) when smart sort is OFF.
+    return list.sort((a, b) => {
+      const da = a.creationDate ? new Date(a.creationDate).getTime() : 0;
+      const db = b.creationDate ? new Date(b.creationDate).getTime() : 0;
+      return db - da;
+    });
+  });
+
   ngOnInit(): void {
     this.loadClaims();
   }
@@ -128,6 +163,10 @@ export class SavClaimsListComponent implements OnInit {
         this.isLoading.set(false);
       }
     });
+  }
+
+  toggleSmartSort(): void {
+    this.smartSort.set(!this.smartSort());
   }
 
   navigateToCreate(): void {
@@ -156,20 +195,35 @@ export class SavClaimsListComponent implements OnInit {
     }
   }
 
+  // ── Badge helpers ─────────────────────────────────────────────────────────
+
+  /**
+   * Returns the CSS classes for the priority score badge.
+   * High (score ≥ 5) → red   Medium (score ≥ 2) → orange   Low → default gray
+   */
+  getPriorityBadgeClass(score?: number): string {
+    const s = score ?? 0;
+    if (s >= 5) return 'bg-red-100 text-red-700 border border-red-200';
+    if (s >= 2) return 'bg-orange-100 text-orange-700 border border-orange-200';
+    return 'bg-gray-100 text-gray-500 border border-gray-200';
+  }
+
+  /** Human-readable label derived from the numeric priority score. */
+  getPriorityLabel(score?: number): string {
+    const s = score ?? 0;
+    if (s >= 5) return '🔴 High';
+    if (s >= 2) return '🟠 Medium';
+    return '⚪ Low';
+  }
+
   getStatusBadgeClass(status?: string): string {
     switch (status) {
-      case 'PENDING':
-        return 'bg-yellow-100 text-yellow-700';
-      case 'INVESTIGATING':
-        return 'bg-blue-100 text-blue-700';
-      case 'RESOLVED':
-        return 'bg-green-100 text-green-700';
-      case 'REJECTED':
-        return 'bg-red-100 text-red-700';
-      case 'ARCHIVED':
-        return 'bg-gray-100 text-gray-700';
-      default:
-        return 'bg-gray-100 text-gray-700';
+      case 'PENDING':       return 'bg-yellow-100 text-yellow-700';
+      case 'INVESTIGATING': return 'bg-blue-100 text-blue-700';
+      case 'RESOLVED':      return 'bg-green-100 text-green-700';
+      case 'REJECTED':      return 'bg-red-100 text-red-700';
+      case 'ARCHIVED':      return 'bg-gray-100 text-gray-700';
+      default:              return 'bg-gray-100 text-gray-700';
     }
   }
 }
