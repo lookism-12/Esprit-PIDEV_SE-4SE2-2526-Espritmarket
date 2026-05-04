@@ -1,4 +1,4 @@
 export const environment = {
   production: false,
-  apiUrl: 'http://localhost:8090/api'
+  apiUrl: 'marketplace-backend-czeeenabcxb2djfu.spaincentral-01.azurewebsites.net'
 };
