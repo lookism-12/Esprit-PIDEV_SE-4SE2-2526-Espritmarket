@@ -3,6 +3,7 @@ package esprit_market.config;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -26,7 +27,7 @@ public class SecurityConfig {
     private final CustomUserDetailsService userDetailsService;
     private final AuthEntryPointJwt unauthorizedHandler;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
-    private final CorsConfigurationSource corsConfigurationSource; // Injected from CorsConfig bean
+    private final CorsConfigurationSource corsConfigurationSource;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -49,44 +50,45 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // CRITICAL: CORS must be configured FIRST before other security measures
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .csrf(AbstractHttpConfigurer::disable)
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(unauthorizedHandler))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Public authentication endpoints
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/users/register", "/api/users/login", "/api/users/forgot-password",
-                                "/api/users/reset-password")
-                        .permitAll()
-                        
-                        // Documentation and error endpoints
-                        .requestMatchers("/v3/api-docs/**", "/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                        .requestMatchers(
+                                "/api/users/register",
+                                "/api/users/login",
+                                "/api/users/forgot-password",
+                                "/api/users/reset-password"
+                        ).permitAll()
+
+                        .requestMatchers(
+                                "/v3/api-docs/**",
+                                "/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html"
+                        ).permitAll()
                         .requestMatchers("/error").permitAll()
                         .requestMatchers("/uploads/**").permitAll()
                         .requestMatchers("/api/uploads/**").permitAll()
-                        
-                        // CRITICAL: Public marketplace endpoints for Angular frontend
-                        .requestMatchers("GET", "/api/categories").permitAll() // Get all categories
-                        .requestMatchers("GET", "/api/categories/**").permitAll() // Get category by ID
-                        .requestMatchers("GET", "/api/products").permitAll() // Get all products  
-                        .requestMatchers("GET", "/api/products/**").permitAll() // Get product by ID
-                        .requestMatchers("GET", "/api/shops").permitAll() // Browse shops
-                        .requestMatchers("GET", "/api/shops/**").permitAll() // Shop details
-                        
-                        // OPTIONS requests (CORS preflight) - MUST be public
-                        .requestMatchers("OPTIONS", "/**").permitAll()
-                        
-                        // WebSocket endpoint for STOMP/SockJS
+
+                        .requestMatchers(HttpMethod.GET, "/api/categories").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/products").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/shops").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/shops/**").permitAll()
+
                         .requestMatchers("/ws/**", "/api/chat/**").permitAll()
-                        
-                        // Admin endpoints
+
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/seller/**").hasAnyRole("ADMIN", "SELLER", "PROVIDER")
-                        
-                        // All other requests require authentication
-                        .anyRequest().authenticated())
+
+                        .anyRequest().authenticated()
+                )
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
