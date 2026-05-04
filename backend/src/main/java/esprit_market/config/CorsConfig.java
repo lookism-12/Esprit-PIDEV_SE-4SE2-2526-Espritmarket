@@ -33,6 +33,7 @@ public class CorsConfig {
                 "http://localhost:4201",    // Alternative Angular port
                 "https://espritmarket.com", // Production domain
                 "https://www.espritmarket.com"
+                "https://marketplace-frontend-g7fnhrdeakg2brcg.spaincentral-01.azurewebsites.net"
         ));
 
         // Allow ALL standard HTTP methods
